@@ -671,19 +671,19 @@ Use-case constraint: Minimal guarantee: every failure attempts a new numbered di
 
 Use-case constraint: Minimal guarantee: every failure attempts a new numbered diagnostic; older reports are never claimed as current.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED (fault injection) — the failure path already behaved correctly, so the scenario passed on first run. Swallowing the write error and reporting success proved the assertion discriminates:
   ```
-  <RED output>
+  Step panicked: no conversion failure was reported: Written: …/roster.ics
+  1 scenario (1 failed), 3 steps (2 passed, 1 failed)   FAULT_EXIT=101
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+  The failure reporting was restored; the injection was never committed.
+- [x] GREEN — no production change needed; the failure is exposed, a new numbered report is written, and the existing calendar survives unchanged.
   ```
-  <GREEN output>
+  1 scenario (1 passed), 5 steps (5 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: A publication failure is exposed and a diagnostic is attempted`; hash: `<hash>`
+  Fixture technique: the candidate calendar name is a dangling symbolic link — it reports as non-existent so it is chosen, and writing it fails while the directory stays writable, which keeps the diagnostic saveable and distinguishes this scenario from the unsavable-diagnostic one.
+- [x] REFACTOR — nothing to clean; fmt/clippy clean; suite 47 passed, 4 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: A publication failure is exposed and a diagnostic is attempted`; hash: `970f46d`
 
 ### 39. An unsavable diagnostic keeps the original failure visible
 
