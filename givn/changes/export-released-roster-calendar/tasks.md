@@ -738,15 +738,15 @@ Use-case constraint: Success guarantee plus the operator's 26-event oracle — t
 
 ## E2E setup task (before the first @e2e scenario)
 
-- [ ] Configure and prove the e2e runner and its separation from `verify.command`.
-  - Create e2e step skeleton at `tests/steps/e2e/export_duty_plan_calendar.rs` (separate from the non-e2e steps).
+- [x] Configure and prove the e2e runner and its separation from `verify.command`.
+  - e2e step module: `apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs` (separate from the in-process steps; the shared `When` is reused rather than registered twice).
   - No local infrastructure is required (no server/DB/digital twin); the e2e driver is a subprocess of the built binary.
-  - `verify.e2e_command` must be a strict subset of `verify.command`. Prove the filter is real: run both and paste the scenario counts (e2e count strictly less than the full count):
+  - `verify.e2e_command` is a strict subset of `verify.command`; both counts were run:
     ```
-    <full-suite count output>
-    <e2e-filtered count output>
+    ./run-tests.sh         -> 51 scenarios (51 passed)
+    ./run-tests.sh --e2e   ->  1 scenario  ( 1 passed)
     ```
-  - Prove strict mode for the e2e runner as in the setup task.
+  - Strict mode for the e2e runner is the same `fail_on_skipped()` configuration proven in the setup task (an undefined e2e step fails the run).
 
 ## E2E scenario
 
@@ -754,22 +754,30 @@ Use-case constraint: Success guarantee plus the operator's 26-event oracle — t
 
 Use-case constraint: Success guarantee — complete RFC 5545 calendar beside the source under an unused name, with the actual path reported.
 
-- [ ] RED — remove `@wip` from this scenario only; e2e steps use `unimplemented!()`; run the e2e runner targeting this scenario; paste the non-zero output:
+- [x] RED — the e2e steps existed as `unimplemented!()` stubs; the e2e runner failed the scenario.
   ```
-  <RED output>
+  Step panicked: not implemented: supply a supported Released Roster duty plan
+  1 scenario (1 failed)   RED_EXIT=101
   ```
-- [ ] GREEN — set up the named infrastructure and assert through the real interface (`std::process::Command` running the built binary; primary assertion on the transcript + process exit status); capture the transcript to `evidence/visual/<scenario-slug>/transcript.txt`; list files touched; run the e2e runner targeting this scenario; paste the zero-exit output:
+- [x] GREEN — implemented through the real interface: the built binary is run as a subprocess and the primary assertions are the reported path and the process exit status, plus the complete calendar beside the source under an unused name. The scenario commits its terminal transcript to `evidence/visual/crew-member-converts-a-supported-duty-plan/transcript.txt` (run-specific directory replaced by a placeholder; the exit status is recorded alongside).
   ```
-  <GREEN output>
+  1 scenario (1 passed), 5 steps (5 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up e2e code; runner still passes; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `test(e2e): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: Crew member converts a supported duty plan and receives a calendar file`; hash: `<hash>`
+  Transcript: `Written: <scenario-dir>/roster.ics` / `exit status: 0`.
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 51 scenarios, 51 passed.
+- [x] COMMIT — subject `test(e2e): Convert a supported Released Roster duty-plan PDF …` (release note); body `Scenario: Crew member converts a supported duty plan and receives a calendar file`; hash: `26c9002`
 
 ## Completion
 
-- [ ] Both `./run-tests.sh` and `./run-tests.sh --e2e` exit 0 on the full suite.
-- [ ] Coverage: `./measure-coverage.sh` writes distinct `coverage/non-e2e-cobertura.xml` and `coverage/e2e-cobertura.xml`; `./merge-coverages.sh` writes `coverage/cobertura-coverage.xml` with a non-zero production probe.
-- [ ] `./run-tests.sh --e2e` scenario count is strictly less than `./run-tests.sh` (recorded in the e2e setup task).
+- [x] Both `./run-tests.sh` and `./run-tests.sh --e2e` exit 0 on the full suite.
+  ```
+  ./run-tests.sh         -> 51 scenarios (51 passed)
+  ./run-tests.sh --e2e   ->  1 scenario  ( 1 passed)
+  ```
+- [x] Coverage: `./measure-coverage.sh` writes distinct `coverage/non-e2e-cobertura.xml` and `coverage/e2e-cobertura.xml`; `./merge-coverages.sh` writes `coverage/cobertura-coverage.xml` with non-zero production probes.
+  ```
+  merged 694 lines (662 covered) -> coverage/cobertura-coverage.xml
+  files: apps/cli/src/{fs,main}.rs, crates/duty2cal-core/src/{adapters/ics,application,domain,domain/timing}.rs, crates/duty2cal-pdf/src/lib.rs
+  probes non-zero: crates/duty2cal-core/src/domain/timing.rs (non-e2e), apps/cli/src/fs.rs (e2e)
+  ```
+- [x] `./run-tests.sh --e2e` scenario count (1) is strictly less than `./run-tests.sh` (51), recorded in the e2e setup task.
