@@ -20,11 +20,11 @@ trap 'rm -rf "$root"' EXIT
 export GIVN_FEATURES="$root"
 
 echo "== non-e2e profile =="
-cargo llvm-cov -p duty2cal --test features_runner \
+cargo llvm-cov --workspace --test features_runner \
   --cobertura --output-path "$non_e2e" --ignore-run-fail -- --tags "not @e2e"
 
 echo "== e2e profile =="
-cargo llvm-cov -p duty2cal --test features_runner \
+cargo llvm-cov --workspace --test features_runner \
   --cobertura --output-path "$e2e" --ignore-run-fail -- --tags "@e2e"
 
 echo "wrote $non_e2e and $e2e"

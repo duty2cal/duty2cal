@@ -148,7 +148,7 @@ One file per capability:
 
 The whole-file oracle is a Gherkin scenario (conflict 17), not a parallel Rust test: `Scenario: The reference roster converts to the expected calendar` converts `apps/cli/tests/fixtures/reference_roster.pdf` (independently generated, fictional values — conflict 18) and compares the produced calendar with `apps/cli/tests/fixtures/expected/2026-06.ics` after CRLF→LF and line-folding normalisation. The expected file's event list is the operator's 26-event oracle; the UID scheme follows the committed snapshot-scoped identity (conflict 11), not a date/flight/route recipe.
 
-Fixture generation (carried over from the first draft): the reference PDF is compiled from a committed Typst source (Typst is Apache-2.0) and its host metadata stripped (`exiftool -all=`) so nothing leaks beyond the table; the expected calendar is generated from it. All values are fictional and non-personal.
+Fixture generation (as implemented): the reference plan is built at test time by the shared fixture builder (`apps/cli/tests/steps/support.rs`), which writes an uncompressed PDF from positioned text; no binary PDF and no Typst toolchain are required, and no host metadata exists to strip. Only the expected calendar (`apps/cli/tests/fixtures/expected/2026-06.ics`) is committed, so the oracle pins the output for a deterministically reproducible input. All values are fictional and non-personal.
 
 Distribution notes: the release profile uses `opt-level = "z"`, `lto` and `strip` to keep the single executable small.
 
@@ -162,6 +162,8 @@ Resolves the proposal's open questions and the external brief's conflicts. Seed 
 - **Brief reconciliation (conflicts 1–20, full log in `design-review.md`):** kept committed — all-day by code (U/FZ/FREE/OFF) with timed SB/RE/SBX and TK/DTUSA/EM; DH title prefix; independent endpoint resolution with adjacent-day qualifiers and the narrow unqualified rollover; snapshot-scoped opaque identity; source-footer DTSTAMP with a `Clock` fallback; enumerated no-overwrite calendar names; numbered preserved diagnostics; one plan per conversion (batch deferred); golden oracle inside Gherkin. Adopted from the brief — rename to `duty2cal`; `pdfplumber = "=0.4.1"`; project-wide MPL-2.0 licensing (the brief's GPL application layer was dropped — operator amendment for App-Store distribution of the future iOS UI); the reduced two-crate workspace with four-level layer enforcement; in-process domain events; ADRs minted in `docs/arc42/adr/`. Kept committed against the brief — Windows GNU target; generated fixtures only; Phase 1 scope (Phase 2/3 roadmap).
 
 No proposal question is unresolved.
+
+The CLI exposes one documented seam for deterministic runs: `DUTY2CAL_CONSTRUCTION_CLOCK` fixes the instant behind the revision-timestamp fallback (used by the golden-oracle, fallback and `@e2e` scenarios), so no production constant is needed.
 
 ## Use-case traceability
 
@@ -195,7 +197,7 @@ User-visible surface: a terminal interface (CLI text output). Confirmed Personas
 - Viewports: n/a (no rendered screen)
 - Design system: none
 - Evidence kind: captured transcript per `@e2e` scenario at `givn/changes/export-released-roster-calendar/evidence/visual/<scenario-slug>/transcript.txt`.
-- Baseline: the transcript names the actual new calendar path (or the failure and diagnostic outcome) and the process exit status; no internal identifier appears.
+- Baseline: the transcript names the actual new calendar path (or the failure and diagnostic outcome) and the process exit status is recorded alongside it; no internal identifier appears.
 
 ## E2E smoke test infrastructure
 
@@ -223,10 +225,10 @@ User-visible surface: a terminal interface (CLI text output). Confirmed Personas
 
 | Process | Started by | Instrumented artifact | Profile output | Merge step | Non-zero production probe |
 |---|---|---|---|---|---|
-| features_runner (unit/integration) | `./run-tests.sh` | `cargo llvm-cov -p duty2cal --test features_runner` | `coverage/non-e2e-cobertura.xml` | `./merge-coverages.sh` | `crates/duty2cal-core/src/domain/timing.rs` |
-| E2E runner + spawned CLI | `./run-tests.sh --e2e` | `cargo llvm-cov -p duty2cal --test features_runner` with the CLI built under instrumentation (`LLVM_PROFILE_FILE` for the child) | `coverage/e2e-cobertura.xml` | `./merge-coverages.sh` | `apps/cli/src/fs.rs` |
+| features_runner (unit/integration) | `./measure-coverage.sh` (`--tags "not @e2e"`) | `cargo llvm-cov --workspace --test features_runner` | `coverage/non-e2e-cobertura.xml` | `./merge-coverages.sh` | `crates/duty2cal-core/src/domain/timing.rs` |
+| E2E runner + spawned CLI | `./measure-coverage.sh` (`--tags "@e2e"`, which spawns the built CLI) | `cargo llvm-cov --workspace --test features_runner` with the CLI built under instrumentation (`LLVM_PROFILE_FILE` for the child) | `coverage/e2e-cobertura.xml` | `./merge-coverages.sh` | `apps/cli/src/fs.rs` |
 
-Both reports come from distinct instrumentation runs; `./measure-coverage.sh` reuses `./run-tests.sh`'s assembly (`GIVN_FEATURES`) rather than re-implementing it.
+Both reports come from distinct instrumentation runs, and `--workspace` instruments every crate (the CLI binary alone leaves the core and PDF crates uncovered); `./measure-coverage.sh` reuses `./run-tests.sh`'s assembly (`GIVN_FEATURES`) rather than re-implementing it.
 
 ## Roadmap (out of this change)
 

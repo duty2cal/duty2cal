@@ -77,6 +77,8 @@ async fn success_exit_status(w: &mut DutyWorld) {
     }
     // The transcript is committed evidence, so the run-specific directory is
     // replaced by a placeholder.
-    let evidence = transcript(w).replace(&w.working_dir().display().to_string(), "<scenario-dir>");
+    let mut evidence =
+        transcript(w).replace(&w.working_dir().display().to_string(), "<scenario-dir>");
+    evidence.push_str(&format!("exit status: {}\n", w.exit_status.unwrap_or(-1)));
     std::fs::write(&path, evidence).expect("write the transcript");
 }

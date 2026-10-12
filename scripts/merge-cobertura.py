@@ -15,7 +15,12 @@ def covers(root):
     for cls in root.iter("class"):
         key = cls.get("filename") or cls.get("name") or ""
         lines = out.setdefault(key, {})
-        for line in cls.iter("line"):
+        # Only the class's own line block: `iter` would also descend into the
+        # method blocks and count the same line twice.
+        block = cls.find("lines")
+        if block is None:
+            continue
+        for line in block.findall("line"):
             num = int(line.get("number", "0"))
             hits = int(line.get("hits", "0"))
             lines[num] = lines.get(num, 0) + hits
