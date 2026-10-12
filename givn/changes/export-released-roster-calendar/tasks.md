@@ -85,19 +85,29 @@ Use-case constraint: Extensions 2: an unreadable/unsupported source fails explic
 
 Use-case constraint: Rule: overview, statistics, footer, and date-only rows supply no dated activities.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
   ```
-  <RED output>
+  Scenario: Overview and statistics material supplies no dated activities
+   ✔  Given a supported duty plan whose overview calendar and statistics name activity codes …
+   ✔  When the crew member converts it
+   ✘  Then the published calendar contains no activity taken from the overview or statistics
+      Step panicked. Captured output: not implemented: assert the published calendar carries no overview/statistics activity
+  1 scenario (1 failed), 3 steps (2 passed, 1 failed)
+  RED_EXIT=101
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+  (The Given needed the fixture to exist, so `apps/cli/tests/steps/support.rs` — a positioned-text PDF builder — was added in RED; it also fixes a compile error: `support` had to be imported as `crate::steps::support`.)
+- [x] GREEN — replace stubs with real assertions + minimum production code; production files: `crates/duty2cal-pdf/src/lib.rs` (rows clustered by vertical position, column bands derived from the detail-table header, only rows *below* the header are yielded; no coordinate is hard-coded and reading order is never used as structure), `crates/duty2cal-core/src/domain/mod.rs` (`Roster`, `Activity`), `crates/duty2cal-core/src/adapters/ics/mod.rs` (`render` producing a complete VCALENDAR), `crates/duty2cal-core/src/application/mod.rs` (`interpret` + `execute` wiring; the interim `UnsupportedPlan` refusal is replaced), `apps/cli/tests/steps/export_duty_plan_calendar.rs` (Given/Then); run the single-scenario command; paste the zero-exit output:
   ```
-  <GREEN output>
+  1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
+- [x] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
   ```
-  <REFACTOR output>
+  cargo fmt --all --check  -> FMT OK
+  cargo clippy --workspace --all-targets -- -D warnings -> clean (elided a needless lifetime)
+  full suite -> 51 scenarios (2 passed, 49 failed)
   ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: Overview and statistics material supplies no dated activities`; hash: `<hash>`
+  Found and fixed a real defect: cucumber executes scenarios in parallel, so the shared per-process working directory made the suite interfere with itself (1 passed, 50 failed). Each scenario now gets its own directory.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Overview and statistics material supplies no dated activities`; hash: `053163f`
 
 ### 3. Footer records supply no dated activities
 
