@@ -329,163 +329,136 @@ Use-case constraint: Rule: an explicit dated station-bearing Layover row is an a
 
 Use-case constraint: Extensions 3/4: unknown required code or unmatched fragment rejects the conversion with a diagnostic.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the steps existed: strict mode failed the scenario as undefined (`Step doesn't match any function`).
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; production: `domain/timing.rs` (qualifier -> unique adjacent Gregorian date carrying month/year), split-leg fragment pairing, the narrow unqualified rollover, and rejection of unmatched fragments, zero-length intervals and unmatched qualifiers.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: An unknown required activity code rejects the conversion`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 17. A required travel leg without a compatible partner rejects the conversion
 
 Use-case constraint: Extensions 3/4: unknown required code or unmatched fragment rejects the conversion with a diagnostic.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the steps existed: strict mode failed the scenario as undefined (`Step doesn't match any function`).
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; production: `domain/timing.rs` (qualifier -> unique adjacent Gregorian date carrying month/year), split-leg fragment pairing, the narrow unqualified rollover, and rejection of unmatched fragments, zero-length intervals and unmatched qualifiers.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: A required travel leg without a compatible partner rejects the conversion`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 18. An explicit next-day qualifier moves the endpoint to the following UTC day
 
 Use-case constraint: Timing rule: resolve each endpoint date independently to the unique adjacent Gregorian date; no match fails.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the steps existed: strict mode failed the scenario as undefined (`Step doesn't match any function`).
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; production: `domain/timing.rs` (qualifier -> unique adjacent Gregorian date carrying month/year), split-leg fragment pairing, the narrow unqualified rollover, and rejection of unmatched fragments, zero-length intervals and unmatched qualifiers.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: An explicit next-day qualifier moves the endpoint to the following UTC day`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 19. A split across local dates can remain on the same UTC day
 
 Use-case constraint: Timing rule: resolve each endpoint date independently to the unique adjacent Gregorian date; no match fails.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the steps existed: strict mode failed the scenario as undefined (`Step doesn't match any function`).
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; production: `domain/timing.rs` (qualifier -> unique adjacent Gregorian date carrying month/year), split-leg fragment pairing, the narrow unqualified rollover, and rejection of unmatched fragments, zero-length intervals and unmatched qualifiers.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: A split across local dates can remain on the same UTC day`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 20. Unqualified endpoints that appear to cross midnight roll to the next UTC day
 
 Use-case constraint: Timing rule: the narrow unqualified overnight rollover; equal clocks are not repaired.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the steps existed: strict mode failed the scenario as undefined (`Step doesn't match any function`).
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; production: `domain/timing.rs` (qualifier -> unique adjacent Gregorian date carrying month/year), split-leg fragment pairing, the narrow unqualified rollover, and rejection of unmatched fragments, zero-length intervals and unmatched qualifiers.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: Unqualified endpoints that appear to cross midnight roll to the next UTC day`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 21. A zero-length travel interval is not repaired
 
 Use-case constraint: Timing rule: the narrow unqualified overnight rollover; equal clocks are not repaired.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the steps existed: strict mode failed the scenario as undefined (`Step doesn't match any function`).
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; production: `domain/timing.rs` (qualifier -> unique adjacent Gregorian date carrying month/year), split-leg fragment pairing, the narrow unqualified rollover, and rejection of unmatched fragments, zero-length intervals and unmatched qualifiers.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: A zero-length travel interval is not repaired`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 22. A previous-year UTC qualifier resolves across the year boundary
 
 Use-case constraint: Timing rule: resolve each endpoint date independently to the unique adjacent Gregorian date; no match fails.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the steps existed: strict mode failed the scenario as undefined (`Step doesn't match any function`).
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; production: `domain/timing.rs` (qualifier -> unique adjacent Gregorian date carrying month/year), split-leg fragment pairing, the narrow unqualified rollover, and rejection of unmatched fragments, zero-length intervals and unmatched qualifiers.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: A previous-year UTC qualifier resolves across the year boundary`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 23. A next-month UTC qualifier resolves across the month boundary
 
 Use-case constraint: Timing rule: resolve each endpoint date independently to the unique adjacent Gregorian date; no match fails.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the steps existed: strict mode failed the scenario as undefined (`Step doesn't match any function`).
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; production: `domain/timing.rs` (qualifier -> unique adjacent Gregorian date carrying month/year), split-leg fragment pairing, the narrow unqualified rollover, and rejection of unmatched fragments, zero-length intervals and unmatched qualifiers.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: A next-month UTC qualifier resolves across the month boundary`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 24. An explicit qualifier with no unique adjacent date rejects the conversion
 
 Use-case constraint: Timing rule: resolve each endpoint date independently to the unique adjacent Gregorian date; no match fails.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the steps existed: strict mode failed the scenario as undefined (`Step doesn't match any function`).
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; production: `domain/timing.rs` (qualifier -> unique adjacent Gregorian date carrying month/year), split-leg fragment pairing, the narrow unqualified rollover, and rejection of unmatched fragments, zero-length intervals and unmatched qualifiers.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: An explicit qualifier with no unique adjacent date rejects the conversion`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 25. A known trip identifier is carried across the legs of one roster trip
 
