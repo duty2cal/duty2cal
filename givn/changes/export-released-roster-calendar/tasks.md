@@ -558,19 +558,16 @@ Use-case constraint: Calendar representation: all-day events use a date with a n
 
 Use-case constraint: Calendar representation: RFC 5545 byte contract (CRLF, escaping, octet-aware folding, end after start).
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — text values were unescaped: the Tags value `5_MFL;X,Y` reached the calendar raw.
   ```
-  <RED output>
+  1 scenario (1 failed), 4 steps (3 passed, 1 failed)   RED_EXIT=101
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — production: content lines escape TEXT values (`\;`, `\,`, `\\`, newlines) and fold at 75 octets with a single-space continuation, cutting on character boundaries so a UTF-8 character is never split.
   ```
-  <GREEN output>
+  1 scenario (1 passed), 6 steps (6 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: The published calendar is a valid RFC 5545 file`; hash: `<hash>`
+- [x] REFACTOR — folding exposed that a reader must unfold first; the test helper now joins continuation lines. fmt/clippy clean; suite 40 passed, 11 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: The published calendar is a valid RFC 5545 file`; hash: `d9c1d9d`
 
 ### 32. An identical source snapshot keeps its component identifiers
 
