@@ -1,6 +1,6 @@
 # Change seed: export-released-roster-calendar
 
-Status: ready
+Status: proposed by export-released-roster-calendar
 
 - Use-case IDs: export-duty-plan-calendar
 - Topic: duty-plan-calendar-conversion

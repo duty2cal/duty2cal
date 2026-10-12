@@ -2,25 +2,32 @@
 
 ## Requirements overview
 
-<!-- What are the essential features and quality goals of this system?
-     Summarise the top 3–5 requirements from the user/stakeholder perspective.
-     Reference the givn/specs/ feature files for the authoritative behaviour spec. -->
+`duty2ical` (the deliverable of the change to export released roster calendars) is a local, offline command-line converter. A crew member supplies one published Released Roster duty-plan PDF; the converter writes one complete RFC 5545 calendar beside it under an unused name, or fails explicitly and attempts a numbered diagnostic. It never overwrites an existing calendar or report.
+
+Top requirements, from the stakeholder perspective:
+
+1. **Faithful conversion** — every required activity in a supported plan is represented, with correct all-day/timed distinction and correct UTC endpoints; nothing is silently omitted.
+2. **Complete-or-explicit-failure** — a plan that cannot be represented completely is rejected with a visible failure and a diagnostic, never a partial calendar.
+3. **No destruction** — an existing calendar or report is never replaced; new outputs use an unused enumerated name.
+4. **Privacy** — private duty plans and identifying values never reach the public repository; fixtures and golden calendars are generated or anonymized.
+5. **Distributable release** — one self-contained Windows executable, permissively licensed, with claims backed by evidence.
+
+The authoritative behaviour specification is the change's feature files under `givn/changes/export-released-roster-calendar/specs/` (merged to `givn/specs/export-duty-plan-calendar/` on archive).
 
 ## Quality goals
 
-<!-- The top quality attributes (from ISO 25010 or similar) that are architecturally
-     significant — i.e. drive or constrain the architecture. Typically 3–5.
-     Format: | Priority | Quality attribute | Motivation | -->
-
 | Priority | Quality attribute | Motivation |
 |---|---|---|
-| | | |
+| 1 | Correctness / completeness | A calendar that looks complete but omits or invents activities is worse than an explicit failure; the whole-plan completeness boundary enforces this. |
+| 2 | Reliability (no data loss) | Existing calendars and reports must survive any conversion attempt, including concurrent ones. |
+| 3 | Interoperability | The output must be a valid RFC 5545 file (CRLF, escaping, octet-aware folding) usable by real calendar clients. |
+| 4 | Privacy | Duty plans carry identifying data; public artifacts must contain only generated or anonymized material. |
+| 5 | Maintainability / portability | Clean Architecture layering plus a single self-contained Windows executable keep the converter verifiable and distributable. |
 
 ## Stakeholders
 
-<!-- Who has an interest in this system? Who must be satisfied by the architecture?
-     Format: | Role | Expectation | -->
-
 | Role | Expectation |
 |---|---|
-| | |
+| Crew member exporting their own duty plan (`crew-member--personal-calendar-owner`) | A usable personal calendar that faithfully represents their plan, with clear failures and no invented dates. |
+| Person identified in a duty plan (including its owner) | Their identifying information never enters the public repository or public test material. |
+| Maintainer responsible for a public release (`project-maintainer--release-owner`) | A maintainable, verifiable, legally distributable converter whose public support claims match its evidence. |
