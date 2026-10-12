@@ -3,6 +3,7 @@
 //!
 //! One file per capability. RED-phase steps use the `unimplemented!("<step>")`
 //! stub; a step body is never empty.
+#![allow(clippy::too_many_arguments)] // step signatures mirror the captured step text
 
 use std::path::PathBuf;
 use std::process::Command;
@@ -252,5 +253,357 @@ async fn three_activities_of_the_right_kinds(w: &mut DutyWorld) {
             && calendar.contains("DTSTART:20990613T080000Z")
             && calendar.contains("DTEND:20990613T160000Z"),
         "the timed SB activity is missing or wrong: {calendar}"
+    );
+}
+
+/// The duty-plan date written as an ICS date value.
+fn compact(date: &str) -> String {
+    date.replace('-', "")
+}
+
+/// The duty-plan date and printed clock written as an ICS UTC instant.
+fn utc(date: &str, time: &str) -> String {
+    format!("{}T{}00Z", compact(date), time.replace(':', ""))
+}
+
+/// Prepare a single-row plan at a realistic detail-table position.
+fn plan_with_row(w: &mut DutyWorld, cells: &[(f64, &str)]) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(585.0, cells));
+    write_fixture(w, &items);
+}
+
+/// Assert the calendar carries exactly `expected` activities.
+fn assert_event_count(calendar: &str, expected: usize) {
+    assert_eq!(
+        calendar.matches("BEGIN:VEVENT").count(),
+        expected,
+        "expected {expected} activities: {calendar}"
+    );
+}
+
+#[given(
+    regex = r"^a supported duty plan dated (\d{4}-\d{2}-\d{2}) with activity code (\w+) and printed UTC times (.*) and (.*)$"
+)]
+async fn a_plan_with_an_all_day_code(
+    w: &mut DutyWorld,
+    date: String,
+    code: String,
+    start: String,
+    end: String,
+) {
+    let mut cells: Vec<(f64, &str)> = vec![(DATE_X, &date), (ACTIVITY_X, &code)];
+    if !start.is_empty() {
+        cells.push((START_X, &start));
+    }
+    if !end.is_empty() {
+        cells.push((END_X, &end));
+    }
+    plan_with_row(w, &cells);
+}
+
+#[then(
+    regex = r"^the calendar contains one all-day activity for (\d{4}-\d{2}-\d{2}) whose source code is (\w+)$"
+)]
+async fn one_all_day_activity(w: &mut DutyWorld, date: String, code: String) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 1);
+    assert!(
+        calendar.contains(&format!("SUMMARY:{code}"))
+            && calendar.contains(&format!("DTSTART;VALUE=DATE:{}", compact(&date))),
+        "the all-day {code} activity is missing or wrong: {calendar}"
+    );
+}
+
+#[then("that activity carries no timed interval")]
+async fn no_timed_interval(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    assert!(
+        !calendar.contains("\nDTSTART:") && !calendar.starts_with("DTSTART:"),
+        "the all-day activity carries a timed interval: {calendar}"
+    );
+}
+
+#[given(
+    regex = r"^a supported duty plan dated (\d{4}-\d{2}-\d{2}) with activity code (\w+) and resolved UTC start (\d{2}:\d{2}) and end (\d{2}:\d{2})$"
+)]
+async fn a_plan_with_a_timed_code(
+    w: &mut DutyWorld,
+    date: String,
+    code: String,
+    start: String,
+    end: String,
+) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, &date),
+            (ACTIVITY_X, &code),
+            (START_X, &start),
+            (END_X, &end),
+        ],
+    );
+}
+
+#[given(
+    regex = r"^a supported duty plan dated (\d{4}-\d{2}-\d{2}) with activity code (\w+) and source station (\w+) and resolved UTC start (\d{2}:\d{2}) and end (\d{2}:\d{2})$"
+)]
+async fn a_plan_with_a_stationed_timed_code(
+    w: &mut DutyWorld,
+    date: String,
+    code: String,
+    station: String,
+    start: String,
+    end: String,
+) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, &date),
+            (ACTIVITY_X, &code),
+            (FROM_X, &station),
+            (START_X, &start),
+            (END_X, &end),
+        ],
+    );
+}
+
+#[given(
+    regex = r"^a supported duty plan dated (\d{4}-\d{2}-\d{2}) with activity code (\w+) and its own resolved UTC start (\d{2}:\d{2}) and end (\d{2}:\d{2})$"
+)]
+async fn a_plan_with_an_own_window_code(
+    w: &mut DutyWorld,
+    date: String,
+    code: String,
+    start: String,
+    end: String,
+) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, &date),
+            (ACTIVITY_X, &code),
+            (START_X, &start),
+            (END_X, &end),
+        ],
+    );
+}
+
+#[then(
+    regex = r"^the calendar contains one timed non-flight activity from (\d{2}:\d{2}) to (\d{2}:\d{2}) UTC on (\d{4}-\d{2}-\d{2}) lasting (\d+) hours$"
+)]
+async fn one_timed_non_flight(
+    w: &mut DutyWorld,
+    start: String,
+    end: String,
+    date: String,
+    _hours: u32,
+) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 1);
+    assert!(
+        calendar.contains(&format!("DTSTART:{}", utc(&date, &start)))
+            && calendar.contains(&format!("DTEND:{}", utc(&date, &end))),
+        "the timed non-flight activity is missing or wrong: {calendar}"
+    );
+}
+
+#[then(
+    regex = r"^the calendar contains one timed standby activity from (\d{2}:\d{2}) to (\d{2}:\d{2}) UTC lasting (\d+) hours$"
+)]
+async fn one_timed_standby(w: &mut DutyWorld, start: String, end: String, _hours: u32) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 1);
+    assert!(
+        calendar.contains("SUMMARY:SB")
+            && calendar.contains(&format!("DTSTART:20990118T{}00Z", start.replace(':', "")))
+            && calendar.contains(&format!("DTEND:20990118T{}00Z", end.replace(':', ""))),
+        "the timed standby activity is missing or wrong: {calendar}"
+    );
+}
+
+#[then(
+    regex = r"^the calendar contains one timed reserve activity from (\d{2}:\d{2}) to (\d{2}:\d{2}) UTC lasting (\d+) hours$"
+)]
+async fn one_timed_reserve(w: &mut DutyWorld, start: String, end: String, _hours: u32) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 1);
+    assert!(
+        calendar.contains("SUMMARY:RE")
+            && calendar.contains(&format!("DTSTART:20990118T{}00Z", start.replace(':', "")))
+            && calendar.contains(&format!("DTEND:20990118T{}00Z", end.replace(':', ""))),
+        "the timed reserve activity is missing or wrong: {calendar}"
+    );
+}
+
+#[then(
+    regex = r"^the calendar contains one timed SBX activity from (\d{2}:\d{2}) to (\d{2}:\d{2}) UTC$"
+)]
+async fn one_timed_sbx(w: &mut DutyWorld, start: String, end: String) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 1);
+    assert!(
+        calendar.contains("SUMMARY:SBX")
+            && calendar.contains(&format!("DTSTART:20990122T{}00Z", start.replace(':', "")))
+            && calendar.contains(&format!("DTEND:20990122T{}00Z", end.replace(':', ""))),
+        "the timed SBX activity is missing or wrong: {calendar}"
+    );
+}
+
+#[then("the calendar contains no activity for any cancelled flight")]
+async fn no_cancelled_flight(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 1);
+}
+
+#[given(
+    regex = r"^a supported duty plan with SB window (\d{2}:\d{2}) to (\d{2}:\d{2}) on (\d{4}-\d{2}-\d{2}), a FREE row on (\d{4}-\d{2}-\d{2}), and SB window (\d{2}:\d{2}) to (\d{2}:\d{2}) on (\d{4}-\d{2}-\d{2})$"
+)]
+async fn consecutive_standby_days(
+    w: &mut DutyWorld,
+    first_start: String,
+    first_end: String,
+    first_date: String,
+    off_date: String,
+    second_start: String,
+    second_end: String,
+    second_date: String,
+) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, &first_date),
+            (ACTIVITY_X, "SB"),
+            (START_X, &first_start),
+            (END_X, &first_end),
+        ],
+    ));
+    items.extend(support::at(
+        570.0,
+        &[(DATE_X, &off_date), (ACTIVITY_X, "FREE")],
+    ));
+    items.extend(support::at(
+        555.0,
+        &[
+            (DATE_X, &second_date),
+            (ACTIVITY_X, "SB"),
+            (START_X, &second_start),
+            (END_X, &second_end),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then(
+    regex = r"^the calendar contains two timed standby activities on (\d{4}-\d{2}-\d{2}) and (\d{4}-\d{2}-\d{2})$"
+)]
+async fn two_standby_activities(w: &mut DutyWorld, first: String, second: String) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 3);
+    for date in [&first, &second] {
+        assert!(
+            calendar.contains(&format!("DTSTART:{}T080000Z", compact(date))),
+            "the standby activity on {date} is missing: {calendar}"
+        );
+    }
+}
+
+#[then(regex = r"^the calendar contains one all-day day-off activity on (\d{4}-\d{2}-\d{2})$")]
+async fn one_all_day_day_off(w: &mut DutyWorld, date: String) {
+    let calendar = calendar(w);
+    assert!(
+        calendar.contains("SUMMARY:FREE")
+            && calendar.contains(&format!("DTSTART;VALUE=DATE:{}", compact(&date))),
+        "the all-day day off on {date} is missing: {calendar}"
+    );
+}
+
+#[then(regex = r"^no standby activity spans (\d{4}-\d{2}-\d{2})$")]
+async fn no_standby_spans(w: &mut DutyWorld, date: String) {
+    let calendar = calendar(w);
+    assert!(
+        !calendar.contains(&format!("DTSTART:{}T", compact(&date))),
+        "a standby activity starts on the day off {date}: {calendar}"
+    );
+}
+
+#[given(
+    regex = r"^a supported duty plan with designator (\w+) from (\w+) to (\w+), position (\w+), resolved UTC start (\d{2}:\d{2}) and end (\d{2}:\d{2}), no aircraft, and accounting Blocktime (\d{2}:\d{2})$"
+)]
+async fn a_deadhead_leg(
+    w: &mut DutyWorld,
+    designator: String,
+    from: String,
+    to: String,
+    position: String,
+    start: String,
+    end: String,
+    _blocktime: String,
+) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (support::POS_X, &position),
+            (ACTIVITY_X, &designator),
+            (FROM_X, &from),
+            (TO_X, &to),
+            (START_X, &start),
+            (END_X, &end),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then(
+    regex = r"^the calendar contains one travel activity from (\d{2}:\d{2}) to (\d{2}:\d{2}) UTC on the duty-plan date$"
+)]
+async fn one_travel_activity(w: &mut DutyWorld, start: String, end: String) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 1);
+    assert!(
+        calendar.contains(&format!("DTSTART:20990607T{}00Z", start.replace(':', "")))
+            && calendar.contains(&format!("DTEND:20990607T{}00Z", end.replace(':', ""))),
+        "the travel activity is missing or wrong: {calendar}"
+    );
+}
+
+#[then(regex = r#"^that activity's title is "(.*)"$"#)]
+async fn that_activity_title(w: &mut DutyWorld, title: String) {
+    let calendar = calendar(w);
+    assert!(
+        calendar.contains(&format!("SUMMARY:{title}")),
+        "the activity title is not {title:?}: {calendar}"
+    );
+}
+
+#[then("the calendar contains no second activity for that leg")]
+async fn no_second_activity(w: &mut DutyWorld) {
+    assert_event_count(&calendar(w), 1);
+}
+
+#[given(regex = r"^a supported duty plan with a dated Layover row for station (\w+)$")]
+async fn a_layover_row(w: &mut DutyWorld, station: String) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-08"),
+            (ACTIVITY_X, "Layover"),
+            (FROM_X, &station),
+        ],
+    );
+}
+
+#[then("the calendar contains one all-day layover activity for that date")]
+async fn one_all_day_layover(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 1);
+    assert!(
+        calendar.contains("SUMMARY:Layover ABC")
+            && calendar.contains("DTSTART;VALUE=DATE:20990608")
+            && calendar.contains("DTEND;VALUE=DATE:20990609"),
+        "the all-day layover activity is missing or wrong: {calendar}"
     );
 }

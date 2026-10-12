@@ -43,7 +43,7 @@ Feature: Export a duty-plan calendar
     When the crew member converts it
     Then the calendar contains exactly three activities: one timed travel activity, one all-day U activity, and one timed SB activity
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: All-day codes ignore printed clocks
     Given a supported duty plan dated <date> with activity code <code> and printed UTC times <start> and <end>
     When the crew member converts it
@@ -57,37 +57,37 @@ Feature: Export a duty-plan calendar
       | 2099-01-14 | FZ   | 09:00 | 17:00 |
       | 2099-01-15 | FREE | 00:00 | 00:00 |
 
-  @givn.added @wip
+  @givn.added
   Scenario: Office or seminar duty uses its printed UTC window
     Given a supported duty plan dated 2099-01-16 with activity code TK and resolved UTC start 08:00 and end 12:00
     When the crew member converts it
     Then the calendar contains one timed non-flight activity from 08:00 to 12:00 UTC on 2099-01-16 lasting 4 hours
 
-  @givn.added @wip
+  @givn.added
   Scenario: Consulate visa duty uses its printed UTC window
     Given a supported duty plan dated 2099-01-17 with activity code DTUSA and resolved UTC start 09:00 and end 15:00
     When the crew member converts it
     Then the calendar contains one timed non-flight activity from 09:00 to 15:00 UTC on 2099-01-17 lasting 6 hours
 
-  @givn.added @wip
+  @givn.added
   Scenario: Extended non-flight duty uses its printed UTC window
     Given a supported duty plan dated 2099-01-18 with activity code EM and source station ABC and resolved UTC start 06:00 and end 10:00
     When the crew member converts it
     Then the calendar contains one timed non-flight activity from 06:00 to 10:00 UTC on 2099-01-18 lasting 4 hours
 
-  @givn.added @wip
+  @givn.added
   Scenario: Standby duty uses its own UTC window
     Given a supported duty plan dated 2099-01-18 with activity code SB and resolved UTC start 08:00 and end 16:00
     When the crew member converts it
     Then the calendar contains one timed standby activity from 08:00 to 16:00 UTC lasting 8 hours
 
-  @givn.added @wip
+  @givn.added
   Scenario: Reserve duty uses its own UTC window
     Given a supported duty plan dated 2099-01-18 with activity code RE and resolved UTC start 09:00 and end 17:00
     When the crew member converts it
     Then the calendar contains one timed reserve activity from 09:00 to 17:00 UTC lasting 8 hours
 
-  @givn.added @wip
+  @givn.added
   Scenario: Consecutive standby days interrupted by a day off stay separate
     Given a supported duty plan with SB window 08:00 to 12:00 on 2099-01-19, a FREE row on 2099-01-20, and SB window 08:00 to 12:00 on 2099-01-21
     When the crew member converts it
@@ -95,14 +95,14 @@ Feature: Export a duty-plan calendar
     And the calendar contains one all-day day-off activity on 2099-01-20
     And no standby activity spans 2099-01-20
 
-  @givn.added @wip
+  @givn.added
   Scenario: Single-day standby uses its own window rather than a cancelled flight
     Given a supported duty plan dated 2099-01-22 with activity code SBX and its own resolved UTC start 08:00 and end 16:00
     When the crew member converts it
     Then the calendar contains one timed SBX activity from 08:00 to 16:00 UTC
     And the calendar contains no activity for any cancelled flight
 
-  @givn.added @wip
+  @givn.added
   Scenario: Deadhead positioning travel keeps one event and marks the assignment in its title
     Given a supported duty plan with designator 007 from ABC to DEF, position DH, resolved UTC start 06:00 and end 07:00, no aircraft, and accounting Blocktime 00:00
     When the crew member converts it
@@ -110,7 +110,7 @@ Feature: Export a duty-plan calendar
     And that activity's title is "DH 007 ABC-DEF"
     And the calendar contains no second activity for that leg
 
-  @givn.added @wip
+  @givn.added
   Scenario: A dated station-bearing layover row becomes an all-day activity
     Given a supported duty plan with a dated Layover row for station ABC
     When the crew member converts it
