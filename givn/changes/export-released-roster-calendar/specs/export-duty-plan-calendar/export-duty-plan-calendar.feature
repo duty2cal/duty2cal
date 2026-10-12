@@ -116,7 +116,7 @@ Feature: Export a duty-plan calendar
     When the crew member converts it
     Then the calendar contains one all-day layover activity for that date
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unknown required activity code rejects the conversion
     Given a supported duty plan containing a required activity code the converter does not recognize
     When the crew member converts it
@@ -124,7 +124,7 @@ Feature: Export a duty-plan calendar
     And the converter reports a conversion failure naming the source
     And a new unused numbered diagnostic report identifies the source and the reason
 
-  @givn.added @wip
+  @givn.added
   Scenario: A required travel leg without a compatible partner rejects the conversion
     Given a supported duty plan whose travel fragment has no unique compatible partner
     When the crew member converts it
@@ -132,44 +132,44 @@ Feature: Export a duty-plan calendar
     And the converter reports a conversion failure naming the source
     And a new unused numbered diagnostic report identifies the source and the reason
 
-  @givn.added @wip
+  @givn.added
   Scenario: An explicit next-day qualifier moves the endpoint to the following UTC day
     Given a supported duty plan whose local block for 2099-01-12 carries a departure start "(13) 00:20" and whose arrival block for 2099-01-13 ends at 08:10 UTC
     When the crew member converts it
     Then the calendar contains one travel activity on UTC day 2099-01-13 lasting 7 hours 50 minutes
 
-  @givn.added @wip
+  @givn.added
   Scenario: A split across local dates can remain on the same UTC day
     Given a supported duty plan whose local block for 2099-01-12 starts at 19:15 UTC and whose next block ends "(12) 21:05" UTC
     When the crew member converts it
     Then the calendar contains one travel activity on UTC day 2099-01-12 lasting 1 hour 50 minutes
 
-  @givn.added @wip
+  @givn.added
   Scenario: Unqualified endpoints that appear to cross midnight roll to the next UTC day
     Given a supported duty plan with one local block for 2099-01-12 whose travel start is 23:10 and end is 01:05, with no day qualifiers and no separate arrival block
     When the crew member converts it
     Then the calendar contains one travel activity from 23:10 on 2099-01-12 to 01:05 on 2099-01-13 UTC lasting 1 hour 55 minutes
 
-  @givn.added @wip
+  @givn.added
   Scenario: A zero-length travel interval is not repaired
     Given a supported duty plan with one local block whose travel start and end clocks are equal and unqualified
     When the crew member converts it
     Then no calendar is published
     And the converter reports a conversion failure naming the source
 
-  @givn.added @wip
+  @givn.added
   Scenario: A previous-year UTC qualifier resolves across the year boundary
     Given a supported duty plan with local date 2099-01-01 and a UTC cell "(31) 23:10"
     When the crew member converts it
     Then that endpoint is 2098-12-31 23:10 UTC
 
-  @givn.added @wip
+  @givn.added
   Scenario: A next-month UTC qualifier resolves across the month boundary
     Given a supported duty plan with local date 2099-01-31 and a UTC cell "(1) 00:20"
     When the crew member converts it
     Then that endpoint is 2099-02-01 00:20 UTC
 
-  @givn.added @wip
+  @givn.added
   Scenario: An explicit qualifier with no unique adjacent date rejects the conversion
     Given a supported duty plan whose explicit UTC day number matches none of the previous, same, or next dates around its local-date block
     When the crew member converts it

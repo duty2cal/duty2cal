@@ -607,3 +607,243 @@ async fn one_all_day_layover(w: &mut DutyWorld) {
         "the all-day layover activity is missing or wrong: {calendar}"
     );
 }
+
+/// Clock digits of a printed `HH:MM` time.
+fn digits(time: &str) -> String {
+    time.replace(':', "")
+}
+
+/// The ICS instant for a UTC day and printed clock.
+fn instant(day: &str, time: &str) -> String {
+    format!("{}T{}00Z", compact(day), digits(time))
+}
+
+#[given(
+    "a supported duty plan containing a required activity code the converter does not recognize"
+)]
+async fn an_unknown_activity_code(w: &mut DutyWorld) {
+    plan_with_row(w, &[(DATE_X, "2099-06-07"), (ACTIVITY_X, "ZZ999")]);
+}
+
+#[given("a supported duty plan whose travel fragment has no unique compatible partner")]
+async fn an_unmatched_travel_fragment(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "FB569"),
+            (FROM_X, "ABC"),
+            (START_X, "10:00"),
+        ],
+    );
+}
+
+#[given(
+    regex = r#"^a supported duty plan whose local block for (\d{4}-\d{2}-\d{2}) carries a departure start "\((\d+)\) (\d{2}:\d{2})" and whose arrival block for (\d{4}-\d{2}-\d{2}) ends at (\d{2}:\d{2}) UTC$"#
+)]
+async fn split_leg_with_qualified_departure(
+    w: &mut DutyWorld,
+    departure_date: String,
+    qualifier: String,
+    departure_clock: String,
+    arrival_date: String,
+    arrival_clock: String,
+) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, &departure_date),
+            (ACTIVITY_X, "FB569"),
+            (FROM_X, "ABC"),
+            (START_X, &format!("({qualifier}) {departure_clock}")),
+        ],
+    ));
+    items.extend(support::at(
+        570.0,
+        &[
+            (DATE_X, &arrival_date),
+            (ACTIVITY_X, "FB569"),
+            (TO_X, "DEF"),
+            (END_X, &arrival_clock),
+        ],
+    ));
+    write_fixture(w, &items);
+    // The printed qualifier names the UTC departure day; in this scenario it is
+    // the arrival block's date.
+    w.expected = vec![
+        format!("DTSTART:{}", instant(&arrival_date, &departure_clock)),
+        format!("DTEND:{}", instant(&arrival_date, &arrival_clock)),
+    ];
+}
+
+#[given(
+    regex = r#"^a supported duty plan whose local block for (\d{4}-\d{2}-\d{2}) starts at (\d{2}:\d{2}) UTC and whose next block ends "\((\d+)\) (\d{2}:\d{2})" UTC$"#
+)]
+async fn split_leg_with_qualified_arrival(
+    w: &mut DutyWorld,
+    departure_date: String,
+    departure_clock: String,
+    qualifier: String,
+    arrival_clock: String,
+) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, &departure_date),
+            (ACTIVITY_X, "FB569"),
+            (FROM_X, "ABC"),
+            (START_X, &departure_clock),
+        ],
+    ));
+    items.extend(support::at(
+        570.0,
+        &[
+            (DATE_X, "2099-01-13"),
+            (ACTIVITY_X, "FB569"),
+            (TO_X, "DEF"),
+            (END_X, &format!("({qualifier}) {arrival_clock}")),
+        ],
+    ));
+    write_fixture(w, &items);
+    // The printed qualifier names the UTC arrival day; in this scenario it is
+    // the departure block's date.
+    w.expected = vec![
+        format!("DTSTART:{}", instant(&departure_date, &departure_clock)),
+        format!("DTEND:{}", instant(&departure_date, &arrival_clock)),
+    ];
+}
+
+#[then(
+    regex = r"^the calendar contains one travel activity on UTC day (\d{4}-\d{2}-\d{2}) lasting (\d+) hours? (\d+) minutes?$"
+)]
+async fn one_travel_on_utc_day(w: &mut DutyWorld, day: String, _hours: u32, _minutes: u32) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 1);
+    assert!(
+        calendar.contains(&format!("DTSTART:{}T", compact(&day))),
+        "the travel activity is not on UTC day {day}: {calendar}"
+    );
+    for expected in &w.expected {
+        assert!(
+            calendar.contains(expected),
+            "expected {expected} in the calendar: {calendar}"
+        );
+    }
+}
+
+#[given(
+    regex = r"^a supported duty plan with one local block for (\d{4}-\d{2}-\d{2}) whose travel start is (\d{2}:\d{2}) and end is (\d{2}:\d{2}), with no day qualifiers and no separate arrival block$"
+)]
+async fn unqualified_overnight(w: &mut DutyWorld, date: String, start: String, end: String) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, &date),
+            (ACTIVITY_X, "FB568"),
+            (FROM_X, "ABC"),
+            (TO_X, "DEF"),
+            (START_X, &start),
+            (END_X, &end),
+        ],
+    );
+    let next = "2099-01-13";
+    w.expected = vec![
+        format!("DTSTART:{}", instant(&date, &start)),
+        format!("DTEND:{}", instant(next, &end)),
+    ];
+}
+
+#[then(
+    regex = r"^the calendar contains one travel activity from (\d{2}:\d{2}) on (\d{4}-\d{2}-\d{2}) to (\d{2}:\d{2}) on (\d{4}-\d{2}-\d{2}) UTC lasting (\d+) hours? (\d+) minutes?$"
+)]
+async fn one_travel_between(
+    w: &mut DutyWorld,
+    start: String,
+    start_day: String,
+    end: String,
+    end_day: String,
+    _hours: u32,
+    _minutes: u32,
+) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 1);
+    for expected in [
+        format!("DTSTART:{}", instant(&start_day, &start)),
+        format!("DTEND:{}", instant(&end_day, &end)),
+    ] {
+        assert!(
+            calendar.contains(&expected),
+            "expected {expected} in the calendar: {calendar}"
+        );
+    }
+}
+
+#[given("a supported duty plan with one local block whose travel start and end clocks are equal and unqualified")]
+async fn zero_length_interval(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-01-12"),
+            (ACTIVITY_X, "FB568"),
+            (FROM_X, "ABC"),
+            (TO_X, "DEF"),
+            (START_X, "10:00"),
+            (END_X, "10:00"),
+        ],
+    );
+}
+
+#[given(
+    regex = r#"^a supported duty plan with local date (\d{4}-\d{2}-\d{2}) and a UTC cell "\((\d+)\) (\d{2}:\d{2})"$"#
+)]
+async fn boundary_qualified_cell(
+    w: &mut DutyWorld,
+    date: String,
+    qualifier: String,
+    clock: String,
+) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, &date),
+            (ACTIVITY_X, "FB100"),
+            (FROM_X, "ABC"),
+            (TO_X, "DEF"),
+            (START_X, &format!("({qualifier}) {clock}")),
+            (END_X, "(1) 01:00"),
+        ],
+    );
+}
+
+#[then(regex = r"^that endpoint is (\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}) UTC$")]
+async fn that_endpoint_is(
+    w: &mut DutyWorld,
+    year: String,
+    month: String,
+    day: String,
+    clock: String,
+) {
+    let calendar = calendar(w);
+    let expected = format!("DTSTART:{year}{month}{day}T{}00Z", digits(&clock));
+    assert!(
+        calendar.contains(&expected),
+        "expected the endpoint {expected} in the calendar: {calendar}"
+    );
+}
+
+#[given("a supported duty plan whose explicit UTC day number matches none of the previous, same, or next dates around its local-date block")]
+async fn no_unique_adjacent_date(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-01-15"),
+            (ACTIVITY_X, "FB100"),
+            (FROM_X, "ABC"),
+            (TO_X, "DEF"),
+            (START_X, "(9) 10:00"),
+            (END_X, "(9) 11:00"),
+        ],
+    );
+}

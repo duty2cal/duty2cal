@@ -4,8 +4,9 @@
 //! Input crosses this boundary as bytes and output as text; no path or file
 //! handle does, so the same use case is callable from the CLI, WASM and UniFFI.
 
-use time::{Date, Month, OffsetDateTime, Time};
+use time::{Date, Duration, Month, OffsetDateTime};
 
+use crate::domain::timing;
 use crate::domain::{DutyEntry, Position, Roster, SnapshotId, UtcInterval};
 
 /// Raw, position-based content of a supplied document — the anti-corruption
@@ -78,145 +79,259 @@ const AVAILABILITY_CODES: [&str; 3] = ["SB", "RE", "SBX"];
 /// The activity codes that denote timed non-flight duty.
 const NON_FLIGHT_CODES: [&str; 3] = ["TK", "DTUSA", "EM"];
 
+/// One detail row with its cells resolved by column label.
+struct Row {
+    index: usize,
+    date: Date,
+    code: String,
+    from: String,
+    to: String,
+    start: String,
+    end: String,
+    position: Position,
+    trip: Option<String>,
+    report_lt: Option<String>,
+    aircraft: Option<String>,
+    blocktime: Option<String>,
+    tz_diff: Option<String>,
+    layover: Option<String>,
+    tags: Option<String>,
+}
+
+/// What one detail row resolves to.
+///
+/// The variants are transient: a fragment is immediately paired into a travel
+/// leg, so boxing the entry would only add an allocation.
+#[allow(clippy::large_enum_variant)]
+enum Classified {
+    /// A complete activity.
+    Entry(DutyEntry),
+    /// A departure fragment of a travel leg, awaiting its arrival fragment.
+    Departure(usize),
+    /// An arrival fragment of a travel leg.
+    Arrival(usize),
+}
+
 /// Turn the raw detail rows into the whole-plan roster.
 ///
 /// Overview, statistics and footer material never reaches this function: the
 /// adapter yields only rows inside the detail table. A row that carries neither
 /// an activity code nor a route (a date-only row) contributes nothing.
 fn interpret(table: &RawRosterTable, snapshot: SnapshotId) -> Result<Roster, ConvertError> {
-    for label in ["Date", "Activity", "From", "To"] {
-        if column(table, label).is_none() && label != "Activity" {
+    for label in ["Date", "From", "To"] {
+        if column(table, label).is_none() {
             return Err(ConvertError::UnresolvedRequiredActivity(format!(
                 "the detail table carries no {label} column"
             )));
         }
     }
 
-    let mut entries = Vec::new();
-    for cells in &table.rows {
+    let rows = collect_rows(table)?;
+    let mut entries: Vec<(usize, DutyEntry)> = Vec::new();
+    let mut pending: Vec<usize> = Vec::new();
+
+    for row in &rows {
+        match classify(table, row)? {
+            Classified::Entry(entry) => entries.push((row.index, entry)),
+            Classified::Departure(index) => pending.push(index),
+            Classified::Arrival(index) => {
+                let arrival = &rows[index];
+                let position = pending
+                    .iter()
+                    .rposition(|departure| rows[*departure].code == arrival.code);
+                let Some(position) = position else {
+                    return Err(unmatched_fragment(&arrival.code));
+                };
+                let departure = pending.remove(position);
+                entries.push((
+                    rows[departure].index,
+                    merge_travel(&rows[departure], arrival)?,
+                ));
+            }
+        }
+    }
+
+    if let Some(unmatched) = pending.first() {
+        return Err(unmatched_fragment(&rows[*unmatched].code));
+    }
+
+    // A split leg belongs where it departs, whatever order the fragments appear.
+    entries.sort_by_key(|(index, _)| *index);
+    Ok(Roster {
+        snapshot,
+        entries: entries.into_iter().map(|(_, entry)| entry).collect(),
+    })
+}
+
+fn unmatched_fragment(designator: &str) -> ConvertError {
+    ConvertError::UnresolvedRequiredActivity(format!(
+        "no unique compatible partner for travel fragment {designator:?}"
+    ))
+}
+
+/// Build one `Row` per detail row that carries reachable activity data.
+fn collect_rows(table: &RawRosterTable) -> Result<Vec<Row>, ConvertError> {
+    let mut rows = Vec::new();
+    for (index, cells) in table.rows.iter().enumerate() {
         let code = value(table, cells, "Activity");
         let from = value(table, cells, "From");
         let to = value(table, cells, "To");
         let date_cell = value(table, cells, "Date");
-
         if code.is_empty() && from.is_empty() && to.is_empty() {
-            // A date-only row carries no activity and contributes none.
             continue;
         }
-
         let date = parse_date(&date_cell).ok_or_else(|| {
             ConvertError::UnresolvedRequiredActivity(format!("unresolved date: {date_cell:?}"))
         })?;
-        let entry = classify(table, cells, &code, &from, &to, date)?;
-        entries.push(entry);
-    }
-
-    Ok(Roster { snapshot, entries })
-}
-
-/// Classify one detail row into the activity it represents.
-fn classify(
-    table: &RawRosterTable,
-    cells: &[String],
-    code: &str,
-    from: &str,
-    to: &str,
-    date: Date,
-) -> Result<DutyEntry, ConvertError> {
-    let tags = optional(table, cells, "Tags");
-    let station = optional(table, cells, "From");
-
-    if ALL_DAY_CODES.contains(&code) {
-        return Ok(DutyEntry::AllDay {
+        rows.push(Row {
+            index,
             date,
-            code: code.to_string(),
-            tags,
-        });
-    }
-
-    if AVAILABILITY_CODES.contains(&code) {
-        return Ok(DutyEntry::Availability {
-            date,
-            code: code.to_string(),
-            station,
-            interval: interval(table, cells)?,
-            tags,
-        });
-    }
-
-    if NON_FLIGHT_CODES.contains(&code) {
-        return Ok(DutyEntry::NonFlightDuty {
-            date,
-            code: code.to_string(),
-            station,
-            trip: optional(table, cells, "Trip"),
-            interval: interval(table, cells)?,
-            tags,
-        });
-    }
-
-    if code.eq_ignore_ascii_case("Layover") {
-        let Some(station) = station else {
-            return Err(ConvertError::UnresolvedRequiredActivity(
-                "a layover row carries no station".to_string(),
-            ));
-        };
-        return Ok(DutyEntry::Layover { date, station });
-    }
-
-    if !from.is_empty() && !to.is_empty() {
-        let position = if value(table, cells, "Pos").eq_ignore_ascii_case("DH") {
-            Position::Deadhead
-        } else {
-            Position::Operating
-        };
-        return Ok(DutyEntry::Travel {
-            date,
-            designator: code.to_string(),
-            from: from.to_string(),
-            to: to.to_string(),
-            position,
-            interval: interval(table, cells)?,
+            code,
+            from,
+            to,
+            start: value(table, cells, "Start"),
+            end: value(table, cells, "End"),
+            position: if value(table, cells, "Pos").eq_ignore_ascii_case("DH") {
+                Position::Deadhead
+            } else {
+                Position::Operating
+            },
             trip: optional(table, cells, "Trip"),
             report_lt: optional(table, cells, "Report"),
             aircraft: optional(table, cells, "A/C"),
             blocktime: optional(table, cells, "Blocktime"),
             tz_diff: optional(table, cells, "Timezone Difference"),
             layover: optional(table, cells, "Layover"),
-            tags,
+            tags: optional(table, cells, "Tags"),
         });
+    }
+    Ok(rows)
+}
+
+/// Classify one detail row into the activity it represents.
+fn classify(table: &RawRosterTable, row: &Row) -> Result<Classified, ConvertError> {
+    let code = row.code.as_str();
+    let _ = table;
+
+    if ALL_DAY_CODES.contains(&code) {
+        return Ok(Classified::Entry(DutyEntry::AllDay {
+            date: row.date,
+            code: row.code.clone(),
+            tags: row.tags.clone(),
+        }));
+    }
+
+    if AVAILABILITY_CODES.contains(&code) {
+        return Ok(Classified::Entry(DutyEntry::Availability {
+            date: row.date,
+            code: row.code.clone(),
+            station: station(row),
+            interval: row_interval(row)?,
+            tags: row.tags.clone(),
+        }));
+    }
+
+    if NON_FLIGHT_CODES.contains(&code) {
+        return Ok(Classified::Entry(DutyEntry::NonFlightDuty {
+            date: row.date,
+            code: row.code.clone(),
+            station: station(row),
+            trip: row.trip.clone(),
+            interval: row_interval(row)?,
+            tags: row.tags.clone(),
+        }));
+    }
+
+    if code.eq_ignore_ascii_case("Layover") {
+        return match station(row) {
+            Some(station) => Ok(Classified::Entry(DutyEntry::Layover {
+                date: row.date,
+                station,
+            })),
+            None => Err(ConvertError::UnresolvedRequiredActivity(
+                "a layover row carries no station".to_string(),
+            )),
+        };
+    }
+
+    let has_route = !row.from.is_empty() && !row.to.is_empty();
+    let has_endpoints = !row.start.is_empty() && !row.end.is_empty();
+    if has_route && has_endpoints {
+        return Ok(Classified::Entry(DutyEntry::Travel {
+            date: row.date,
+            designator: row.code.clone(),
+            from: row.from.clone(),
+            to: row.to.clone(),
+            position: row.position,
+            interval: row_interval(row)?,
+            trip: row.trip.clone(),
+            report_lt: row.report_lt.clone(),
+            aircraft: row.aircraft.clone(),
+            blocktime: row.blocktime.clone(),
+            tz_diff: row.tz_diff.clone(),
+            layover: row.layover.clone(),
+            tags: row.tags.clone(),
+        }));
+    }
+    if !row.from.is_empty() && !row.start.is_empty() && row.to.is_empty() && row.end.is_empty() {
+        return Ok(Classified::Departure(row.index));
+    }
+    if !row.to.is_empty() && !row.end.is_empty() && row.from.is_empty() && row.start.is_empty() {
+        return Ok(Classified::Arrival(row.index));
     }
 
     Err(ConvertError::UnresolvedRequiredActivity(
         if code.is_empty() {
             "a detail row carries neither an activity code nor a route".to_string()
         } else {
-            code.to_string()
+            row.code.clone()
         },
     ))
 }
 
-/// The printed UTC interval of a timed row.
-fn interval(table: &RawRosterTable, cells: &[String]) -> Result<UtcInterval, ConvertError> {
-    let start = value(table, cells, "Start");
-    let end = value(table, cells, "End");
-    let start_date = value(table, cells, "Date");
-    let date = parse_date(&start_date).ok_or_else(|| {
-        ConvertError::UnresolvedTiming(format!("unresolved date: {start_date:?}"))
-    })?;
+fn station(row: &Row) -> Option<String> {
+    (!row.from.is_empty()).then(|| row.from.clone())
+}
 
-    let start_time = parse_time(&start)
-        .ok_or_else(|| ConvertError::UnresolvedTiming(format!("unresolved start: {start:?}")))?;
-    let end_time = parse_time(&end)
-        .ok_or_else(|| ConvertError::UnresolvedTiming(format!("unresolved end: {end:?}")))?;
+/// Merge a departure and an arrival fragment into one travel leg.
+fn merge_travel(departure: &Row, arrival: &Row) -> Result<DutyEntry, ConvertError> {
+    let start = resolve(departure.date, &departure.start)?;
+    let end = resolve(arrival.date, &arrival.end)?;
+    Ok(DutyEntry::Travel {
+        date: departure.date,
+        designator: departure.code.clone(),
+        from: departure.from.clone(),
+        to: arrival.to.clone(),
+        position: departure.position,
+        interval: UtcInterval::new(start, end).map_err(|_| ConvertError::NonPositiveInterval)?,
+        trip: departure.trip.clone(),
+        report_lt: departure.report_lt.clone(),
+        aircraft: departure.aircraft.clone(),
+        blocktime: departure.blocktime.clone(),
+        tz_diff: departure.tz_diff.clone(),
+        layover: departure.layover.clone(),
+        tags: departure.tags.clone(),
+    })
+}
 
-    let start = combine(date, start_time);
-    let end = combine(date, end_time);
+/// The interval of a row that carries both of its own endpoints.
+fn row_interval(row: &Row) -> Result<UtcInterval, ConvertError> {
+    let start = resolve(row.date, &row.start)?;
+    let mut end = resolve(row.date, &row.end)?;
+
+    // The narrow unqualified rollover: both endpoints unqualified in one local
+    // block with no separate arrival block, and the end clock earlier than the
+    // start. Equal clocks and qualified endpoints are never repaired.
+    if end < start && !timing::is_qualified(&row.start) && !timing::is_qualified(&row.end) {
+        end += Duration::days(1);
+    }
+
     UtcInterval::new(start, end).map_err(|_| ConvertError::NonPositiveInterval)
 }
 
-fn combine(date: Date, time: Time) -> OffsetDateTime {
-    date.with_time(time).assume_utc()
+fn resolve(local_date: Date, cell: &str) -> Result<OffsetDateTime, ConvertError> {
+    timing::resolve_endpoint(local_date, cell)
+        .map_err(|error| ConvertError::UnresolvedTiming(error.to_string()))
 }
 
 /// A column's index, matched by its derived header label.
@@ -258,19 +373,6 @@ fn parse_date(text: &str) -> Option<Date> {
     let month: u8 = parts.next()?.trim().parse().ok()?;
     let day: u8 = parts.next()?.trim().parse().ok()?;
     Date::from_calendar_date(year, Month::try_from(month).ok()?, day).ok()
-}
-
-/// Parse a printed UTC clock (`HH:MM` or `HH:MM:SS`), ignoring a day qualifier.
-fn parse_time(text: &str) -> Option<Time> {
-    let clock = text.rsplit(')').next().unwrap_or(text).trim();
-    let mut parts = clock.split(':');
-    let hour: u8 = parts.next()?.trim().parse().ok()?;
-    let minute: u8 = parts.next()?.trim().parse().ok()?;
-    let second: u8 = parts
-        .next()
-        .and_then(|s| s.trim().parse().ok())
-        .unwrap_or(0);
-    Time::from_hms(hour, minute, second).ok()
 }
 
 /// A stable fingerprint of the supplied bytes, scoping the roster's identity.

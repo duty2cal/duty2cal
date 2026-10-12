@@ -3,6 +3,8 @@
 //!
 //! Pure types and rules; no I/O, no clock, no format knowledge.
 
+pub mod timing;
+
 use time::{Date, OffsetDateTime};
 
 /// Why a domain value could not be constructed.

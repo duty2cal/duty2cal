@@ -21,6 +21,8 @@ pub struct DutyWorld {
     pub stdout: String,
     /// Captured standard error of the last child invocation.
     pub stderr: String,
+    /// Calendar lines the current scenario expects to find.
+    pub expected: Vec<String>,
 }
 
 impl DutyWorld {
