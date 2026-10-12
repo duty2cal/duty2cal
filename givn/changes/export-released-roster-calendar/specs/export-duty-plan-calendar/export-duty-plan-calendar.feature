@@ -218,7 +218,7 @@ Feature: Export a duty-plan calendar
     Then the travel activity's description states "Report (LT) 07:30 (departure fragment)" and "Report (LT) 08:00 (arrival fragment)"
     And neither printed value changes the activity's UTC interval
 
-  @givn.added @wip
+  @givn.added
   Scenario: All-day activities use dates with a non-inclusive following-day end
     Given a supported duty plan dated 2099-01-12 with activity code U
     When the crew member converts it

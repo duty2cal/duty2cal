@@ -1154,3 +1154,22 @@ async fn printed_values_do_not_move_the_interval(w: &mut DutyWorld) {
         "the printed report times changed the interval: {calendar}"
     );
 }
+
+#[given(regex = r"^a supported duty plan dated (\d{4}-\d{2}-\d{2}) with activity code (\w+)$")]
+async fn a_plan_with_one_all_day_code(w: &mut DutyWorld, date: String, code: String) {
+    plan_with_row(w, &[(DATE_X, &date), (ACTIVITY_X, &code)]);
+}
+
+#[then(regex = r"^the all-day activity for (\d{4}-\d{2}-\d{2}) ends on (\d{4}-\d{2}-\d{2})$")]
+async fn all_day_ends_the_following_day(w: &mut DutyWorld, starts: String, ends: String) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 1);
+    assert!(
+        calendar.contains(&format!("DTSTART;VALUE=DATE:{}", compact(&starts))),
+        "the all-day activity does not start on {starts}: {calendar}"
+    );
+    assert!(
+        calendar.contains(&format!("DTEND;VALUE=DATE:{}", compact(&ends))),
+        "the all-day activity does not end on {ends}: {calendar}"
+    );
+}
