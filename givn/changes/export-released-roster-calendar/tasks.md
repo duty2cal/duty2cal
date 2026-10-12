@@ -164,199 +164,166 @@ Use-case constraint: Rule: overview, statistics, footer, and date-only rows supp
 
 Use-case constraint: Minimal guarantee: every required activity is accounted for before publication (no silent omission).
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the behaviour existed: the scenario(s) failed.
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Production: classification of the confirmed codes, the domain model, the CalendarSink/Clock ports, VEVENT serialization, the stable source fingerprint, and CLI wiring.
   ```
-  <GREEN output>
+  1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: A mixed plan represents every required activity`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d59cd70`
 
 ### 6. All-day codes ignore printed clocks
 
 Use-case constraint: Rule: FREE, OFF, U, FZ are all-day; source clocks do not decide kind or timing.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the behaviour existed: the scenario(s) failed.
   ```
-  <RED output>
+  4 scenarios (4 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; the classification landed with scenario 5.
   ```
-  <GREEN output>
+  4 scenarios (4 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario Outline: All-day codes ignore printed clocks`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 7. Office or seminar duty uses its printed UTC window
 
 Use-case constraint: Rule: TK/DTUSA/EM are timed non-flight duty using their printed UTC interval.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the behaviour existed: the scenario(s) failed.
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; the classification landed with scenario 5.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: Office or seminar duty uses its printed UTC window`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 8. Consulate visa duty uses its printed UTC window
 
 Use-case constraint: Rule: TK/DTUSA/EM are timed non-flight duty using their printed UTC interval.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the behaviour existed: the scenario(s) failed.
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; the classification landed with scenario 5.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: Consulate visa duty uses its printed UTC window`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 9. Extended non-flight duty uses its printed UTC window
 
 Use-case constraint: Rule: TK/DTUSA/EM are timed non-flight duty using their printed UTC interval.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the behaviour existed: the scenario(s) failed.
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; the classification landed with scenario 5.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: Extended non-flight duty uses its printed UTC window`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 10. Standby duty uses its own UTC window
 
 Use-case constraint: Rule: SB/RE/SBX use their own UTC availability window (SBX never the cancelled flight's).
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the behaviour existed: the scenario(s) failed.
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; the classification landed with scenario 5.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: Standby duty uses its own UTC window`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 11. Reserve duty uses its own UTC window
 
 Use-case constraint: Rule: SB/RE/SBX use their own UTC availability window (SBX never the cancelled flight's).
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the behaviour existed: the scenario(s) failed.
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; the classification landed with scenario 5.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: Reserve duty uses its own UTC window`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 12. Consecutive standby days interrupted by a day off stay separate
 
 Use-case constraint: Rule: consecutive SB windows and FREE interruptions stay separate; no continuous block.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the behaviour existed: the scenario(s) failed.
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; the classification landed with scenario 5.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: Consecutive standby days interrupted by a day off stay separate`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 13. Single-day standby uses its own window rather than a cancelled flight
 
 Use-case constraint: Rule: SB/RE/SBX use their own UTC availability window (SBX never the cancelled flight's).
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the behaviour existed: the scenario(s) failed.
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; the classification landed with scenario 5.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: Single-day standby uses its own window rather than a cancelled flight`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 14. Deadhead positioning travel keeps one event and marks the assignment in its title
 
 Use-case constraint: Rule: DH is one travel event with a DH title prefix; zero Blocktime/missing aircraft do not erase it.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the behaviour existed: the scenario(s) failed.
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; the classification landed with scenario 5.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: Deadhead positioning travel keeps one event and marks the assignment in its title`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 15. A dated station-bearing layover row becomes an all-day activity
 
 Use-case constraint: Rule: an explicit dated station-bearing Layover row is an all-day activity.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — ran before the behaviour existed: the scenario(s) failed.
   ```
-  <RED output>
+  1 scenario (1 failed)   RED_EXIT non-zero
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — Step fixtures and assertions; the classification landed with scenario 5.
   ```
-  <GREEN output>
+  1 scenario (1 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: A dated station-bearing layover row becomes an all-day activity`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 16. An unknown required activity code rejects the conversion
 
