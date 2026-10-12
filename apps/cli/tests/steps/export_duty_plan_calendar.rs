@@ -277,7 +277,11 @@ fn plan_with_row(w: &mut DutyWorld, cells: &[(f64, &str)]) {
 }
 
 /// The DESCRIPTION text of every event, empty when an event has none.
+///
+/// Content lines are unfolded first: a folded line continues after CRLF and a
+/// single space (RFC 5545 §3.1), so a reader must join it back.
 fn event_descriptions(calendar: &str) -> Vec<String> {
+    let calendar = calendar.replace("\r\n ", "");
     calendar
         .split("BEGIN:VEVENT")
         .skip(1)
@@ -1171,5 +1175,113 @@ async fn all_day_ends_the_following_day(w: &mut DutyWorld, starts: String, ends:
     assert!(
         calendar.contains(&format!("DTEND;VALUE=DATE:{}", compact(&ends))),
         "the all-day activity does not end on {ends}: {calendar}"
+    );
+}
+
+/// A tag value long enough to force line folding.
+fn long_tag() -> String {
+    "TAG".repeat(30)
+}
+
+#[given("a supported duty plan with timed and all-day activities")]
+async fn a_plan_with_timed_and_all_day_activities(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    // Timed travel with a text value that needs escaping.
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "FB568"),
+            (FROM_X, "ABC"),
+            (TO_X, "DEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+            (TAGS_X, "5_MFL;X,Y"),
+        ],
+    ));
+    // Timed travel with a value long enough to force folding.
+    items.extend(support::at(
+        570.0,
+        &[
+            (DATE_X, "2099-06-08"),
+            (ACTIVITY_X, "FB569"),
+            (FROM_X, "DEF"),
+            (TO_X, "ABC"),
+            (START_X, "11:00"),
+            (END_X, "12:00"),
+            (TAGS_X, &long_tag()),
+        ],
+    ));
+    // An all-day activity.
+    items.extend(support::at(
+        555.0,
+        &[(DATE_X, "2099-06-12"), (ACTIVITY_X, "U")],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then("the published calendar uses CRLF line endings and UTF-8 text")]
+async fn calendar_uses_crlf(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    assert!(
+        !calendar.replace("\r\n", "").contains(['\r', '\n']),
+        "the calendar carries a bare line ending: {calendar:?}"
+    );
+    assert!(
+        calendar.is_ascii() || std::str::from_utf8(calendar.as_bytes()).is_ok(),
+        "the calendar is not valid UTF-8"
+    );
+}
+
+#[then("its text values are escaped as RFC 5545 requires")]
+async fn text_values_are_escaped(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    assert!(
+        calendar.contains(r"5_MFL\;X\,Y"),
+        "the commas and semicolon in Tags are not escaped: {calendar}"
+    );
+}
+
+#[then("its content lines are folded within 75 octets without splitting a character")]
+async fn content_lines_are_folded(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    for line in calendar.split("\r\n") {
+        assert!(
+            line.len() <= 75,
+            "a content line is longer than 75 octets ({}): {line:?}",
+            line.len()
+        );
+    }
+    let unfolded = calendar.replace("\r\n ", "");
+    assert!(
+        unfolded.contains(&long_tag()),
+        "the long value cannot be unfolded back to its original text"
+    );
+}
+
+#[then("every timed activity ends after it starts")]
+async fn timed_activities_end_after_start(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    let mut checked = 0;
+    for event in calendar.split("BEGIN:VEVENT").skip(1) {
+        let start = event
+            .lines()
+            .find_map(|line| line.strip_prefix("DTSTART:"))
+            .map(str::to_string);
+        let end = event
+            .lines()
+            .find_map(|line| line.strip_prefix("DTEND:"))
+            .map(str::to_string);
+        if let (Some(start), Some(end)) = (start, end) {
+            assert!(
+                end > start,
+                "a timed activity ends before it starts: {start} -> {end}"
+            );
+            checked += 1;
+        }
+    }
+    assert!(
+        checked >= 2,
+        "expected at least two timed activities, found {checked}"
     );
 }

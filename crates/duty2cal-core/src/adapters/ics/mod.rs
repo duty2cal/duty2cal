@@ -68,11 +68,63 @@ fn render_entry(
     out.push_str("END:VEVENT\r\n");
 }
 
+/// Fold at 75 octets; continuation lines begin with a single space (RFC 5545
+/// §3.1). Folding never splits a character.
+const FOLD_LIMIT: usize = 75;
+
 fn line(out: &mut String, name: &str, value: &str) {
-    out.push_str(name);
-    out.push(':');
-    out.push_str(value);
-    out.push_str("\r\n");
+    let content = format!("{name}:{}", escape_text(value));
+    fold_into(out, &content);
+}
+
+/// Escape a TEXT value as RFC 5545 §3.3.11 requires.
+fn escape_text(value: &str) -> String {
+    let mut escaped = String::with_capacity(value.len());
+    for character in value.chars() {
+        match character {
+            '\\' => escaped.push_str("\\\\"),
+            ';' => escaped.push_str("\\;"),
+            ',' => escaped.push_str("\\,"),
+            '\n' => escaped.push_str("\\n"),
+            '\r' => {}
+            _ => escaped.push(character),
+        }
+    }
+    escaped
+}
+
+/// Append one content line, folded within the octet limit.
+fn fold_into(out: &mut String, content: &str) {
+    let mut remaining = content;
+    let mut continuation = false;
+    while !remaining.is_empty() {
+        // A continuation line spends one octet on its leading space.
+        let limit = if continuation {
+            FOLD_LIMIT - 1
+        } else {
+            FOLD_LIMIT
+        };
+        let take = floor_char_boundary(remaining, limit);
+        if continuation {
+            out.push(' ');
+        }
+        out.push_str(&remaining[..take]);
+        out.push_str("\r\n");
+        remaining = &remaining[take..];
+        continuation = true;
+    }
+}
+
+/// The largest character boundary not exceeding `limit`.
+fn floor_char_boundary(text: &str, limit: usize) -> usize {
+    if text.len() <= limit {
+        return text.len();
+    }
+    let mut boundary = limit;
+    while boundary > 0 && !text.is_char_boundary(boundary) {
+        boundary -= 1;
+    }
+    boundary
 }
 
 /// `YYYYMMDD` for a date value.

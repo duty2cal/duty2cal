@@ -224,7 +224,7 @@ Feature: Export a duty-plan calendar
     When the crew member converts it
     Then the all-day activity for 2099-01-12 ends on 2099-01-13
 
-  @givn.added @wip
+  @givn.added
   Scenario: The published calendar is a valid RFC 5545 file
     Given a supported duty plan with timed and all-day activities
     When the crew member converts it
