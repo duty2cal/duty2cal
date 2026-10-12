@@ -78,8 +78,8 @@ async fn a_duty_plan_that_is_not_a_supported_export(w: &mut DutyWorld) {
     w.source = Some(source);
 }
 
-#[when("the crew member converts it")]
-async fn the_crew_member_converts_it(w: &mut DutyWorld) {
+/// Invoke the converter once on the scenario's source.
+fn run_converter(w: &mut DutyWorld) {
     let output = Command::new(env!("CARGO_BIN_EXE_duty2cal"))
         .arg(w.source_path())
         .output()
@@ -87,6 +87,21 @@ async fn the_crew_member_converts_it(w: &mut DutyWorld) {
     w.exit_status = output.status.code();
     w.stdout = String::from_utf8_lossy(&output.stdout).into_owned();
     w.stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+}
+
+/// The component identifiers carried by a calendar (unfolded first).
+fn component_ids(calendar: &str) -> Vec<String> {
+    calendar
+        .replace("\r\n ", "")
+        .lines()
+        .filter_map(|line| line.strip_prefix("UID:"))
+        .map(str::to_string)
+        .collect()
+}
+
+#[when("the crew member converts it")]
+async fn the_crew_member_converts_it(w: &mut DutyWorld) {
+    run_converter(w);
 }
 
 #[then("no calendar is published")]
@@ -1283,5 +1298,54 @@ async fn timed_activities_end_after_start(w: &mut DutyWorld) {
     assert!(
         checked >= 2,
         "expected at least two timed activities, found {checked}"
+    );
+}
+
+#[given(
+    "a supported duty plan converted once and then converted again under a different output name"
+)]
+async fn the_same_plan_converted_twice(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "FB568"),
+            (FROM_X, "ABC"),
+            (TO_X, "DEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    );
+    run_converter(w);
+    let first = std::fs::read_to_string(w.working_dir().join("roster.ics"))
+        .expect("the first conversion published no calendar");
+    run_converter(w);
+    let second = std::fs::read_to_string(w.working_dir().join("roster-1.ics"))
+        .expect("the second conversion published no differently named calendar");
+    w.calendars = vec![first, second];
+}
+
+#[when("the crew member compares the two calendars")]
+async fn compares_the_two_calendars(w: &mut DutyWorld) {
+    assert_eq!(
+        w.calendars.len(),
+        2,
+        "two calendars are needed for the comparison"
+    );
+    for calendar in &w.calendars {
+        assert!(
+            calendar.contains("BEGIN:VCALENDAR") && !component_ids(calendar).is_empty(),
+            "a calendar carries no component identifiers: {calendar}"
+        );
+    }
+}
+
+#[then("the same activity carries the same component identifier in both calendars")]
+async fn same_identifiers_in_both(w: &mut DutyWorld) {
+    let first = component_ids(&w.calendars[0]);
+    let second = component_ids(&w.calendars[1]);
+    assert_eq!(
+        first, second,
+        "the identical source produced different component identifiers"
     );
 }

@@ -23,6 +23,8 @@ pub struct DutyWorld {
     pub stderr: String,
     /// Calendar lines the current scenario expects to find.
     pub expected: Vec<String>,
+    /// Calendars produced by the current scenario, in order.
+    pub calendars: Vec<String>,
 }
 
 impl DutyWorld {

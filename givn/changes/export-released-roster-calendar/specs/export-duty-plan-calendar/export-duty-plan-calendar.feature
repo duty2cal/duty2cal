@@ -233,7 +233,7 @@ Feature: Export a duty-plan calendar
     And its content lines are folded within 75 octets without splitting a character
     And every timed activity ends after it starts
 
-  @givn.added @wip
+  @givn.added
   Scenario: An identical source snapshot keeps its component identifiers
     Given a supported duty plan converted once and then converted again under a different output name
     When the crew member compares the two calendars
