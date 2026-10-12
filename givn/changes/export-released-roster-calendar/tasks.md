@@ -541,19 +541,18 @@ Use-case constraint: Decides D1 (seed Q28): differing optional values are both r
 
 Use-case constraint: Calendar representation: all-day events use a date with a non-inclusive following-day end.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED (fault injection) — the writer already emitted the non-inclusive following-day end, so the scenario passed on first run. Making the all-day end the same day proved the assertion discriminates:
   ```
-  <RED output>
+  Step panicked: the all-day activity does not end on 2099-01-13
+  1 scenario (1 failed), 3 steps (2 passed, 1 failed)   FAULT_EXIT=101
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+  The next-day end was restored; the injection was never committed.
+- [x] GREEN — no production change needed; the scenario passes.
   ```
-  <GREEN output>
+  1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: All-day activities use dates with a non-inclusive following-day end`; hash: `<hash>`
+- [x] REFACTOR — nothing to clean; fmt/clippy clean; suite 39 passed, 12 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: All-day activities use dates with a non-inclusive following-day end`; hash: `3d6ad9b`
 
 ### 31. The published calendar is a valid RFC 5545 file
 
