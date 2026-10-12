@@ -118,8 +118,15 @@ async fn a_supported_plan_with_only_summary_codes(w: &mut DutyWorld) {
 #[then("the published calendar contains no activity taken from the overview or statistics")]
 async fn no_activity_from_overview_or_statistics(w: &mut DutyWorld) {
     let path = w.working_dir().join("roster.ics");
-    let calendar = std::fs::read_to_string(&path)
-        .unwrap_or_else(|error| panic!("no calendar at {}: {error}", path.display()));
+    let calendar = std::fs::read_to_string(&path).unwrap_or_else(|error| {
+        let diagnostic = std::fs::read_to_string(w.working_dir().join("roster.parse-error.txt"))
+            .unwrap_or_else(|_| "<no diagnostic>".to_string());
+        panic!(
+            "no calendar at {}: {error}\nconverter transcript: {}\ndiagnostic: {diagnostic}",
+            path.display(),
+            transcript(w)
+        )
+    });
 
     assert!(
         calendar.contains("BEGIN:VCALENDAR") && calendar.contains("END:VCALENDAR"),
@@ -133,6 +140,59 @@ async fn no_activity_from_overview_or_statistics(w: &mut DutyWorld) {
         assert!(
             !calendar.contains(code),
             "the {code} code from the overview/statistics reached the calendar: {calendar}"
+        );
+    }
+}
+
+#[given("a supported duty plan whose footer names activity codes that never appear in its dated detail rows")]
+async fn a_supported_plan_with_a_footer(w: &mut DutyWorld) {
+    let dir = fresh_dir();
+    let source = dir.join("roster.pdf");
+
+    let mut items: Vec<(f64, f64, &str)> = vec![
+        (40.0, 800.0, "Overview"),
+        (40.0, 785.0, "FREE SB OFF"),
+        (40.0, 770.0, "Statistics SB 12:00 FREE 00:00"),
+    ];
+    items.extend(support::detail_header_row(600.0));
+    // One dated detail row that carries no activity code.
+    items.push((40.0, 585.0, "12 Jan"));
+    // Footer material below the table, naming codes inside the activity column:
+    // these must never become activities.
+    items.push((40.0, 520.0, "Footer"));
+    items.push((330.0, 520.0, "SB"));
+    items.push((400.0, 520.0, "OFF"));
+
+    std::fs::write(&source, support::build_pdf(&items)).expect("write the source");
+    w.dir = Some(dir);
+    w.source = Some(source);
+}
+
+#[then("the published calendar contains no activity taken from the footer")]
+async fn no_activity_from_footer(w: &mut DutyWorld) {
+    let path = w.working_dir().join("roster.ics");
+    let calendar = std::fs::read_to_string(&path).unwrap_or_else(|error| {
+        let diagnostic = std::fs::read_to_string(w.working_dir().join("roster.parse-error.txt"))
+            .unwrap_or_else(|_| "<no diagnostic>".to_string());
+        panic!(
+            "no calendar at {}: {error}\nconverter transcript: {}\ndiagnostic: {diagnostic}",
+            path.display(),
+            transcript(w)
+        )
+    });
+
+    assert!(
+        calendar.contains("BEGIN:VCALENDAR") && calendar.contains("END:VCALENDAR"),
+        "the published calendar is not a complete VCALENDAR: {calendar}"
+    );
+    assert!(
+        !calendar.contains("BEGIN:VEVENT"),
+        "an activity reached the calendar: {calendar}"
+    );
+    for code in ["SB", "OFF", "FREE"] {
+        assert!(
+            !calendar.contains(code),
+            "the {code} code from the footer reached the calendar: {calendar}"
         );
     }
 }

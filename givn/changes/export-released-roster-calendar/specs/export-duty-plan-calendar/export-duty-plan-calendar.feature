@@ -25,7 +25,7 @@ Feature: Export a duty-plan calendar
     When the crew member converts it
     Then the published calendar contains no activity taken from the overview or statistics
 
-  @givn.added @wip
+  @givn.added
   Scenario: Footer records supply no dated activities
     Given a supported duty plan whose footer names activity codes that never appear in its dated detail rows
     When the crew member converts it

@@ -15,6 +15,8 @@ use pdfplumber::{Pdf, Word, WordOptions};
 const ROW_TOLERANCE: f64 = 4.0;
 /// Maximum horizontal gap in points for merging header words into one label.
 const LABEL_GAP: f64 = 6.0;
+/// Vertical gap in points larger than the row pitch that ends the detail table.
+const TABLE_GAP: f64 = 20.0;
 
 /// Reads a supplied document with the pinned extraction crate.
 #[derive(Debug, Default)]
@@ -27,30 +29,50 @@ impl RosterSource for PdfRosterSource {
         let options = WordOptions::default();
 
         let mut table = RawRosterTable::default();
-        let mut areas: Option<Vec<Area>> = None;
+        let mut family_recognised = false;
 
         for page in pdf.pages() {
             let page = page.map_err(|error| SourceError::Unreadable(error.to_string()))?;
             let words = page.extract_words(&options);
 
+            // A continuation page repeats the detail-table header, so nothing is
+            // a detail row before that header on its own page.
+            let mut areas: Option<Vec<Area>> = None;
+            let mut last_top: Option<f64> = None;
+
             for row in cluster_rows(&words, ROW_TOLERANCE) {
+                let top = row.first().map(|word| word.bbox.top).unwrap_or_default();
+
                 if let Some(header) = header_areas(&row) {
                     if table.columns.is_empty() {
                         table.columns = header.iter().map(|area| area.label.clone()).collect();
                     }
                     areas = Some(header);
+                    family_recognised = true;
+                    last_top = Some(top);
                     continue;
                 }
-                // Material above the first detail-table header is overview or
-                // statistics, and is not an activity source.
-                let Some(areas) = areas.as_ref() else {
+
+                if areas.is_some() {
+                    if let Some(previous) = last_top {
+                        if top - previous > TABLE_GAP {
+                            // A gap larger than the row pitch ends the table:
+                            // whatever follows on the page is footer material.
+                            areas = None;
+                            continue;
+                        }
+                    }
+                }
+
+                let Some(current) = areas.as_ref() else {
                     continue;
                 };
-                table.rows.push(assign_cells(&row, areas));
+                table.rows.push(assign_cells(&row, current));
+                last_top = Some(top);
             }
         }
 
-        if areas.is_none() {
+        if !family_recognised {
             return Err(SourceError::UnsupportedFamily);
         }
         Ok(table)
