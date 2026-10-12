@@ -53,19 +53,33 @@ Full suite: `./run-tests.sh`. E2E-only suite: `./run-tests.sh --e2e`.
 
 Use-case constraint: Extensions 2: an unreadable/unsupported source fails explicitly with a numbered diagnostic.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
   ```
-  <RED output>
+  Scenario: A source outside the supported family is rejected
+   ✔  Given a duty plan that is not a supported Released Roster detail-table export
+   ✘  When the crew member converts it
+      Step panicked. Captured output: not implemented: run the converter on the prepared source
+  1 scenario (1 failed), 2 steps (1 passed, 1 failed)
+  RED_EXIT=101
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — replace stubs with real assertions + minimum production code; production files: `crates/duty2cal-core/src/application/mod.rs` (RosterSource port, `SourceError`, `RawRosterTable`, `ConvertRoster`), `crates/duty2cal-pdf/src/lib.rs` (`PdfRosterSource` over pdfplumber 0.4.1), `apps/cli/src/fs.rs` (unused numbered paths), `apps/cli/src/main.rs` (conversion/rejection flow), `apps/cli/tests/features_runner.rs` (world), `apps/cli/tests/steps/export_duty_plan_calendar.rs` (steps); run the single-scenario command; paste the zero-exit output:
   ```
-  <GREEN output>
+  Scenario: A source outside the supported family is rejected
+   ✔  Given … ✔  When … ✔  Then no calendar is published
+   ✔  And the converter reports a conversion failure naming the source
+   ✔  And the invocation reports failure through a non-zero process exit status
+   ✔  And a new unused numbered diagnostic report identifies the source and the reason
+  1 scenario (1 passed), 6 steps (6 passed)
+  GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
+  Interim state recorded honestly: `ConvertRoster::execute` refuses any readable plan (`ConvertError::UnsupportedPlan`) because interpretation and calendar composition arrive with the following scenarios; the publish branch in the CLI is written but first exercised by the calendar-naming scenario.
+- [x] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
   ```
-  <REFACTOR output>
+  cargo fmt --all --check            -> FMT OK
+  cargo clippy --workspace --all-targets -- -D warnings -> clean
+  1 scenario (1 passed), 6 steps (6 passed)   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: A source outside the supported family is rejected`; hash: `<hash>`
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: A source outside the supported family is rejected`; hash: `8166734`
 
 ### 2. Overview and statistics material supplies no dated activities
 
