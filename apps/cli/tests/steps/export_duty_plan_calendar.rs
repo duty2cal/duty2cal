@@ -1762,3 +1762,216 @@ async fn both_older_reports_unchanged(w: &mut DutyWorld) {
         assert_eq!(content, OLDER_REPORT, "{name} was modified");
     }
 }
+
+/// The reference plan: the operator's 26-event example month (June 2026).
+///
+/// All values are generated; the layout reproduces the supported family's
+/// detail table with the local-date, designator, route and printed UTC columns.
+fn reference_plan(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(800.0);
+    let mut y = 785.0;
+    let mut row = |items: &mut Vec<(f64, f64, String)>,
+                   date: &str,
+                   activity: &str,
+                   from: &str,
+                   to: &str,
+                   start: &str,
+                   end: &str| {
+        let mut values: Vec<(f64, &str)> = vec![(DATE_X, date), (ACTIVITY_X, activity)];
+        if !from.is_empty() {
+            values.push((FROM_X, from));
+        }
+        if !to.is_empty() {
+            values.push((TO_X, to));
+        }
+        if !start.is_empty() {
+            values.push((START_X, start));
+        }
+        if !end.is_empty() {
+            values.push((END_X, end));
+        }
+        items.extend(support::at(y, &values));
+        y -= 15.0;
+    };
+
+    for day in 1..=4 {
+        row(
+            &mut items,
+            &format!("2026-06-0{day}"),
+            "FREE",
+            "",
+            "",
+            "",
+            "",
+        );
+    }
+    row(
+        &mut items,
+        "2026-06-07",
+        "FB568",
+        "FRA",
+        "LOS",
+        "09:25",
+        "15:45",
+    );
+    row(
+        &mut items,
+        "2026-06-07",
+        "FB568",
+        "LOS",
+        "SSG",
+        "16:45",
+        "18:10",
+    );
+    row(&mut items, "2026-06-08", "Layover", "SSG", "", "", "");
+    row(
+        &mut items,
+        "2026-06-09",
+        "FB569",
+        "SSG",
+        "LOS",
+        "19:35",
+        "21:00",
+    );
+    row(
+        &mut items,
+        "2026-06-09",
+        "FB569",
+        "LOS",
+        "FRA",
+        "22:10",
+        "04:25",
+    );
+    row(
+        &mut items,
+        "2026-06-13",
+        "FB1466",
+        "FRA",
+        "IBZ",
+        "11:00",
+        "13:25",
+    );
+    row(
+        &mut items,
+        "2026-06-13",
+        "FB1467",
+        "IBZ",
+        "FRA",
+        "14:25",
+        "16:50",
+    );
+    row(
+        &mut items,
+        "2026-06-13",
+        "FB892",
+        "FRA",
+        "RIX",
+        "18:00",
+        "20:10",
+    );
+    row(&mut items, "2026-06-14", "Layover", "RIX", "", "", "");
+    row(
+        &mut items,
+        "2026-06-15",
+        "FB893",
+        "RIX",
+        "FRA",
+        "04:00",
+        "06:20",
+    );
+    row(
+        &mut items,
+        "2026-06-15",
+        "FB1186",
+        "FRA",
+        "ZRH",
+        "07:30",
+        "08:25",
+    );
+    row(
+        &mut items,
+        "2026-06-15",
+        "FB1187",
+        "ZRH",
+        "FRA",
+        "09:05",
+        "10:10",
+    );
+    row(&mut items, "2026-06-18", "EM", "", "", "06:00", "10:00");
+    row(
+        &mut items,
+        "2026-06-20",
+        "FB732",
+        "FRA",
+        "PVG",
+        "19:30",
+        "07:05",
+    );
+    row(&mut items, "2026-06-22", "Layover", "PVG", "", "", "");
+    row(
+        &mut items,
+        "2026-06-23",
+        "FB733",
+        "PVG",
+        "FRA",
+        "15:50",
+        "05:30",
+    );
+    for day in 25..=29 {
+        row(
+            &mut items,
+            &format!("2026-06-{day}"),
+            "FREE",
+            "",
+            "",
+            "",
+            "",
+        );
+    }
+    row(&mut items, "2026-06-30", "OFF", "", "", "", "");
+
+    let dir = fresh_dir();
+    let source = dir.join("roster.pdf");
+    std::fs::write(&source, support::build_pdf(&items)).expect("write the reference plan");
+    w.dir = Some(dir);
+    w.source = Some(source);
+    // The oracle states DTSTAMP 20260610T000000Z; the construction clock is the
+    // fallback this plan has no revision footer for.
+    w.env = vec![(
+        "DUTY2CAL_CONSTRUCTION_CLOCK".to_string(),
+        "2026-06-10T00:00:00Z".to_string(),
+    )];
+}
+
+#[given("the generated reference roster PDF and its expected calendar fixture")]
+async fn the_reference_roster(w: &mut DutyWorld) {
+    reference_plan(w);
+}
+
+#[when("the crew member converts the reference roster")]
+async fn converts_the_reference_roster(w: &mut DutyWorld) {
+    run_converter(w);
+}
+
+#[then("the published calendar equals the expected calendar after CRLF-to-LF and folding normalisation")]
+async fn equals_the_expected_calendar(w: &mut DutyWorld) {
+    let expected_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/expected/2026-06.ics");
+    let published = calendar(w);
+    let expected = std::fs::read_to_string(&expected_path).unwrap_or_else(|error| {
+        panic!(
+            "no expected calendar at {}: {error}",
+            expected_path.display()
+        )
+    });
+    assert_eq!(
+        normalise(&published),
+        normalise(&expected),
+        "the published calendar differs from the expected one"
+    );
+}
+
+/// CRLF to LF, and folded lines joined back (the agreed normalisation).
+fn normalise(calendar: &str) -> String {
+    calendar.replace("\r\n ", "").replace("\r\n", "\n")
+}

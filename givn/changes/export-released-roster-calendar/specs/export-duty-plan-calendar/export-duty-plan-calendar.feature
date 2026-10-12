@@ -296,7 +296,7 @@ Feature: Export a duty-plan calendar
     Then the new diagnostic is written as roster.parse-error-2.txt
     And roster.parse-error.txt and roster.parse-error-1.txt are unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: The reference roster converts to the expected calendar
     Given the generated reference roster PDF and its expected calendar fixture
     When the crew member converts the reference roster
