@@ -282,7 +282,7 @@ Feature: Export a duty-plan calendar
     And a new unused numbered diagnostic report is attempted
     And existing calendars are unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unsavable diagnostic keeps the original failure visible
     Given a conversion failure and no writable destination for a new numbered report
     When the crew member converts it

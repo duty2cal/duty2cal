@@ -1663,3 +1663,61 @@ async fn existing_calendars_are_unchanged(w: &mut DutyWorld) {
         "the failed publication modified the existing calendar"
     );
 }
+
+/// An older diagnostic that must not be presented as the current one.
+const OLDER_REPORT: &str = "Source PDF: earlier.pdf\nReason: an earlier failure\n";
+
+#[given("a conversion failure and no writable destination for a new numbered report")]
+async fn a_failure_without_a_writable_report(w: &mut DutyWorld) {
+    // A required activity the converter cannot resolve, so the conversion fails
+    // before any calendar is attempted.
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "ZZ999"),
+            (FROM_X, "ABC"),
+        ],
+    );
+    let dir = w.working_dir();
+    // The ordinary report name is a dangling link into a directory that does
+    // not exist: the name looks free and writing it fails.
+    std::os::unix::fs::symlink(
+        dir.join("missing-dir").join("roster.parse-error.txt"),
+        dir.join("roster.parse-error.txt"),
+    )
+    .expect("create the dangling report candidate");
+    std::fs::write(dir.join("roster.parse-error-1.txt"), OLDER_REPORT)
+        .expect("write the older report");
+}
+
+#[then("the original failure remains visible")]
+async fn original_failure_remains_visible(w: &mut DutyWorld) {
+    let text = transcript(w);
+    assert!(
+        text.contains("conversion failed"),
+        "the original failure is not visible: {text}"
+    );
+    let candidate = w.working_dir().join("roster.parse-error.txt");
+    let claimed = format!("Diagnostic: {}", candidate.display());
+    assert!(
+        !text.contains(&claimed),
+        "a report that was never saved was presented as current: {text}"
+    );
+}
+
+#[then("the converter does not present an older report as current")]
+async fn older_report_not_current(w: &mut DutyWorld) {
+    let text = transcript(w);
+    assert!(
+        text.contains("no new report was saved"),
+        "the unsaved diagnostic was not stated: {text}"
+    );
+    assert!(
+        !text.contains("roster.parse-error-1.txt"),
+        "the older report was presented as the current one: {text}"
+    );
+    let older = std::fs::read_to_string(w.working_dir().join("roster.parse-error-1.txt"))
+        .expect("the older report disappeared");
+    assert_eq!(older, OLDER_REPORT, "the older report was modified");
+}
