@@ -245,7 +245,7 @@ Feature: Export a duty-plan calendar
     When the crew member converts both revisions
     Then every activity of the revised snapshot carries a component identifier distinct from the earlier snapshot
 
-  @givn.added @wip
+  @givn.added
   Scenario: The revision timestamp comes from the source's Created footer
     Given a supported duty plan whose footer states Created 2099-01-10 12:34 UTC
     When the crew member converts it

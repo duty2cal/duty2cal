@@ -501,6 +501,7 @@ version = "0.1.0"
 dependencies = [
  "duty2cal-core",
  "pdfplumber",
+ "time",
 ]
 
 [[package]]

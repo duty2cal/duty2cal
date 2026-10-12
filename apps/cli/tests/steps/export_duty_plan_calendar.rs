@@ -1430,3 +1430,44 @@ async fn revised_identifiers_are_distinct(w: &mut DutyWorld) {
         );
     }
 }
+
+#[given(
+    regex = r"^a supported duty plan whose footer states Created (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}) UTC$"
+)]
+async fn a_plan_with_a_revision_footer(w: &mut DutyWorld, date: String, time: String) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "FB568"),
+            (FROM_X, "ABC"),
+            (TO_X, "DEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    ));
+    // Footer material below the table carrying the source revision stamp.
+    items.extend(support::at(
+        520.0,
+        &[
+            (DATE_X, "Created"),
+            (support::TRIP_X, &date),
+            (support::REPORT_X, &time),
+            (support::POS_X, "UTC"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then(
+    regex = r"^the published calendar's revision timestamp is (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}) UTC$"
+)]
+async fn revision_timestamp_is(w: &mut DutyWorld, date: String, time: String) {
+    let calendar = calendar(w);
+    let expected = format!("DTSTAMP:{}T{}00Z", compact(&date), digits(&time));
+    assert!(
+        calendar.contains(&expected),
+        "expected the revision timestamp {expected}: {calendar}"
+    );
+}

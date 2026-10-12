@@ -9,3 +9,4 @@ license.workspace = true
 duty2cal-core = { path = "../duty2cal-core" }
 # Exact pin; the only crate allowed to depend on the extraction dependency.
 pdfplumber = "=0.4.1"
+time = "0.3"

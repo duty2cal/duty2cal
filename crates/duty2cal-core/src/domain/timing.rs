@@ -56,7 +56,7 @@ fn parse_cell(cell: &str) -> Result<(Option<u8>, Time), TimingError> {
 }
 
 /// Parse `HH:MM` or `HH:MM:SS`.
-fn parse_clock(text: &str) -> Option<Time> {
+pub fn parse_clock(text: &str) -> Option<Time> {
     let mut parts = text.split(':');
     let hour: u8 = parts.next()?.trim().parse().ok()?;
     let minute: u8 = parts.next()?.trim().parse().ok()?;
@@ -65,6 +65,15 @@ fn parse_clock(text: &str) -> Option<Time> {
         .and_then(|value| value.trim().parse().ok())
         .unwrap_or(0);
     Time::from_hms(hour, minute, second).ok()
+}
+
+/// Parse an ISO calendar date (`YYYY-MM-DD`).
+pub fn parse_iso_date(text: &str) -> Option<Date> {
+    let mut parts = text.split('-');
+    let year: i32 = parts.next()?.trim().parse().ok()?;
+    let month: u8 = parts.next()?.trim().parse().ok()?;
+    let day: u8 = parts.next()?.trim().parse().ok()?;
+    Date::from_calendar_date(year, time::Month::try_from(month).ok()?, day).ok()
 }
 
 /// The unique adjacent date whose day-of-month equals `day`.

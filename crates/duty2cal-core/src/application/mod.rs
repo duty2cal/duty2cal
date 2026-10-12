@@ -4,7 +4,7 @@
 //! Input crosses this boundary as bytes and output as text; no path or file
 //! handle does, so the same use case is callable from the CLI, WASM and UniFFI.
 
-use time::{Date, Duration, Month, OffsetDateTime};
+use time::{Date, Duration, OffsetDateTime};
 
 use crate::domain::timing;
 use crate::domain::{DutyEntry, FieldValue, Position, Roster, SnapshotId, UtcInterval};
@@ -30,10 +30,19 @@ pub enum SourceError {
     UnsupportedFamily,
 }
 
+/// A supplied document: its raw detail rows and its own revision metadata.
+#[derive(Debug, Clone, Default)]
+pub struct SourceDocument {
+    /// The detail-table content.
+    pub table: RawRosterTable,
+    /// The source's own revision instant, when it states one.
+    pub revision: Option<OffsetDateTime>,
+}
+
 /// Driven port: yields raw rows from a supplied document.
 pub trait RosterSource {
-    /// Read one document into the raw table, or explain why it cannot be read.
-    fn read(&self, bytes: &[u8]) -> Result<RawRosterTable, SourceError>;
+    /// Read one document into its raw content, or explain why it cannot be read.
+    fn read(&self, bytes: &[u8]) -> Result<SourceDocument, SourceError>;
 }
 
 /// Driven port: serializes a roster into a calendar format.
@@ -189,7 +198,7 @@ fn collect_rows(table: &RawRosterTable) -> Result<Vec<Row>, ConvertError> {
         if code.is_empty() && from.is_empty() && to.is_empty() {
             continue;
         }
-        let date = parse_date(&date_cell).ok_or_else(|| {
+        let date = timing::parse_iso_date(&date_cell).ok_or_else(|| {
             ConvertError::UnresolvedRequiredActivity(format!("unresolved date: {date_cell:?}"))
         })?;
         let own_trip = optional(table, cells, "Trip");
@@ -410,15 +419,6 @@ fn optional(table: &RawRosterTable, cells: &[String], label: &str) -> Option<Str
     (!value.is_empty()).then_some(value)
 }
 
-/// Parse an ISO calendar date (`YYYY-MM-DD`).
-fn parse_date(text: &str) -> Option<Date> {
-    let mut parts = text.split('-');
-    let year: i32 = parts.next()?.trim().parse().ok()?;
-    let month: u8 = parts.next()?.trim().parse().ok()?;
-    let day: u8 = parts.next()?.trim().parse().ok()?;
-    Date::from_calendar_date(year, Month::try_from(month).ok()?, day).ok()
-}
-
 /// A stable fingerprint of the supplied bytes, scoping the roster's identity.
 fn fingerprint(bytes: &[u8]) -> u64 {
     let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
@@ -449,9 +449,11 @@ impl<S: RosterSource, K: CalendarSink, C: Clock> ConvertRoster<S, K, C> {
 
     /// Convert one supplied plan, or explain why it could not be converted.
     pub fn execute(&self, input: &[u8]) -> Result<ConversionOutcome, ConvertError> {
-        let table = self.source.read(input)?;
-        let roster = interpret(&table, SnapshotId(fingerprint(input)))?;
-        let revision = self.clock.now_utc();
+        let document = self.source.read(input)?;
+        let roster = interpret(&document.table, SnapshotId(fingerprint(input)))?;
+        // The source's own revision metadata is preferred; the constructed
+        // representation's clock is the fallback.
+        let revision = document.revision.unwrap_or_else(|| self.clock.now_utc());
         Ok(ConversionOutcome {
             calendar: self.sink.write(&roster, revision),
         })

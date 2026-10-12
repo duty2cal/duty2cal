@@ -8,8 +8,10 @@
 
 use std::cmp::Ordering;
 
-use duty2cal_core::application::{RawRosterTable, RosterSource, SourceError};
-use pdfplumber::{Pdf, Word, WordOptions};
+use duty2cal_core::application::{RawRosterTable, RosterSource, SourceDocument, SourceError};
+use duty2cal_core::domain::timing;
+use pdfplumber::{Pdf, TextOptions, Word, WordOptions};
+use time::OffsetDateTime;
 
 /// Vertical tolerance in points for clustering words into one row.
 const ROW_TOLERANCE: f64 = 4.0;
@@ -23,17 +25,21 @@ const TABLE_GAP: f64 = 20.0;
 pub struct PdfRosterSource;
 
 impl RosterSource for PdfRosterSource {
-    fn read(&self, bytes: &[u8]) -> Result<RawRosterTable, SourceError> {
+    fn read(&self, bytes: &[u8]) -> Result<SourceDocument, SourceError> {
         let pdf = Pdf::open_bytes(bytes, None)
             .map_err(|error| SourceError::Unreadable(error.to_string()))?;
         let options = WordOptions::default();
 
         let mut table = RawRosterTable::default();
+        let mut revision: Option<OffsetDateTime> = None;
         let mut family_recognised = false;
 
         for page in pdf.pages() {
             let page = page.map_err(|error| SourceError::Unreadable(error.to_string()))?;
             let words = page.extract_words(&options);
+            if revision.is_none() {
+                revision = created_footer(&page.extract_text(&TextOptions::default()));
+            }
 
             // A continuation page repeats the detail-table header, so nothing is
             // a detail row before that header on its own page.
@@ -75,7 +81,7 @@ impl RosterSource for PdfRosterSource {
         if !family_recognised {
             return Err(SourceError::UnsupportedFamily);
         }
-        Ok(table)
+        Ok(SourceDocument { table, revision })
     }
 }
 
@@ -160,6 +166,21 @@ fn assign_cells(row: &[&Word], areas: &[Area]) -> Vec<String> {
         }
     }
     cells
+}
+
+/// The source's own revision stamp, written as `Created YYYY-MM-DD HH:MM UTC`.
+///
+/// This is source metadata, not activity timing: it never supplies an activity
+/// date (the change's timestamp-provenance decision).
+fn created_footer(text: &str) -> Option<OffsetDateTime> {
+    let rest = text.split("Created").nth(1)?;
+    let mut parts = rest.split_whitespace();
+    let date = timing::parse_iso_date(parts.next()?)?;
+    let clock = timing::parse_clock(parts.next()?)?;
+    if !parts.next()?.eq_ignore_ascii_case("UTC") {
+        return None;
+    }
+    Some(date.with_time(clock).assume_utc())
 }
 
 /// Distance from a point to a band, zero when inside it.
