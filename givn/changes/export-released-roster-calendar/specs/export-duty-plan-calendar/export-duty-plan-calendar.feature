@@ -19,7 +19,7 @@ Feature: Export a duty-plan calendar
     And the invocation reports failure through a non-zero process exit status
     And a new unused numbered diagnostic report identifies the source and the reason
 
-  @givn.added @wip
+  @givn.added
   Scenario: Overview and statistics material supplies no dated activities
     Given a supported duty plan whose overview calendar and statistics name activity codes that never appear in its dated detail rows
     When the crew member converts it

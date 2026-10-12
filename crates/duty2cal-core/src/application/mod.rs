@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: MPL-2.0
-//! Application: the driven ports and the `ConvertRoster` use case.
+//! Application: the driven ports, the `ConvertRoster` use case and its errors.
 //!
 //! Input crosses this boundary as bytes and output as text; no path or file
 //! handle does, so the same use case is callable from the CLI, WASM and UniFFI.
 
+use crate::adapters::ics;
+use crate::domain::Roster;
+
 /// Raw, position-based content of a supplied document — the anti-corruption
-/// intermediate between the PDF adapter and the domain.
+/// intermediate between the PDF adapter and interpretation.
 #[derive(Debug, Clone, Default)]
 pub struct RawRosterTable {
-    /// Rows of cell text, in source order.
+    /// Column labels derived from the detail-table header, left to right.
+    pub columns: Vec<String>,
+    /// Rows of cell text below the header, in source order.
     pub rows: Vec<Vec<String>>,
 }
 
@@ -35,16 +40,52 @@ pub enum ConvertError {
     /// The source could not be read as a supported plan.
     #[error(transparent)]
     Source(#[from] SourceError),
-    /// The plan is supported but this build cannot represent it yet.
-    #[error("no supported activity representation is available for this plan")]
-    UnsupportedPlan,
+    /// A required source activity could not be resolved.
+    #[error("a required activity could not be resolved: {0}")]
+    UnresolvedRequiredActivity(String),
 }
 
-/// A completed conversion: the published calendar text.
+/// A completed conversion: the calendar text to publish.
 #[derive(Debug, Clone)]
 pub struct ConversionOutcome {
     /// Calendar text ready to be written beside the source.
     pub calendar: String,
+}
+
+/// The detail-table column that carries the activity code.
+const ACTIVITY_COLUMN: &str = "Activity";
+
+/// Turn the raw detail rows into the whole-plan roster.
+///
+/// Overview, statistics and footer material never reaches this function: the
+/// adapter yields only rows below the detail-table header. A row that carries no
+/// activity code (a date-only row) contributes nothing.
+fn interpret(table: &RawRosterTable) -> Result<Roster, ConvertError> {
+    let Some(activity_index) = table
+        .columns
+        .iter()
+        .position(|column| column.eq_ignore_ascii_case(ACTIVITY_COLUMN))
+    else {
+        return Err(ConvertError::UnresolvedRequiredActivity(
+            "the detail table carries no activity column".to_string(),
+        ));
+    };
+
+    let activities = Vec::new();
+    for row in &table.rows {
+        let code = row
+            .get(activity_index)
+            .map(|cell| cell.trim())
+            .filter(|cell| !cell.is_empty());
+        if let Some(code) = code {
+            return Err(ConvertError::UnresolvedRequiredActivity(code.to_string()));
+        }
+        // A date-only row carries no activity and contributes none.
+    }
+
+    let roster = Roster { activities };
+    debug_assert!(roster.is_complete());
+    Ok(roster)
 }
 
 /// Driving port: convert one supplied duty plan.
@@ -60,12 +101,11 @@ impl<S: RosterSource> ConvertRoster<S> {
     }
 
     /// Convert one supplied plan, or explain why it could not be converted.
-    ///
-    /// Interpretation and calendar composition arrive with the following
-    /// scenarios; until then no plan can be represented, so the conversion
-    /// refuses explicitly instead of publishing a partial calendar.
     pub fn execute(&self, input: &[u8]) -> Result<ConversionOutcome, ConvertError> {
-        let _table = self.source.read(input)?;
-        Err(ConvertError::UnsupportedPlan)
+        let table = self.source.read(input)?;
+        let roster = interpret(&table)?;
+        Ok(ConversionOutcome {
+            calendar: ics::render(&roster),
+        })
     }
 }

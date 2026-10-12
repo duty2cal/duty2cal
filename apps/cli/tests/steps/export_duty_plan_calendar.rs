@@ -6,14 +6,21 @@
 
 use std::path::PathBuf;
 use std::process::Command;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use cucumber::{given, then, when};
 
+use crate::steps::support;
 use crate::DutyWorld;
+
+/// Scenario sequence, so concurrently executed scenarios never share a directory.
+static SCENARIO_SEQUENCE: AtomicUsize = AtomicUsize::new(0);
 
 /// Fresh per-scenario working directory.
 fn fresh_dir() -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("duty2cal-tests-{}", std::process::id()));
+    let sequence = SCENARIO_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+    let dir =
+        std::env::temp_dir().join(format!("duty2cal-tests-{}-{sequence}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).expect("create the scenario directory");
     dir
@@ -89,4 +96,43 @@ async fn a_numbered_diagnostic_identifies_source_and_reason(w: &mut DutyWorld) {
         report.contains("Reason:"),
         "the diagnostic does not state the reason: {report}"
     );
+}
+
+#[given("a supported duty plan whose overview calendar and statistics name activity codes that never appear in its dated detail rows")]
+async fn a_supported_plan_with_only_summary_codes(w: &mut DutyWorld) {
+    let dir = fresh_dir();
+    let source = dir.join("roster.pdf");
+
+    let mut items: Vec<(f64, f64, &str)> = vec![
+        (40.0, 800.0, "Overview"),
+        (40.0, 785.0, "FREE SB OFF"),
+        (40.0, 770.0, "Statistics SB 12:00 FREE 00:00"),
+    ];
+    items.extend(support::detail_header_row(600.0));
+
+    std::fs::write(&source, support::build_pdf(&items)).expect("write the source");
+    w.dir = Some(dir);
+    w.source = Some(source);
+}
+
+#[then("the published calendar contains no activity taken from the overview or statistics")]
+async fn no_activity_from_overview_or_statistics(w: &mut DutyWorld) {
+    let path = w.working_dir().join("roster.ics");
+    let calendar = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no calendar at {}: {error}", path.display()));
+
+    assert!(
+        calendar.contains("BEGIN:VCALENDAR") && calendar.contains("END:VCALENDAR"),
+        "the published calendar is not a complete VCALENDAR: {calendar}"
+    );
+    assert!(
+        !calendar.contains("BEGIN:VEVENT"),
+        "an activity reached the calendar: {calendar}"
+    );
+    for code in ["FREE", "SB", "OFF"] {
+        assert!(
+            !calendar.contains(code),
+            "the {code} code from the overview/statistics reached the calendar: {calendar}"
+        );
+    }
 }
