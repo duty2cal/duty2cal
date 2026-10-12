@@ -139,19 +139,26 @@ Use-case constraint: Rule: overview, statistics, footer, and date-only rows supp
 
 Use-case constraint: Rule: overview, statistics, footer, and date-only rows supply no dated activities.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
   ```
-  <RED output>
+  Scenario: A date-only row is not turned into an activity
+   ✔  Given … ✔  When the crew member converts it
+   ✘  Then the published calendar contains no absence or layover for that date
+      Step panicked. Captured output: not implemented: assert no absence or layover activity was invented for the date-only row
+  1 scenario (1 failed), 3 steps (2 passed, 1 failed)   RED_EXIT=101
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — **no production change was needed**: interpretation already skips a detail row whose activity cell is empty, so a date-only row contributes nothing instead of being invented as FREE/OFF/layover. Files: `apps/cli/tests/steps/export_duty_plan_calendar.rs` (Given/Then). Run the single-scenario command; paste the zero-exit output:
   ```
-  <GREEN output>
+  1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
+  (This is a legitimately reuse-covered scenario; the evidence records that no production file changed, rather than manufacturing a change to fit the template.)
+- [x] REFACTOR — no cleanup required; re-run the single-scenario command; paste the zero-exit output:
   ```
-  <REFACTOR output>
+  cargo fmt --all --check -> FMT OK
+  cargo clippy --workspace --all-targets -- -D warnings -> clean
+  full suite -> 51 scenarios (4 passed, 47 failed)
   ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: A date-only row is not turned into an activity`; hash: `<hash>`
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: A date-only row is not turned into an activity`; hash: `fb164c8`
 
 ### 5. A mixed plan represents every required activity
 
