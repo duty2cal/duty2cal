@@ -494,19 +494,16 @@ Use-case constraint: Descriptive-field selection: approved field order; omit uns
 
 Use-case constraint: Descriptive-field selection: approved field order; omit unsupplied fields; combine complementary/equal values.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — the merged leg carried only the departure fragment's aircraft (`A/C ABC`); the arrival fragment's Blocktime was lost.
   ```
-  <RED output>
+  1 scenario (1 failed), 3 steps (2 passed, 1 failed)   RED_EXIT=101
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — production: `merge_travel` takes each optional field from the departure fragment and falls back to the arrival fragment, so complementary values combine and a repeated value stays represented once.
   ```
-  <GREEN output>
+  1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: Complementary optional values from compatible fragments combine`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; suite 36 passed, 15 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Complementary optional values from compatible fragments combine`; hash: `b89e222`
 
 ### 28. Description fields follow the approved order
 
