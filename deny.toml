@@ -7,6 +7,8 @@ allow = [
   "Unicode-DFS-2016", "Unicode-3.0",
   "MPL-2.0",
 ]
+# Dev-only licences (e.g. BlueOak-1.0.0 via cucumber-codegen -> synthez) are not
+# part of cargo-deny's default graph; `cargo about` does include them.
 # Workspace crates are exempt from the allowlist; third-party crates must match.
 # Any GPL/LGPL/AGPL/SSPL third-party crate is a hard failure.
 confidence-threshold = 0.9

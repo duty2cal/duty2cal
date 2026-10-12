@@ -1,0 +1,121 @@
+# SPDX-License-Identifier: MPL-2.0
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all --check
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --workspace
+
+  deny:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo install cargo-deny --locked
+      - run: cargo deny check
+
+  reuse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pipx install reuse
+      - run: reuse lint
+
+  license-headers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/license-headers.sh
+
+  pii-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/pii-guard.sh
+
+  notices:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo install cargo-about --locked
+      - run: cargo about generate about.hbs --output-file THIRD-PARTY-NOTICES.md
+      - run: git diff --exit-code THIRD-PARTY-NOTICES.md
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - run: cargo install cargo-llvm-cov --locked
+      - run: ./measure-coverage.sh
+      - run: ./merge-coverages.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+
+  windows-gnu-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-gnu
+      - run: sudo apt-get update && sudo apt-get install -y mingw-w64
+      - run: cargo build --release --target x86_64-pc-windows-gnu
+      - name: Assert no companion DLLs are required
+        run: |
+          set -euo pipefail
+          imports=$(x86_64-w64-mingw32-objdump -p target/x86_64-pc-windows-gnu/release/duty2cal.exe \
+            | awk '/DLL Name/ {print $3}' | sort -u)
+          echo "$imports"
+          if echo "$imports" | grep -viE '^(kernel32|user32|advapi32|ntdll|msvcrt|api-ms-win-|ucrtbase|bcrypt|ws2_32|shell32|ole32|oleaut32|combase|powrprof|secur32|crypt32|iphlpapi|userenv|dbghelp)\.dll$'; then
+            echo "unexpected non-system DLL import — the executable is not self-contained";
+            exit 1;
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: duty2cal-windows-gnu
+          path: target/x86_64-pc-windows-gnu/release/duty2cal.exe
+
+  windows-smoke:
+    needs: [windows-gnu-build]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: duty2cal-windows-gnu
+      - name: The executable starts and reports usage without arguments
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath .\duty2cal.exe -Wait -PassThru -RedirectStandardError err.txt
+          Get-Content err.txt
+          if ($p.ExitCode -eq 0) { throw "expected a non-zero exit for a missing argument" }

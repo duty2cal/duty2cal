@@ -1,0 +1,19 @@
+{{!-- SPDX-License-Identifier: MPL-2.0 --}}
+# Third-party notices
+
+`duty2cal` is MPL-2.0 (see `docs/arc42/adr/ADR-0001-project-license.md`). It
+bundles or depends on the third-party crates listed below.
+
+{{#each licenses}}
+## {{name}}
+
+Used by:
+{{#each used_by}}
+- {{crate.name}} {{crate.version}}{{#if crate.repository}} — {{crate.repository}}{{/if}}
+{{/each}}
+
+```
+{{{text}}}
+```
+
+{{/each}}

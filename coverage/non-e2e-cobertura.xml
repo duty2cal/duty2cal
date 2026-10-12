@@ -1,0 +1,26 @@
+<?xml version="1.0" ?>
+<!DOCTYPE coverage SYSTEM "https://cobertura.sourceforge.net/xml/coverage-04.dtd">
+<coverage branch-rate="0" branches-covered="0" branches-valid="0" complexity="0" line-rate="0" lines-covered="0" lines-valid="2" timestamp="1791831366" version="2.0.3">
+    <sources>
+        <source>/home/dan/dev/PRIVATE/duty2ical</source>
+    </sources>
+    <packages>
+        <package line-rate="0" branch-rate="0" name="apps.cli.src" complexity="0">
+            <classes>
+                <class branch-rate="0" complexity="0" filename="apps/cli/src/main.rs" line-rate="0" name="apps.cli.src.main.rs">
+                    <methods>
+                        <method name="duty2cal::main" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="8" branch="false"/>
+                            </lines>
+                        </method>
+                    </methods>
+                    <lines>
+                        <line branch="false" hits="0" number="8"/>
+                        <line branch="false" hits="0" number="10"/>
+                    </lines>
+                </class>
+            </classes>
+        </package>
+    </packages>
+</coverage>

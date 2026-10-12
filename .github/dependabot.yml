@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MPL-2.0
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      rust-deps:
+        patterns: ["*"]
+    ignore:
+      # Pre-1.0 alpha: bump deliberately only (see design.md risk R-001).
+      - dependency-name: "pdfplumber"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      # Pre-1.0 architecture-test crate: bump deliberately only.
+      - dependency-name: "archunit"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

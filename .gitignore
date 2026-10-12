@@ -7,6 +7,8 @@ private
 
 # Rust build output
 /target
+__pycache__/
+*.pyc
 
 # givn:begin:rules
 .opencode/skills/givn-*/

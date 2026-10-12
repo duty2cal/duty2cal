@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: MPL-2.0
+# Cross-compile link configuration for the Windows GNU target.
+# The absence of companion DLLs is verified by the release task (risk R-002).
+[target.x86_64-pc-windows-gnu]
+linker = "x86_64-w64-mingw32-gcc"
+rustflags = ["-C", "target-feature=+crt-static", "-C", "link-arg=-static"]

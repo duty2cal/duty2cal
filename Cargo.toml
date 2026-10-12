@@ -13,3 +13,10 @@ members = [
 version = "0.1.0"
 edition = "2021"
 license = "MPL-2.0"
+
+# Small single executable (see design.md "Distribution notes").
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true
+codegen-units = 1

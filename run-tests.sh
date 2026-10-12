@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MPL-2.0
 # Test runner for duty2cal (see design.md "Test runner, strict mode, and
 # single-scenario command").
 #
-# cucumber-rs takes one feature root, so this script assembles every .feature
-# from the permanent corpus (givn/specs/**) and the active change's specs
-# (givn/changes/*/specs/**) into a temporary root and points the runner at it.
+# cucumber-rs takes one feature root, so scripts/assemble-features.sh builds a
+# temporary root from the permanent corpus and the active change's specs and
+# this script points the runner at it.
 #
 # Usage:
 #   ./run-tests.sh                       # full suite (non-@e2e and @e2e)
@@ -24,15 +25,8 @@ for a in "$@"; do
   fi
 done
 
-root="$(mktemp -d)"
+root="$(scripts/assemble-features.sh)"
 trap 'rm -rf "$root"' EXIT
-mkdir -p "$root"
-
-i=0
-while IFS= read -r -d '' f; do
-  i=$((i + 1))
-  cp "$f" "$root/$(printf 'f%04d' "$i").feature"
-done < <(find givn/specs givn/changes -name '*.feature' -print0 2>/dev/null)
 
 export GIVN_FEATURES="$root"
 status=0

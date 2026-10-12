@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: MPL-2.0
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  windows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-gnu
+      - run: sudo apt-get update && sudo apt-get install -y mingw-w64
+      - run: cargo build --release --target x86_64-pc-windows-gnu
+      - name: Checksums
+        run: |
+          cd target/x86_64-pc-windows-gnu/release
+          sha256sum duty2cal.exe > duty2cal.exe.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: duty2cal-windows
+          path: |
+            target/x86_64-pc-windows-gnu/release/duty2cal.exe
+            target/x86_64-pc-windows-gnu/release/duty2cal.exe.sha256
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target/x86_64-pc-windows-gnu/release/duty2cal.exe
+            target/x86_64-pc-windows-gnu/release/duty2cal.exe.sha256
