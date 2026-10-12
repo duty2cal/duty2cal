@@ -88,6 +88,8 @@ Applied: ADR-0001 rewritten as "Licence the project under MPL-2.0 (per-file weak
 
 Fresh-context re-review: **PASS** on all six checks (no live GPL claim; licence statement consistent across manifests, headers, docs and indexes; ADR-0001 complete and correctly routed as an amendment with the qualification gate re-derived; chapter 11 and the register agree; `cargo build --workspace`, `cargo test -p duty2cal-core --test architecture` 3 passed, `./run-tests.sh` 51 RED, `./run-tests.sh --e2e` 1 RED; no relicensing/strong-copyleft claims anywhere). One low finding — chapter 01 still said "permissively licensed" — was fixed to "licensed MPL-2.0 project-wide (weak file-level copyleft; App-Store distributable)".
 
+**Operator reaffirmation (2026-10-12):** asked whether a permissive project licence remained possible given the extraction dependency, the operator confirmed copyleft is intended and declined the `MIT OR Apache-2.0` alternative. `pdfplumber 0.4.1` was verified as Apache-2.0 with a permissive-only shipped closure, so no licence question arises from the dependency either way; the project stays MPL-2.0 project-wide.
+
 ## Status
 
 DESIGN-REVIEW: PASS — every branch walked, every question resolved, all hardening edits applied.
