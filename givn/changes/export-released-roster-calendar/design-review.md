@@ -90,6 +90,17 @@ Fresh-context re-review: **PASS** on all six checks (no live GPL claim; licence 
 
 **Operator reaffirmation (2026-10-12):** asked whether a permissive project licence remained possible given the extraction dependency, the operator confirmed copyleft is intended and declined the `MIT OR Apache-2.0` alternative. `pdfplumber 0.4.1` was verified as Apache-2.0 with a permissive-only shipped closure, so no licence question arises from the dependency either way; the project stays MPL-2.0 project-wide.
 
+## Coverage-scope fix and final confirmation (implementation complete)
+
+Design and reality diverged during implementation and were reconciled, with a fresh-context review each time:
+
+- `./measure-coverage.sh` used `cargo llvm-cov -p duty2cal`, which instrumented only the CLI binary and left the core and PDF crates (including the design's named non-e2e probe `domain/timing.rs`) uncovered. The script and the design's coverage rows now use `--workspace`; the reports cover all seven source files (694 lines, 662 covered) and both probes are non-zero.
+- The same review found that the merge tool mutated one input report, keeping that report's other packages and duplicating six of seven classes. It now builds a fresh document: one package, one class per file, every merged line equal to the sum of the two reports (verified exhaustively, 0 mismatches).
+- design.md was corrected where it described a committed reference PDF/Typst source that never existed (the plan is built at test time; only the expected calendar is committed), where the coverage rows named `./run-tests.sh` instead of `./measure-coverage.sh`, and where the `@e2e` transcript had to carry the process exit status (it now does).
+- The `DUTY2CAL_CONSTRUCTION_CLOCK` seam is recorded in the design instead of being undocumented.
+
+Final confirmation (fresh context): all checks pass — merged coverage structurally clean and arithmetically correct, golden-oracle wording matching the implementation, `./run-tests.sh` 51/51 and `./run-tests.sh --e2e` 1/1, `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean (re-run in a fresh target dir), and the architecture tests green.
+
 ## Status
 
-DESIGN-REVIEW: PASS — every branch walked, every question resolved, all hardening edits applied.
+DESIGN-REVIEW: PASS — every branch walked, every question resolved, all hardening edits applied; the implementation-phase divergences above were reconciled and re-confirmed.
