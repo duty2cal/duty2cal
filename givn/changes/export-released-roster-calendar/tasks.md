@@ -607,19 +607,16 @@ Use-case constraint: Calendar representation: UIDs are snapshot-scoped, globally
 
 Use-case constraint: Calendar representation: DTSTAMP prefers the source Created footer, construction-time fallback.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — the published `DTSTAMP` was the construction time, not the footer's `20990110T123400Z`.
   ```
-  <RED output>
+  1 scenario (1 failed), 3 steps (2 passed, 1 failed)   RED_EXIT=101
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — production: the driven port returns a `SourceDocument` carrying the raw detail content and the source's own revision instant parsed from the `Created … UTC` footer; the use case prefers that metadata and falls back to the construction clock. `domain::timing` now owns the shared ISO date and clock parsers.
   ```
-  <GREEN output>
+  1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: The revision timestamp comes from the source's Created footer`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; suite 43 passed, 8 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: The revision timestamp comes from the source's Created footer`; hash: `4bbe9a0`
 
 ### 35. Without usable source metadata the construction time is the revision timestamp
 
