@@ -22,15 +22,3 @@ pub struct Roster {
     /// Represented activities, in source order.
     pub activities: Vec<Activity>,
 }
-
-impl Roster {
-    /// An empty but complete roster: a plan with no dated activities.
-    pub fn empty() -> Self {
-        Self::default()
-    }
-
-    /// Whether every required activity is resolved and the roster may be published.
-    pub fn is_complete(&self) -> bool {
-        true
-    }
-}

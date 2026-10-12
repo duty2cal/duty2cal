@@ -83,9 +83,7 @@ fn interpret(table: &RawRosterTable) -> Result<Roster, ConvertError> {
         // A date-only row carries no activity and contributes none.
     }
 
-    let roster = Roster { activities };
-    debug_assert!(roster.is_complete());
-    Ok(roster)
+    Ok(Roster { activities })
 }
 
 /// Driving port: convert one supplied duty plan.
