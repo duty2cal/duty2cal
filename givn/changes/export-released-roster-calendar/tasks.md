@@ -479,19 +479,16 @@ Use-case constraint: Rule: a known Trip ID carries within one unambiguous roster
 
 Use-case constraint: Descriptive-field selection: approved field order; omit unsupplied fields; combine complementary/equal values.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — all seven example rows failed: the description rendered only the trip, so every supplied field was missing.
   ```
-  <RED output>
+  7 scenarios (7 failed), 21 steps (14 passed, 7 failed)   RED_EXIT=101
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — production: `description_fields` selects the approved seven fields in order, omitting any the source did not supply. Fixture support gained the aircraft, blocktime, timezone, layover and tags columns.
   ```
-  <GREEN output>
+  7 scenarios (7 passed), 21 steps (21 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario Outline: An unsupplied optional description field is omitted`; hash: `<hash>`
+- [x] REFACTOR — real defect fixed: relaxed label-prefix matching made `A/C` resolve to `Activity`; matching now requires an exact name, a real boundary, or an exact normalised name. fmt/clippy clean; suite 35 passed, 16 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: An unsupplied optional description field is omitted`; hash: `8054e9e`
 
 ### 27. Complementary optional values from compatible fragments combine
 
