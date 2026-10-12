@@ -1349,3 +1349,84 @@ async fn same_identifiers_in_both(w: &mut DutyWorld) {
         "the identical source produced different component identifiers"
     );
 }
+
+/// Build one revision of the same plan, differing only in the leg's times.
+fn revision_pdf(start: &str, end: &str) -> Vec<(f64, f64, String)> {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "FB568"),
+            (FROM_X, "ABC"),
+            (TO_X, "DEF"),
+            (START_X, start),
+            (END_X, end),
+        ],
+    ));
+    items.extend(support::at(
+        570.0,
+        &[(DATE_X, "2099-06-12"), (ACTIVITY_X, "U")],
+    ));
+    items
+}
+
+#[given("a supported duty plan whose later revision changes one flight's UTC time while its other activities are unchanged")]
+async fn a_revised_snapshot(w: &mut DutyWorld) {
+    let dir = fresh_dir();
+    let original = dir.join("roster.pdf");
+    let revised = dir.join("roster-revised.pdf");
+    std::fs::write(
+        &original,
+        support::build_pdf(&revision_pdf("09:00", "10:00")),
+    )
+    .expect("write the original");
+    std::fs::write(
+        &revised,
+        support::build_pdf(&revision_pdf("10:00", "11:00")),
+    )
+    .expect("write the revision");
+    w.dir = Some(dir);
+
+    w.source = Some(original);
+    run_converter(w);
+    let first = std::fs::read_to_string(w.working_dir().join("roster.ics"))
+        .expect("the original conversion published no calendar");
+
+    w.source = Some(revised);
+    run_converter(w);
+    let second = std::fs::read_to_string(w.working_dir().join("roster-revised.ics"))
+        .expect("the revised conversion published no calendar");
+
+    w.calendars = vec![first, second];
+}
+
+#[when("the crew member converts both revisions")]
+async fn converts_both_revisions(w: &mut DutyWorld) {
+    assert_eq!(
+        w.calendars.len(),
+        2,
+        "both revisions must have been converted"
+    );
+}
+
+#[then("every activity of the revised snapshot carries a component identifier distinct from the earlier snapshot")]
+async fn revised_identifiers_are_distinct(w: &mut DutyWorld) {
+    let original = component_ids(&w.calendars[0]);
+    let revised = component_ids(&w.calendars[1]);
+    assert!(
+        !original.is_empty(),
+        "the original snapshot carried no identifiers"
+    );
+    assert_eq!(
+        original.len(),
+        revised.len(),
+        "the revision changed the number of activities"
+    );
+    for identifier in &revised {
+        assert!(
+            !original.contains(identifier),
+            "the revised snapshot reused the identifier {identifier}"
+        );
+    }
+}

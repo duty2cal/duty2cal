@@ -239,7 +239,7 @@ Feature: Export a duty-plan calendar
     When the crew member compares the two calendars
     Then the same activity carries the same component identifier in both calendars
 
-  @givn.added @wip
+  @givn.added
   Scenario: A revised source snapshot has separate component identifiers
     Given a supported duty plan whose later revision changes one flight's UTC time while its other activities are unchanged
     When the crew member converts both revisions
