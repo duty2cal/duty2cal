@@ -113,19 +113,27 @@ Use-case constraint: Rule: overview, statistics, footer, and date-only rows supp
 
 Use-case constraint: Rule: overview, statistics, footer, and date-only rows supply no dated activities.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
   ```
-  <RED output>
+  Scenario: Footer records supply no dated activities
+   ✔  Given … ✔  When the crew member converts it
+   ✘  Then the published calendar contains no activity taken from the footer
+      Step panicked. Captured output: not implemented: assert the published calendar carries no footer activity
+  1 scenario (1 failed), 3 steps (2 passed, 1 failed)   RED_EXIT=101
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+  Fixture note: the footer places its codes inside the activity column band, so the gap rule is genuinely required — without it the footer row is read as a coded detail row.
+- [x] GREEN — replace stubs with real assertions + minimum production code; production files: `crates/duty2cal-pdf/src/lib.rs` (a vertical gap larger than the row pitch ends the detail table; a continuation page must repeat the header), `apps/cli/tests/steps/export_duty_plan_calendar.rs` (Given/Then); run the single-scenario command; paste the zero-exit output:
   ```
-  <GREEN output>
+  1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
+- [x] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
   ```
-  <REFACTOR output>
+  cargo fmt --all --check -> FMT OK
+  cargo clippy --workspace --all-targets -- -D warnings -> clean
+  full suite -> 51 scenarios (3 passed, 48 failed)
   ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: Footer records supply no dated activities`; hash: `<hash>`
+  Real defects found and fixed here: (1) the gap rule cleared the column areas, and the family-recognition check then read them — so a footer rejected the whole document; recognition is now tracked separately and the column areas are page-local; (2) a failing calendar assertion now surfaces the converter transcript and the diagnostic, which is how (1) was found.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Footer records supply no dated activities`; hash: `d81f34a`
 
 ### 4. A date-only row is not turned into an activity
 
