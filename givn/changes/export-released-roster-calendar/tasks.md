@@ -689,19 +689,19 @@ Use-case constraint: Minimal guarantee: every failure attempts a new numbered di
 
 Use-case constraint: Minimal guarantee: every failure attempts a new numbered diagnostic; older reports are never claimed as current.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED (fault injection) — the unsavable path already behaved correctly, so the scenario passed on first run. Printing the older report's path as if current proved the assertion discriminates:
   ```
-  <RED output>
+  Step panicked: the unsaved diagnostic was not stated
+  1 scenario (1 failed), 4 steps (3 passed, 1 failed)   FAULT_EXIT=101
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+  The honest failure message was restored; the injection was never committed.
+- [x] GREEN — no production change needed; the original failure stays visible, the unsaved diagnostic is stated, and the older report is byte-identical and never named as current.
   ```
-  <GREEN output>
+  1 scenario (1 passed), 4 steps (4 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: An unsavable diagnostic keeps the original failure visible`; hash: `<hash>`
+  Fixture technique: a dangling symbolic link as the diagnostic candidate makes the report unsavable while an older report stays in place.
+- [x] REFACTOR — nothing to clean; fmt/clippy clean; suite 48 passed, 3 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: An unsavable diagnostic keeps the original failure visible`; hash: `4ce0999`
 
 ### 40. An occupied diagnostic name yields a new unused numbered report
 
