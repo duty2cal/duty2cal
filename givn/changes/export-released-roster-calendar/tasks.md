@@ -724,19 +724,17 @@ Use-case constraint: Minimal guarantee: every failure attempts a new numbered di
 
 Use-case constraint: Success guarantee plus the operator's 26-event oracle — the whole-file comparison lives inside the Gherkin suite (no parallel golden test).
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — no expected calendar fixture existed, so the comparison step failed.
   ```
-  <RED output>
+  1 scenario (1 failed), 3 steps (2 passed, 1 failed)   RED_EXIT=101
   ```
-- [ ] GREEN — generate `apps/cli/tests/fixtures/reference_roster.pdf` (fictional values) and `apps/cli/tests/fixtures/expected/2026-06.ics`; implement the conversion path; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — the reference plan is built from the operator's 26-event example month (June 2026) and the committed expected calendar is compared after CRLF-to-LF and folding normalisation; the plan sets the construction clock to the oracle's stated DTSTAMP `20260610T000000Z`.
   ```
-  <GREEN output>
+  1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: The reference roster converts to the expected calendar`; hash: `<hash>`
+  The committed fixture was verified line by line against the operator's oracle before being committed: 26 events, matching summaries, all-day activities with following-day non-inclusive ends, and the three overnight legs resolving to the next UTC day.
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; suite 50 passed, 1 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: The reference roster converts to the expected calendar`; hash: `af93202`
 
 ## E2E setup task (before the first @e2e scenario)
 
