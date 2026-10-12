@@ -16,7 +16,7 @@
 | PDF extraction | `pdfplumber = "=0.4.1"` in `duty2cal-pdf` | Supplied pin (brief); chapter 2. |
 | Calendar output | Hand-written RFC 5545 in `duty2cal-core/src/adapters/ics` | Supplied constraint. |
 | Module boundaries | Two-crate workspace + four enforcement levels | ADR-0002. |
-| Licensing | MPL-2.0 core, GPL-3.0-or-later CLI | ADR-0001. |
+| Licence | MPL-2.0 for the whole project | ADR-0001. |
 | Executable specification | Gherkin `.feature` files run by cucumber-rs (strict) | Chapter 2. |
 | Distribution | One self-contained `x86_64-pc-windows-gnu` executable, cross-compiled | Chapter 7. |
 

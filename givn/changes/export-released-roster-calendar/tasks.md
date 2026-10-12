@@ -9,7 +9,7 @@ Full suite: `./run-tests.sh`. E2E-only suite: `./run-tests.sh --e2e`.
 
 ## Setup task — workspace, licensing, runner, strict mode, architecture test
 
-- [x] Restructure to the adopted workspace (ADR-0002): `crates/duty2cal-core` (MPL-2.0; modules `domain/`, `application/`, `adapters/ics/`; deps `thiserror` + `time`; `clippy.toml` guardrails), `crates/duty2cal-pdf` (MPL-2.0; the only `pdfplumber` user), `apps/cli` (package/bin `duty2cal`, GPL-3.0-or-later). Root `Cargo.toml` workspace, `rust-toolchain.toml`, `deny.toml`, `REUSE.toml`, `LICENSES/{MPL-2.0,GPL-3.0-or-later}.txt`, per-file SPDX headers.
+- [x] Restructure to the adopted workspace (ADR-0002): `crates/duty2cal-core` (MPL-2.0; modules `domain/`, `application/`, `adapters/ics/`; deps `thiserror` + `time`; `clippy.toml` guardrails), `crates/duty2cal-pdf` (MPL-2.0; the only `pdfplumber` user), `apps/cli` (package/bin `duty2cal`, MPL-2.0). Root `Cargo.toml` workspace (`license = "MPL-2.0"`), `rust-toolchain.toml`, `deny.toml`, `REUSE.toml`, `LICENSES/MPL-2.0.txt`, per-file SPDX headers.
 - [x] Configure the Gherkin runner and prove strict mode BEFORE any scenario.
   - `apps/cli/tests/features_runner.rs` is a `harness = false` cucumber-rs target. It reads the feature root from `GIVN_FEATURES`, sets `.fail_on_skipped()`, and uses `.run_and_exit(root)` so the exit code reflects failures.
   - cucumber-rs 0.23 takes a single feature root, so `./run-tests.sh` assembles every `.feature` from `givn/specs/**` and `givn/changes/*/specs/**` into a temporary directory and exports `GIVN_FEATURES`.

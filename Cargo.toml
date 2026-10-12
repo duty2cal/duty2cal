@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
-# Mixed-licence workspace: `crates/**` are MPL-2.0, `apps/**` are
-# GPL-3.0-or-later (see docs/arc42/adr/ADR-0001-license-split.md). The workspace
-# root therefore carries no `license` field.
+# The whole workspace is MPL-2.0, project-wide (see
+# docs/arc42/adr/ADR-0001-project-license.md).
 [workspace]
 resolver = "2"
 members = [
@@ -13,3 +12,4 @@ members = [
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
+license = "MPL-2.0"

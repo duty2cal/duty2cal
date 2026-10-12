@@ -19,9 +19,8 @@
 
 | Constraint | Motivation |
 |---|---|
-| Licensing split by layer: `crates/**` MPL-2.0, `apps/**` GPL-3.0-or-later | ADR-0001. |
-| `deny.toml` allowlist; any GPL/LGPL/AGPL/SSPL third-party crate is a hard failure | Keeps the core embeddable in any host app. |
-| No file may carry the MPL Exhibit B "Incompatible With Secondary Licenses" notice | MPL §3.3 combination with the GPL CLI depends on it. |
+| Licence: MPL-2.0 project-wide (per-file weak copyleft, App-Store compatible) | ADR-0001. |
+| `deny.toml` allowlist; any GPL/LGPL/AGPL/SSPL third-party crate is a hard failure | Keeps the project embeddable in any host app. |
 | Per-file SPDX header; `REUSE.toml` for binary/data files; `cargo-about` notices; DCO sign-off, no CLA | ADR-0001 obligations. |
 | Private duty-plan PDFs are read for analysis but never committed; fixtures and golden calendars are generated/anonymised | Privacy. |
 | Changes follow the givn workflow; `.feature` files are the executable specification | Specification and tests are one artifact. |

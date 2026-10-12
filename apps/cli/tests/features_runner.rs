@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //! Gherkin runner (see design.md "Test runner, strict mode, and single-scenario
 //! command"). Strict by construction: `fail_on_skipped()` makes an undefined or
 //! skipped step fail the run.

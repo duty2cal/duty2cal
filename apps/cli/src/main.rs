@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //! Driving adapter: argv → `ConvertRoster` → reported path/exit code.
 //! Wires the filesystem adapter (`fs`) and the logger (`log`).
 

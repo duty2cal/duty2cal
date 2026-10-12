@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //! Step definitions for the capability `export-duty-plan-calendar`.
 //!
 //! One file per capability. RED-phase steps use the `unimplemented!("<step>")`

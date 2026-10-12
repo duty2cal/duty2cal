@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
-# cargo-deny policy (see docs/arc42/adr/ADR-0001-license-split.md).
+# cargo-deny policy (see docs/arc42/adr/ADR-0001-project-license.md).
 [licenses]
 allow = [
   "MIT", "Apache-2.0", "Apache-2.0 WITH LLVM-exception",

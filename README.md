@@ -49,10 +49,8 @@ Add lint, build, and other project commands alongside these scripts.
 
 ## License
 
-Split by layer (see [ADR-0001](docs/arc42/adr/ADR-0001-license-split.md)):
+MPL-2.0, project-wide (see [ADR-0001](docs/arc42/adr/ADR-0001-project-license.md)).
 
-- `crates/**` — MPL-2.0
-- `apps/**` — GPL-3.0-or-later
-
-No file may carry the MPL Exhibit B "Incompatible With Secondary Licenses"
-notice. Contributions use DCO sign-off (`git commit -s`); there is no CLA.
+Per-file weak copyleft: a redistributor of a modified product must publish the
+modified MPL files. This keeps the future iOS UI App-Store distributable.
+Contributions use DCO sign-off (`git commit -s`); there is no CLA.

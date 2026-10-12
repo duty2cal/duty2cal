@@ -1,9 +1,9 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 [package]
 name = "duty2cal"
 version.workspace = true
 edition.workspace = true
-license = "GPL-3.0-or-later"
+license.workspace = true
 
 [dependencies]
 duty2cal-core = { path = "../../crates/duty2cal-core" }

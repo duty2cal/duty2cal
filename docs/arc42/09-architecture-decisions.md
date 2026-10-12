@@ -8,7 +8,7 @@ Markdown file under `docs/arc42/adr/ADR-NNNN-short-slug.md`.
 
 | ADR | Title | Status | Date | File |
 |---|---|---|---|---|
-| ADR-0001 | Split licensing by hexagon layer: MPL-2.0 core, GPL-3.0-or-later CLI | accepted | 2026-10-12 | [ADR-0001-license-split.md](adr/ADR-0001-license-split.md) |
+| ADR-0001 | Licence the project under MPL-2.0 (per-file weak copyleft) | accepted | 2026-10-12 | [ADR-0001-project-license.md](adr/ADR-0001-project-license.md) |
 | ADR-0002 | Enforce the hexagonal layer model with crate boundaries and four policy levels | accepted | 2026-10-12 | [ADR-0002-layer-enforcement.md](adr/ADR-0002-layer-enforcement.md) |
 
 Both records were minted by the change to export released roster calendars

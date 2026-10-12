@@ -10,7 +10,7 @@ Top requirements, from the stakeholder perspective:
 2. **Complete-or-explicit-failure** — a plan that cannot be represented completely is rejected with a visible failure and a diagnostic, never a partial calendar.
 3. **No destruction** — an existing calendar or report is never replaced; new outputs use an unused enumerated name.
 4. **Privacy** — private duty plans and identifying values never reach the public repository; fixtures and golden calendars are generated or anonymized.
-5. **Distributable release** — one self-contained Windows executable, permissively licensed, with claims backed by evidence.
+5. **Distributable release** — one self-contained Windows executable, licensed MPL-2.0 project-wide (weak file-level copyleft; App-Store distributable), with claims backed by evidence.
 
 The authoritative behaviour specification is the change's feature files under `givn/changes/export-released-roster-calendar/specs/` (merged to `givn/specs/export-duty-plan-calendar/` on archive).
 
