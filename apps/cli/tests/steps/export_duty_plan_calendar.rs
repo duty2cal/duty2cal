@@ -273,6 +273,21 @@ fn plan_with_row(w: &mut DutyWorld, cells: &[(f64, &str)]) {
     write_fixture(w, &items);
 }
 
+/// The DESCRIPTION text of every event, empty when an event has none.
+fn event_descriptions(calendar: &str) -> Vec<String> {
+    calendar
+        .split("BEGIN:VEVENT")
+        .skip(1)
+        .map(|event| {
+            event
+                .lines()
+                .filter_map(|line| line.strip_prefix("DESCRIPTION:"))
+                .collect::<Vec<_>>()
+                .join(" ")
+        })
+        .collect()
+}
+
 /// Assert the calendar carries exactly `expected` activities.
 fn assert_event_count(calendar: &str, expected: usize) {
     assert_eq!(
@@ -845,5 +860,74 @@ async fn no_unique_adjacent_date(w: &mut DutyWorld) {
             (START_X, "(9) 10:00"),
             (END_X, "(9) 11:00"),
         ],
+    );
+}
+
+#[given("a supported duty plan whose roster trip T42 has legs 007 and 008 where only leg 007 prints the Trip ID, followed by roster trip T43")]
+async fn a_roster_trip_with_sparse_ids(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (support::TRIP_X, "T42"),
+            (ACTIVITY_X, "007"),
+            (FROM_X, "ABC"),
+            (TO_X, "DEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    ));
+    items.extend(support::at(
+        570.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "008"),
+            (FROM_X, "DEF"),
+            (TO_X, "GHI"),
+            (START_X, "11:00"),
+            (END_X, "12:00"),
+        ],
+    ));
+    items.extend(support::at(
+        555.0,
+        &[
+            (DATE_X, "2099-06-08"),
+            (support::TRIP_X, "T43"),
+            (ACTIVITY_X, "009"),
+            (FROM_X, "GHI"),
+            (TO_X, "ABC"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then(r#"the descriptions of leg 007 and leg 008 both contain "Trip T42""#)]
+async fn two_legs_share_the_trip(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 3);
+    let carrying = event_descriptions(&calendar)
+        .iter()
+        .filter(|description| description.contains("Trip T42"))
+        .count();
+    assert_eq!(
+        carrying, 2,
+        "expected exactly the two T42 legs to carry the trip: {calendar}"
+    );
+}
+
+#[then(r#"the description of the leg in trip T43 does not contain "Trip T42""#)]
+async fn a_later_trip_does_not_inherit(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    let descriptions = event_descriptions(&calendar);
+    assert!(
+        descriptions.iter().any(|d| d.contains("Trip T43"))
+            && !descriptions
+                .iter()
+                .filter(|d| d.contains("Trip T43"))
+                .any(|d| d.contains("Trip T42")),
+        "the later trip inherited the earlier identifier: {calendar}"
     );
 }

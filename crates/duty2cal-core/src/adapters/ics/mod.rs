@@ -45,6 +45,15 @@ fn render_entry(
     if let Some(location) = entry.location() {
         line(out, "LOCATION", &location);
     }
+    let fields = entry.description_fields();
+    if !fields.is_empty() {
+        let description = fields
+            .iter()
+            .map(|(name, value)| format!("{name} {value}"))
+            .collect::<Vec<_>>()
+            .join(" | ");
+        line(out, "DESCRIPTION", &description);
+    }
     match entry.interval() {
         Some(interval) => {
             line(out, "DTSTART", &format_utc(interval.start()));

@@ -176,7 +176,7 @@ Feature: Export a duty-plan calendar
     Then no calendar is published
     And the converter reports a conversion failure naming the source
 
-  @givn.added @wip
+  @givn.added
   Scenario: A known trip identifier is carried across the legs of one roster trip
     Given a supported duty plan whose roster trip T42 has legs 007 and 008 where only leg 007 prints the Trip ID, followed by roster trip T43
     When the crew member converts it

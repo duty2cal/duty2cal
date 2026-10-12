@@ -89,7 +89,11 @@ struct Row {
     start: String,
     end: String,
     position: Position,
+    /// The identifier printed on this row, when it prints one.
     trip: Option<String>,
+    /// The identifier of the roster trip this row belongs to, carried from an
+    /// earlier leg when this row prints none.
+    carried_trip: Option<String>,
     report_lt: Option<String>,
     aircraft: Option<String>,
     blocktime: Option<String>,
@@ -143,9 +147,13 @@ fn interpret(table: &RawRosterTable, snapshot: SnapshotId) -> Result<Roster, Con
                     return Err(unmatched_fragment(&arrival.code));
                 };
                 let departure = pending.remove(position);
+                let trip = rows[departure]
+                    .trip
+                    .clone()
+                    .or_else(|| rows[departure].carried_trip.clone());
                 entries.push((
                     rows[departure].index,
-                    merge_travel(&rows[departure], arrival)?,
+                    merge_travel(&rows[departure], arrival, trip)?,
                 ));
             }
         }
@@ -172,6 +180,7 @@ fn unmatched_fragment(designator: &str) -> ConvertError {
 /// Build one `Row` per detail row that carries reachable activity data.
 fn collect_rows(table: &RawRosterTable) -> Result<Vec<Row>, ConvertError> {
     let mut rows = Vec::new();
+    let mut carried_trip: Option<String> = None;
     for (index, cells) in table.rows.iter().enumerate() {
         let code = value(table, cells, "Activity");
         let from = value(table, cells, "From");
@@ -183,6 +192,10 @@ fn collect_rows(table: &RawRosterTable) -> Result<Vec<Row>, ConvertError> {
         let date = parse_date(&date_cell).ok_or_else(|| {
             ConvertError::UnresolvedRequiredActivity(format!("unresolved date: {date_cell:?}"))
         })?;
+        let own_trip = optional(table, cells, "Trip");
+        if let Some(trip) = &own_trip {
+            carried_trip = Some(trip.clone());
+        }
         rows.push(Row {
             index,
             date,
@@ -196,7 +209,8 @@ fn collect_rows(table: &RawRosterTable) -> Result<Vec<Row>, ConvertError> {
             } else {
                 Position::Operating
             },
-            trip: optional(table, cells, "Trip"),
+            trip: own_trip,
+            carried_trip: carried_trip.clone(),
             report_lt: optional(table, cells, "Report"),
             aircraft: optional(table, cells, "A/C"),
             blocktime: optional(table, cells, "Blocktime"),
@@ -264,7 +278,7 @@ fn classify(table: &RawRosterTable, row: &Row) -> Result<Classified, ConvertErro
             to: row.to.clone(),
             position: row.position,
             interval: row_interval(row)?,
-            trip: row.trip.clone(),
+            trip: row.trip.clone().or_else(|| row.carried_trip.clone()),
             report_lt: row.report_lt.clone(),
             aircraft: row.aircraft.clone(),
             blocktime: row.blocktime.clone(),
@@ -294,7 +308,11 @@ fn station(row: &Row) -> Option<String> {
 }
 
 /// Merge a departure and an arrival fragment into one travel leg.
-fn merge_travel(departure: &Row, arrival: &Row) -> Result<DutyEntry, ConvertError> {
+fn merge_travel(
+    departure: &Row,
+    arrival: &Row,
+    trip: Option<String>,
+) -> Result<DutyEntry, ConvertError> {
     let start = resolve(departure.date, &departure.start)?;
     let end = resolve(arrival.date, &arrival.end)?;
     Ok(DutyEntry::Travel {
@@ -304,7 +322,7 @@ fn merge_travel(departure: &Row, arrival: &Row) -> Result<DutyEntry, ConvertErro
         to: arrival.to.clone(),
         position: departure.position,
         interval: UtcInterval::new(start, end).map_err(|_| ConvertError::NonPositiveInterval)?,
-        trip: departure.trip.clone(),
+        trip,
         report_lt: departure.report_lt.clone(),
         aircraft: departure.aircraft.clone(),
         blocktime: departure.blocktime.clone(),

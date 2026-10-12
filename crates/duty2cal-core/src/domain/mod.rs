@@ -171,6 +171,19 @@ impl DutyEntry {
         }
     }
 
+    /// Selected description fields, in the approved order, omitting any the
+    /// source did not supply.
+    pub fn description_fields(&self) -> Vec<(String, String)> {
+        let mut fields = Vec::new();
+        if let Self::Travel {
+            trip: Some(trip), ..
+        } = self
+        {
+            fields.push(("Trip".to_string(), trip.clone()));
+        }
+        fields
+    }
+
     /// The calendar location, when the activity has one.
     pub fn location(&self) -> Option<String> {
         match self {
