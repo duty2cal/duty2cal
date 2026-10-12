@@ -1100,3 +1100,57 @@ async fn description_lists_approved_order(w: &mut DutyWorld) {
         previous = position;
     }
 }
+
+#[given("a compatible departure and arrival fragment of one travel leg supplying Report (LT) 07:30 and Report (LT) 08:00 respectively")]
+async fn differing_report_times(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "FB568"),
+            (FROM_X, "ABC"),
+            (START_X, "09:00"),
+            (support::REPORT_X, "07:30"),
+        ],
+    ));
+    items.extend(support::at(
+        570.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "FB568"),
+            (TO_X, "DEF"),
+            (END_X, "10:00"),
+            (support::REPORT_X, "08:00"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then(r#"the travel activity's description states "Report (LT) 07:30 (departure fragment)" and "Report (LT) 08:00 (arrival fragment)""#)]
+async fn both_fragment_values_retained(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    let description = event_descriptions(&calendar)
+        .first()
+        .cloned()
+        .unwrap_or_default();
+    for expected in [
+        "Report (LT) 07:30 (departure fragment)",
+        "Report (LT) 08:00 (arrival fragment)",
+    ] {
+        assert!(
+            description.contains(expected),
+            "expected {expected:?} in the description: {description}"
+        );
+    }
+}
+
+#[then("neither printed value changes the activity's UTC interval")]
+async fn printed_values_do_not_move_the_interval(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    assert!(
+        calendar.contains("DTSTART:20990607T090000Z")
+            && calendar.contains("DTEND:20990607T100000Z"),
+        "the printed report times changed the interval: {calendar}"
+    );
+}

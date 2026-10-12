@@ -50,6 +50,36 @@ fn push_field(fields: &mut Vec<(String, String)>, label: &str, value: &Option<St
     }
 }
 
+/// Append a selected optional value, retaining both fragments when they differ.
+fn push_value(fields: &mut Vec<(String, String)>, label: &str, value: &Option<FieldValue>) {
+    match value {
+        None => {}
+        Some(FieldValue::Single(value)) => fields.push((label.to_string(), value.clone())),
+        Some(FieldValue::Differing { departure, arrival }) => {
+            fields.push((
+                label.to_string(),
+                format!("{departure} (departure fragment)"),
+            ));
+            fields.push((label.to_string(), format!("{arrival} (arrival fragment)")));
+        }
+    }
+}
+
+/// A selected optional description value.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FieldValue {
+    /// Supplied by one fragment, or supplied equally by both.
+    Single(String),
+    /// Supplied differently by the two fragments; both are retained, each with
+    /// the fragment that supplied it.
+    Differing {
+        /// The value printed on the departure fragment.
+        departure: String,
+        /// The value printed on the arrival fragment.
+        arrival: String,
+    },
+}
+
 /// The crew assignment on a travel leg.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Position {
@@ -60,6 +90,10 @@ pub enum Position {
 }
 
 /// One represented calendar activity.
+///
+/// The travel variant is the largest by design: it carries the descriptive
+/// fields of a leg. Boxing it would only add an indirection per entry.
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DutyEntry {
     /// Code-driven all-day activity: FREE, OFF, U (vacation) or FZ.
@@ -88,17 +122,17 @@ pub enum DutyEntry {
         /// Roster trip context, when known.
         trip: Option<String>,
         /// Report time (local), descriptive only.
-        report_lt: Option<String>,
+        report_lt: Option<FieldValue>,
         /// Aircraft, when supplied.
-        aircraft: Option<String>,
+        aircraft: Option<FieldValue>,
         /// Accounting block time, descriptive only.
-        blocktime: Option<String>,
+        blocktime: Option<FieldValue>,
         /// Timezone difference, descriptive only.
-        tz_diff: Option<String>,
+        tz_diff: Option<FieldValue>,
         /// Layover duration, descriptive only.
-        layover: Option<String>,
+        layover: Option<FieldValue>,
         /// Tags, when supplied.
-        tags: Option<String>,
+        tags: Option<FieldValue>,
     },
     /// Timed availability window: SB, RE or SBX.
     Availability {
@@ -194,12 +228,12 @@ impl DutyEntry {
         } = self
         {
             push_field(&mut fields, "Trip", trip);
-            push_field(&mut fields, "Report (LT)", report_lt);
-            push_field(&mut fields, "A/C", aircraft);
-            push_field(&mut fields, "Blocktime", blocktime);
-            push_field(&mut fields, "Timezone Difference", tz_diff);
-            push_field(&mut fields, "Layover duration", layover);
-            push_field(&mut fields, "Tags", tags);
+            push_value(&mut fields, "Report (LT)", report_lt);
+            push_value(&mut fields, "A/C", aircraft);
+            push_value(&mut fields, "Blocktime", blocktime);
+            push_value(&mut fields, "Timezone Difference", tz_diff);
+            push_value(&mut fields, "Layover duration", layover);
+            push_value(&mut fields, "Tags", tags);
         }
         fields
     }

@@ -7,7 +7,7 @@
 use time::{Date, Duration, Month, OffsetDateTime};
 
 use crate::domain::timing;
-use crate::domain::{DutyEntry, Position, Roster, SnapshotId, UtcInterval};
+use crate::domain::{DutyEntry, FieldValue, Position, Roster, SnapshotId, UtcInterval};
 
 /// Raw, position-based content of a supplied document — the anti-corruption
 /// intermediate between the PDF adapter and interpretation.
@@ -279,12 +279,12 @@ fn classify(table: &RawRosterTable, row: &Row) -> Result<Classified, ConvertErro
             position: row.position,
             interval: row_interval(row)?,
             trip: row.trip.clone().or_else(|| row.carried_trip.clone()),
-            report_lt: row.report_lt.clone(),
-            aircraft: row.aircraft.clone(),
-            blocktime: row.blocktime.clone(),
-            tz_diff: row.tz_diff.clone(),
-            layover: row.layover.clone(),
-            tags: row.tags.clone(),
+            report_lt: single(row.report_lt.clone()),
+            aircraft: single(row.aircraft.clone()),
+            blocktime: single(row.blocktime.clone()),
+            tz_diff: single(row.tz_diff.clone()),
+            layover: single(row.layover.clone()),
+            tags: single(row.tags.clone()),
         }));
     }
     if !row.from.is_empty() && !row.start.is_empty() && row.to.is_empty() && row.end.is_empty() {
@@ -301,6 +301,26 @@ fn classify(table: &RawRosterTable, row: &Row) -> Result<Classified, ConvertErro
             row.code.clone()
         },
     ))
+}
+
+/// A value supplied by one fragment.
+fn single(value: Option<String>) -> Option<FieldValue> {
+    value.map(FieldValue::Single)
+}
+
+/// Combine the two fragments' values for one selected optional field.
+///
+/// A value supplied by one fragment, or supplied equally by both, stays a
+/// single value; two different values are both retained.
+fn combine(departure: Option<String>, arrival: Option<String>) -> Option<FieldValue> {
+    match (departure, arrival) {
+        (None, None) => None,
+        (Some(value), None) | (None, Some(value)) => Some(FieldValue::Single(value)),
+        (Some(departure), Some(arrival)) if departure == arrival => {
+            Some(FieldValue::Single(departure))
+        }
+        (Some(departure), Some(arrival)) => Some(FieldValue::Differing { departure, arrival }),
+    }
 }
 
 fn station(row: &Row) -> Option<String> {
@@ -323,27 +343,12 @@ fn merge_travel(
         position: departure.position,
         interval: UtcInterval::new(start, end).map_err(|_| ConvertError::NonPositiveInterval)?,
         trip,
-        report_lt: departure
-            .report_lt
-            .clone()
-            .or_else(|| arrival.report_lt.clone()),
-        aircraft: departure
-            .aircraft
-            .clone()
-            .or_else(|| arrival.aircraft.clone()),
-        blocktime: departure
-            .blocktime
-            .clone()
-            .or_else(|| arrival.blocktime.clone()),
-        tz_diff: departure
-            .tz_diff
-            .clone()
-            .or_else(|| arrival.tz_diff.clone()),
-        layover: departure
-            .layover
-            .clone()
-            .or_else(|| arrival.layover.clone()),
-        tags: departure.tags.clone().or_else(|| arrival.tags.clone()),
+        report_lt: combine(departure.report_lt.clone(), arrival.report_lt.clone()),
+        aircraft: combine(departure.aircraft.clone(), arrival.aircraft.clone()),
+        blocktime: combine(departure.blocktime.clone(), arrival.blocktime.clone()),
+        tz_diff: combine(departure.tz_diff.clone(), arrival.tz_diff.clone()),
+        layover: combine(departure.layover.clone(), arrival.layover.clone()),
+        tags: combine(departure.tags.clone(), arrival.tags.clone()),
     })
 }
 

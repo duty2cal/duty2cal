@@ -211,7 +211,7 @@ Feature: Export a duty-plan calendar
     When the crew member converts it
     Then the travel activity's description lists them in the order Trip ID, Report (LT), A/C, Blocktime, Timezone Difference, Layover duration, Tags
 
-  @givn.added @wip
+  @givn.added
   Scenario: Differing optional values are both retained with their fragment roles
     Given a compatible departure and arrival fragment of one travel leg supplying Report (LT) 07:30 and Report (LT) 08:00 respectively
     When the crew member converts it
