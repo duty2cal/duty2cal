@@ -289,7 +289,7 @@ Feature: Export a duty-plan calendar
     Then the original failure remains visible
     And the converter does not present an older report as current
 
-  @givn.added @wip
+  @givn.added
   Scenario: An occupied diagnostic name yields a new unused numbered report
     Given a conversion failure beside existing reports roster.parse-error.txt and roster.parse-error-1.txt
     When the crew member converts it

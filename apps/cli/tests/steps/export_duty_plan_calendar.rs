@@ -1721,3 +1721,44 @@ async fn older_report_not_current(w: &mut DutyWorld) {
         .expect("the older report disappeared");
     assert_eq!(older, OLDER_REPORT, "the older report was modified");
 }
+
+#[given("a conversion failure beside existing reports roster.parse-error.txt and roster.parse-error-1.txt")]
+async fn a_failure_beside_two_reports(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "ZZ999"),
+            (FROM_X, "ABC"),
+        ],
+    );
+    let dir = w.working_dir();
+    std::fs::write(dir.join("roster.parse-error.txt"), OLDER_REPORT)
+        .expect("write the first report");
+    std::fs::write(dir.join("roster.parse-error-1.txt"), OLDER_REPORT)
+        .expect("write the second report");
+}
+
+#[then("the new diagnostic is written as roster.parse-error-2.txt")]
+async fn new_diagnostic_is_the_third_name(w: &mut DutyWorld) {
+    let path = w.working_dir().join("roster.parse-error-2.txt");
+    let report = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no diagnostic at {}: {error}", path.display()));
+    assert!(
+        report.contains("Source PDF:") && report.contains("roster.pdf"),
+        "the diagnostic does not identify the source: {report}"
+    );
+    assert!(
+        report.contains("Reason:") && report.contains("ZZ999"),
+        "the diagnostic does not state the current reason: {report}"
+    );
+}
+
+#[then("roster.parse-error.txt and roster.parse-error-1.txt are unchanged")]
+async fn both_older_reports_unchanged(w: &mut DutyWorld) {
+    for name in ["roster.parse-error.txt", "roster.parse-error-1.txt"] {
+        let content = std::fs::read_to_string(w.working_dir().join(name))
+            .unwrap_or_else(|error| panic!("{name} disappeared: {error}"));
+        assert_eq!(content, OLDER_REPORT, "{name} was modified");
+    }
+}
