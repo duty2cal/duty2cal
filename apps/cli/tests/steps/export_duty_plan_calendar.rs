@@ -1010,3 +1010,40 @@ async fn description_omits(w: &mut DutyWorld, omitted: String) {
         }
     }
 }
+
+#[given("a compatible departure and arrival fragment of one travel leg where the departure fragment supplies A/C ABC and the arrival fragment supplies Blocktime 02:00")]
+async fn complementary_fragments(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "FB568"),
+            (FROM_X, "ABC"),
+            (START_X, "09:00"),
+            (AIRCRAFT_X, "ABC"),
+        ],
+    ));
+    items.extend(support::at(
+        570.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "FB568"),
+            (TO_X, "DEF"),
+            (END_X, "10:00"),
+            (BLOCKTIME_X, "02:00"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then("the travel activity's description contains A/C ABC and Blocktime 02:00")]
+async fn complementary_values_present(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    let descriptions = event_descriptions(&calendar);
+    let description = descriptions.first().cloned().unwrap_or_default();
+    assert!(
+        description.contains("A/C ABC") && description.contains("Blocktime 02:00"),
+        "the complementary values did not combine into one description: {description}"
+    );
+}

@@ -323,12 +323,27 @@ fn merge_travel(
         position: departure.position,
         interval: UtcInterval::new(start, end).map_err(|_| ConvertError::NonPositiveInterval)?,
         trip,
-        report_lt: departure.report_lt.clone(),
-        aircraft: departure.aircraft.clone(),
-        blocktime: departure.blocktime.clone(),
-        tz_diff: departure.tz_diff.clone(),
-        layover: departure.layover.clone(),
-        tags: departure.tags.clone(),
+        report_lt: departure
+            .report_lt
+            .clone()
+            .or_else(|| arrival.report_lt.clone()),
+        aircraft: departure
+            .aircraft
+            .clone()
+            .or_else(|| arrival.aircraft.clone()),
+        blocktime: departure
+            .blocktime
+            .clone()
+            .or_else(|| arrival.blocktime.clone()),
+        tz_diff: departure
+            .tz_diff
+            .clone()
+            .or_else(|| arrival.tz_diff.clone()),
+        layover: departure
+            .layover
+            .clone()
+            .or_else(|| arrival.layover.clone()),
+        tags: departure.tags.clone().or_else(|| arrival.tags.clone()),
     })
 }
 

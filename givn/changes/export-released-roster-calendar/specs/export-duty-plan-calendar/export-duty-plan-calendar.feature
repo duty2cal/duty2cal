@@ -199,7 +199,7 @@ Feature: Export a duty-plan calendar
       | Layover duration    |
       | Tags                |
 
-  @givn.added @wip
+  @givn.added
   Scenario: Complementary optional values from compatible fragments combine
     Given a compatible departure and arrival fragment of one travel leg where the departure fragment supplies A/C ABC and the arrival fragment supplies Blocktime 02:00
     When the crew member converts it
