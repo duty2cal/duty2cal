@@ -1550,3 +1550,57 @@ async fn existing_calendars_unchanged(w: &mut DutyWorld) {
         );
     }
 }
+
+/// Contents of a diagnostic that must survive a later failure.
+const EXISTING_DIAGNOSTIC: &str = "Source PDF: earlier.pdf\nReason: an earlier failure\n";
+
+#[given("a supported duty plan with an unresolvable required activity and an existing roster.parse-error.txt beside it")]
+async fn a_plan_with_a_failure_and_an_older_diagnostic(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "ZZ999"),
+            (FROM_X, "ABC"),
+        ],
+    );
+    std::fs::write(
+        w.working_dir().join("roster.parse-error.txt"),
+        EXISTING_DIAGNOSTIC,
+    )
+    .expect("write the earlier diagnostic");
+}
+
+#[then("the converter reports the failure")]
+async fn converter_reports_the_failure(w: &mut DutyWorld) {
+    let text = transcript(w);
+    assert!(
+        text.contains("conversion failed"),
+        "no conversion failure was reported: {text}"
+    );
+}
+
+#[then("roster.parse-error-1.txt names the source PDF and the reason")]
+async fn numbered_diagnostic_names_source_and_reason(w: &mut DutyWorld) {
+    let path = w.working_dir().join("roster.parse-error-1.txt");
+    let report = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no numbered diagnostic at {}: {error}", path.display()));
+    assert!(
+        report.contains("Source PDF:") && report.contains("roster.pdf"),
+        "the diagnostic does not identify the source: {report}"
+    );
+    assert!(
+        report.contains("Reason:") && report.contains("ZZ999"),
+        "the diagnostic does not state the current reason: {report}"
+    );
+}
+
+#[then("roster.parse-error.txt is unchanged")]
+async fn older_diagnostic_unchanged(w: &mut DutyWorld) {
+    let content = std::fs::read_to_string(w.working_dir().join("roster.parse-error.txt"))
+        .expect("the earlier diagnostic disappeared");
+    assert_eq!(
+        content, EXISTING_DIAGNOSTIC,
+        "the earlier diagnostic was overwritten"
+    );
+}

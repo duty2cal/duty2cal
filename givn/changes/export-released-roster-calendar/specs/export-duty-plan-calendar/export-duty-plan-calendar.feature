@@ -265,7 +265,7 @@ Feature: Export a duty-plan calendar
     Then a complete calendar is published as roster-2.ics
     And roster.ics and roster-1.ics are unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: An interpretation failure preserves an older diagnostic
     Given a supported duty plan with an unresolvable required activity and an existing roster.parse-error.txt beside it
     When the crew member converts it
