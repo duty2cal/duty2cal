@@ -482,6 +482,7 @@ dependencies = [
  "cucumber",
  "duty2cal-core",
  "duty2cal-pdf",
+ "time",
  "tokio",
 ]
 

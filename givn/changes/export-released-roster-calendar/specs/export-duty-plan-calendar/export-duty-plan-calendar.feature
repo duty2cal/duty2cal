@@ -37,7 +37,7 @@ Feature: Export a duty-plan calendar
     When the crew member converts it
     Then the published calendar contains no absence or layover for that date
 
-  @givn.added @wip
+  @givn.added
   Scenario: A mixed plan represents every required activity
     Given a supported duty plan with one timed travel leg, one all-day U row, and one timed SB row
     When the crew member converts it

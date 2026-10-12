@@ -8,6 +8,7 @@ license.workspace = true
 [dependencies]
 duty2cal-core = { path = "../../crates/duty2cal-core" }
 duty2cal-pdf = { path = "../../crates/duty2cal-pdf" }
+time = "0.3"
 
 [dev-dependencies]
 cucumber = "0.23"

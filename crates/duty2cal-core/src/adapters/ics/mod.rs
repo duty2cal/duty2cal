@@ -1,22 +1,93 @@
 // SPDX-License-Identifier: MPL-2.0
 //! RFC 5545 serializer — the `CalendarSink` implementation used by every facade.
 
-use crate::domain::Roster;
+use time::{Date, OffsetDateTime};
 
-/// Render a roster as a complete RFC 5545 calendar.
-///
-/// Byte-level contract: CRLF line endings, escaping, and octet-aware folding are
-/// added with the timed/all-day scenarios; the empty roster already produces a
-/// valid VCALENDAR.
-pub fn render(roster: &Roster) -> String {
+use crate::application::CalendarSink;
+use crate::domain::{DutyEntry, Roster};
+
+/// Writes rosters as RFC 5545 calendar text.
+#[derive(Debug, Default)]
+pub struct IcsSink;
+
+impl CalendarSink for IcsSink {
+    fn write(&self, roster: &Roster, revision: OffsetDateTime) -> String {
+        render(roster, revision)
+    }
+}
+
+/// Serialize a roster as a complete RFC 5545 calendar.
+pub fn render(roster: &Roster, revision: OffsetDateTime) -> String {
     let mut calendar = String::new();
     calendar.push_str("BEGIN:VCALENDAR\r\n");
     calendar.push_str("VERSION:2.0\r\n");
     calendar.push_str("PRODID:-//kressnerd//duty2cal//EN\r\n");
     calendar.push_str("CALSCALE:GREGORIAN\r\n");
-    for _activity in &roster.activities {
-        // Event serialization arrives with the timed/all-day scenarios.
+    for (index, entry) in roster.entries.iter().enumerate() {
+        render_entry(&mut calendar, entry, roster.snapshot.0, index, revision);
     }
     calendar.push_str("END:VCALENDAR\r\n");
     calendar
+}
+
+fn render_entry(
+    out: &mut String,
+    entry: &DutyEntry,
+    snapshot: u64,
+    index: usize,
+    revision: OffsetDateTime,
+) {
+    out.push_str("BEGIN:VEVENT\r\n");
+    let uid = format!("{snapshot:016x}-{index}@duty2cal");
+    line(out, "UID", &uid);
+    line(out, "DTSTAMP", &format_utc(revision));
+    line(out, "SUMMARY", &entry.summary());
+    if let Some(location) = entry.location() {
+        line(out, "LOCATION", &location);
+    }
+    match entry.interval() {
+        Some(interval) => {
+            line(out, "DTSTART", &format_utc(interval.start()));
+            line(out, "DTEND", &format_utc(interval.end()));
+        }
+        None => {
+            let date = entry.date();
+            line(out, "DTSTART;VALUE=DATE", &format_date(date));
+            line(out, "DTEND;VALUE=DATE", &format_date(next_day(date)));
+        }
+    }
+    out.push_str("END:VEVENT\r\n");
+}
+
+fn line(out: &mut String, name: &str, value: &str) {
+    out.push_str(name);
+    out.push(':');
+    out.push_str(value);
+    out.push_str("\r\n");
+}
+
+/// `YYYYMMDD` for a date value.
+pub fn format_date(date: Date) -> String {
+    format!(
+        "{:04}{:02}{:02}",
+        date.year(),
+        u8::from(date.month()),
+        date.day()
+    )
+}
+
+/// `YYYYMMDDTHHMMSSZ` for a UTC instant.
+pub fn format_utc(instant: OffsetDateTime) -> String {
+    format!(
+        "{}T{:02}{:02}{:02}Z",
+        format_date(instant.date()),
+        instant.hour(),
+        instant.minute(),
+        instant.second()
+    )
+}
+
+/// The following day, used as the non-inclusive all-day end.
+fn next_day(date: Date) -> Date {
+    date.next_day().unwrap_or(date)
 }

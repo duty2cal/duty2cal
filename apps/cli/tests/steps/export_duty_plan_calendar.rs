@@ -10,7 +10,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use cucumber::{given, then, when};
 
-use crate::steps::support;
+use crate::steps::support::{self, ACTIVITY_X, DATE_X, END_X, FROM_X, START_X, TO_X};
 use crate::DutyWorld;
 
 /// Scenario sequence, so concurrently executed scenarios never share a directory.
@@ -26,8 +26,43 @@ fn fresh_dir() -> PathBuf {
     dir
 }
 
+/// Prepare a fixture PDF holding the given item rows.
+fn write_fixture(w: &mut DutyWorld, items: &[(f64, f64, String)]) {
+    let dir = fresh_dir();
+    let source = dir.join("roster.pdf");
+    std::fs::write(&source, support::build_pdf(items)).expect("write the source");
+    w.dir = Some(dir);
+    w.source = Some(source);
+}
+
 fn transcript(world: &DutyWorld) -> String {
     format!("{}{}", world.stdout, world.stderr)
+}
+
+/// The published calendar, or a panic carrying the converter transcript.
+fn calendar(w: &DutyWorld) -> String {
+    let path = w.working_dir().join("roster.ics");
+    std::fs::read_to_string(&path).unwrap_or_else(|error| {
+        let diagnostic = std::fs::read_to_string(w.working_dir().join("roster.parse-error.txt"))
+            .unwrap_or_else(|_| "<no diagnostic>".to_string());
+        panic!(
+            "no calendar at {}: {error}\nconverter transcript: {}\ndiagnostic: {diagnostic}",
+            path.display(),
+            transcript(w)
+        )
+    })
+}
+
+/// Assert the calendar carries no activity at all.
+fn assert_no_activity(calendar: &str, context: &str) {
+    assert!(
+        calendar.contains("BEGIN:VCALENDAR") && calendar.contains("END:VCALENDAR"),
+        "the published calendar is not a complete VCALENDAR: {calendar}"
+    );
+    assert!(
+        !calendar.contains("BEGIN:VEVENT"),
+        "{context} produced an activity: {calendar}"
+    );
 }
 
 #[given("a duty plan that is not a supported Released Roster detail-table export")]
@@ -100,95 +135,38 @@ async fn a_numbered_diagnostic_identifies_source_and_reason(w: &mut DutyWorld) {
 
 #[given("a supported duty plan whose overview calendar and statistics name activity codes that never appear in its dated detail rows")]
 async fn a_supported_plan_with_only_summary_codes(w: &mut DutyWorld) {
-    let dir = fresh_dir();
-    let source = dir.join("roster.pdf");
-
-    let mut items: Vec<(f64, f64, &str)> = vec![
-        (40.0, 800.0, "Overview"),
-        (40.0, 785.0, "FREE SB OFF"),
-        (40.0, 770.0, "Statistics SB 12:00 FREE 00:00"),
-    ];
+    let mut items = support::at(800.0, &[(DATE_X, "Overview"), (FROM_X, "FREE SB OFF")]);
+    items.extend(support::at(
+        770.0,
+        &[(DATE_X, "Statistics"), (FROM_X, "SB 12:00")],
+    ));
     items.extend(support::detail_header_row(600.0));
-
-    std::fs::write(&source, support::build_pdf(&items)).expect("write the source");
-    w.dir = Some(dir);
-    w.source = Some(source);
+    write_fixture(w, &items);
 }
 
 #[then("the published calendar contains no activity taken from the overview or statistics")]
 async fn no_activity_from_overview_or_statistics(w: &mut DutyWorld) {
-    let path = w.working_dir().join("roster.ics");
-    let calendar = std::fs::read_to_string(&path).unwrap_or_else(|error| {
-        let diagnostic = std::fs::read_to_string(w.working_dir().join("roster.parse-error.txt"))
-            .unwrap_or_else(|_| "<no diagnostic>".to_string());
-        panic!(
-            "no calendar at {}: {error}\nconverter transcript: {}\ndiagnostic: {diagnostic}",
-            path.display(),
-            transcript(w)
-        )
-    });
-
-    assert!(
-        calendar.contains("BEGIN:VCALENDAR") && calendar.contains("END:VCALENDAR"),
-        "the published calendar is not a complete VCALENDAR: {calendar}"
-    );
-    assert!(
-        !calendar.contains("BEGIN:VEVENT"),
-        "an activity reached the calendar: {calendar}"
-    );
-    for code in ["FREE", "SB", "OFF"] {
-        assert!(
-            !calendar.contains(code),
-            "the {code} code from the overview/statistics reached the calendar: {calendar}"
-        );
-    }
+    assert_no_activity(&calendar(w), "the overview/statistics material");
 }
 
 #[given("a supported duty plan whose footer names activity codes that never appear in its dated detail rows")]
 async fn a_supported_plan_with_a_footer(w: &mut DutyWorld) {
-    let dir = fresh_dir();
-    let source = dir.join("roster.pdf");
-
-    let mut items: Vec<(f64, f64, &str)> = vec![
-        (40.0, 800.0, "Overview"),
-        (40.0, 785.0, "FREE SB OFF"),
-        (40.0, 770.0, "Statistics SB 12:00 FREE 00:00"),
-    ];
+    let mut items = support::at(800.0, &[(DATE_X, "Overview"), (FROM_X, "FREE SB OFF")]);
     items.extend(support::detail_header_row(600.0));
     // One dated detail row that carries no activity code.
-    items.push((40.0, 585.0, "12 Jan"));
-    // Footer material below the table, naming codes inside the activity column:
-    // these must never become activities.
-    items.push((40.0, 520.0, "Footer"));
-    items.push((330.0, 520.0, "SB"));
-    items.push((400.0, 520.0, "OFF"));
-
-    std::fs::write(&source, support::build_pdf(&items)).expect("write the source");
-    w.dir = Some(dir);
-    w.source = Some(source);
+    items.extend(support::at(585.0, &[(DATE_X, "2099-06-12")]));
+    // Footer material below the table, naming codes inside the activity column.
+    items.extend(support::at(
+        520.0,
+        &[(DATE_X, "Footer"), (ACTIVITY_X, "SB"), (FROM_X, "OFF")],
+    ));
+    write_fixture(w, &items);
 }
 
 #[then("the published calendar contains no activity taken from the footer")]
 async fn no_activity_from_footer(w: &mut DutyWorld) {
-    let path = w.working_dir().join("roster.ics");
-    let calendar = std::fs::read_to_string(&path).unwrap_or_else(|error| {
-        let diagnostic = std::fs::read_to_string(w.working_dir().join("roster.parse-error.txt"))
-            .unwrap_or_else(|_| "<no diagnostic>".to_string());
-        panic!(
-            "no calendar at {}: {error}\nconverter transcript: {}\ndiagnostic: {diagnostic}",
-            path.display(),
-            transcript(w)
-        )
-    });
-
-    assert!(
-        calendar.contains("BEGIN:VCALENDAR") && calendar.contains("END:VCALENDAR"),
-        "the published calendar is not a complete VCALENDAR: {calendar}"
-    );
-    assert!(
-        !calendar.contains("BEGIN:VEVENT"),
-        "an activity reached the calendar: {calendar}"
-    );
+    let calendar = calendar(w);
+    assert_no_activity(&calendar, "the footer material");
     for code in ["SB", "OFF", "FREE"] {
         assert!(
             !calendar.contains(code),
@@ -199,43 +177,80 @@ async fn no_activity_from_footer(w: &mut DutyWorld) {
 
 #[given("a supported duty plan with a detail row that carries only a date and no activity code")]
 async fn a_plan_with_a_date_only_row(w: &mut DutyWorld) {
-    let dir = fresh_dir();
-    let source = dir.join("roster.pdf");
-
-    let mut items: Vec<(f64, f64, &str)> = support::detail_header_row(600.0);
-    // A dated detail row whose activity cell is empty.
-    items.push((40.0, 585.0, "12 Jan"));
-
-    std::fs::write(&source, support::build_pdf(&items)).expect("write the source");
-    w.dir = Some(dir);
-    w.source = Some(source);
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(585.0, &[(DATE_X, "2099-06-12")]));
+    write_fixture(w, &items);
 }
 
 #[then("the published calendar contains no absence or layover for that date")]
 async fn no_absence_or_layover_for_that_date(w: &mut DutyWorld) {
-    let path = w.working_dir().join("roster.ics");
-    let calendar = std::fs::read_to_string(&path).unwrap_or_else(|error| {
-        let diagnostic = std::fs::read_to_string(w.working_dir().join("roster.parse-error.txt"))
-            .unwrap_or_else(|_| "<no diagnostic>".to_string());
-        panic!(
-            "no calendar at {}: {error}\nconverter transcript: {}\ndiagnostic: {diagnostic}",
-            path.display(),
-            transcript(w)
-        )
-    });
-
-    assert!(
-        calendar.contains("BEGIN:VCALENDAR") && calendar.contains("END:VCALENDAR"),
-        "the published calendar is not a complete VCALENDAR: {calendar}"
-    );
-    assert!(
-        !calendar.contains("BEGIN:VEVENT"),
-        "the date-only row produced an activity: {calendar}"
-    );
+    let calendar = calendar(w);
+    assert_no_activity(&calendar, "the date-only row");
     for invented in ["Layover", "FREE", "OFF", "FZ"] {
         assert!(
             !calendar.contains(invented),
             "the date-only row was turned into {invented}: {calendar}"
         );
     }
+}
+
+#[given("a supported duty plan with one timed travel leg, one all-day U row, and one timed SB row")]
+async fn a_mixed_plan(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    // Timed travel leg.
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "FB568"),
+            (FROM_X, "FRA"),
+            (TO_X, "LOS"),
+            (START_X, "09:25"),
+            (END_X, "15:45"),
+        ],
+    ));
+    // All-day vacation day.
+    items.extend(support::at(
+        570.0,
+        &[(DATE_X, "2099-06-12"), (ACTIVITY_X, "U")],
+    ));
+    // Timed availability window.
+    items.extend(support::at(
+        555.0,
+        &[
+            (DATE_X, "2099-06-13"),
+            (ACTIVITY_X, "SB"),
+            (START_X, "08:00"),
+            (END_X, "16:00"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then("the calendar contains exactly three activities: one timed travel activity, one all-day U activity, and one timed SB activity")]
+async fn three_activities_of_the_right_kinds(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    assert_eq!(
+        calendar.matches("BEGIN:VEVENT").count(),
+        3,
+        "expected three activities: {calendar}"
+    );
+    assert!(
+        calendar.contains("SUMMARY:FB568 FRA-LOS")
+            && calendar.contains("DTSTART:20990607T092500Z")
+            && calendar.contains("DTEND:20990607T154500Z"),
+        "the timed travel activity is missing or wrong: {calendar}"
+    );
+    assert!(
+        calendar.contains("SUMMARY:U")
+            && calendar.contains("DTSTART;VALUE=DATE:20990612")
+            && calendar.contains("DTEND;VALUE=DATE:20990613"),
+        "the all-day U activity is missing or wrong: {calendar}"
+    );
+    assert!(
+        calendar.contains("SUMMARY:SB")
+            && calendar.contains("DTSTART:20990613T080000Z")
+            && calendar.contains("DTEND:20990613T160000Z"),
+        "the timed SB activity is missing or wrong: {calendar}"
+    );
 }

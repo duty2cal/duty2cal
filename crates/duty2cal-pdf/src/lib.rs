@@ -14,7 +14,7 @@ use pdfplumber::{Pdf, Word, WordOptions};
 /// Vertical tolerance in points for clustering words into one row.
 const ROW_TOLERANCE: f64 = 4.0;
 /// Maximum horizontal gap in points for merging header words into one label.
-const LABEL_GAP: f64 = 6.0;
+const LABEL_GAP: f64 = 12.0;
 /// Vertical gap in points larger than the row pitch that ends the detail table.
 const TABLE_GAP: f64 = 20.0;
 
@@ -105,12 +105,15 @@ fn cluster_rows(words: &[Word], tolerance: f64) -> Vec<Vec<&Word>> {
 /// If this row is the detail-table header, return its column bands.
 ///
 /// The supported family's header is recognised by the local-date, local-report
-/// and UTC-time labels; adjacent words are merged so wrapped headings such as
-/// `Report (LT)` stay one column.
+/// and UTC-time labels; word extraction merges adjacent label words, so
+/// recognition works on the row's joined text.
 fn header_areas(row: &[&Word]) -> Option<Vec<Area>> {
-    let labels: Vec<&str> = row.iter().map(|word| word.text.as_str()).collect();
-    let recognised =
-        labels.contains(&"Date") && labels.contains(&"(LT)") && labels.contains(&"(UTC)");
+    let joined = row
+        .iter()
+        .map(|word| word.text.as_str())
+        .collect::<Vec<_>>()
+        .join(" ");
+    let recognised = joined.contains("Date") && joined.contains("(LT)") && joined.contains("(UTC)");
     if !recognised {
         return None;
     }

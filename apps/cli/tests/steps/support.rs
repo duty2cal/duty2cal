@@ -1,8 +1,20 @@
 // SPDX-License-Identifier: MPL-2.0
-//! Test support: build a minimal, uncompressed PDF from positioned text items.
+//! Test support: build a minimal, uncompressed PDF from positioned text items,
+//! and place them at the column positions of the supported detail table.
 //!
-//! Used to generate fictional duty-plan fixtures at test time, so no real plan
-//! or committed binary fixture is needed (see the change's fixture decision).
+//! Fixtures are generated at test time, so no real plan or committed binary
+//! fixture is needed (see the change's fixture decision).
+
+/// Column x positions of the supported detail table.
+pub const DATE_X: f64 = 40.0;
+pub const TRIP_X: f64 = 100.0;
+pub const REPORT_X: f64 = 150.0;
+pub const POS_X: f64 = 210.0;
+pub const ACTIVITY_X: f64 = 250.0;
+pub const FROM_X: f64 = 320.0;
+pub const TO_X: f64 = 360.0;
+pub const START_X: f64 = 400.0;
+pub const END_X: f64 = 480.0;
 
 /// Escape a string for a PDF literal string.
 fn escape(text: &str) -> String {
@@ -14,7 +26,7 @@ fn escape(text: &str) -> String {
 /// Build a one-page PDF placing each `(x, y, text)` item with Helvetica 9pt.
 ///
 /// Coordinates are in page space (origin bottom-left); the page is A4-sized.
-pub fn build_pdf(items: &[(f64, f64, &str)]) -> Vec<u8> {
+pub fn build_pdf(items: &[(f64, f64, String)]) -> Vec<u8> {
     let mut content = String::from("BT\n/F1 9 Tf\n");
     for (x, y, text) in items {
         content.push_str(&format!("1 0 0 1 {x} {y} Tm ({}) Tj\n", escape(text)));
@@ -55,23 +67,37 @@ pub fn build_pdf(items: &[(f64, f64, &str)]) -> Vec<u8> {
     pdf.into_bytes()
 }
 
-/// The detail-table header of the supported family, as positioned text items.
+/// Place `(x, text)` values on one row at height `y`.
+pub fn at(y: f64, values: &[(f64, &str)]) -> Vec<(f64, f64, String)> {
+    values
+        .iter()
+        .map(|(x, text)| (*x, y, (*text).to_string()))
+        .collect()
+}
+
+/// The detail-table header row: local-date, local-report and UTC-time labels.
 ///
-/// The heading row carries the local-date, local-report and UTC-time column
-/// labels that family recognition looks for.
-pub fn detail_header_row(y: f64) -> Vec<(f64, f64, &'static str)> {
-    vec![
-        (40.0, y, "Date"),
-        (85.0, y, "(LT)"),
-        (150.0, y, "Trip"),
-        (210.0, y, "Report"),
-        (265.0, y, "(LT)"),
-        (320.0, y, "Activity"),
-        (400.0, y, "From"),
-        (450.0, y, "To"),
-        (505.0, y, "Start"),
-        (550.0, y, "(UTC)"),
-        (610.0, y, "End"),
-        (655.0, y, "(UTC)"),
-    ]
+/// Adjacent label words are placed within the merge tolerance so that wrapped
+/// headings such as `Date (LT)` and `Start (UTC)` form one column each.
+pub fn detail_header_row(y: f64) -> Vec<(f64, f64, String)> {
+    let mut items = Vec::new();
+    items.extend(at(
+        y,
+        &[
+            (DATE_X, "Date"),
+            (DATE_X + 20.0, "(LT)"),
+            (TRIP_X, "Trip"),
+            (REPORT_X, "Report"),
+            (REPORT_X + 30.0, "(LT)"),
+            (POS_X, "Pos"),
+            (ACTIVITY_X, "Activity"),
+            (FROM_X, "From"),
+            (TO_X, "To"),
+            (START_X, "Start"),
+            (START_X + 24.0, "(UTC)"),
+            (END_X, "End"),
+            (END_X + 16.0, "(UTC)"),
+        ],
+    ));
+    items
 }

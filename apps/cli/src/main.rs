@@ -8,8 +8,19 @@ mod log;
 use std::path::Path;
 use std::process::ExitCode;
 
-use duty2cal_core::application::ConvertRoster;
+use duty2cal_core::adapters::ics::IcsSink;
+use duty2cal_core::application::{Clock, ConvertRoster};
 use duty2cal_pdf::PdfRosterSource;
+use time::OffsetDateTime;
+
+/// The host clock, used for the revision timestamp fallback.
+struct SystemClock;
+
+impl Clock for SystemClock {
+    fn now_utc(&self) -> OffsetDateTime {
+        OffsetDateTime::now_utc()
+    }
+}
 
 fn main() -> ExitCode {
     let Some(argument) = std::env::args_os().nth(1) else {
@@ -23,7 +34,7 @@ fn main() -> ExitCode {
         Err(error) => return reject(&source, &format!("cannot read the source: {error}")),
     };
 
-    match ConvertRoster::new(PdfRosterSource).execute(&bytes) {
+    match ConvertRoster::new(PdfRosterSource, IcsSink, SystemClock).execute(&bytes) {
         Ok(outcome) => publish(&source, &outcome.calendar),
         Err(error) => reject(&source, &error.to_string()),
     }
