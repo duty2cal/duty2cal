@@ -622,19 +622,16 @@ Use-case constraint: Calendar representation: DTSTAMP prefers the source Created
 
 Use-case constraint: Calendar representation: DTSTAMP prefers the source Created footer, construction-time fallback.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — with no usable footer the `DTSTAMP` was the wall clock, not the controlled `20990111T080000Z`.
   ```
-  <RED output>
+  1 scenario (1 failed), 3 steps (2 passed, 1 failed)   RED_EXIT=101
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — production: the CLI clock honours `DUTY2CAL_CONSTRUCTION_CLOCK`, so the construction instant behind the revision-timestamp fallback is controllable; activity dates are unaffected.
   ```
-  <GREEN output>
+  1 scenario (1 passed), 4 steps (4 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: Without usable source metadata the construction time is the revision timestamp`; hash: `<hash>`
+- [x] REFACTOR — fmt/clippy clean; scenario 34 still green; suite 44 passed, 7 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Without usable source metadata the construction time is the revision timestamp`; hash: `77b6864`
 
 ### 36. An occupied calendar name yields a new unused numbered name
 
