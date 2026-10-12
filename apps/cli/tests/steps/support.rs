@@ -15,6 +15,11 @@ pub const FROM_X: f64 = 320.0;
 pub const TO_X: f64 = 360.0;
 pub const START_X: f64 = 400.0;
 pub const END_X: f64 = 480.0;
+pub const AIRCRAFT_X: f64 = 540.0;
+pub const BLOCKTIME_X: f64 = 600.0;
+pub const TZ_X: f64 = 660.0;
+pub const LAYOVER_X: f64 = 760.0;
+pub const TAGS_X: f64 = 820.0;
 
 /// Escape a string for a PDF literal string.
 fn escape(text: &str) -> String {
@@ -36,7 +41,7 @@ pub fn build_pdf(items: &[(f64, f64, String)]) -> Vec<u8> {
     let objects = [
         "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
         "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
-        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] \
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 1200 842] \
          /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>"
             .to_string(),
         format!(
@@ -97,6 +102,11 @@ pub fn detail_header_row(y: f64) -> Vec<(f64, f64, String)> {
             (START_X + 24.0, "(UTC)"),
             (END_X, "End"),
             (END_X + 16.0, "(UTC)"),
+            (AIRCRAFT_X, "A/C"),
+            (BLOCKTIME_X, "Blocktime"),
+            (TZ_X, "Timezone Difference"),
+            (LAYOVER_X, "Layover"),
+            (TAGS_X, "Tags"),
         ],
     ));
     items

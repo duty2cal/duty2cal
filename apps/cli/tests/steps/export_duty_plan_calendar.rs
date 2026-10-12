@@ -11,7 +11,10 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use cucumber::{given, then, when};
 
-use crate::steps::support::{self, ACTIVITY_X, DATE_X, END_X, FROM_X, START_X, TO_X};
+use crate::steps::support::{
+    self, ACTIVITY_X, AIRCRAFT_X, BLOCKTIME_X, DATE_X, END_X, FROM_X, LAYOVER_X, START_X, TAGS_X,
+    TO_X, TZ_X,
+};
 use crate::DutyWorld;
 
 /// Scenario sequence, so concurrently executed scenarios never share a directory.
@@ -930,4 +933,80 @@ async fn a_later_trip_does_not_inherit(w: &mut DutyWorld) {
                 .any(|d| d.contains("Trip T42")),
         "the later trip inherited the earlier identifier: {calendar}"
     );
+}
+
+/// The rendered label each optional description field uses, and a fixture value.
+fn optional_field(field: &str) -> (&'static str, f64, &'static str) {
+    match field {
+        "Report (LT)" => ("Report (LT)", support::REPORT_X, "08:10"),
+        "A/C" => ("A/C", AIRCRAFT_X, "320"),
+        "Blocktime" => ("Blocktime", BLOCKTIME_X, "03:00"),
+        "Timezone Difference" => ("Timezone Difference", TZ_X, "+01:00"),
+        "Layover duration" => ("Layover duration", LAYOVER_X, "51:30"),
+        "Tags" => ("Tags", TAGS_X, "5_MFL"),
+        _ => ("Trip", support::TRIP_X, "T42"),
+    }
+}
+
+#[given(regex = r"^a supported duty plan travel leg whose (.*) is not supplied$")]
+async fn a_travel_leg_missing_one_field(w: &mut DutyWorld, omitted: String) {
+    let fields = [
+        "Trip ID",
+        "Report (LT)",
+        "A/C",
+        "Blocktime",
+        "Timezone Difference",
+        "Layover duration",
+        "Tags",
+    ];
+    let mut values: Vec<(f64, String)> = vec![
+        (DATE_X, "2099-06-07".to_string()),
+        (ACTIVITY_X, "FB568".to_string()),
+        (FROM_X, "ABC".to_string()),
+        (TO_X, "DEF".to_string()),
+        (START_X, "09:00".to_string()),
+        (END_X, "10:00".to_string()),
+    ];
+    for field in fields {
+        if field == omitted {
+            continue;
+        }
+        let (_, x, value) = optional_field(field);
+        values.push((x, value.to_string()));
+    }
+    let refs: Vec<(f64, &str)> = values.iter().map(|(x, v)| (*x, v.as_str())).collect();
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(585.0, &refs));
+    write_fixture(w, &items);
+}
+
+#[then(regex = r"^the travel activity's description carries no (.*)$")]
+async fn description_omits(w: &mut DutyWorld, omitted: String) {
+    let calendar = calendar(w);
+    let descriptions = event_descriptions(&calendar);
+    let description = descriptions.first().cloned().unwrap_or_default();
+    let all = [
+        "Trip ID",
+        "Report (LT)",
+        "A/C",
+        "Blocktime",
+        "Timezone Difference",
+        "Layover duration",
+        "Tags",
+    ];
+    for field in all {
+        let (label, _, value) = optional_field(field);
+        let rendered = format!("{label} {value}");
+        if field == omitted {
+            assert!(
+                !description.contains(label),
+                "the unsupplied {field} appeared in the description: {description}"
+            );
+        } else {
+            assert!(
+                description.contains(&rendered),
+                "the supplied {field} is missing from the description: {description}"
+            );
+        }
+    }
 }

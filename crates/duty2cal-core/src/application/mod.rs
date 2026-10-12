@@ -354,14 +354,20 @@ fn resolve(local_date: Date, cell: &str) -> Result<OffsetDateTime, ConvertError>
 
 /// A column's index, matched by its derived header label.
 ///
-/// Word extraction merges adjacent label words without a space, so labels are
-/// compared with their punctuation and spacing removed.
+/// Word extraction merges adjacent label words without a space, so a label is
+/// matched when it equals the wanted name, continues it at a real boundary, or
+/// normalises to it. A bare normalised prefix would collide (`A/C` vs
+/// `Activity`).
 fn column(table: &RawRosterTable, label: &str) -> Option<usize> {
-    let wanted = normalise(label);
-    table
-        .columns
-        .iter()
-        .position(|column| normalise(column).starts_with(&wanted))
+    let wanted = label.to_ascii_lowercase();
+    let wanted_normalised = normalise(label);
+    table.columns.iter().position(|column| {
+        let lower = column.to_ascii_lowercase();
+        lower == wanted
+            || lower.starts_with(&format!("{wanted} "))
+            || lower.starts_with(&format!("{wanted}("))
+            || normalise(column) == wanted_normalised
+    })
 }
 
 /// Lowercase letters and digits only.

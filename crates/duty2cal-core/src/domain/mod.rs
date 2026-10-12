@@ -43,6 +43,13 @@ impl UtcInterval {
     }
 }
 
+/// Append a selected description field when the source supplied it.
+fn push_field(fields: &mut Vec<(String, String)>, label: &str, value: &Option<String>) {
+    if let Some(value) = value {
+        fields.push((label.to_string(), value.clone()));
+    }
+}
+
 /// The crew assignment on a travel leg.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Position {
@@ -176,10 +183,23 @@ impl DutyEntry {
     pub fn description_fields(&self) -> Vec<(String, String)> {
         let mut fields = Vec::new();
         if let Self::Travel {
-            trip: Some(trip), ..
+            trip,
+            report_lt,
+            aircraft,
+            blocktime,
+            tz_diff,
+            layover,
+            tags,
+            ..
         } = self
         {
-            fields.push(("Trip".to_string(), trip.clone()));
+            push_field(&mut fields, "Trip", trip);
+            push_field(&mut fields, "Report (LT)", report_lt);
+            push_field(&mut fields, "A/C", aircraft);
+            push_field(&mut fields, "Blocktime", blocktime);
+            push_field(&mut fields, "Timezone Difference", tz_diff);
+            push_field(&mut fields, "Layover duration", layover);
+            push_field(&mut fields, "Tags", tags);
         }
         fields
     }

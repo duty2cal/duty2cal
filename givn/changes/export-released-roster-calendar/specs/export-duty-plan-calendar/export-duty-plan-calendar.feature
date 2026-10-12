@@ -183,7 +183,7 @@ Feature: Export a duty-plan calendar
     Then the descriptions of leg 007 and leg 008 both contain "Trip T42"
     And the description of the leg in trip T43 does not contain "Trip T42"
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: An unsupplied optional description field is omitted
     Given a supported duty plan travel leg whose <field> is not supplied
     When the crew member converts it
