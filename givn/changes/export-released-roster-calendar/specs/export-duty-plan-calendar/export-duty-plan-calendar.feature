@@ -274,7 +274,7 @@ Feature: Export a duty-plan calendar
     And roster.parse-error-1.txt names the source PDF and the reason
     And roster.parse-error.txt is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: A publication failure is exposed and a diagnostic is attempted
     Given a supported duty plan whose activities resolve but whose calendar cannot be published
     When the crew member converts it

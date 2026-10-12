@@ -1604,3 +1604,62 @@ async fn older_diagnostic_unchanged(w: &mut DutyWorld) {
         "the earlier diagnostic was overwritten"
     );
 }
+
+/// Contents of a calendar that must survive a failed publication.
+const SURVIVING_CALENDAR: &str = "BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n";
+
+#[given("a supported duty plan whose activities resolve but whose calendar cannot be published")]
+async fn a_plan_that_cannot_be_published(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "FB568"),
+            (FROM_X, "ABC"),
+            (TO_X, "DEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    );
+    let dir = w.working_dir();
+    // The ordinary calendar name is a dangling link into a directory that does
+    // not exist: the name looks free, and writing it fails.
+    std::os::unix::fs::symlink(
+        dir.join("missing-dir").join("roster.ics"),
+        dir.join("roster.ics"),
+    )
+    .expect("create the dangling candidate");
+    // A previously published calendar must survive the failed attempt.
+    std::fs::write(dir.join("roster-1.ics"), SURVIVING_CALENDAR)
+        .expect("write the existing calendar");
+}
+
+#[then("a new unused numbered diagnostic report is attempted")]
+async fn a_diagnostic_is_attempted(w: &mut DutyWorld) {
+    let text = transcript(w);
+    assert!(
+        text.contains("Diagnostic:"),
+        "no diagnostic was attempted: {text}"
+    );
+    let reports: Vec<String> = std::fs::read_dir(w.working_dir())
+        .expect("read the scenario directory")
+        .filter_map(Result::ok)
+        .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .filter(|name| name.starts_with("roster.parse-error"))
+        .collect();
+    assert_eq!(
+        reports.len(),
+        1,
+        "expected exactly one new report for this failure: {reports:?}"
+    );
+}
+
+#[then("existing calendars are unchanged")]
+async fn existing_calendars_are_unchanged(w: &mut DutyWorld) {
+    let content = std::fs::read_to_string(w.working_dir().join("roster-1.ics"))
+        .expect("the existing calendar disappeared");
+    assert_eq!(
+        content, SURVIVING_CALENDAR,
+        "the failed publication modified the existing calendar"
+    );
+}
