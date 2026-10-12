@@ -38,7 +38,7 @@ Full suite: `./run-tests.sh`. E2E-only suite: `./run-tests.sh --e2e`.
   ./run-tests.sh --e2e    -> 1 feature,  1 scenario  (RED)
   ```
   (The failures are the expected RED state: no step definitions exist yet and strict mode fails undefined steps.)
-- [ ] Remaining setup: `THIRD-PARTY-NOTICES.md` via `cargo-about`; CI (`fmt`, `clippy --workspace -- -D warnings`, `test --workspace`, `cargo deny check`, `reuse lint`, `license-headers`, Windows GNU cross-build smoke); Dependabot with `pdfplumber`/`archunit` minor-major ignores; coverage scripts `./measure-coverage.sh` and `./merge-coverages.sh`.
+- [ ] Remaining setup: `THIRD-PARTY-NOTICES.md` via `cargo-about`; CI (`fmt`, `clippy --workspace -- -D warnings`, `test --workspace`, `cargo deny check`, `reuse lint`, `license-headers`, Windows GNU cross-build smoke); Dependabot with `pdfplumber`/`archunit` minor-major ignores; coverage scripts `./measure-coverage.sh` and `./merge-coverages.sh`; `.cargo/config.toml` with the `x86_64-w64-mingw32-gcc` linker for the GNU target; `scripts/pii-guard.sh` (pattern-based, calendar-syntax-aware so `DTSTAMP` is not misflagged); release profile `opt-level = "z"`, `lto`, `strip` for a small single executable.
 
 ## Scenarios (non-@e2e first, in feature order)
 

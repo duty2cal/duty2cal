@@ -78,7 +78,7 @@ The reconciliation decisions were applied: `design.md` rewritten (name `duty2cal
 
 A fresh-context re-review returned **PASS** on all six checks (decision fidelity for all 20 conflicts + the crate-naming consequence; contradiction greps clean; both ADRs complete and defensible with ADR-0001's licensing exception recorded; scaffold/tasks/tests/arc42 consistent; golden scenario correctly non-`@e2e` with exactly one `@e2e` preserved; verification reproduces `cargo test -p duty2cal-core --test architecture` 3 passed, `./run-tests.sh` 51 RED, `./run-tests.sh --e2e` 1 RED).
 
-Fixes applied: chapters 6 and 8 renamed `ConvertDutyPlan`/`DutyPlanCalendar` to `ConvertRoster`/`Roster`; the README licence section now states the MPL-2.0/GPL-3.0-or-later split. Noted, not acted on: the pre-reconciliation first draft `temp_first_idea.md` still carries the superseded name/pin/licence (it is the operator's unedited draft and is not a change artifact), and the forward-looking E2E step skeleton, `application/src/testing.rs` port fakes, coverage scripts and CI workflows remain tracked unchecked tasks.
+Fixes applied: chapters 6 and 8 renamed `ConvertDutyPlan`/`DutyPlanCalendar` to `ConvertRoster`/`Roster`; the README licence section now states the MPL-2.0/GPL-3.0-or-later split. Noted then: the pre-reconciliation first draft `temp_first_idea.md` still carried the superseded name/pin/licence — since resolved by deleting it (operator-confirmed; superseded by the frame/contract/seed/change artifacts; its reusable mechanical details were preserved first — see the ideation session record). The forward-looking E2E step skeleton, `application/src/testing.rs` port fakes, coverage scripts and CI workflows remain tracked unchecked tasks.
 
 ## Status
 

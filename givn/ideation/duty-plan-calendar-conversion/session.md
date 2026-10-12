@@ -40,7 +40,7 @@
 - `givn status`: no changes exist.
 - `givn spec tree`: no permanent specifications.
 - Read `README.md`, the introduction/goals, constraints, context/scope, quality requirements, risks, and glossary chapters under `docs/arc42/`; these contain placeholders, not established domain contracts.
-- Read `temp_first_idea.md` without editing it; it is untracked user work.
+- Read `temp_first_idea.md` without editing it; it was untracked user work at the time (it was later committed, then deleted on 2026-10-12 once the change was planned — see below).
 - Checked `private/` without displaying filenames or contents: five PDFs, zero tracked files, directory ignored by Git.
 - No `pdftotext`, `pdfinfo`, or `mutool` command is available; the PDF-capable read tool nevertheless returned parsed text and rendered pages for all five private PDFs after the user authorized inspection.
 - Inspected all five PDFs. Structural findings and generated counterexamples are recorded in `frame.md`; no identifying source values are copied into topic state.
@@ -215,3 +215,11 @@ the current publication state and actual global outputs are listed above.
 - `glob(pattern="givn/ideation/**/domain-terms.md")`: 1 current file, 0 siblings.
 - The same bounded repository Markdown grep returned 12 lines: the candidate term and source-field/topic references, without a competing grouping definition. An initial unbounded pairing search returned 13 because it also matched “repairing”; the bounded check excludes that irrelevant hit.
 - Roster trip is confirmed from the user's within-trip inheritance choice, with genus, contrast, generated sentence, and exact checks in domain-terms.md. Duty-plan calendar remains the only aggregate; no permanent glossary or code change is written.
+
+## 2026-10-12 — first draft superseded and deleted
+
+- The user confirmed that `temp_first_idea.md` is superseded and may be deleted.
+- Superseded by: `frame.md` (Mission, non-negotiable constraints, structural findings, and the recorded draft defects), the approved contract in `use-cases/export-duty-plan-calendar.md`, the ready seed `changes/export-released-roster-calendar.md`, and the normal change's `proposal.md` / `specs/` / `design.md`. Its concrete artifacts were explicitly replaced rather than reused: the January-2099 synthetic oracle and its L1/L2/L3 test shape (replaced by the Gherkin suite plus the operator's June-2026 oracle scenario), the fixed output/error paths (replaced by enumerated no-overwrite names and numbered diagnostics), the MIT/Apache-only licence rule and `=0.1.0` pin (replaced by ADR-0001's MPL/GPL split and `pdfplumber = "=0.4.1"`), and the Clean-Architecture file layout (replaced by ADR-0002's two-crate workspace).
+- The maintainer release-evidence lens recorded against it still binds: its synthetic golden had five overlong lines, its normalization erased the CRLF property, and its PII regex false-positived on a generated `DTSTAMP` — so none of its oracle, guard, or test text may be reused verbatim.
+- Preserved before deletion: the real-PDF `.gitignore` patterns (now in `.gitignore`), the `x86_64-w64-mingw32-gcc` linker note, the pattern-based PII guard, Typst fixture generation with metadata stripping, and the small-binary release profile (now in `design.md`/`tasks.md`).
+- The file was tracked in Git, so its full text remains retrievable from history; references in this topic are historical and resolve through that history.

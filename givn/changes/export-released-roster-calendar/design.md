@@ -148,6 +148,10 @@ One file per capability:
 
 The whole-file oracle is a Gherkin scenario (conflict 17), not a parallel Rust test: `Scenario: The reference roster converts to the expected calendar` converts `apps/cli/tests/fixtures/reference_roster.pdf` (independently generated, fictional values — conflict 18) and compares the produced calendar with `apps/cli/tests/fixtures/expected/2026-06.ics` after CRLF→LF and line-folding normalisation. The expected file's event list is the operator's 26-event oracle; the UID scheme follows the committed snapshot-scoped identity (conflict 11), not a date/flight/route recipe.
 
+Fixture generation (carried over from the first draft): the reference PDF is compiled from a committed Typst source (Typst is Apache-2.0) and its host metadata stripped (`exiftool -all=`) so nothing leaks beyond the table; the expected calendar is generated from it. All values are fictional and non-personal.
+
+Distribution notes: the release profile uses `opt-level = "z"`, `lto` and `strip` to keep the single executable small.
+
 ## Decisions
 
 Resolves the proposal's open questions and the external brief's conflicts. Seed references in parentheses.

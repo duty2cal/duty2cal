@@ -1,5 +1,10 @@
 private
 
+# Real duty plans never enter the repository (carried over from the first draft)
+*_real*.pdf
+*_original*.pdf
+.pii-denylist
+
 # Rust build output
 /target
 
