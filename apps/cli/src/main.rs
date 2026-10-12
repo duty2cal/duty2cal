@@ -14,12 +14,33 @@ use duty2cal_pdf::PdfRosterSource;
 use time::OffsetDateTime;
 
 /// The host clock, used for the revision timestamp fallback.
+///
+/// `DUTY2CAL_CONSTRUCTION_CLOCK` supplies a fixed construction instant, so a
+/// run can be deterministic without a production-value shortcut (the change's
+/// timestamp-provenance decision).
 struct SystemClock;
 
 impl Clock for SystemClock {
     fn now_utc(&self) -> OffsetDateTime {
+        if let Ok(value) = std::env::var(CONSTRUCTION_CLOCK) {
+            if let Some(instant) = parse_stamp(&value) {
+                return instant;
+            }
+        }
         OffsetDateTime::now_utc()
     }
+}
+
+/// The environment variable that fixes the construction instant.
+const CONSTRUCTION_CLOCK: &str = "DUTY2CAL_CONSTRUCTION_CLOCK";
+
+/// Parse a `YYYY-MM-DDTHH:MM:SSZ` construction instant.
+fn parse_stamp(value: &str) -> Option<OffsetDateTime> {
+    let value = value.trim().trim_end_matches('Z');
+    let (date, clock) = value.split_once('T')?;
+    let date = duty2cal_core::domain::timing::parse_iso_date(date)?;
+    let clock = duty2cal_core::domain::timing::parse_clock(clock)?;
+    Some(date.with_time(clock).assume_utc())
 }
 
 fn main() -> ExitCode {

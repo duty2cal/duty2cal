@@ -251,7 +251,7 @@ Feature: Export a duty-plan calendar
     When the crew member converts it
     Then the published calendar's revision timestamp is 2099-01-10 12:34 UTC
 
-  @givn.added @wip
+  @givn.added
   Scenario: Without usable source metadata the construction time is the revision timestamp
     Given a supported duty plan with no usable source revision metadata and a controlled construction clock of 2099-01-11 08:00 UTC
     When the crew member converts it

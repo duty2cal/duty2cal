@@ -80,10 +80,12 @@ async fn a_duty_plan_that_is_not_a_supported_export(w: &mut DutyWorld) {
 
 /// Invoke the converter once on the scenario's source.
 fn run_converter(w: &mut DutyWorld) {
-    let output = Command::new(env!("CARGO_BIN_EXE_duty2cal"))
-        .arg(w.source_path())
-        .output()
-        .expect("run the converter");
+    let mut command = Command::new(env!("CARGO_BIN_EXE_duty2cal"));
+    command.arg(w.source_path());
+    for (name, value) in &w.env {
+        command.env(name, value);
+    }
+    let output = command.output().expect("run the converter");
     w.exit_status = output.status.code();
     w.stdout = String::from_utf8_lossy(&output.stdout).into_owned();
     w.stderr = String::from_utf8_lossy(&output.stderr).into_owned();
@@ -1469,5 +1471,36 @@ async fn revision_timestamp_is(w: &mut DutyWorld, date: String, time: String) {
     assert!(
         calendar.contains(&expected),
         "expected the revision timestamp {expected}: {calendar}"
+    );
+}
+
+#[given(
+    regex = r"^a supported duty plan with no usable source revision metadata and a controlled construction clock of (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}) UTC$"
+)]
+async fn a_plan_without_a_revision_footer(w: &mut DutyWorld, date: String, time: String) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "FB568"),
+            (FROM_X, "ABC"),
+            (TO_X, "DEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    );
+    w.env = vec![(
+        "DUTY2CAL_CONSTRUCTION_CLOCK".to_string(),
+        format!("{date}T{time}:00Z"),
+    )];
+}
+
+#[then("its activity dates are unaffected")]
+async fn activity_dates_are_unaffected(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    assert!(
+        calendar.contains("DTSTART:20990607T090000Z")
+            && calendar.contains("DTEND:20990607T100000Z"),
+        "the revision metadata moved an activity date: {calendar}"
     );
 }

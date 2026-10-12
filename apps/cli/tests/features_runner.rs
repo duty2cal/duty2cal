@@ -25,6 +25,8 @@ pub struct DutyWorld {
     pub expected: Vec<String>,
     /// Calendars produced by the current scenario, in order.
     pub calendars: Vec<String>,
+    /// Environment variables passed to the converter subprocess.
+    pub env: Vec<(String, String)>,
 }
 
 impl DutyWorld {
