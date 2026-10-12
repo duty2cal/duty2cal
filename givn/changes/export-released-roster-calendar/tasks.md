@@ -464,19 +464,16 @@ Use-case constraint: Timing rule: resolve each endpoint date independently to th
 
 Use-case constraint: Rule: a known Trip ID carries within one unambiguous roster trip only, never leaking.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — the assertion was in place while no DESCRIPTION existed; the calendar held 3 events and 0 carried the trip.
   ```
-  <RED output>
+  1 scenario (1 failed), 4 steps (3 passed, 1 failed)   RED_EXIT=101
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — production: `Row::carried_trip` tracks the last printed Trip ID and hands it to later travel legs only (so it cannot leak into unrelated duties); `DutyEntry::description_fields` selects the approved field order (Trip so far); the ICS writer emits `DESCRIPTION`.
   ```
-  <GREEN output>
+  1 scenario (1 passed), 4 steps (4 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: A known trip identifier is carried across the legs of one roster trip`; hash: `<hash>`
+- [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; scenario still 4/4; full suite 28 passed, 23 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: A known trip identifier is carried across the legs of one roster trip`; hash: `2b63075`
 
 ### 26. An unsupplied optional description field is omitted
 
