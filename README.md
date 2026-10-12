@@ -1,4 +1,4 @@
-# duty2ical
+# duty2cal
 
 <!-- givn:begin:coverage-badge -->
 [![Line Coverage: n/a](https://img.shields.io/badge/line%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
@@ -49,4 +49,10 @@ Add lint, build, and other project commands alongside these scripts.
 
 ## License
 
-<!-- givn:todo: The project's license (SPDX identifier) — not TBD. -->
+Split by layer (see [ADR-0001](docs/arc42/adr/ADR-0001-license-split.md)):
+
+- `crates/**` — MPL-2.0
+- `apps/**` — GPL-3.0-or-later
+
+No file may carry the MPL Exhibit B "Incompatible With Secondary Licenses"
+notice. Contributions use DCO sign-off (`git commit -s`); there is no CLA.

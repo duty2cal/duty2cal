@@ -8,14 +8,14 @@ file at `docs/arc42/adr/ADR-NNNN-short-slug.md`; the chapter-09 register
 
 | ADR | Title | Status | Date | File |
 |---|---|---|---|---|
-| — | No accepted ADRs yet | — | — | — |
+| ADR-0001 | Split licensing by hexagon layer: MPL-2.0 core, GPL-3.0-or-later CLI | accepted | 2026-10-12 | [ADR-0001-license-split.md](ADR-0001-license-split.md) |
+| ADR-0002 | Enforce the hexagonal layer model with crate boundaries and four policy levels | accepted | 2026-10-12 | [ADR-0002-layer-enforcement.md](ADR-0002-layer-enforcement.md) |
 
 ## Notes
 
 - The change to export released roster calendars (export-released-roster-calendar)
-  introduced no ADR: its decisions are supplied constraints (chapter 2), local
-  mechanisms (design.md), or product behaviour owned by the capability
-  specification and the glossary. See that change's `arc42.md` row 9.
+  minted both records; every other choice is a supplied constraint (chapter 2),
+  local mechanism (design.md), or product behaviour owned by the capability
+  specification and the glossary.
 - Archived historical ADRs live under `docs/arc42/adr/archive/` with their IDs
-  preserved. The chapter-09 register must be updated whenever a record moves or
-  is superseded.
+  preserved; both indexes are updated on any move.

@@ -1,2 +1,0 @@
-# Feature files for the runner are assembled here by `./run-tests.sh` from
-# `givn/specs/**` and `givn/changes/*/specs/**` (cucumber-rs takes one root).

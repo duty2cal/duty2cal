@@ -2,7 +2,7 @@
 
 ## Requirements overview
 
-`duty2ical` (the deliverable of the change to export released roster calendars) is a local, offline command-line converter. A crew member supplies one published Released Roster duty-plan PDF; the converter writes one complete RFC 5545 calendar beside it under an unused name, or fails explicitly and attempts a numbered diagnostic. It never overwrites an existing calendar or report.
+`duty2cal` (the deliverable of the change to export released roster calendars) is a local, offline command-line converter. A crew member supplies one published Released Roster duty-plan PDF; the converter writes one complete RFC 5545 calendar beside it under an unused name, or fails explicitly and attempts a numbered diagnostic. It never overwrites an existing calendar or report.
 
 Top requirements, from the stakeholder perspective:
 

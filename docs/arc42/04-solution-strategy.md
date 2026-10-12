@@ -2,30 +2,32 @@
 
 ## Key decisions
 
-- **A pure domain behind ports.** Classification, timing, description composition, trip carry, and calendar composition are pure and dependency-free; the PDF extractor, the RFC 5545 writer, and the filesystem are adapters behind ports. This keeps the domain testable without a real PDF and independent of the extraction crate.
-- **Staged pipeline with a completeness gate.** Source recognition → activity classification → endpoint date resolution → description composition → calendar composition → publication. The `DutyPlanCalendar` aggregate reaches "complete" only when every required activity and field resolves; publication happens after completeness, so a partial calendar can never be published.
-- **Determinism scoped to the source snapshot.** Component identity is derived from the source snapshot plus the represented activity, not from an output counter or a title, so identical input is reproducible and a revised input gets new identities.
-- **Create-new publication.** New calendars and diagnostics are written only to an unused name (create-new semantics with retry), so an existing or concurrently claimed file is never replaced.
-- **Explicit failure as a first-class outcome.** A conversion failure returns a distinct outcome, attempts a numbered diagnostic, and reports the primary error even when the diagnostic cannot be saved.
+- **A pure core behind ports.** `duty2cal-core` holds the domain, the application ports and the dependency-free ICS adapter; `duty2cal-pdf` is the only crate that touches the extraction dependency; `apps/cli` wires them. The compiler, `cargo deny`+clippy, archunit tests and review conventions enforce the inward-only rule (ADR-0002).
+- **Staged pipeline with a completeness gate.** Source recognition → classification → endpoint date resolution → description composition → calendar composition → publication. The `Roster` aggregate reaches "complete" only when every required activity and field resolves; publication happens after completeness, so a partial calendar can never be published.
+- **Determinism scoped to the source snapshot.** Component identity derives from the source snapshot plus the represented activity, not from an output counter or a title (opaque discriminator; the readable date/flight/route recipe was rejected as non-unique).
+- **Create-new publication.** New calendars and diagnostics are written only to an unused name (create-new semantics with retry); existing or concurrently claimed files are never replaced.
+- **Explicit failure as a first-class outcome**, with an in-process, synchronous `DomainEvent` stream for host surfaces.
 
 ## Technology choices
 
 | Concern | Choice | Rationale (see ADR) |
 |---|---|---|
-| Language / runtime | Rust (edition 2021), latest stable toolchain meeting the dependency minimum | Supplied constraint; chapter 2. |
-| PDF extraction | Rust `pdfplumber` crate, exact pin `=0.1.0` | Supplied exact pin; chapter 2. |
-| Calendar output | Hand-written RFC 5545 writer | Supplied constraint; chapter 2. |
-| Executable specification | Gherkin `.feature` files run by cucumber-rs (strict) | The spec and its tests are one artifact; chapter 2. |
-| Distribution | One self-contained Windows GNU executable, cross-compiled | Supplied constraint; chapter 7. |
+| Language / runtime | Rust edition 2021, `stable` toolchain | Supplied constraint; chapter 2. |
+| PDF extraction | `pdfplumber = "=0.4.1"` in `duty2cal-pdf` | Supplied pin (brief); chapter 2. |
+| Calendar output | Hand-written RFC 5545 in `duty2cal-core/src/adapters/ics` | Supplied constraint. |
+| Module boundaries | Two-crate workspace + four enforcement levels | ADR-0002. |
+| Licensing | MPL-2.0 core, GPL-3.0-or-later CLI | ADR-0001. |
+| Executable specification | Gherkin `.feature` files run by cucumber-rs (strict) | Chapter 2. |
+| Distribution | One self-contained `x86_64-pc-windows-gnu` executable, cross-compiled | Chapter 7. |
 
-No new ADR is minted for these choices: each is either a supplied constraint (owned by chapter 2) or a product-behaviour decision owned by the capability specification and the glossary. See the qualification assessment in the change's `arc42.md`.
+ADR-0001 and ADR-0002 are the change's only ADRs; the remaining choices are supplied constraints (chapter 2) or product behaviour owned by the capability specification and the glossary.
 
 ## Approach to quality goals
 
 | Quality attribute | Approach |
 |---|---|
-| Correctness / completeness | Whole-plan completeness gate before publication; required-value contradictions and unresolved activities reject the conversion rather than being omitted. |
-| Reliability (no data loss) | Create-new publication with enumerated retry; diagnostics preserved and numbered; existing contents untouched. |
-| Interoperability | Hand-written writer with CRLF, escaping, and octet-aware folding, asserted by a scenario on the published file. |
-| Privacy | Generated/anonymized fixtures only; no private sources or identifying values in the repository. |
-| Maintainability / portability | Clean Architecture layering; one self-contained executable with no native dependency. |
+| Correctness / completeness | Whole-plan completeness gate before publication; contradictions and unresolved activities reject the conversion. |
+| Reliability (no data loss) | Create-new publication with enumerated retry; numbered preserved diagnostics; existing contents untouched. |
+| Interoperability | Hand-written writer with CRLF, escaping and octet-aware folding, asserted on the published file. |
+| Privacy | Generated/anonymised fixtures only; no private sources in the repository. |
+| Maintainability / portability | Hexagonal layout with mechanical layer enforcement; one self-contained executable; a core free of I/O, clock and environment. |

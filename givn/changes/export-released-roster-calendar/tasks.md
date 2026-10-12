@@ -7,40 +7,38 @@ Owning use case: [Export a duty-plan calendar](specs/export-duty-plan-calendar/u
 Single-scenario run command (used by every RED/GREEN/REFACTOR below): `./run-tests.sh --name "<scenario title>"`.
 Full suite: `./run-tests.sh`. E2E-only suite: `./run-tests.sh --e2e`.
 
-## Setup task — runner, strict mode, step skeleton
+## Setup task — workspace, licensing, runner, strict mode, architecture test
 
+- [x] Restructure to the adopted workspace (ADR-0002): `crates/duty2cal-core` (MPL-2.0; modules `domain/`, `application/`, `adapters/ics/`; deps `thiserror` + `time`; `clippy.toml` guardrails), `crates/duty2cal-pdf` (MPL-2.0; the only `pdfplumber` user), `apps/cli` (package/bin `duty2cal`, GPL-3.0-or-later). Root `Cargo.toml` workspace, `rust-toolchain.toml`, `deny.toml`, `REUSE.toml`, `LICENSES/{MPL-2.0,GPL-3.0-or-later}.txt`, per-file SPDX headers.
 - [x] Configure the Gherkin runner and prove strict mode BEFORE any scenario.
-  - `tests/features_runner.rs` is a `harness = false` cucumber-rs target. It reads the feature root from `GIVN_FEATURES` (default `tests/features`), sets `.fail_on_skipped()`, and uses `.run_and_exit(root)` so the process exit code reflects failures.
-  - cucumber-rs 0.23 takes a single feature root, so `./run-tests.sh` assembles every `.feature` from `givn/specs/**` and `givn/changes/*/specs/**` into a temporary directory and exports `GIVN_FEATURES`. (design.md amended; design-review re-run.)
-  - Step skeleton: `tests/steps/export_duty_plan_calendar.rs` (`tests/steps/mod.rs`), one file per capability.
-  - Proof-of-strictness (undefined step must fail): temporary `tests/features/strict-mode-proof.feature` with an undefined step; runner output:
+  - `apps/cli/tests/features_runner.rs` is a `harness = false` cucumber-rs target. It reads the feature root from `GIVN_FEATURES`, sets `.fail_on_skipped()`, and uses `.run_and_exit(root)` so the exit code reflects failures.
+  - cucumber-rs 0.23 takes a single feature root, so `./run-tests.sh` assembles every `.feature` from `givn/specs/**` and `givn/changes/*/specs/**` into a temporary directory and exports `GIVN_FEATURES`.
+  - Step skeleton: `apps/cli/tests/steps/export_duty_plan_calendar.rs` (+ `steps/mod.rs`), one file per capability.
+  - Proof-of-strictness (undefined step must fail): temporary `strict-mode-proof.feature` with an undefined step:
     ```
-    Feature: Strict-mode proof
-      Scenario: An undefined step fails the run
-       ✘  Given a step that has no definition
-          Step doesn't match any function
-    [Summary]
-    1 feature
-    1 scenario (1 failed)
-    1 step (1 failed)
-    thread 'main' panicked ...: 1 step failed
+    Scenario: An undefined step fails the run
+     ✘  Given a step that has no definition
+        Step doesn't match any function
+    1 feature / 1 scenario (1 failed) / 1 step (1 failed)
     RUNNER_EXIT=101
     ```
     The temporary feature was deleted after the proof.
-- [x] Compile-proof the pinned extraction dependency (R-001): `cargo build` compiled `pdfplumber-core 0.1.0`, `pdfplumber-parse 0.1.0`, and `pdfplumber 0.1.0` on rustc 1.98.1 / cargo 1.98.0 (ephemeral `nix-shell -p rustc cargo`); the crate resolves on crates.io 0.1.0 (not yanked, MIT OR Apache-2.0) and builds with no native C/C++ dependency.
+- [x] Compile-proof the pinned extraction dependency (R-001) under the new pin: `cargo build --workspace` compiled `pdfplumber-core 0.4.1`, `pdfplumber-parse 0.4.1`, `pdfplumber 0.4.1`, `duty2cal-core`, `duty2cal-pdf`, `duty2cal` on rustc 1.98.1 / cargo 1.98.0; no native C/C++ dependency.
   ```
-  Compiling pdfplumber-core v0.1.0
-  Compiling pdfplumber-parse v0.1.0
-  Compiling pdfplumber v0.1.0
-  Compiling duty2ical v0.1.0
-  Finished `dev` profile ... in 25.36s
+  Compiling pdfplumber-parse v0.4.1
+  Compiling pdfplumber v0.4.1
+  Compiling duty2cal-pdf v0.1.0
+  Compiling duty2cal v0.1.0
+  Finished `dev` profile ... in 36.43s
   ```
-- [x] Prove the e2e filter is a strict subset: full suite reports 50 scenarios (41 scenarios + 9 outline example rows); `./run-tests.sh --e2e` reports 1 scenario.
+- [x] Architecture test, level 3 (ADR-0002): `cargo test -p duty2cal-core --test architecture` → 3 passed (domain isolation, application→adapters denial, cycle-free).
+- [x] Prove the e2e filter is a strict subset: full suite reports 51 scenarios; `./run-tests.sh --e2e` reports 1 scenario.
   ```
-  ./run-tests.sh          -> 1 feature, 50 scenarios (50 failed)
-  ./run-tests.sh --e2e    -> 1 feature,  1 scenario  ( 1 failed)
+  ./run-tests.sh          -> 1 feature, 51 scenarios (RED)
+  ./run-tests.sh --e2e    -> 1 feature,  1 scenario  (RED)
   ```
-  (All failures are the expected RED state: no step definitions exist yet and strict mode fails undefined steps.)
+  (The failures are the expected RED state: no step definitions exist yet and strict mode fails undefined steps.)
+- [ ] Remaining setup: `THIRD-PARTY-NOTICES.md` via `cargo-about`; CI (`fmt`, `clippy --workspace -- -D warnings`, `test --workspace`, `cargo deny check`, `reuse lint`, `license-headers`, Windows GNU cross-build smoke); Dependabot with `pdfplumber`/`archunit` minor-major ignores; coverage scripts `./measure-coverage.sh` and `./merge-coverages.sh`.
 
 ## Scenarios (non-@e2e first, in feature order)
 
@@ -764,6 +762,24 @@ Use-case constraint: Minimal guarantee: every failure attempts a new numbered di
   ```
 - [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: An occupied diagnostic name yields a new unused numbered report`; hash: `<hash>`
 
+### 41. The reference roster converts to the expected calendar
+
+Use-case constraint: Success guarantee plus the operator's 26-event oracle — the whole-file comparison lives inside the Gherkin suite (no parallel golden test).
+
+- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+  ```
+  <RED output>
+  ```
+- [ ] GREEN — generate `apps/cli/tests/fixtures/reference_roster.pdf` (fictional values) and `apps/cli/tests/fixtures/expected/2026-06.ics`; implement the conversion path; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+  ```
+  <GREEN output>
+  ```
+- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
+  ```
+  <REFACTOR output>
+  ```
+- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: The reference roster converts to the expected calendar`; hash: `<hash>`
+
 ## E2E setup task (before the first @e2e scenario)
 
 - [ ] Configure and prove the e2e runner and its separation from `verify.command`.
@@ -778,7 +794,7 @@ Use-case constraint: Minimal guarantee: every failure attempts a new numbered di
 
 ## E2E scenario
 
-### 41. Crew member converts a supported duty plan and receives a calendar file
+### 42. Crew member converts a supported duty plan and receives a calendar file
 
 Use-case constraint: Success guarantee — complete RFC 5545 calendar beside the source under an unused name, with the actual path reported.
 

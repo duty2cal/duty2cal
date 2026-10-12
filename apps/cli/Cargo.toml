@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+[package]
+name = "duty2cal"
+version.workspace = true
+edition.workspace = true
+license = "GPL-3.0-or-later"
+
+[dependencies]
+duty2cal-core = { path = "../../crates/duty2cal-core" }
+duty2cal-pdf = { path = "../../crates/duty2cal-pdf" }
+
+[dev-dependencies]
+cucumber = "0.23"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+
+[[test]]
+name = "features_runner"
+harness = false

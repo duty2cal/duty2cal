@@ -6,7 +6,7 @@ The system is a local tool used by one crew member at a time. It has no business
 
 ```mermaid
 flowchart LR
-  crew["Crew member"] -->|"supported duty-plan PDF"| conv["duty2ical converter"]
+  crew["Crew member"] -->|"supported duty-plan PDF"| conv["duty2cal converter"]
   conv -->|"complete calendar beside the source under an unused name"| crew
   conv -->|"explicit failure + numbered diagnostic report"| crew
 ```
@@ -21,7 +21,7 @@ All interfaces are the local filesystem. There is no network interface, no datab
 
 ```mermaid
 flowchart LR
-  pdf["Input PDF (local path)"] --> conv["duty2ical converter"]
+  pdf["Input PDF (local path)"] --> conv["duty2cal converter"]
   conv --> ics["Calendar .ics (beside source, unused name)"]
   conv --> diag["Diagnostic .txt (beside source, unused numbered name)"]
   crypto["Process clock (construction timestamp)"] --> conv

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Test runner for duty2ical (see design.md "Test runner, strict mode, and
+# Test runner for duty2cal (see design.md "Test runner, strict mode, and
 # single-scenario command").
 #
 # cucumber-rs takes one feature root, so this script assembles every .feature
@@ -36,5 +36,5 @@ done < <(find givn/specs givn/changes -name '*.feature' -print0 2>/dev/null)
 
 export GIVN_FEATURES="$root"
 status=0
-cargo test --test features_runner -- ${filter[@]+"${filter[@]}"} ${args[@]+"${args[@]}"} || status=$?
+cargo test -p duty2cal --test features_runner -- ${filter[@]+"${filter[@]}"} ${args[@]+"${args[@]}"} || status=$?
 exit "$status"

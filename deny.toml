@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MPL-2.0
+# cargo-deny policy (see docs/arc42/adr/ADR-0001-license-split.md).
+[licenses]
+allow = [
+  "MIT", "Apache-2.0", "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause", "BSD-3-Clause", "ISC", "Zlib",
+  "Unicode-DFS-2016", "Unicode-3.0",
+  "MPL-2.0",
+]
+# Workspace crates are exempt from the allowlist; third-party crates must match.
+# Any GPL/LGPL/AGPL/SSPL third-party crate is a hard failure.
+confidence-threshold = 0.9
+
+[bans]
+multiple-versions = "warn"
+# `pdfplumber` may only be depended on by `duty2cal-pdf`.
+[[bans.deny]]
+name = "pdfplumber"
+wrappers = ["duty2cal-pdf"]

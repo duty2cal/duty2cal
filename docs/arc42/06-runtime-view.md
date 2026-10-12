@@ -7,7 +7,7 @@
 ```mermaid
 sequenceDiagram
   participant CLI
-  participant App as ConvertDutyPlan
+  participant App as ConvertRoster
   participant PDF as PDF extraction
   participant Dom as Domain
   participant FS as Filesystem publication
@@ -15,7 +15,7 @@ sequenceDiagram
   App->>PDF: read source, build snapshot
   PDF-->>App: positioned content + revision footer
   App->>Dom: classify, resolve dates, compose descriptions
-  Dom-->>App: complete DutyPlanCalendar (or rejection)
+  Dom-->>App: complete Roster (or rejection)
   App->>FS: allocate unused calendar path + write
   FS-->>App: published path
   App-->>CLI: Published { path }
@@ -39,7 +39,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
   participant CLI
-  participant App as ConvertDutyPlan
+  participant App as ConvertRoster
   participant Dom as Domain
   participant Diag as Diagnostic writer
   CLI->>App: convert(source path)
@@ -66,7 +66,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
   participant CLI
-  participant App as ConvertDutyPlan
+  participant App as ConvertRoster
   participant FS as Filesystem publication
   participant Diag as Diagnostic writer
   CLI->>App: convert(source path)

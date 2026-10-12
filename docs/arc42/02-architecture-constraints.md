@@ -4,31 +4,34 @@
 
 | Constraint | Motivation |
 |---|---|
-| Rust, application edition 2021 | Supplied non-negotiable constraint inherited from the first draft and the approved contract. |
-| Latest stable Rust toolchain satisfying the extraction dependency's minimum (the pinned crate declares Rust 1.85) | The dependency cannot be built on an older toolchain; the exact version resolves at setup. |
-| Windows GNU target, cross-compiled on Linux/CI | Supplied distribution constraint. |
-| One executable, no companion DLL or runtime installer | Supplied single-file distribution constraint. |
-| PDF extraction from the Rust `pdfplumber` crate, exact pin `=0.1.0` | Supplied exact pin; no substitution without a user decision. |
-| No native C/C++ PDF extraction dependency | Supplied; keeps the build and the executable self-contained. |
-| Hand-written RFC 5545 output; no iCalendar writer library | Supplied; makes the byte-level contract directly provable. |
-| Dependencies restricted to MIT or Apache-2.0; public material releasable on that basis | Supplied licensing constraint for a public repository. |
-| No network I/O at runtime | The converter is local and offline; nothing may call out. |
-
-Clean Architecture is a supplied technical constraint, not a proposed actor goal or a use-case boundary.
+| Rust, edition 2021, `stable` toolchain (`rust-toolchain.toml`) | Supplied constraint. |
+| Cargo workspace with a crate boundary only where dependencies, target platform, or `crate-type` differ | ADR-0002 (reduced two-crate core + PDF split). |
+| `pdfplumber = "=0.4.1"` (Apache-2.0), depended on only by `duty2cal-pdf` | Supplied exact pin, updated by the operator's brief; re-proved to build. |
+| Hand-written RFC 5545 serializer; the `icalendar` crate is a test-only parser | Output must be deterministic for the golden scenario. |
+| No native C/C++ dependency; core is `wasm32`-safe and does no I/O, clock or environment access | `crates/duty2cal-core/clippy.toml` `disallowed-types`/`disallowed-methods`, enforced by `cargo clippy --workspace -- -D warnings`. |
+| Windows GNU target (`x86_64-pc-windows-gnu`), cross-compiled on Linux/CI, statically linked | Supplied distribution constraint (kept). |
+| One self-contained executable, no companion DLL or runtime installer | Supplied distribution constraint. |
+| `archunit = "=0.0.2"` architecture tests for the intra-crate layer direction | ADR-0002, level 3. |
+| Typed errors (`thiserror`); no `unwrap()`/`expect()` outside test code | Operator brief conventions. |
+| No network I/O at runtime | The converter is local and offline. |
 
 ## Organisational constraints
 
 | Constraint | Motivation |
 |---|---|
-| Private duty-plan PDFs are read for analysis but never committed | Privacy: plans contain identifying personal data. |
-| Fixtures and golden calendars are generated or anonymized | Public material must carry no real itineraries, names, or identifiers, and privacy checks consider identifying combinations, not just names. |
-| Changes follow the givn workflow; `.feature` files are the executable specification | The specification and its tests are the same artifact. |
+| Licensing split by layer: `crates/**` MPL-2.0, `apps/**` GPL-3.0-or-later | ADR-0001. |
+| `deny.toml` allowlist; any GPL/LGPL/AGPL/SSPL third-party crate is a hard failure | Keeps the core embeddable in any host app. |
+| No file may carry the MPL Exhibit B "Incompatible With Secondary Licenses" notice | MPL §3.3 combination with the GPL CLI depends on it. |
+| Per-file SPDX header; `REUSE.toml` for binary/data files; `cargo-about` notices; DCO sign-off, no CLA | ADR-0001 obligations. |
+| Private duty-plan PDFs are read for analysis but never committed; fixtures and golden calendars are generated/anonymised | Privacy. |
+| Changes follow the givn workflow; `.feature` files are the executable specification | Specification and tests are one artifact. |
 
 ## Conventions
 
 | Convention | Motivation |
 |---|---|
-| Clean Architecture dependency rule: dependencies point inward at a pure domain; PDF/filesystem reached through ports | Keeps domain logic testable without the outside world and independent of the extraction dependency. |
-| One Gherkin step-definition file per capability | Keeps the executable-spec bindings scoped and replaceable. |
-| Strict Gherkin execution (`.fail_on_skipped()`) | Prevents a change from being marked complete while steps are unimplemented. |
-| Diagrams in arc42 and design documents are Mermaid | Rendered consistently and diffable. |
+| Dependencies point inward; each adapter implements exactly one port with no business logic | ADR-0002. |
+| Value objects are built only through validating `Result` constructors with no public fields; ports are traits in `application` and know no adapter type; every port has one fake in `application/src/testing.rs` | ADR-0002, level 4. |
+| No path or file handle crosses the use-case boundary (input `&[u8]`, output `String`) | Keeps one use case callable from CLI, WASM and UniFFI. |
+| Strict Gherkin execution (`.fail_on_skipped()`); one step-definition file per capability | Prevents false completion. |
+| Diagrams in arc42/design are Mermaid | Rendered consistently. |

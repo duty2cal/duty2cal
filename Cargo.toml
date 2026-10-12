@@ -1,15 +1,15 @@
-[package]
-name = "duty2ical"
+# SPDX-License-Identifier: MPL-2.0
+# Mixed-licence workspace: `crates/**` are MPL-2.0, `apps/**` are
+# GPL-3.0-or-later (see docs/arc42/adr/ADR-0001-license-split.md). The workspace
+# root therefore carries no `license` field.
+[workspace]
+resolver = "2"
+members = [
+  "crates/duty2cal-core",
+  "crates/duty2cal-pdf",
+  "apps/cli",
+]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2021"
-
-[dependencies]
-pdfplumber = "=0.1.0"
-
-[dev-dependencies]
-cucumber = "0.23"
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-
-[[test]]
-name = "features_runner"
-harness = false

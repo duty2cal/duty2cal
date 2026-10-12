@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MPL-2.0
+# REUSE annotations for files that cannot carry an SPDX comment header
+# (generated or binary test material). See ADR-0001.
+version = 1
+
+[[annotations]]
+path = ["LICENSES/**", "apps/cli/tests/fixtures/**", "docs/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 kressnerd"
+SPDX-License-Identifier = "MPL-2.0"

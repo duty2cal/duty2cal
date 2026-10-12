@@ -62,7 +62,7 @@ Any conversion failure — unsupported source, unresolved required activity, unr
 
 ### Release evidence
 
-The change is ready for the maintainer to release only when its claims are backed by evidence: generated or anonymized fixtures and golden calendars that exercise the rules above (including the standby codes, month/year boundaries, and the unobserved unqualified-overnight variation); an actual Windows build that runs as one self-contained executable without a companion runtime installer; a resolved dependency licence set that is permissively releasable; and public artifacts free of private source data, checked against identifying combinations and not only names. These are pre-release gates, not new product behaviour.
+The change is ready for the maintainer to release only when its claims are backed by evidence: generated or anonymized fixtures and golden calendars that exercise the rules above (including the standby codes, month/year boundaries, and the unobserved unqualified-overnight variation); an actual Windows build that runs as one self-contained executable without a companion runtime installer; the adopted licence model enforced (`crates/**` MPL-2.0, `apps/**` GPL-3.0-or-later, no copyleft third-party crate, per-file SPDX headers) — see ADR-0001; and public artifacts free of private source data, checked against identifying combinations and not only names. These are pre-release gates, not new product behaviour.
 
 ## Capability Routing
 

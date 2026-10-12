@@ -4,7 +4,7 @@
 
 ```mermaid
 flowchart TB
-  root["duty2ical quality"]
+  root["duty2cal quality"]
   root --> corr["Correctness"]
   root --> rel["Reliability"]
   root --> inter["Interoperability"]

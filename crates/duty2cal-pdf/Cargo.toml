@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MPL-2.0
+[package]
+name = "duty2cal-pdf"
+version.workspace = true
+edition.workspace = true
+license = "MPL-2.0"
+
+[dependencies]
+duty2cal-core = { path = "../duty2cal-core" }
+# Exact pin; the only crate allowed to depend on the extraction dependency.
+pdfplumber = "=0.4.1"

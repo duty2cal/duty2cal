@@ -1,7 +1,7 @@
-//! Gherkin runner for the change `export-released-roster-calendar`.
-//!
-//! Strict by construction: `fail_on_skipped()` makes an undefined or skipped
-//! step fail the run, so a task cannot tick while nothing is implemented.
+// SPDX-License-Identifier: GPL-3.0-or-later
+//! Gherkin runner (see design.md "Test runner, strict mode, and single-scenario
+//! command"). Strict by construction: `fail_on_skipped()` makes an undefined or
+//! skipped step fail the run.
 
 use cucumber::World as _;
 
