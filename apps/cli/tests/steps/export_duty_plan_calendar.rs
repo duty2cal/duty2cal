@@ -196,3 +196,46 @@ async fn no_activity_from_footer(w: &mut DutyWorld) {
         );
     }
 }
+
+#[given("a supported duty plan with a detail row that carries only a date and no activity code")]
+async fn a_plan_with_a_date_only_row(w: &mut DutyWorld) {
+    let dir = fresh_dir();
+    let source = dir.join("roster.pdf");
+
+    let mut items: Vec<(f64, f64, &str)> = support::detail_header_row(600.0);
+    // A dated detail row whose activity cell is empty.
+    items.push((40.0, 585.0, "12 Jan"));
+
+    std::fs::write(&source, support::build_pdf(&items)).expect("write the source");
+    w.dir = Some(dir);
+    w.source = Some(source);
+}
+
+#[then("the published calendar contains no absence or layover for that date")]
+async fn no_absence_or_layover_for_that_date(w: &mut DutyWorld) {
+    let path = w.working_dir().join("roster.ics");
+    let calendar = std::fs::read_to_string(&path).unwrap_or_else(|error| {
+        let diagnostic = std::fs::read_to_string(w.working_dir().join("roster.parse-error.txt"))
+            .unwrap_or_else(|_| "<no diagnostic>".to_string());
+        panic!(
+            "no calendar at {}: {error}\nconverter transcript: {}\ndiagnostic: {diagnostic}",
+            path.display(),
+            transcript(w)
+        )
+    });
+
+    assert!(
+        calendar.contains("BEGIN:VCALENDAR") && calendar.contains("END:VCALENDAR"),
+        "the published calendar is not a complete VCALENDAR: {calendar}"
+    );
+    assert!(
+        !calendar.contains("BEGIN:VEVENT"),
+        "the date-only row produced an activity: {calendar}"
+    );
+    for invented in ["Layover", "FREE", "OFF", "FZ"] {
+        assert!(
+            !calendar.contains(invented),
+            "the date-only row was turned into {invented}: {calendar}"
+        );
+    }
+}

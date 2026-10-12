@@ -31,7 +31,7 @@ Feature: Export a duty-plan calendar
     When the crew member converts it
     Then the published calendar contains no activity taken from the footer
 
-  @givn.added @wip
+  @givn.added
   Scenario: A date-only row is not turned into an activity
     Given a supported duty plan with a detail row that carries only a date and no activity code
     When the crew member converts it
