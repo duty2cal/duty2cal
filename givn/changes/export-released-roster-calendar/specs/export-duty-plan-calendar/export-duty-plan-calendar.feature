@@ -10,7 +10,7 @@ Feature: Export a duty-plan calendar
     And the converter reports the path of the newly published calendar
     And the invocation reports success through its process exit status
 
-  @givn.added @wip
+  @givn.added
   Scenario: A source outside the supported family is rejected
     Given a duty plan that is not a supported Released Roster detail-table export
     When the crew member converts it

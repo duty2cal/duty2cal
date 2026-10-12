@@ -3,18 +3,38 @@
 //! command"). Strict by construction: `fail_on_skipped()` makes an undefined or
 //! skipped step fail the run.
 
+use std::path::PathBuf;
+
 use cucumber::World as _;
 
 mod steps;
 
 #[derive(Debug, Default, cucumber::World)]
 pub struct DutyWorld {
+    /// Per-scenario working directory.
+    pub dir: Option<PathBuf>,
+    /// The source file supplied for conversion.
+    pub source: Option<PathBuf>,
     /// Exit status of the last child invocation, when one was run.
     pub exit_status: Option<i32>,
     /// Captured standard output of the last child invocation.
     pub stdout: String,
     /// Captured standard error of the last child invocation.
     pub stderr: String,
+}
+
+impl DutyWorld {
+    /// Fresh working directory for the current scenario.
+    pub fn working_dir(&self) -> PathBuf {
+        self.dir
+            .clone()
+            .expect("scenario prepared no working directory")
+    }
+
+    /// The source file supplied for conversion.
+    pub fn source_path(&self) -> PathBuf {
+        self.source.clone().expect("scenario prepared no source")
+    }
 }
 
 #[tokio::main]
