@@ -590,19 +590,18 @@ Use-case constraint: Calendar representation: UIDs are snapshot-scoped, globally
 
 Use-case constraint: Calendar representation: UIDs are snapshot-scoped, globally distinct, deterministic for the identical snapshot.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED (fault injection) — identity was already snapshot-scoped, so the scenario passed on first run. Replacing it with a content-derived identifier (the rejected corresponding-activity approach) proved the assertion discriminates:
   ```
-  <RED output>
+  Step panicked: the revised snapshot reused the identifier FB568ABC-DEF-20990607@duty2cal
+  1 scenario (1 failed), 3 steps (2 passed, 1 failed)   FAULT_EXIT=101
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+  The snapshot-scoped identifier was restored; the injection was never committed.
+- [x] GREEN — no production change needed; every activity of the revision carries an identifier distinct from the original.
   ```
-  <GREEN output>
+  1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: A revised source snapshot has separate component identifiers`; hash: `<hash>`
+- [x] REFACTOR — nothing to clean; fmt/clippy clean; suite 42 passed, 9 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: A revised source snapshot has separate component identifiers`; hash: `a42e728`
 
 ### 34. The revision timestamp comes from the source's Created footer
 
