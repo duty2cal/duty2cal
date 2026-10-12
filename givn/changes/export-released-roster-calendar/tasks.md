@@ -509,19 +509,18 @@ Use-case constraint: Descriptive-field selection: approved field order; omit uns
 
 Use-case constraint: Descriptive-field selection: approved field order; omit unsupplied fields; combine complementary/equal values.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED (fault injection) — the approved ordering was already delivered by scenario 26, so the scenario passed on first run. The field order was then deliberately reversed to prove the assertion discriminates:
   ```
-  <RED output>
+  Step panicked: Report (LT) 07:30 appears out of the approved order: Tags 5_MFL | … | Trip T42
+  1 scenario (1 failed), 3 steps (2 passed, 1 failed)   FAULT_EXIT=101
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+  The approved order was restored; the injection was never committed.
+- [x] GREEN — no production change needed; the scenario passes against the approved order.
   ```
-  <GREEN output>
+  1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: Description fields follow the approved order`; hash: `<hash>`
+- [x] REFACTOR — nothing to clean; `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; suite 37 passed, 14 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Description fields follow the approved order`; hash: `fcb95e0`
 
 ### 29. Differing optional values are both retained with their fragment roles
 
