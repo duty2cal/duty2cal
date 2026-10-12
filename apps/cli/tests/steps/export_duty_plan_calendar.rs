@@ -21,7 +21,7 @@ use crate::DutyWorld;
 static SCENARIO_SEQUENCE: AtomicUsize = AtomicUsize::new(0);
 
 /// Fresh per-scenario working directory.
-fn fresh_dir() -> PathBuf {
+pub(crate) fn fresh_dir() -> PathBuf {
     let sequence = SCENARIO_SEQUENCE.fetch_add(1, Ordering::Relaxed);
     let dir =
         std::env::temp_dir().join(format!("duty2cal-tests-{}-{sequence}", std::process::id()));
@@ -31,7 +31,7 @@ fn fresh_dir() -> PathBuf {
 }
 
 /// Prepare a fixture PDF holding the given item rows.
-fn write_fixture(w: &mut DutyWorld, items: &[(f64, f64, String)]) {
+pub(crate) fn write_fixture(w: &mut DutyWorld, items: &[(f64, f64, String)]) {
     let dir = fresh_dir();
     let source = dir.join("roster.pdf");
     std::fs::write(&source, support::build_pdf(items)).expect("write the source");
@@ -39,12 +39,12 @@ fn write_fixture(w: &mut DutyWorld, items: &[(f64, f64, String)]) {
     w.source = Some(source);
 }
 
-fn transcript(world: &DutyWorld) -> String {
+pub(crate) fn transcript(world: &DutyWorld) -> String {
     format!("{}{}", world.stdout, world.stderr)
 }
 
 /// The published calendar, or a panic carrying the converter transcript.
-fn calendar(w: &DutyWorld) -> String {
+pub(crate) fn calendar(w: &DutyWorld) -> String {
     let path = w.working_dir().join("roster.ics");
     std::fs::read_to_string(&path).unwrap_or_else(|error| {
         let diagnostic = std::fs::read_to_string(w.working_dir().join("roster.parse-error.txt"))
@@ -79,7 +79,7 @@ async fn a_duty_plan_that_is_not_a_supported_export(w: &mut DutyWorld) {
 }
 
 /// Invoke the converter once on the scenario's source.
-fn run_converter(w: &mut DutyWorld) {
+pub(crate) fn run_converter(w: &mut DutyWorld) {
     let mut command = Command::new(env!("CARGO_BIN_EXE_duty2cal"));
     command.arg(w.source_path());
     for (name, value) in &w.env {
@@ -287,7 +287,7 @@ fn utc(date: &str, time: &str) -> String {
 }
 
 /// Prepare a single-row plan at a realistic detail-table position.
-fn plan_with_row(w: &mut DutyWorld, cells: &[(f64, &str)]) {
+pub(crate) fn plan_with_row(w: &mut DutyWorld, cells: &[(f64, &str)]) {
     let mut items = support::detail_header_row(600.0);
     items.extend(support::at(585.0, cells));
     write_fixture(w, &items);

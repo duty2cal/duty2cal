@@ -2,7 +2,7 @@
 
 Feature: Export a duty-plan calendar
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Crew member converts a supported duty plan and receives a calendar file
     Given a supported Released Roster duty plan supplied for conversion
     When the crew member converts it
