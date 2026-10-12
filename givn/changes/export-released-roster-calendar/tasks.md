@@ -526,19 +526,16 @@ Use-case constraint: Descriptive-field selection: approved field order; omit uns
 
 Use-case constraint: Decides D1 (seed Q28): differing optional values are both retained with their fragment roles.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED — the description carried only the departure fragment's report time (`Report (LT) 07:30`); the arrival fragment's `08:00` was dropped with no fragment role.
   ```
-  <RED output>
+  1 scenario (1 failed), 4 steps (3 passed, 1 failed)   RED_EXIT=101
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+- [x] GREEN — production: `FieldValue` distinguishes a value supplied once (or equally by both fragments) from two differing values; the description renders both, each labelled with its supplying fragment, and neither computes the interval. This is the D1 decision (seed Q28).
   ```
-  <GREEN output>
+  1 scenario (1 passed), 4 steps (4 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: Differing optional values are both retained with their fragment roles`; hash: `<hash>`
+- [x] REFACTOR — allowed the large travel variant (boxing would add an indirection per entry). fmt/clippy clean; scenario 27 still green; suite 38 passed, 13 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Differing optional values are both retained with their fragment roles`; hash: `1a5d0ae`
 
 ### 30. All-day activities use dates with a non-inclusive following-day end
 
