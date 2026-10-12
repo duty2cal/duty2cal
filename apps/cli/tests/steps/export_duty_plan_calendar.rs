@@ -1047,3 +1047,56 @@ async fn complementary_values_present(w: &mut DutyWorld) {
         "the complementary values did not combine into one description: {description}"
     );
 }
+
+#[given("a supported duty plan travel leg supplying Trip ID T42, Report (LT) 07:30, A/C ABC, Blocktime 02:00, Timezone Difference +01, Layover duration 03:00, and Tags 5_MFL")]
+async fn a_leg_supplying_every_selected_field(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (support::TRIP_X, "T42"),
+            (ACTIVITY_X, "FB568"),
+            (FROM_X, "ABC"),
+            (TO_X, "DEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+            (support::REPORT_X, "07:30"),
+            (AIRCRAFT_X, "ABC"),
+            (BLOCKTIME_X, "02:00"),
+            (TZ_X, "+01"),
+            (LAYOVER_X, "03:00"),
+            (TAGS_X, "5_MFL"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then("the travel activity's description lists them in the order Trip ID, Report (LT), A/C, Blocktime, Timezone Difference, Layover duration, Tags")]
+async fn description_lists_approved_order(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    let description = event_descriptions(&calendar)
+        .first()
+        .cloned()
+        .unwrap_or_default();
+    let order = [
+        "Trip T42",
+        "Report (LT) 07:30",
+        "A/C ABC",
+        "Blocktime 02:00",
+        "Timezone Difference +01",
+        "Layover duration 03:00",
+        "Tags 5_MFL",
+    ];
+    let mut previous = 0;
+    for field in order {
+        let position = description
+            .find(field)
+            .unwrap_or_else(|| panic!("{field} is missing from the description: {description}"));
+        assert!(
+            position >= previous,
+            "{field} appears out of the approved order: {description}"
+        );
+        previous = position;
+    }
+}
