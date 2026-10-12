@@ -573,19 +573,18 @@ Use-case constraint: Calendar representation: RFC 5545 byte contract (CRLF, esca
 
 Use-case constraint: Calendar representation: UIDs are snapshot-scoped, globally distinct, deterministic for the identical snapshot.
 
-- [ ] RED — remove `@wip` from this scenario only; unimplemented steps use `unimplemented!()`; run the single-scenario command; paste the non-zero output:
+- [x] RED (fault injection) — identity was already scoped to the source fingerprint, so the scenario passed on first run. Tying the identifier to the output name (the behaviour the design forbids) proved the assertion discriminates:
   ```
-  <RED output>
+  Step panicked: the identical source produced different component identifiers
+  1 scenario (1 failed), 3 steps (2 passed, 1 failed)   FAULT_EXIT=101
   ```
-- [ ] GREEN — replace stubs with real assertions + minimum production code; list every production file created/modified; run the single-scenario command; paste the zero-exit output:
+  The injection was never committed; the output-name independence was restored.
+- [x] GREEN — no production change needed; both calendars carry identical identifiers.
   ```
-  <GREEN output>
+  1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — clean up with no behaviour change; re-run the single-scenario command; paste the zero-exit output:
-  ```
-  <REFACTOR output>
-  ```
-- [ ] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: An identical source snapshot keeps its component identifiers`; hash: `<hash>`
+- [x] REFACTOR — nothing to clean; the converter invocation was factored into `run_converter` for reuse. fmt/clippy clean; suite 41 passed, 10 failed.
+- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: An identical source snapshot keeps its component identifiers`; hash: `29f8b74`
 
 ### 33. A revised source snapshot has separate component identifiers
 
