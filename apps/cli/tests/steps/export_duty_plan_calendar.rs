@@ -1504,3 +1504,49 @@ async fn activity_dates_are_unaffected(w: &mut DutyWorld) {
         "the revision metadata moved an activity date: {calendar}"
     );
 }
+
+/// Contents of a calendar that must survive an unrelated conversion.
+const EXISTING_CALENDAR: &str = "BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n";
+
+#[given("the source roster.pdf beside it existing calendars roster.ics and roster-1.ics")]
+async fn a_source_beside_existing_calendars(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "FB568"),
+            (FROM_X, "ABC"),
+            (TO_X, "DEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    );
+    for name in ["roster.ics", "roster-1.ics"] {
+        std::fs::write(w.working_dir().join(name), EXISTING_CALENDAR).expect("write the calendar");
+    }
+}
+
+#[then("a complete calendar is published as roster-2.ics")]
+async fn published_as_roster_two(w: &mut DutyWorld) {
+    let path = w.working_dir().join("roster-2.ics");
+    let calendar = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no calendar at {}: {error}", path.display()));
+    assert!(
+        calendar.contains("BEGIN:VCALENDAR")
+            && calendar.contains("BEGIN:VEVENT")
+            && calendar.contains("SUMMARY:FB568 ABC-DEF"),
+        "the published calendar is not complete: {calendar}"
+    );
+}
+
+#[then("roster.ics and roster-1.ics are unchanged")]
+async fn existing_calendars_unchanged(w: &mut DutyWorld) {
+    for name in ["roster.ics", "roster-1.ics"] {
+        let content = std::fs::read_to_string(w.working_dir().join(name))
+            .unwrap_or_else(|error| panic!("{name} disappeared: {error}"));
+        assert_eq!(
+            content, EXISTING_CALENDAR,
+            "{name} was modified by the conversion"
+        );
+    }
+}

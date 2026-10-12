@@ -258,7 +258,7 @@ Feature: Export a duty-plan calendar
     Then the published calendar's revision timestamp is 2099-01-11 08:00 UTC
     And its activity dates are unaffected
 
-  @givn.added @wip
+  @givn.added
   Scenario: An occupied calendar name yields a new unused numbered name
     Given the source roster.pdf beside it existing calendars roster.ics and roster-1.ics
     When the crew member converts it
