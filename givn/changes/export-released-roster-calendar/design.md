@@ -32,12 +32,11 @@ DDD + Hexagonal (ports and adapters), dependencies point inward. The workspace k
 flowchart TB
   subgraph app["apps/cli (bin, driving adapter)"]
     CLI["argv → use case → exit code"]
-    FS["fs module (paths, diagnostics)"]
-    LOG["log module (EventSubscriber)"]
+    FS["fs module (paths, diagnostics, publication)"]
   end
   subgraph core["crates/duty2cal-core (lib, MPL-2.0)"]
     subgraph appmod["application"]
-      Ports["RosterSource · CalendarSink · Clock · EventSubscriber"]
+      Ports["RosterSource · CalendarSink · Clock"]
       UC["ConvertRoster use case"]
     end
     DOM["domain: Roster aggregate, value objects, pure services"]
@@ -59,12 +58,12 @@ New: the whole workspace (`crates/duty2cal-core`, `crates/duty2cal-pdf`, `apps/c
 1. **Compiler (crate boundaries).** `duty2cal-core` depends on no workspace crate; `duty2cal-pdf` depends only on `duty2cal-core` + `pdfplumber`; `apps/*` and future `ffi/*` are composition roots.
 2. **Static policy.** `deny.toml` (licence allowlist; no copyleft third-party crate; no `pdfplumber` outside `duty2cal-pdf`) and `crates/duty2cal-core/clippy.toml` (`disallowed-types`: `File`, `TcpStream`, `UdpSocket`, `SystemTime`, `Instant`; `disallowed-methods`: `fs::read|write|read_to_string`, `env::var|args`, `process::exit`). CI runs `cargo clippy --workspace -- -D warnings`.
 3. **Architecture tests.** `crates/duty2cal-core/tests/architecture.rs` (archunit 0.0.2) enforces intra-crate module direction: `domain` → nothing; `application` → `domain`; `adapters` → `application` + `domain`; and the cycle rule. Limits: syntax-based, file granularity, no macro expansion.
-4. **Review conventions.** Each adapter implements exactly one port with no business logic; value objects are built only through validating `Result` constructors with no public fields; ports are traits in `application` and know no adapter type; every port has exactly one fake in `application/src/testing.rs`; no `unwrap()`/`expect()` outside tests.
+4. **Review conventions.** Each adapter implements exactly one port with no business logic; value objects are built only through validating `Result` constructors with no public fields; ports are traits in `application` and know no adapter type; every port is exercised through the real adapters, so no test-double module exists; no `unwrap()`/`expect()` outside tests.
 
 ### Modules in `duty2cal-core`
 
-- `domain` — `Roster` aggregate, value objects, and the pure services `merge_midnight_legs`, `classify_activity`, `derive_layover_days`. No I/O, no format knowledge.
-- `application` — the ports, the `ConvertRoster` use case, `RawRosterTable`, `DomainEvent`, and port fakes.
+- `domain` — `Roster` aggregate, `DutyEntry` values, and the pure timing rules (`timing`). No I/O, no format knowledge.
+- `application` — the ports (`RosterSource`, `CalendarSink`, `Clock`), the `ConvertRoster` use case, `RawRosterTable`, and the row interpretation that classifies activities and pairs travel fragments.
 - `adapters/ics` — the dependency-free RFC 5545 serializer.
 
 ## Domain model
@@ -104,13 +103,12 @@ Unknown required codes, unmatched travel fragments, zero/negative intervals, and
 
 ```rust
 /// Driven port: yields raw, position-based rows from a document.
-pub trait RosterSource { fn read(&self, bytes: &[u8]) -> Result<RawRosterTable, SourceError>; }
+pub trait RosterSource { fn read(&self, bytes: &[u8]) -> Result<SourceDocument, SourceError>; }
 /// Driven port: serializes a roster into a calendar format.
 pub trait CalendarSink { fn write(&self, roster: &Roster, opts: &WriteOptions) -> Result<String, SinkError>; }
 /// Driven port: time (for the DTSTAMP construction fallback); fixed in tests.
 pub trait Clock { fn now_utc(&self) -> UtcDateTime; }
 /// Driven port: event observer (CLI logger; later progress/JS).
-pub trait EventSubscriber { fn on(&self, ev: &DomainEvent); }
 
 /// Driving port.
 pub struct ConvertRoster<S: RosterSource, K: CalendarSink, C: Clock> { /* … */ }
@@ -121,7 +119,7 @@ impl<S, K, C> ConvertRoster<S, K, C> {
 
 Input `&[u8]`, output `String` — no path or file handle crosses the boundary, so the same use case is callable from the CLI, WASM, and UniFFI without adaptation.
 
-`RawRosterTable` is the anti-corruption intermediate format: rows of column cells (`date, trip, report, pos, activity, from, to, start, end, ac, layover, tz, block, tags`). Column assignment (header row → X bands, derived dynamically, never hard-coded; Y clustering into rows) happens in `duty2cal-pdf`; interpretation (midnight merge, classification, date resolution) happens in `domain`. The PDF adapter is therefore replaceable.
+`RawRosterTable` is the anti-corruption intermediate format: rows of column cells (`date, trip, report, pos, activity, from, to, start, end, ac, layover, tz, block, tags`). Column assignment (header row → X bands, derived dynamically, never hard-coded; Y clustering into rows) happens in `duty2cal-pdf`; interpretation (classification, fragment pairing, date carry, date resolution) happens in `application`. The PDF adapter is therefore replaceable.
 
 **Domain events** (in-process, synchronous, ordered; no broker, no async channel — conflict 19): `RosterParsed`, `EntryRecognized`, `MidnightLegMerged`, `UnknownActivity` (hard failure), `CalendarWritten`.
 
@@ -202,7 +200,6 @@ The CLI exposes one documented seam for deterministic runs: `DUTY2CAL_CONSTRUCTI
 | Rule: description selection, omission, coalescing, differing values, order | `description` rules | the description scenarios |
 | Rule: Trip ID carry within one roster trip | `trip` rules | "A known trip identifier is carried across the legs of one unambiguous roster trip" |
 | Rule: snapshot-scoped deterministic UIDs; source/fallback DTSTAMP | `calendar` + `SourceSnapshot` + `Clock` | the identity and timestamp scenarios |
-| Events | `DomainEvent` + `EventSubscriber` | CLI logger; future progress surface |
 | Capability ownership | `export-duty-plan-calendar` only | Interaction Coverage Matrix |
 
 Actors in Gherkin are domain actors; Personas are review lenses (below).

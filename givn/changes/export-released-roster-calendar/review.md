@@ -61,7 +61,49 @@ scenario it needs.
 
 `README-IMPACT: updated - Description, Quick start, Prerequisites, Usage, Contributing`
 
-## Sign-off
+## Arc42 implementation conformance
 
-Not yet: the conformance tables (checks 5, 6, 11, 13, arc42 implementation conformance, ubiquitous
-language) and the coverage dispositions above must land first. `REVIEW: PASS` follows both.
+The arc42 addon is enabled (`givn/config.yaml`), so the check ran against all 12 chapters, re-derived
+independently from proposal/specs/design before opening `arc42.md`. All 12 files exist with real content,
+no chapter carries ASCII art (every diagram is Mermaid), ADR-0001 and ADR-0002 are registered with their
+consequences in chapter 11, and `arc42.md`'s all-Yes selection has no missing or extra row.
+
+| # | Chapter | Verdict |
+|---|---|---|
+| 1, 3, 6, 7, 9, 10, 11 | introduction, context, runtime, deployment, decisions, quality, risks | MATCH |
+| 2 | architecture-constraints | WAS STALE: claimed an `icalendar` test-only parser (no such dependency) and one fake per port in `application/src/testing.rs` (no test doubles exist). Fixed |
+| 4 | solution-strategy | WAS STALE: claimed an in-process `DomainEvent` stream. Replaced with the real explicit-failure outcome |
+| 5 | building-block-view | WAS STALE: named `merge_midnight_legs`, `classify_activity`, `derive_layover_days`, an `EventSubscriber` port, `DomainEvent` and a `log` module; none exist. Replaced with the real modules, and the dead `apps/cli/src/log.rs` module is deleted |
+| 8 | crosscutting-concepts | WAS OVERSTATED: claimed create-new semantics; the code probes for an unused name then writes, which is not atomic. Corrected, including the race it does not close |
+| 12 | glossary | WAS STALE: the Code symbol column said "Not implemented." for all 16 terms although the concepts are implemented. Each term now names its symbol |
+
+The change's own `design.md` carried the same drift (a `log`/`EventSubscriber` node, an `EventSubscriber`
+port, `DomainEvent` in the module list and the decision table, a `RawRosterTable` return type, domain
+services that do not exist); it is corrected too, which makes this change's design a changed artifact —
+see *Pending*.
+
+`ARC42 CONFORMANCE: CLEAN` after those fixes (suite still 51 of 51, `givn lint` clean).
+
+## Ubiquitous language conformance
+
+One finding: the spec titled a scenario "Extended non-flight duty" while the confirmed glossary term is
+"EM duty". The scenario title and the task record now use "EM duty"; the glossary holds all 16 terms with
+their code symbols.
+
+`LANGUAGE CONFORMANCE: CLEAN` after that fix.
+
+## Overlap dispositions
+
+| Shape match | Decision |
+|---|---|
+| "An explicit qualifier with no unique adjacent date rejects the conversion" ⊂ "A required travel leg without a compatible partner rejects the conversion" | keep — the subset scenario names a distinct cause (a qualifier with no unique adjacent date) even though both surface as the same rejection class; splitting it would lose the qualifier case |
+| "The revision timestamp comes from the source's Created footer" ⊂ "Without usable source metadata the construction time is the revision timestamp" | keep — the two assert opposite provenance outcomes from one another's setup (source stamp versus clock fallback) |
+
+## Pending before sign-off
+
+1. `design.md` changed in this pass, so **design-review must be re-run** over it (the review instruction makes that mandatory) before `REVIEW: PASS`.
+2. The 55 classified coverage gaps need their scenarios (RED, then GREEN, then one commit each); they are
+   named in the classification table above.
+3. Checks 5, 6, 11 and 13 (interaction coverage cross-reference, driving mechanism, design-versus-implementation
+   deviation) are not yet recorded here; the conformance pass returned the arc42 section only, and the rest
+   is requested.

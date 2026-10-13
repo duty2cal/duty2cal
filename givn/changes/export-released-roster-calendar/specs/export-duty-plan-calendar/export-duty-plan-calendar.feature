@@ -70,7 +70,7 @@ Feature: Export a duty-plan calendar
     Then the calendar contains one timed non-flight activity from 09:00 to 15:00 UTC on 2099-01-17 lasting 6 hours
 
   @givn.added
-  Scenario: Extended non-flight duty uses its printed UTC window
+  Scenario: EM duty uses its printed UTC window
     Given a supported duty plan dated 2099-01-18 with activity code EM and source station ABC and resolved UTC start 06:00 and end 10:00
     When the crew member converts it
     Then the calendar contains one timed non-flight activity from 06:00 to 10:00 UTC on 2099-01-18 lasting 4 hours

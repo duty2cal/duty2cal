@@ -6,7 +6,7 @@ Every conversion either produces a complete calendar or fails explicitly. The `R
 
 ## No-clobber publication
 
-New calendars and diagnostics are allocated with create-new semantics and an enumerated suffix; an occupied or concurrently claimed path is never replaced, and allocation retries the next unused name. This is enforced in the publication and diagnostic adapters, not in the domain, so the domain stays pure. The rule protects both the user's earlier outputs and a competing process.
+New calendars and diagnostics are allocated by probing for an unused name and enumerating a suffix when the plain name is taken; an occupied path is never replaced, so the user's earlier outputs survive re-runs. The probe and the write are two steps, so the rule is not an atomic create-new claim: two processes racing for the same fresh name can both pass the probe. Enforced in the filesystem boundary of `apps/cli`, not in the domain, which stays pure.
 
 ## Explicit failure reporting
 

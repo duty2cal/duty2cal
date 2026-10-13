@@ -3,7 +3,6 @@
 //! Wires the filesystem adapter (`fs`) and the logger (`log`).
 
 mod fs;
-mod log;
 
 use std::path::Path;
 use std::process::ExitCode;

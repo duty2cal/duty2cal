@@ -6,7 +6,7 @@
 - **Staged pipeline with a completeness gate.** Source recognition → classification → endpoint date resolution → description composition → calendar composition → publication. The `Roster` aggregate reaches "complete" only when every required activity and field resolves; publication happens after completeness, so a partial calendar can never be published.
 - **Determinism scoped to the source snapshot.** Component identity derives from the source snapshot plus the represented activity, not from an output counter or a title (opaque discriminator; the readable date/flight/route recipe was rejected as non-unique).
 - **Create-new publication.** New calendars and diagnostics are written only to an unused name (create-new semantics with retry); existing or concurrently claimed files are never replaced.
-- **Explicit failure as a first-class outcome**, with an in-process, synchronous `DomainEvent` stream for host surfaces.
+- **Explicit failure as a first-class outcome**: the CLI names the source and the reason in a numbered diagnostic written beside it and reports the failure through its exit status; the use case returns a typed error rather than a partial calendar.
 
 ## Technology choices
 

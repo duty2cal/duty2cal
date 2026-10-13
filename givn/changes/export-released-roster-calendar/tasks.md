@@ -220,7 +220,7 @@ Use-case constraint: Rule: TK/DTUSA/EM are timed non-flight duty using their pri
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
 - [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
-### 9. Extended non-flight duty uses its printed UTC window
+### 9. EM duty uses its printed UTC window
 
 Use-case constraint: Rule: TK/DTUSA/EM are timed non-flight duty using their printed UTC interval.
 

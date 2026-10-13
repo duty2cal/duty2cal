@@ -4,7 +4,7 @@
 
 ```mermaid
 flowchart TB
-  CLI["apps/cli — driving adapter (argv → use case → exit code); fs + log modules"]
+  CLI["apps/cli — driving adapter (argv → use case → exit code); fs module publishes"]
   PDF["crates/duty2cal-pdf — pdfplumber → RosterSource"]
   CORE["crates/duty2cal-core — lib"]
   CLI --> CORE
@@ -14,7 +14,7 @@ flowchart TB
 
 | Building block | Responsibility |
 |---|---|
-| `apps/cli` (package `duty2cal`) | Parse the invocation, invoke the conversion, print the reported path or failure, set the exit status, publish files (fs module) and emit events (log module). |
+| `apps/cli` (package `duty2cal`) | Parse the invocation, invoke the conversion, print the reported path or failure, set the exit status, and publish the calendar or the diagnostic (`fs` module). |
 | `crates/duty2cal-pdf` | The only crate that depends on `pdfplumber`; produces the `RawRosterTable` anti-corruption input. |
 | `crates/duty2cal-core` | Pure domain, application ports + `ConvertRoster`, and the dependency-free ICS adapter. |
 
@@ -26,8 +26,8 @@ flowchart TB
 
 | Element | Responsibility |
 |---|---|
-| `domain` | `Roster` aggregate, value objects, and `merge_midnight_legs`, `classify_activity`, `derive_layover_days`. No I/O, no clock. |
-| `application` | Ports (`RosterSource`, `CalendarSink`, `Clock`, `EventSubscriber`), the `ConvertRoster` use case, `RawRosterTable`, `DomainEvent`, and port fakes. |
+| `domain` | `Roster` aggregate, `DutyEntry` values, and the pure timing rules (`timing`). No I/O, no clock. |
+| `application` | Ports (`RosterSource`, `CalendarSink`, `Clock`), the `ConvertRoster` use case, `RawRosterTable` as the anti-corruption intermediate, and the row interpretation that classifies activities and pairs travel fragments. |
 | `adapters/ics` | RFC 5545 serializer — the `CalendarSink` used by every facade. |
 
 ### `duty2cal-pdf`
@@ -42,7 +42,6 @@ flowchart TB
 |---|---|
 | `main` | argv handling, wiring, exit status. |
 | `fs` | unused-path allocation for calendars and numbered diagnostics. |
-| `log` | `EventSubscriber` printing to the terminal. |
 
 ### Deferred (roadmap)
 
