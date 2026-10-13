@@ -48,14 +48,13 @@ Feature: Publish a public release
     And  the prepared release holds no archive
 
   Scenario: The release text states the released revisions' release notes
-    Given  a history whose released revisions carry release-note subjects, including one subject repeated by several revisions and one subject that carries no release-note type, and whose housekeeping revisions do not
+    Given  a history whose released revisions name a new capability, a fix, and work no user can see
+    And  one released change is named by several revisions
     When  the maintainer prepares the release for version 0.2.0
     Then  the release text names version 0.2.0
-    And  the release text lists these release notes in release order
-      | release note |
-      | Offer an archive for every supported platform |
-      | Publish only an archive the evidence supports |
-    And  the release text omits the housekeeping revisions and the subject that carries no release-note type
+    And  the release text names the new capability before the fix
+    And  the release text names the released change once
+    And  the release text omits the work no user can see
 
   @e2e
   Scenario: Maintainer prepares a release and runs the archived executable
@@ -66,3 +65,73 @@ Feature: Publish a public release
     When  the maintainer extracts the archive for this machine's platform
     And  runs the executable taken from that archive
     Then  the executable prints "usage: duty2cal <duty-plan.pdf>" and reports failure through its process exit status
+  Scenario: A version's notes group the changes a reader can see
+    Given  a history whose released revisions name a new capability, a fix, and work no user can see
+    And  a revision typed as a fix of that capability whose words name the project's own tooling
+    And  a revision whose subject borrows a tooling word for a crew member's own work
+    When  the maintainer generates the change log for version 0.2.0
+    Then  the notes for version 0.2.0 name the new capability and the fix
+    And  the notes name the new capability before the fix
+    And  the notes name no revision whose work no user can see
+    And  the notes name no revision whose words name the project's own tooling
+    And  the notes name the revision whose subject borrows a tooling word for a crew member's own work
+
+  Scenario: A version that changes nothing a user can see is refused
+    Given  a history whose released revisions name only work no user can see
+    When  the maintainer generates the change log for version 0.2.0
+    Then  the generation fails and states that the version changes nothing a user can see
+
+  Scenario: The change log keeps the earlier versions beside the new one
+    Given  a change log whose newest section is version 0.1.0
+    When  the maintainer generates the change log for version 0.2.0
+    Then  version 0.2.0 is the newest section of the change log
+    And  the section for version 0.1.0 is unchanged
+
+  Scenario: A change log that does not match the released revision is refused
+    Given  a committed change log whose newest section differs from what the history states
+    When  the change log is checked against the released revision
+    Then  the check fails and names the version whose section differs
+
+  Scenario: Each version's section is dated and compared with the one before it
+    Given  a change log holding version 0.1.0 and a history releasing version 0.2.0
+    When  the maintainer generates the change log for version 0.2.0
+    Then  the section for version 0.2.0 states its own date
+    And  the section for version 0.2.0 states the comparison against version 0.1.0
+
+  Scenario: The first released version is recorded from the history
+    Given  a history whose released revisions name a new capability and work no user can see
+    And  no change log exists yet
+    When  the maintainer generates the change log for version 0.1.0
+    Then  the change log holds one section, for version 0.1.0
+    And  that section names the new capability
+    And  that section states no comparison against an earlier version
+
+  Scenario: A version's section can be rendered before its tag exists
+    Given  a history whose newest revision names a new capability and carries its own date
+    And  the version is not tagged yet
+    When  the maintainer generates the change log for version 0.1.0
+    Then  the change log holds one section, for version 0.1.0
+    And  that section states the date of the revision it will be tagged at
+
+  @e2e
+  Scenario: Maintainer generates the change log for a version and reads its newest section
+    Given  a repository whose history releases version 0.1.0
+    When  the maintainer generates the change log for version 0.1.0
+    Then  the change log file holds a section for version 0.1.0
+    And  that section names the released change a user can see
+
+  Scenario: The prepared release carries the change log its section came from
+    Given  a history whose released revisions name a new capability and work no user can see
+    When  the maintainer prepares the release for version 0.2.0
+    Then  the prepared release stages the change log for version 0.2.0
+    And  the staged change log holds the section the release text states
+
+  Scenario: A capability missing from the configured allow-list is refused
+    Given  a capability the repository holds that the configuration does not name
+    When  the maintainer generates the change log for version 0.2.0
+    Then  the generation fails and names the capability missing from the configuration
+
+  Scenario: A committed change log missing the released version's section is refused
+    Given  a committed change log that holds no section for version 0.2.0
+    When  the change log is checked against the released revision
+    Then  the check fails and names version 0.2.0
