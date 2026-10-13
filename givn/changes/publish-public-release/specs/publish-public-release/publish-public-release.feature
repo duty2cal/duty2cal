@@ -26,7 +26,7 @@ Feature: Publish a public release
     Then the preparation fails and names "linux-arm64"
     And the prepared release holds no archive
 
-  @givn.added @wip
+  @givn.added
   Scenario: An executable for an unrecognised platform is refused
     Given an executable built for every supported platform
     And an executable presented as the unrecognised platform "freebsd-x86_64"

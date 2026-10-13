@@ -134,15 +134,41 @@ Use-case constraint: an archive set missing a platform publishes nothing.
 
 Use-case constraint: no invented platform is ever published.
 
-- [ ] RED — paste the non-zero output:
+- [x] RED — paste the non-zero output:
   ```
+  Feature: Publish a public release
+    Scenario: An executable for an unrecognised platform is refused
+     ✔  Given an executable built for every supported platform
+     ✘  And an executable presented as the unrecognised platform "freebsd-x86_64"
+        Step panicked. Captured output: not implemented: present an executable as freebsd-x86_64
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  2 steps (1 passed, 1 failed)
+  RED_EXIT=101
   ```
-- [ ] GREEN — the platform whitelist refusal; paste the output:
+- [x] GREEN — the platform whitelist refusal; paste the output:
   ```
+  Feature: Publish a public release
+    Scenario: An executable for an unrecognised platform is refused
+     ✔  Given an executable built for every supported platform
+     ✔  And an executable presented as the unrecognised platform "freebsd-x86_64"
+     ✔  When the maintainer prepares the release for version 0.1.0
+     ✔  Then the preparation fails and names "freebsd-x86_64"
+     ✔  And the prepared release holds no archive
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  5 steps (5 passed)
+  GREEN_EXIT=0
   ```
-- [ ] REFACTOR — paste the output:
+  Production code: none new — the whitelist refusal in `scripts/prepare-release.sh` walks the binaries directory's subdirectories before anything else and refuses any name outside the canonical set (`prepare-release: unsupported platform: freebsd-x86_64 (supported: …)`); the Given presents the executable under a name the script does not know, and the existing `names`/`no archive` steps assert the refusal and the untouched output.
+- [x] REFACTOR — paste the output:
   ```
+  apps/cli/tests/steps/publish_public_release.rs FMT OK
+  1 scenario (1 passed), 5 steps (5 passed)   REFACTOR_EXIT=0
   ```
+  The Given now asserts the name it presents really is outside the supported set, so the step cannot pass by presenting a supported platform twice.
 - [ ] COMMIT — `<hash>`:
   ```
   ```

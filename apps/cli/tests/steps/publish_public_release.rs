@@ -330,3 +330,22 @@ async fn holds_no_archive(w: &mut DutyWorld) {
         "the refused preparation staged {staged:?}"
     );
 }
+
+#[given(regex = r#"^an executable presented as the unrecognised platform "([^"]+)"$"#)]
+async fn an_unrecognised_platform(w: &mut DutyWorld, platform: String) {
+    assert!(
+        !supported_platforms().contains(&platform.as_str()),
+        "the step names a platform inside the supported set: {platform}"
+    );
+    let binaries = w
+        .binaries
+        .clone()
+        .expect("the scenario prepared no executables");
+    let dir = binaries.join(&platform);
+    std::fs::create_dir_all(&dir).expect("create the unrecognised platform directory");
+    std::fs::write(
+        dir.join("duty2cal"),
+        b"stand-in executable for an unrecognised platform\n",
+    )
+    .expect("write the unrecognised executable");
+}
