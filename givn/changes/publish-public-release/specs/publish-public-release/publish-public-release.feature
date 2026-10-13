@@ -6,7 +6,7 @@ Feature: Publish a public release
   platform, inspects the set, and publishes it as a release that a crew member
   can obtain for their own machine and trace to the revision it was built from.
 
-  @givn.added @wip
+  @givn.added
   Scenario: A prepared release offers one archive for every supported platform
     Given an executable built for every supported platform
     When the maintainer prepares the release for version 0.1.0

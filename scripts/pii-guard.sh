@@ -11,9 +11,9 @@
 #      placeholder in any digit run, because a test may hold
 #      `DTSTART:20990118T{}00Z`.
 #   2. carry a real duty plan's timestamp. This project's committed calendars
-#      are fictional by convention: their UTC timestamps use 2098 or 2099.
-#      Any date-time property outside that convention is treated as a real
-#      plan's output, wherever it appears.
+#      are fictional by convention: their dates use 2098 or 2099. Any complete
+#      calendar date outside that convention is treated as a real plan's
+#      output, wherever it appears.
 #
 # Both surfaces are scanned: the working tree (`grep -r`) and every revision
 # reachable from the published tip (`git grep` over `git rev-list HEAD`),
@@ -23,7 +23,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 pattern='(\+[0-9]{1,3}/[0-9]{6,})|([0-9]{6}[A-Z])'
-year_pattern='(DTSTART|DTEND|DTSTAMP|UNTIL|RECURRENCE-ID|CREATED)[:;][0-9]{4}'
+# A complete calendar date, all-day (`DTSTART;VALUE=DATE:20260607`) or timed
+# (`DTSTART:20260607T092500Z`). A bare property reference such as `DTSTART:2026`
+# quoted in a document is not a calendar's content, so it is not a finding.
+year_pattern='(DTSTART|DTEND|DTSTAMP|UNTIL|RECURRENCE-ID|CREATED)(;VALUE=DATE)?[:;][0-9]{8}'
 fictional_years='(2098|2099)'
 
 # Remove iCalendar timestamp parts: first a time (T + HHMMSS + Z, tolerating a

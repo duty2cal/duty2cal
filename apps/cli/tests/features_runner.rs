@@ -4,6 +4,7 @@
 //! skipped step fail the run.
 
 use std::path::PathBuf;
+use std::time::SystemTime;
 
 use cucumber::World as _;
 
@@ -27,6 +28,21 @@ pub struct DutyWorld {
     pub calendars: Vec<String>,
     /// Environment variables passed to the converter subprocess.
     pub env: Vec<(String, String)>,
+    /// Executables directory the release preparation reads: one subdirectory
+    /// per supported platform.
+    pub binaries: Option<PathBuf>,
+    /// Directory the release preparation stages the release into.
+    pub staged: Option<PathBuf>,
+    /// Fixture repository whose history supplies the release text.
+    pub fixture_repo: Option<PathBuf>,
+    /// Combined output of the last command the scenario ran.
+    pub command_transcript: String,
+    /// Combined output of every command the scenario ran, in order, for the
+    /// transcript an `@e2e` scenario commits as evidence.
+    pub scenario_transcript: String,
+    /// Modification times of the staged archives, captured before a repeated
+    /// preparation.
+    pub staged_snapshot: Vec<(String, SystemTime)>,
 }
 
 impl DutyWorld {

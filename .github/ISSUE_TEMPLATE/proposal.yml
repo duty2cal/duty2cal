@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: MPL-2.0
+name: Proposal
+description: Propose a change to duty2cal or to its release channel
+title: "[proposal] "
+labels: ["proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A change to behaviour is specified in Gherkin before it is implemented —
+        see [CONTRIBUTING.md](../CONTRIBUTING.md). **Never attach a real duty
+        plan or personal identifying values**; a stripped sample is what a
+        review can use (see [SECURITY.md](../SECURITY.md) for anything that
+        could expose private plan data).
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What can a crew member not do today, or what goes wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: The outcome you want
+      description: What is observably different once this is done?
+    validations:
+      required: true
+  - type: dropdown
+    id: export-family
+    attributes:
+      label: Export family
+      description: If this concerns a plan, which export family is it from?
+      options:
+        - Released Roster detail table (supported)
+        - another export family (unsupported)
+        - not about a plan
+    validations:
+      required: true
+  - type: textarea
+    id: dates
+    attributes:
+      label: The dates and station codes this exercises
+      description: For a conversion proposal, the destination station codes and the dates concerned.
+    validations:
+      required: false
+  - type: textarea
+    id: sample
+    attributes:
+      label: Stripped sample or public specification
+      description: A stripped sample, or a link to a public specification of the format. Never a real plan.
+    validations:
+      required: false
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: This proposal contains no real duty plan, no personal itinerary and no personal identifying values.
+          required: true

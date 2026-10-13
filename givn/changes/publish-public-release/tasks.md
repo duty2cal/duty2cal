@@ -31,15 +31,46 @@ Each scenario's production code is `scripts/prepare-release.sh` (extended as nee
 
 Use-case constraint: one archive per supported platform, named for the platform, holding only that platform's executable, plus a checksum covering the archive.
 
-- [ ] RED — remove `@wip` from this scenario only; write the step definitions with `unimplemented!(...)` bodies where real work is missing; run the single-scenario command; paste the non-zero output:
+- [x] RED — remove `@wip` from this scenario only; write the step definitions with `unimplemented!(...)` bodies where real work is missing; run the single-scenario command; paste the non-zero output:
   ```
+  Feature: Publish a public release
+    Scenario: A prepared release offers one archive for every supported platform
+     ✘  Given an executable built for every supported platform
+        Step panicked. Captured output: not implemented: build an executable for every supported platform
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  1 step (1 failed)
+  RED_EXIT=101
   ```
-- [ ] GREEN — real assertions; create `scripts/prepare-release.sh` (version, binaries directory, output directory, repository); run the single-scenario command; paste the passing output:
+  Step file created in RED: `apps/cli/tests/steps/publish_public_release.rs` (helpers plus the four stubs), declared in `apps/cli/tests/steps/mod.rs`; `apps/cli/tests/steps/e2e/publish_public_release.rs` and its declaration in `apps/cli/tests/steps/e2e/mod.rs`; `DutyWorld` gained the fields the capability's steps need (`binaries`, `staged`, `fixture_repo`, `command_transcript`, `scenario_transcript`, `staged_snapshot`).
+- [x] GREEN — real assertions; create `scripts/prepare-release.sh` (version, binaries directory, output directory, repository); run the single-scenario command; paste the passing output:
   ```
+  Feature: Publish a public release
+    Scenario: A prepared release offers one archive for every supported platform
+     ✔  Given an executable built for every supported platform
+     ✔  When the maintainer prepares the release for version 0.1.0
+     ✔  Then the prepared release holds exactly these archives, each with its checksum file
+         | archive                              | executable   |
+         | duty2cal-0.1.0-windows-x86_64.tar.gz | duty2cal.exe |
+         | duty2cal-0.1.0-linux-x86_64.tar.gz   | duty2cal     |
+         | duty2cal-0.1.0-linux-arm64.tar.gz    | duty2cal     |
+         | duty2cal-0.1.0-macos-arm64.tar.gz    | duty2cal     |
+         | duty2cal-0.1.0-macos-x86_64.tar.gz   | duty2cal     |
+     ✔  And every archive holds only its own executable
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  4 steps (4 passed)
+  GREEN_EXIT=0
   ```
-- [ ] REFACTOR — tidy the script and the steps without changing behaviour; run again; paste the output:
+  Production code: `scripts/prepare-release.sh` — the canonical platform set, the argument contract, the completeness/whitelist/readability/occupied refusals (all before any write), the staging directory moved into `<out>` only when complete, the deterministic `tar … | gzip -n` payload, `sha256sum` beside each archive, and the release text. The steps assert the exact staged set (five archives, five checksum files, the release text) and that each archive lists exactly its own executable via `tar -tzf`.
+- [x] REFACTOR — tidy the script and the steps without changing behaviour; run again; paste the output:
   ```
+  rustfmt --edition 2021 --check apps/cli/tests/steps/publish_public_release.rs -> clean
+  1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
+  Two format-neutral rewrites in `fresh_dir` and `run_prepare` so the file is stable under rustfmt 1.98 (the toolchain in this environment), and the not-yet-used `machine_executable` helper removed. Honest tooling note: `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` do not run clean here, but every finding is in files this change does not touch (`crates/duty2cal-pdf/src/lib.rs`, `apps/cli/tests/steps/support.rs`, `apps/cli/tests/steps/export_duty_plan_calendar.rs`); rustfmt 1.98 and clippy 1.98 are newer than whatever formatted them, and the repository pins `channel = "stable"`.
 - [ ] COMMIT — `<hash>` — subject is the release note, body names this scenario:
   ```
   ```

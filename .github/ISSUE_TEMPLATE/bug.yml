@@ -1,0 +1,82 @@
+# SPDX-License-Identifier: MPL-2.0
+name: Bug report
+description: A conversion, diagnostic or release defect in duty2cal
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never attach a real duty plan, a calendar converted from one, or a
+        personal itinerary.** A sample has to be stripped first: the page
+        structure with every real name, employee number, date, station and route
+        removed or replaced. A defect that could expose private plan data does
+        not belong in a public issue — see [SECURITY.md](../SECURITY.md).
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The released version (for example 0.1.0) or the commit you built from.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      description: Which archive or build did you run?
+      options:
+        - Windows x86_64
+        - Linux x86_64
+        - Linux arm64
+        - macOS arm64 (Apple Silicon)
+        - macOS x86_64 (Intel)
+        - built from source
+    validations:
+      required: true
+  - type: dropdown
+    id: export-family
+    attributes:
+      label: Export family
+      description: Which export was the plan? duty2cal supports the Released Roster detail-table family.
+      options:
+        - Released Roster detail table (supported)
+        - another export family (unsupported)
+        - not sure
+    validations:
+      required: true
+  - type: textarea
+    id: dates
+    attributes:
+      label: The dates the plan covers
+      description: Which month or date range does the plan cover? Do not paste the plan itself.
+      placeholder: a released roster for June 2026
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Stripped sample
+      description: If a sample is needed, supply a stripped one. Leave empty if the export family is unsupported.
+    validations:
+      required: false
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: The exact diagnostic text and the process exit status, if you have them.
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: This report contains no real duty plan, no calendar converted from one, and no personal identifying values.
+          required: true

@@ -5,28 +5,346 @@ on:
   push:
     tags: ["v*"]
 
+# One release per tag: a tag's release runs to completion on its own.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
 jobs:
-  windows:
-    runs-on: ubuntu-latest
+  build:
+    name: build (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The Windows executable is cross-built on Linux (the confirmed
+          # distribution constraint) and started by the smoke-windows job.
+          - platform: windows-x86_64
+            runner: ubuntu-latest
+            target: x86_64-pc-windows-gnu
+            binary: duty2cal.exe
+            apt: mingw-w64
+            linker: ""
+          - platform: linux-x86_64
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            binary: duty2cal
+            apt: musl-tools
+            linker: musl-gcc
+          - platform: linux-arm64
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            binary: duty2cal
+            apt: musl-tools
+            linker: musl-gcc
+          - platform: macos-arm64
+            runner: macos-latest
+            target: aarch64-apple-darwin
+            binary: duty2cal
+            apt: ""
+            linker: ""
+          - platform: macos-x86_64
+            runner: macos-15-intel
+            target: x86_64-apple-darwin
+            binary: duty2cal
+            apt: ""
+            linker: ""
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-pc-windows-gnu
-      - run: sudo apt-get update && sudo apt-get install -y mingw-w64
-      - run: cargo build --release --target x86_64-pc-windows-gnu
-      - name: Checksums
+          targets: ${{ matrix.target }}
+      - name: Install the linker this target needs
+        if: matrix.apt != ''
+        run: sudo apt-get update && sudo apt-get install -y ${{ matrix.apt }}
+      - name: Build the release executable
+        env:
+          # Only the target being built reads its own linker variable.
+          CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER: ${{ matrix.linker }}
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: ${{ matrix.linker }}
+        run: cargo build --release --target ${{ matrix.target }}
+      - name: Start the built executable
+        if: matrix.platform != 'windows-x86_64'
         run: |
-          cd target/x86_64-pc-windows-gnu/release
-          sha256sum duty2cal.exe > duty2cal.exe.sha256
-      - uses: actions/upload-artifact@v4
+          set -euo pipefail
+          set +e
+          output="$("target/${{ matrix.target }}/release/${{ matrix.binary }}" 2>&1)"
+          status=$?
+          set -e
+          printf '%s\n' "$output"
+          if [ "$status" -eq 0 ]; then
+            echo "expected a non-zero exit status for a missing argument"
+            exit 1
+          fi
+          case "$output" in
+            *"usage: duty2cal <duty-plan.pdf>"*) ;;
+            *)
+              echo "the executable did not print its usage line"
+              exit 1
+              ;;
+          esac
+      - uses: actions/upload-artifact@v7
         with:
-          name: duty2cal-windows
-          path: |
-            target/x86_64-pc-windows-gnu/release/duty2cal.exe
-            target/x86_64-pc-windows-gnu/release/duty2cal.exe.sha256
-      - uses: softprops/action-gh-release@v2
+          name: binary-${{ matrix.platform }}
+          path: target/${{ matrix.target }}/release/${{ matrix.binary }}
+          if-no-files-found: error
+
+  smoke-windows:
+    name: smoke (windows-x86_64)
+    needs: [build]
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v8
         with:
-          files: |
-            target/x86_64-pc-windows-gnu/release/duty2cal.exe
-            target/x86_64-pc-windows-gnu/release/duty2cal.exe.sha256
+          name: binary-windows-x86_64
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - name: The executable starts and reports usage without arguments
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath .\duty2cal.exe -Wait -PassThru -RedirectStandardError err.txt
+          Get-Content err.txt
+          if ($p.ExitCode -eq 0) { throw "expected a non-zero exit for a missing argument" }
+          if (-not ((Get-Content err.txt -Raw) -match [regex]::Escape("usage: duty2cal <duty-plan.pdf>"))) {
+            throw "the executable did not print its usage line"
+          }
+      - name: Assert no companion DLLs are required
+        shell: pwsh
+        run: |
+          $sysroot = rustc --print sysroot
+          $objdump = Get-ChildItem "$sysroot\lib\rustlib\*\bin\llvm-objdump.exe" | Select-Object -First 1
+          if (-not $objdump) { throw "llvm-objdump was not found in the toolchain" }
+          $imports = & $objdump.FullName -p .\duty2cal.exe | Select-String -Pattern 'DLL Name:' | ForEach-Object { ($_.Line -split '\s+')[-1] } | Sort-Object -Unique
+          $imports
+          $allowed = '^(kernel32|user32|advapi32|ntdll|msvcrt|api-ms-win-.*|ucrtbase|bcrypt|ws2_32|shell32|ole32|oleaut32|combase|powrprof|secur32|crypt32|iphlpapi|userenv|dbghelp)\.dll$'
+          $unexpected = $imports | Where-Object { $_ -notmatch $allowed }
+          if ($unexpected) {
+            throw "unexpected non-system DLL import - the executable is not self-contained: $($unexpected -join ', ')"
+          }
+
+  prepare:
+    name: prepare
+    needs: [build, smoke-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # prepare-release.sh reads the release text from the tag's history.
+          fetch-depth: 0
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: binary-*
+          path: artifacts
+      - name: Lay the built executables out for the preparation
+        run: |
+          set -euo pipefail
+          mkdir -p binaries
+          for artifact in artifacts/binary-*; do
+            platform="${artifact#artifacts/binary-}"
+            mkdir -p "binaries/${platform}"
+            cp "$artifact"/duty2cal* "binaries/${platform}/"
+          done
+          find binaries -type f | sort
+      - name: Prepare the release for the tag's version
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=${version}" >> "$GITHUB_ENV"
+          scripts/prepare-release.sh --version "$version" --binaries binaries --out staged | tee transcript.txt
+          {
+            echo "## Release preparation for v${version}"
+            echo
+            echo '```'
+            cat transcript.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-${{ env.version }}
+          path: staged/
+          if-no-files-found: error
+
+  publish:
+    name: publish
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    permissions:
+      # Write the release; read this run's own check suite; attest the archives.
+      contents: write
+      actions: read
+      checks: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Assert every check on the tagged revision concluded successfully
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # This workflow's own check runs are excluded: they are the release
+          # path itself, still running while this job asserts the gate.
+          suite="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" --jq .check_suite_id)"
+          gh api --paginate --slurp \
+            "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/check-runs?per_page=100" > check-runs.json
+          jq --argjson suite "$suite" -r '
+            [.[].check_runs[] | select(.check_suite.id != $suite)]
+            | .[]
+            | "\(.name)\t\(.status)\t\(.conclusion // "pending")"
+          ' check-runs.json > checks.tsv
+
+          echo "check runs on ${GITHUB_SHA} outside this workflow's own suite:"
+          cat checks.tsv
+
+          if ! grep -q . checks.tsv; then
+            echo "the tagged revision carries no check evidence outside this workflow"
+            exit 1
+          fi
+          green="$(awk -F'\t' '$2 == "completed" && $3 == "success"' checks.tsv | wc -l)"
+          if [ "$green" -eq 0 ]; then
+            echo "no check on the tagged revision has concluded successfully"
+            exit 1
+          fi
+          not_green="$(awk -F'\t' '$2 == "completed" && $3 != "success" && $3 != "skipped" && $3 != "neutral"' checks.tsv)"
+          if [ -n "$not_green" ]; then
+            printf 'not green:\n%s\n' "$not_green"
+            echo "the tagged revision does not carry a green check set"
+            exit 1
+          fi
+          echo "every completed check on the tagged revision concluded successfully"
+      - name: Remember the tag's version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-${{ env.version }}
+          path: staged
+      - name: List the inspected staged set
+        run: |
+          set -euo pipefail
+          find staged -maxdepth 1 -type f | sort
+      - name: Generate the bill of materials
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom/duty2cal-${{ env.version }}.spdx.json
+          artifact-name: ""
+          upload-artifact: false
+          upload-release-assets: false
+      - name: Attest the build provenance of every archive
+        uses: actions/attest@v4
+        with:
+          subject-path: staged/duty2cal-${{ env.version }}-*.tar.gz
+      - name: Attest the bill of materials of every archive
+        uses: actions/attest@v4
+        with:
+          subject-path: staged/duty2cal-${{ env.version }}-*.tar.gz
+          sbom-path: sbom/duty2cal-${{ env.version }}.spdx.json
+      - name: Create the draft release with every archive attached
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --draft \
+            --notes-file staged/release-notes.md \
+            staged/*.tar.gz staged/*.tar.gz.sha256
+      - name: Verify the draft's asset set against the staged set
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --json assets --jq '.assets[].name' | sort > draft-assets.txt
+          find staged -maxdepth 1 -type f -printf '%f\n' | grep -v '^release-notes\.md$' | sort > staged-assets.txt
+          echo "staged:"; cat staged-assets.txt
+          echo "draft:"; cat draft-assets.txt
+          diff -u staged-assets.txt draft-assets.txt
+          echo "the draft holds exactly the staged set"
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false
+
+  verify:
+    name: verify
+    needs: [publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Remember the tag's version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-${{ env.version }}
+          path: staged
+      - name: Download the published assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p published
+          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --dir published
+          find published -type f | sort
+      - name: Compare the published asset set with the staged set
+        run: |
+          set -euo pipefail
+          gh_assets="$(find published -maxdepth 1 -type f -printf '%f\n' | sort)"
+          staged_assets="$(find staged -maxdepth 1 -type f -printf '%f\n' | grep -v '^release-notes\.md$' | sort)"
+          if [ "$gh_assets" != "$staged_assets" ]; then
+            echo "the published asset set differs from the staged set"
+            diff -u <(printf '%s\n' "$staged_assets") <(printf '%s\n' "$gh_assets") || true
+            exit 1
+          fi
+          echo "the published asset set matches the staged set"
+      - name: Verify each published checksum against the staged set
+        run: |
+          set -euo pipefail
+          for checksum in staged/*.tar.gz.sha256; do
+            name="$(basename "$checksum")"
+            cmp "$checksum" "published/${name}"
+          done
+          echo "every published checksum is the staged checksum"
+      - name: Verify every published archive against its checksum
+        run: |
+          set -euo pipefail
+          cd published
+          sha256sum --check ./*.tar.gz.sha256
+      - name: Verify the build provenance and the bill of materials
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          for archive in published/*.tar.gz; do
+            gh attestation verify "$archive" --repo "$GITHUB_REPOSITORY"
+          done
+      - name: Assert the release reports immutable
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            immutable="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME}" --jq '.immutable')"
+            echo "attempt ${attempt}: immutable=${immutable}"
+            if [ "$immutable" = "true" ]; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "the published release does not report immutable: true"
+          exit 1

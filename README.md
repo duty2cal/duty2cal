@@ -5,6 +5,10 @@
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
 
+[![CI](https://github.com/kressnerd/duty2cal/actions/workflows/ci.yml/badge.svg)](https://github.com/kressnerd/duty2cal/actions/workflows/ci.yml)
+[![Release](https://github.com/kressnerd/duty2cal/actions/workflows/release.yml/badge.svg)](https://github.com/kressnerd/duty2cal/releases/latest)
+[![License: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-blue)](LICENSES/MPL-2.0.txt)
+
 `duty2cal` turns a released duty plan into a calendar. It reads the PDF a crew
 scheduling system publishes for one roster month and writes one RFC 5545 calendar
 file beside it, so that month's flights, standbys, non-flight duties, days off and
@@ -20,7 +24,7 @@ conversion from a converted month.
 ## Quick start
 
 ```sh
-git clone <repository-url> duty2cal
+git clone https://github.com/kressnerd/duty2cal.git duty2cal
 cd duty2cal
 cargo build --release -p duty2cal
 target/release/duty2cal ./2026-06.pdf
@@ -36,6 +40,60 @@ cargo run --release -p duty2cal -- ./2026-06.pdf
 ```
 <!-- givn:end:run -->
 
+
+## Download a release
+
+Every version tag publishes one release at the stable address
+<https://github.com/kressnerd/duty2cal/releases/latest>, and every release holds
+exactly one archive per supported platform, each with its checksum file beside
+it. Pick the archive named for your machine:
+
+| Your machine | Archive |
+|---|---|
+| Windows x86_64 | `duty2cal-<version>-windows-x86_64.tar.gz` |
+| Linux x86_64 | `duty2cal-<version>-linux-x86_64.tar.gz` |
+| Linux arm64 | `duty2cal-<version>-linux-arm64.tar.gz` |
+| macOS arm64 (Apple Silicon) | `duty2cal-<version>-macos-arm64.tar.gz` |
+| macOS x86_64 (Intel) | `duty2cal-<version>-macos-x86_64.tar.gz` |
+
+Replace `<version>` with the released version, for example `0.1.0`. Every
+archive is a `.tar.gz` holding only that platform's executable — `duty2cal`, or
+`duty2cal.exe` on Windows — so one extraction route serves all five platforms:
+`tar` reads the archive on Windows 10 and later, on Linux and on macOS, and
+nothing has to be installed first.
+
+```sh
+tar -xzf duty2cal-0.1.0-linux-x86_64.tar.gz
+./duty2cal ./2026-06.pdf
+```
+
+### Verify what you received
+
+Verify the archive's checksum before extracting it, and verify the build
+provenance and the bill of materials of the file in hand with the
+[GitHub CLI](https://cli.github.com/):
+
+```sh
+sha256sum --check duty2cal-0.1.0-linux-x86_64.tar.gz.sha256
+gh attestation verify duty2cal-0.1.0-linux-x86_64.tar.gz --repo kressnerd/duty2cal
+```
+
+The checksum file covers the archive it names; on macOS, which ships `shasum`
+rather than `sha256sum`, run `shasum -a 256 -c duty2cal-0.1.0-macos-arm64.tar.gz.sha256`
+instead. `gh attestation verify` proves that the archive was built by this
+repository's release automation from the tagged revision, and shows the bill of
+materials the build was made from.
+
+### macOS: the one-time approval
+
+The macOS archives are published unsigned, so Gatekeeper quarantines the
+executable when the archive arrives through a browser. The dialog means the
+archive carries no Apple signature, not that it was tampered with. Approve it
+once: right-click the extracted `duty2cal` in Finder and choose **Open**, or use
+System Settings → Privacy & Security → **Open Anyway** after the first launch is
+blocked. Downloading with `curl` or `gh` and extracting with `tar` clears the
+quarantine attribute and needs no approval. Signing and notarising the archives
+is out of scope for now (see [ADR-0003](docs/arc42/adr/ADR-0003-release-channel-and-platforms.md)).
 
 ## Prerequisites
 
@@ -99,22 +157,30 @@ cargo build --workspace --all-targets
 
 ## Contributing
 
-- Behaviour is specified in Gherkin under `givn/changes/<change>/specs/` before it
-  is implemented, and a scenario is RED before it is GREEN.
-- Commits use conventional subjects; one release note is the commit subject and
-  the scenario title goes in the body (`givn commit` stamps the revision).
-- `./run-tests.sh` and `./run-tests.sh --e2e` must both pass, together with the
-  quality gates above.
-- Documentation follows arc42 under `docs/arc42/`; architecture decisions are
-  recorded as ADRs there.
-- Proposed changes name the destination station codes and dates they exercise;
-  real duty plans and personal itineraries never enter the repository.
-- Sign off your commits with the DCO (`git commit -s`); there is no CLA.
+The contribution route is [CONTRIBUTING.md](CONTRIBUTING.md): behaviour is
+specified in Gherkin before it is implemented, the checks to run locally, and
+the sign-off (`git commit -s`, no CLA). Participation is governed by the
+[code of conduct](CODE_OF_CONDUCT.md), and a defect that could expose private
+plan data goes through the confidential route in [SECURITY.md](SECURITY.md)
+rather than a public issue.
+
+Issue forms and the pull-request template ask for the export family and a
+stripped sample. A real duty plan or a personal itinerary never enters the
+repository.
 
 ## License
 
-MPL-2.0, project-wide (see [ADR-0001](docs/arc42/adr/ADR-0001-project-license.md)).
+`duty2cal` is MPL-2.0, project-wide; the licence text is
+[LICENSES/MPL-2.0.txt](LICENSES/MPL-2.0.txt) and the reasoning is
+[ADR-0001](docs/arc42/adr/ADR-0001-project-license.md). It is per-file weak
+copyleft: a redistributor of a modified product must publish the modified MPL
+files, which keeps the future iOS UI App-Store distributable.
 
-Per-file weak copyleft: a redistributor of a modified product must publish the
-modified MPL files. This keeps the future iOS UI App-Store distributable.
-Contributions use DCO sign-off (`git commit -s`); there is no CLA.
+The Unicode character data carried by the third-party crates `duty2cal` depends
+on is licensed under [Unicode-3.0](LICENSES/Unicode-3.0.txt). That licence
+covers the third-party data file only; it is not a second licence for this
+project. The complete third-party list is in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+Contributions are signed off under the DCO (`git commit -s`); there is no CLA
+(see [CONTRIBUTING.md](CONTRIBUTING.md)).

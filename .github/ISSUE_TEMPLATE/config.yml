@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: MPL-2.0
+blank_issues_enabled: false
+contact_links:
+  - name: Report a plan-exposure or security issue privately
+    url: https://github.com/kressnerd/duty2cal/security/advisories/new
+    about: Anything that could expose private duty plan data goes here, never in a public issue. See SECURITY.md.
+  - name: Read the security policy
+    url: https://github.com/kressnerd/duty2cal/blob/main/SECURITY.md
+    about: What is in scope, what is not, and how a report is handled.
+  - name: Raise a code of conduct concern
+    url: https://chaos.social/@kressnerd
+    about: Direct message the maintainer, @kressnerd@chaos.social. See CODE_OF_CONDUCT.md.
+  - name: Read the contribution route
+    url: https://github.com/kressnerd/duty2cal/blob/main/CONTRIBUTING.md
+    about: Behaviour before implementation, the checks, and the DCO sign-off.

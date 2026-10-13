@@ -4,3 +4,4 @@
 //! locations").
 
 pub mod export_duty_plan_calendar;
+pub mod publish_public_release;
