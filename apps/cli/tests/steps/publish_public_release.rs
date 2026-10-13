@@ -27,6 +27,29 @@ pub(crate) const SUPPORTED: [(&str, &str); 5] = [
     ("macos-x86_64", "duty2cal"),
 ];
 
+/// The release-text scenario's fixture history, oldest revision first: two
+/// release-note subjects (one of them repeated by three revisions), three
+/// housekeeping subjects, and one subject that carries no type at all.
+const HISTORY: [&str; 8] = [
+    "chore(release): bootstrap the release channel",
+    "feat(release): Offer an archive for every supported platform",
+    "docs(release): describe the download routes for readers",
+    "feat(release): Offer an archive for every supported platform",
+    "fix(release): Publish only an archive the evidence supports",
+    "Publish the notes by hand",
+    "test(release): cover the refusal paths",
+    "feat(release): Offer an archive for every supported platform",
+];
+
+/// The subjects the release text must not carry: the housekeeping revisions'
+/// notes and the subject that carries no release-note type.
+const OMITTED: [&str; 4] = [
+    "bootstrap the release channel",
+    "describe the download routes for readers",
+    "cover the refusal paths",
+    "Publish the notes by hand",
+];
+
 /// Scenario sequence, so concurrently executed scenarios never share a directory.
 static SCENARIO_SEQUENCE: AtomicUsize = AtomicUsize::new(0);
 
@@ -197,6 +220,30 @@ pub(crate) fn staged_archive(w: &DutyWorld, platform: &str) -> String {
 fn table_rows(step: &Step) -> Vec<Vec<String>> {
     let table = step.table.as_ref().expect("the step carries a data table");
     table.rows.iter().skip(1).cloned().collect()
+}
+
+/// Run one git command in the fixture repository, asserting it succeeded.
+fn git(repo: &Path, args: &[&str]) {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(repo)
+        .args(args)
+        .output()
+        .expect("run git in the fixture repository");
+    assert!(
+        output.status.success(),
+        "git {args:?} failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+/// The release text the preparation staged.
+fn release_text(w: &DutyWorld) -> String {
+    let path = staged_dir(w).join("release-notes.md");
+    match std::fs::read_to_string(&path) {
+        Ok(text) => text,
+        Err(error) => panic!("no release text at {}: {error}", path.display()),
+    }
 }
 
 /// A file's modification time.
@@ -535,6 +582,74 @@ async fn an_unreadable_executable(w: &mut DutyWorld, platform: String) {
     }
     #[cfg(not(unix))]
     panic!("the release-preparation scenarios are Linux-only");
+}
+
+#[given("a history whose released revisions carry release-note subjects, including one subject repeated by several revisions and one subject that carries no release-note type, and whose housekeeping revisions do not")]
+async fn a_history_with_release_note_subjects(w: &mut DutyWorld) {
+    let repo = scenario_dir(w).join("history");
+    let _ = std::fs::remove_dir_all(&repo);
+    std::fs::create_dir_all(&repo).expect("create the fixture repository");
+    git(&repo, &["init", "--quiet"]);
+    for (index, subject) in HISTORY.iter().enumerate() {
+        let file = repo.join(format!("revision-{index}.txt"));
+        std::fs::write(&file, format!("{subject}\n")).expect("write the revision's file");
+        git(&repo, &["add", "--all"]);
+        git(
+            &repo,
+            &[
+                "-c",
+                "user.name=duty2cal tests",
+                "-c",
+                "user.email=tests@example.invalid",
+                "-c",
+                "commit.gpgsign=false",
+                "commit",
+                "--quiet",
+                "--no-verify",
+                "-m",
+                subject,
+            ],
+        );
+    }
+    w.fixture_repo = Some(repo);
+}
+
+#[then(regex = r"^the release text names version (\S+)$")]
+async fn the_release_text_names_version(w: &mut DutyWorld, version: String) {
+    let text = release_text(w);
+    assert!(
+        text.contains(&version),
+        "the release text does not name version {version}: {text}"
+    );
+}
+
+#[then("the release text lists these release notes in release order")]
+async fn the_release_text_lists_these_release_notes(w: &mut DutyWorld, step: &Step) {
+    let text = release_text(w);
+    let expected: Vec<String> = table_rows(step)
+        .into_iter()
+        .map(|row| row[0].clone())
+        .collect();
+    let listed: Vec<String> = text
+        .lines()
+        .filter_map(|line| line.strip_prefix("- "))
+        .map(str::to_string)
+        .collect();
+    assert_eq!(
+        listed, expected,
+        "the release text does not list the expected notes in order: {text}"
+    );
+}
+
+#[then("the release text omits the housekeeping revisions and the subject that carries no release-note type")]
+async fn the_release_text_omits_the_others(w: &mut DutyWorld) {
+    let text = release_text(w);
+    for omitted in OMITTED {
+        assert!(
+            !text.contains(omitted),
+            "the release text carries the omitted subject {omitted:?}: {text}"
+        );
+    }
 }
 
 #[given(regex = r#"^an executable presented as the unrecognised platform "([^"]+)"$"#)]

@@ -60,7 +60,7 @@ Feature: Publish a public release
     Then the preparation fails and names "linux-x86_64"
     And the prepared release holds no archive
 
-  @givn.added @wip
+  @givn.added
   Scenario: The release text states the released revisions' release notes
     Given a history whose released revisions carry release-note subjects, including one subject repeated by several revisions and one subject that carries no release-note type, and whose housekeeping revisions do not
     When the maintainer prepares the release for version 0.2.0

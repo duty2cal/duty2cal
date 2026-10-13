@@ -394,15 +394,62 @@ Use-case constraint: an unreadable input stages nothing and names the cause.
 
 Use-case constraint: release-note subjects in release order, housekeeping and unrecognised subjects omitted, repeated subjects collapsed, the version named, and no preparation failure caused by a commit message.
 
-- [ ] RED — paste the non-zero output:
+- [x] RED — paste the non-zero output:
   ```
+  Feature: Publish a public release
+    Scenario: The release text states the released revisions' release notes
+     ✘  Given a history whose released revisions carry release-note subjects, including one subject repeated by several revisions and one subject that carries no release-note type, and whose housekeeping revisions do not
+        Step panicked. Captured output: not implemented: build a history of release-note, housekeeping and untyped subjects
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  1 step (1 failed)
+  RED_EXIT=101
   ```
-- [ ] GREEN — `release-notes.md` written from the repository's history, with the fixture repository built by the steps; paste the output:
+- [x] GREEN — `release-notes.md` written from the repository's history, with the fixture repository built by the steps; paste the output:
   ```
+  Feature: Publish a public release
+    Scenario: The release text states the released revisions' release notes
+     ✔  Given a history whose released revisions carry release-note subjects, including one subject repeated by several revisions and one subject that carries no release-note type, and whose housekeeping revisions do not
+     ✔  When the maintainer prepares the release for version 0.2.0
+     ✔  Then the release text names version 0.2.0
+     ✔  And the release text lists these release notes in release order
+         | release note                                  |
+         | Offer an archive for every supported platform |
+         | Publish only an archive the evidence supports |
+     ✔  And the release text omits the housekeeping revisions and the subject that carries no release-note type
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  5 steps (5 passed)
+  GREEN_EXIT=0
   ```
-- [ ] REFACTOR — paste the output:
+  Production code: `scripts/prepare-release.sh`'s release-text collection — the range is the previous `v*` tag reachable from `HEAD^` or every revision reachable from `HEAD` when there is none, the type is read from `<type>(<scope>): `, release-note types are quoted, housekeeping types and untyped subjects are dropped, identical notes collapse to one occurrence, and the file names the version. The Given builds the fixture history with `git init` plus eight revisions (two release-note subjects, one of them repeated three times, three housekeeping subjects, one subject with no type); `--repo` points the preparation at it. What the script actually wrote for the same history, reproduced outside the steps:
   ```
+  $ git -C history log --format='%s'
+  feat(release): Offer an archive for every supported platform
+  test(release): cover the refusal paths
+  Publish the notes by hand
+  fix(release): Publish only an archive the evidence supports
+  feat(release): Offer an archive for every supported platform
+  docs(release): describe the download routes for readers
+  feat(release): Offer an archive for every supported platform
+  chore(release): bootstrap the release channel
+  $ cat out/release-notes.md
+  # duty2cal 0.2.0
+
+  Release notes for version 0.2.0.
+
+  - Offer an archive for every supported platform
+  - Publish only an archive the evidence supports
   ```
+  Interpretation recorded: "in release order" is read as the order the revisions entered the release, so the range is walked oldest first (`git log --reverse`) — the table in the scenario is written in that order and the assertion fails if the order is reversed. Collapsing is by the release note the reader sees, which is what makes a repeated subject appear once.
+- [x] REFACTOR — paste the output:
+  ```
+  apps/cli/tests/steps/publish_public_release.rs FMT OK
+  1 scenario (1 passed), 5 steps (5 passed)   REFACTOR_EXIT=0
+  ```
+  No behaviour change: the fixture's `git` helper no longer returns a transcript no caller reads, and the file is rustfmt-clean.
 - [ ] COMMIT — `<hash>`:
   ```
   ```
