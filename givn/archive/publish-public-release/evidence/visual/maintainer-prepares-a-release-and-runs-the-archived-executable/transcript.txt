@@ -1,4 +1,5 @@
 $ scripts/prepare-release.sh --version 0.1.0 --binaries <scenario-dir>/binaries --out <scenario-dir>/out
+change log is current for version 0.1.0
 staged duty2cal-0.1.0-windows-x86_64.tar.gz sha256:93e601ecf7677a3f4761c6ba5c60994b8fc8ce84b5aa50f91b56d10267963e48
 staged duty2cal-0.1.0-linux-x86_64.tar.gz sha256:b6176bbc733f775af5d7b7ee51b02b83cf925d44e9afe9178cb880832ff591d9
 staged duty2cal-0.1.0-linux-arm64.tar.gz sha256:14aa3007abe9b640a29d20442774360b60e44c584041a02299c75310c6cfed19

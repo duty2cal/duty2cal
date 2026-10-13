@@ -22,7 +22,8 @@
 # untouched, when a supported platform's executable is missing, when the
 # binaries directory holds a platform outside the supported set, when an
 # executable cannot be read, when `<out>` already holds a prepared archive for
-# that version, when the version is not a bare version, or when the renderer
+# that version, when the version is not a bare version, when the committed
+# change log is not current for the version being released, or when the renderer
 # refuses the version.
 set -euo pipefail
 
@@ -157,6 +158,16 @@ for platform in $PLATFORMS; do
     refuse "the release for version $version is already prepared in $out: $archive exists"
   fi
 done
+
+# The release path itself refuses a stale change log, before it stages anything:
+# the `changelog` CI job may still be running when the tag is pushed, and the
+# publish job only refuses a check run that has already concluded non-green, so
+# the preparation compares the committed file against a fresh render of the
+# version being released. A checkout with no committed change log has nothing
+# that could be stale; what a render stages there is that render's own output.
+if [ -f "$repo/CHANGELOG.md" ]; then
+  "$renderer" --version "$version" --repo "$repo" --out "$repo/CHANGELOG.md" --check
+fi
 
 # Every refusal has fired by now, so the staged set is built apart from `<out>`
 # and moved in only when it is complete.
