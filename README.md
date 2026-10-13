@@ -167,17 +167,24 @@ be in the change log already, because the drift check compares the committed
 workflow draws the release text from that same section.
 
 ```sh
+released=$(git rev-parse HEAD)
 nix-shell -p git-cliff --run \
   'scripts/render-changelog.sh --version <version> --repo . --out CHANGELOG.md'
 git add CHANGELOG.md
-git commit -m "docs(changelog): record <version>"
+GIT_COMMITTER_DATE="$(git log -1 --date=iso-strict --format=%cd "$released")" \
+  git commit -m "docs(changelog): record <version>"
 git tag v<version>
-git push origin v<version>
+git push origin <branch> v<version>
 ```
 
-Pushing the tag starts the release workflow: the preparation stages the
-section as the release text and the change log as an asset of the draft
-release, which is inspected before it becomes public.
+The renderer has no tag to read yet, so the section's date comes from `released`
+— the revision the tag will point at — and the commit that records the section
+must carry that same committer date: the tagged revision has to state the date
+the section states, or the drift check could never agree with the file. Pushing
+the tag starts the release workflow, whose preparation checks the committed
+change log for drift before it stages anything, then stages the section as the
+release text and the change log as an asset of the draft release, which is
+inspected before it becomes public.
 
 
 ## Contributing

@@ -73,4 +73,13 @@ None. `givn lint --change generate-release-notes` reports eleven findings, every
 
 Scope, Tech choices, Missing scenarios, Testability, E2E fidelity, Visual design contract, Interface classification, Persona disposition, Deferrals, Interaction coverage, Risk, Domain context, ADR qualification, Architecture documentation, Ubiquitous language: no issue outstanding, and every correction the grilling forced is visible in the artifacts rather than promised for later.
 
+## Corrections after implementation (2026-10-13)
+
+Question 2's answer above is left as it was written; these notes correct the record it rests on, added after the review had signed off and the implementation had run.
+
+- The published v0.1.0 page's real count is **16** entries, not fifteen (`curl -sS https://api.github.com/repos/kressnerd/duty2cal/releases/tags/v0.1.0`, `body`); the repository's back-filled 0.1.0 section lists 3 under the new rules.
+- The release procedure Question 2 assumes did not work: the renderer refused any version whose `v*` tag did not exist yet, so "render the section, commit the change log, then push the tag" exited non-zero on its first command. The renderer now takes the section's date from the tag when it exists and otherwise from `HEAD` — the revision the tag will point at — never the clock, and the commit that records the section must carry that same committer date.
+- The reader lens found a realization gap in the permanent rule it had already stated: a `fix(<capability>):` revision whose words name the project's own tooling passed the type-plus-scope allow-list and reached the page (the two coverage entries in the 0.1.0 section). A marked machinery skip list now keeps those words out of every release, whatever a revision's scope says.
+- The `publish` job refuses only a check run that has already concluded non-green, so the release preparation now runs the drift check on the committed change log itself, before it stages anything.
+
 DESIGN-REVIEW: PASS
