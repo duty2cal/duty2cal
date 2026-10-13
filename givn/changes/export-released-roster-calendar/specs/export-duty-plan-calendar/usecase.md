@@ -1,9 +1,13 @@
 # Use case: export-duty-plan-calendar
 
-Status: change-side contract for the change to export released roster calendars. Created from the approved ideation contract [the use case to export a duty-plan calendar](../../../ideation/duty-plan-calendar-conversion/use-cases/export-duty-plan-calendar.md) and the proposal's decisions. On archive it becomes the permanent leaf at `givn/specs/export-duty-plan-calendar/usecase.md`.
+## Status
 
-Name: Export a duty-plan calendar
+Change-side contract for the change to export released roster calendars. Created from the approved
+ideation contract [the use case to export a duty-plan calendar](../../../ideation/duty-plan-calendar-conversion/use-cases/export-duty-plan-calendar.md)
+and the proposal's decisions. On archive it becomes the permanent leaf at
+`givn/specs/export-duty-plan-calendar/usecase.md`.
 
+Name: Export a duty-plan calendar.
 Source topic: Duty-plan calendar conversion (`duty-plan-calendar-conversion`).
 
 ## Level
