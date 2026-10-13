@@ -80,7 +80,10 @@ gh attestation verify duty2cal-0.1.0-linux-x86_64.tar.gz --repo kressnerd/duty2c
 
 The checksum file covers the archive it names; on macOS, which ships `shasum`
 rather than `sha256sum`, run `shasum -a 256 -c duty2cal-0.1.0-macos-arm64.tar.gz.sha256`
-instead. `gh attestation verify` proves that the archive was built by this
+instead, and on Windows, which has neither, run
+`Get-FileHash duty2cal-0.1.0-windows-x86_64.tar.gz -Algorithm SHA256` in
+PowerShell and compare the digest it prints with the one in the `.sha256` file.
+`gh attestation verify` proves that the archive was built by this
 repository's release automation from the tagged revision, and shows the bill of
 materials the build was made from.
 
