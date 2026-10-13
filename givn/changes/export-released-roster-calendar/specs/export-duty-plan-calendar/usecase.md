@@ -186,3 +186,14 @@ This is a changing use case: it creates a new calendar export, not a read-only o
 - Obtain a visa, book positioning travel, or contact external scheduling institutions.
 - Activate standby/reserve crew, calculate call-to-report notice, or perform check-in/reporting.
 - Publish/approve a converter release as a product command.
+
+## Diagram
+
+The actor-goal summary this use case delivers:
+
+```mermaid
+flowchart LR
+  crew["Crew member"] --> goal["Export a duty-plan calendar"]
+  goal --> published["Complete new calendar at unused path"]
+  goal --> failed["Explicit failure; numbered diagnostic attempted"]
+```
