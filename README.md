@@ -66,6 +66,10 @@ archive is a `.tar.gz` holding only that platform's executable — `duty2cal`, o
 `tar` reads the archive on Windows 10 and later, on Linux and on macOS, and
 nothing has to be installed first.
 
+On Linux and macOS, if the extracted file is not executable, run
+`chmod +x duty2cal` once: the `0.1.0` archives store the executable without that
+bit, and later releases do not.
+
 ```sh
 tar -xzf duty2cal-0.1.0-linux-x86_64.tar.gz
 ./duty2cal ./2026-06.pdf
