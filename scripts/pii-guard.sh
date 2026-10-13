@@ -23,9 +23,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 pattern='(\+[0-9]{1,3}/[0-9]{6,})|([0-9]{6}[A-Z])'
-# A complete calendar date, all-day (`DTSTART;VALUE=DATE:20260607`) or timed
-# (`DTSTART:20260607T092500Z`). A bare property reference such as `DTSTART:2026`
-# quoted in a document is not a calendar's content, so it is not a finding.
+# A complete calendar date, all-day (`DTSTART;VALUE=DATE:YYYYMMDD`) or timed
+# (`DTSTART:YYYYMMDDTHHMMSSZ`). Anything shorter, such as a property name quoted
+# in a document, is not a calendar's content and is not a finding.
 year_pattern='(DTSTART|DTEND|DTSTAMP|UNTIL|RECURRENCE-ID|CREATED)(;VALUE=DATE)?[:;][0-9]{8}'
 fictional_years='(2098|2099)'
 
@@ -43,11 +43,14 @@ tree_identifier="$(grep -rIEn "$pattern" . "${excludes[@]}" 2>/dev/null \
 tree_year="$(grep -rIEo "$year_pattern" . "${excludes[@]}" 2>/dev/null \
   | grep -Ev "[:;]${fictional_years}" || true)"
 
-# One `git grep` per chunk of revisions keeps the argument list bounded however
-# long the history grows; `xargs` appends the chunk after the pattern.
+# One `git grep` per revision, excluding this guard's own file: the guard holds
+# the patterns by construction, so its text is never evidence of a leak. Every
+# other path, shell scripts included, is scanned.
 scan_history() { # $1 = git-grep flags, $2 = pattern
-  # shellcheck disable=SC2086
-  git rev-list HEAD | xargs -r -n 200 git grep -E -I $1 "$2"
+  while IFS= read -r revision; do
+    # shellcheck disable=SC2086
+    git grep -E -I $1 "$2" "$revision" -- ':!scripts/pii-guard.sh'
+  done < <(git rev-list HEAD)
 }
 
 history_identifier="$(scan_history "-n" "$pattern" 2>/dev/null \
