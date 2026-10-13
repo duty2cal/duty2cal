@@ -331,8 +331,15 @@ Use-case constraint: a preparation never replaces what exists; the staged archiv
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
   No behaviour change: the two modification-time helpers are used by this scenario only and the file is rustfmt-clean.
-- [ ] COMMIT — `<hash>`:
+- [x] COMMIT — `cb1af7a`:
   ```
+  feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
+
+  Scenario: An already prepared version is not replaced
+
+  RED: the three steps existed as unimplemented!() stubs; the single-scenario run failed with exit 101.
+  GREEN: the occupied-set refusal in scripts/prepare-release.sh runs before any write and names the version; the When records every staged archive's modification time and the Then asserts each is unchanged, which distinguishes a refusal from a silent rewrite.
+  REFACTOR: no tidy needed; the step file is rustfmt-clean and the single scenario passes 4/4 steps with exit 0.
   ```
 
 ### 7. An unreadable executable stops the preparation
