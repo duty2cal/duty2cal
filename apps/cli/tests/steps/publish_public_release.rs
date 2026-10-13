@@ -1124,3 +1124,42 @@ async fn an_unrecognised_platform(w: &mut DutyWorld, platform: String) {
     )
     .expect("write the unrecognised executable");
 }
+
+#[given("a change log holding version 0.1.0 and a history releasing version 0.2.0")]
+async fn a_change_log_holding_version_0_1_0(w: &mut DutyWorld) {
+    two_release_history(w);
+    render_version(w, "0.1.0");
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "rendering version 0.1.0 did not succeed: {}",
+        w.command_transcript
+    );
+}
+
+#[then("the section for version 0.2.0 states its own date")]
+async fn section_states_its_own_date(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "rendering version 0.2.0 did not succeed: {}",
+        w.command_transcript
+    );
+    let section = section_of(&change_log(w), "0.2.0");
+    // The released revision is the one the `v0.2.0` tag names, committed with
+    // the fixture's fixed committer date; the heading states that date, never
+    // the clock.
+    assert!(
+        section.starts_with("## [0.2.0] - 2026-02-02"),
+        "the section does not state the released revision's own date: {section}"
+    );
+}
+
+#[then("the section for version 0.2.0 states the comparison against version 0.1.0")]
+async fn section_states_the_comparison(w: &mut DutyWorld) {
+    let section = section_of(&change_log(w), "0.2.0");
+    assert!(
+        section.contains("https://github.com/kressnerd/duty2cal/compare/v0.1.0...v0.2.0"),
+        "the section does not state the comparison against version 0.1.0: {section}"
+    );
+}

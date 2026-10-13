@@ -32,7 +32,7 @@ Feature: Publish a public release
     When the change log is checked against the released revision
     Then the check fails and names the version whose section differs
 
-  @givn.added @wip
+  @givn.added
   Scenario: Each version's section is dated and compared with the one before it
     Given a change log holding version 0.1.0 and a history releasing version 0.2.0
     When the maintainer generates the change log for version 0.2.0
