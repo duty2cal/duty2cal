@@ -25,10 +25,24 @@ fn transcript_path() -> PathBuf {
     )
 }
 
+/// The change the render scenario belongs to, so its evidence follows the
+/// change: `givn/changes/<change>/` while the change is active, and
+/// `givn/archive/<change>/` once it is archived. Writing to the change path
+/// after archive would resurrect a directory the archive owns, and `givn
+/// archive` refuses a tree that changed outside the evidence it declares.
+const RENDER_CHANGE: &str = "generate-release-notes";
+
 /// Where the render scenario's terminal transcript is committed as evidence.
 fn render_transcript_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
-        "../../givn/changes/generate-release-notes/evidence/visual/\
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let active = root.join("givn/changes").join(RENDER_CHANGE);
+    let home = if active.is_dir() {
+        active
+    } else {
+        root.join("givn/archive").join(RENDER_CHANGE)
+    };
+    home.join(
+        "evidence/visual/\
          maintainer-generates-the-change-log-for-a-version-and-reads-its-newest-section/transcript.txt",
     )
 }
@@ -39,15 +53,23 @@ fn extracted_dir(w: &DutyWorld) -> PathBuf {
 }
 
 /// Commit the scenario's terminal transcript as evidence, with the run-specific
-/// directory replaced by a placeholder.
+/// directory replaced by a placeholder and the digest of the archive holding
+/// the executable this machine really built replaced by a stable one. That
+/// digest carries the compiler's fingerprint, so committing it would make the
+/// record drift with the toolchain on every run; the step asserts the checksum
+/// against the file separately, so the value is not the evidence. The four
+/// stand-in archives' digests are reproducible and stay.
 fn commit_transcript(w: &DutyWorld) {
     let path = transcript_path();
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).expect("create the evidence directory");
     }
+    let archive = staged_archive(w, machine_platform());
+    let built_digest = sha256_of(&staged_dir(w).join(&archive));
     let mut evidence = w
         .scenario_transcript
-        .replace(&w.working_dir().display().to_string(), "<scenario-dir>");
+        .replace(&w.working_dir().display().to_string(), "<scenario-dir>")
+        .replace(&built_digest, "<built-executable-digest>");
     evidence.push_str(&format!("exit status: {}\n", w.exit_status.unwrap_or(-1)));
     std::fs::write(&path, evidence).expect("write the transcript");
 }
