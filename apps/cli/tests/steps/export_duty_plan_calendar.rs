@@ -2225,3 +2225,284 @@ async fn the_calendar_text_carries(w: &mut DutyWorld, value: String) {
         "the calendar text does not carry {value:?}: {calendar}"
     );
 }
+
+/// One dated row whose date cell is printed exactly as given, under a heading.
+fn plan_with_a_printed_date_cell(w: &mut DutyWorld, heading: Option<&[&str]>, cell: &str) {
+    let mut items = support::detail_header_row(600.0);
+    if let Some(parts) = heading {
+        items.extend(support::at(
+            830.0,
+            &[(DATE_X, "Month:"), (DATE_X + 40.0, parts[0]), (DATE_X + 100.0, parts[1])],
+        ));
+    }
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, cell),
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "ABC"),
+            (TO_X, "NEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[given("a supported duty plan whose dated row prints only a day number")]
+async fn a_plan_with_a_single_token_date(w: &mut DutyWorld) {
+    plan_with_a_printed_date_cell(w, Some(&["June", "2099"]), "07");
+}
+
+#[given("a supported duty plan whose dated row prints an unreadable day")]
+async fn a_plan_with_an_unreadable_day(w: &mut DutyWorld) {
+    plan_with_a_printed_date_cell(w, Some(&["June", "2099"]), "aa Mon");
+}
+
+#[given("a supported duty plan whose dated row prints an unknown weekday")]
+async fn a_plan_with_an_unknown_weekday(w: &mut DutyWorld) {
+    plan_with_a_printed_date_cell(w, Some(&["June", "2099"]), "07 Xyz");
+}
+
+#[given("a supported duty plan whose dated row names a day the month does not have")]
+async fn a_plan_with_an_impossible_day(w: &mut DutyWorld) {
+    plan_with_a_printed_date_cell(w, Some(&["June", "2099"]), "31 Mon");
+}
+
+#[given("a supported duty plan whose roster heading prints the year touching the month")]
+async fn a_plan_with_a_joined_heading(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    // The extraction joins a month and a year that touch, as it does for long
+    // month names.
+    items.extend(support::at(
+        830.0,
+        &[(DATE_X, "Month:"), (DATE_X + 40.0, "June2099")],
+    ));
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "07 Sun"),
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "ABC"),
+            (TO_X, "NEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then(regex = r"^the calendar contains a travel activity on (\d{4}-\d{2}-\d{2})$")]
+async fn a_travel_activity_on(w: &mut DutyWorld, date: String) {
+    let calendar = calendar(w);
+    assert!(
+        calendar.contains("SUMMARY:LU742 ABC-NEF")
+            && calendar.contains(&format!("DTSTART:{}T090000Z", compact(&date))),
+        "no travel activity on {date}: {calendar}"
+    );
+}
+
+#[given("a supported duty plan whose revision footer names no UTC zone")]
+async fn a_plan_with_a_zoneless_footer(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "ABC"),
+            (TO_X, "NEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    ));
+    items.extend(support::at(
+        520.0,
+        &[
+            (DATE_X, "Created"),
+            (DATE_X + 40.0, "21May2098"),
+            (DATE_X + 90.0, "15:52"),
+            (DATE_X + 120.0, "CET"),
+        ],
+    ));
+    write_fixture(w, &items);
+    w.env = vec![(
+        "DUTY2CAL_CONSTRUCTION_CLOCK".to_string(),
+        "2099-06-10T00:00:00Z".to_string(),
+    )];
+}
+
+#[then("the calendar's revision is the construction clock")]
+async fn the_revision_is_the_clock(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    assert!(
+        calendar.contains("DTSTAMP:20990610T000000Z"),
+        "the zoneless footer supplied the revision: {calendar}"
+    );
+}
+
+#[given("a supplied document that carries no detail-table labels")]
+async fn a_document_without_table_labels(w: &mut DutyWorld) {
+    let items = support::at(
+        600.0,
+        &[(DATE_X, "This page is prose, not a roster export.")],
+    );
+    write_fixture(w, &items);
+}
+
+#[when("the invocation supplies no duty plan")]
+async fn the_invocation_supplies_no_plan(w: &mut DutyWorld) {
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_duty2cal"))
+        .output()
+        .expect("run the converter");
+    w.exit_status = output.status.code();
+    w.stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+    w.stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+}
+
+#[then(regex = r#"^the transcript states "([^"]*)"$"#)]
+async fn the_transcript_states(w: &mut DutyWorld, expected: String) {
+    let text = transcript(w);
+    assert!(
+        text.contains(&expected),
+        "the transcript does not state {expected:?}: {text}"
+    );
+}
+
+#[given("a supplied duty plan path that does not exist")]
+async fn a_missing_duty_plan(w: &mut DutyWorld) {
+    let dir = fresh_dir();
+    w.source = Some(dir.join("missing.pdf"));
+    w.dir = Some(dir);
+}
+
+#[given("a supported duty plan with no construction clock supplied")]
+async fn a_plan_without_a_clock(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "ABC"),
+            (TO_X, "NEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    );
+}
+
+#[then("the calendar's revision is a current UTC stamp")]
+async fn the_revision_is_current(w: &mut DutyWorld) {
+    let stamp = calendar(w)
+        .lines()
+        .find_map(|line| line.strip_prefix("DTSTAMP:").map(str::to_string))
+        .expect("the calendar carries a revision stamp");
+    assert!(
+        stamp.len() == 16 && stamp.ends_with('Z') && stamp >= "20260101T000000Z".to_string(),
+        "the revision is not a current UTC stamp: {stamp}"
+    );
+}
+
+#[given("a supported duty plan whose row prints only a station")]
+async fn a_plan_with_a_station_only_row(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(585.0, &[(DATE_X, "2099-06-07"), (FROM_X, "ABC")]));
+    write_fixture(w, &items);
+}
+
+#[given("a supported duty plan whose split leg prints its aircraft on the arrival only")]
+async fn a_plan_with_an_arrival_only_field(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "ABC"),
+            (START_X, "09:00"),
+        ],
+    ));
+    items.extend(support::at(
+        570.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "LU742"),
+            (TO_X, "NEF"),
+            (END_X, "10:00"),
+            (AIRCRAFT_X, "LU7"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[given("a supplied duty plan whose name is not valid text")]
+async fn a_plan_with_a_binary_name(w: &mut DutyWorld) {
+    use std::os::unix::ffi::OsStrExt;
+    let dir = fresh_dir();
+    let name = std::ffi::OsStr::from_bytes(b"ro\xff.pdf");
+    let source = dir.join(name);
+    // A readable roster, carried under a name that has no textual form.
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "ABC"),
+            (TO_X, "NEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    ));
+    std::fs::write(&source, support::build_pdf(&items)).expect("write the source");
+    w.source = Some(source);
+    w.dir = Some(dir);
+}
+
+#[given("a supported duty plan whose travel leg carries a long tag with accented letters")]
+async fn a_plan_with_a_long_accented_tag(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "ABC"),
+            (TO_X, "NEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+            (TAGS_X, &"\u{e4}".repeat(60)),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[given("a supported duty plan whose revision footer prints an unusable stamp")]
+async fn a_plan_with_an_unusable_footer_stamp(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "ABC"),
+            (TO_X, "NEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    ));
+    items.extend(support::at(
+        520.0,
+        &[
+            (DATE_X, "Created"),
+            (DATE_X + 40.0, "123May2098"),
+            (DATE_X + 110.0, "15:52"),
+            (DATE_X + 140.0, "(UTC)"),
+        ],
+    ));
+    write_fixture(w, &items);
+    w.env = vec![(
+        "DUTY2CAL_CONSTRUCTION_CLOCK".to_string(),
+        "2099-06-10T00:00:00Z".to_string(),
+    )];
+}

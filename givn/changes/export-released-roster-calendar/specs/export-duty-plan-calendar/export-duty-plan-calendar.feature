@@ -361,3 +361,101 @@ Feature: Export a duty-plan calendar
     Given a supported duty plan whose travel leg carries the tag "3_OFF\"
     When the crew member converts it
     Then the calendar text carries "3_OFF\\"
+
+  @givn.added
+  Scenario: A date cell with a single token is not accepted as activity timing
+    Given a supported duty plan whose dated row prints only a day number
+    When the crew member converts it
+    Then no calendar is published
+    And the conversion failure names "unresolved date"
+
+  @givn.added
+  Scenario: A date cell whose day cannot be read is not accepted as activity timing
+    Given a supported duty plan whose dated row prints an unreadable day
+    When the crew member converts it
+    Then no calendar is published
+    And the conversion failure names "unresolved date"
+
+  @givn.added
+  Scenario: A date cell whose weekday is unknown is not accepted as activity timing
+    Given a supported duty plan whose dated row prints an unknown weekday
+    When the crew member converts it
+    Then no calendar is published
+    And the conversion failure names "unresolved date"
+
+  @givn.added
+  Scenario: A date cell naming a day the month does not have is not accepted as activity timing
+    Given a supported duty plan whose dated row names a day the month does not have
+    When the crew member converts it
+    Then no calendar is published
+    And the conversion failure names "unresolved date"
+
+  @givn.added
+  Scenario: A roster heading whose year touches its month still supplies the month
+    Given a supported duty plan whose roster heading prints the year touching the month
+    When the crew member converts it
+    Then the calendar contains a travel activity on 2099-06-07
+
+  @givn.added
+  Scenario: A revision footer naming no UTC zone supplies no revision
+    Given a supported duty plan whose revision footer names no UTC zone
+    When the crew member converts it
+    Then the calendar's revision is the construction clock
+
+  @givn.added
+  Scenario: A supplied document that is not a roster export is rejected
+    Given a supplied document that carries no detail-table labels
+    When the crew member converts it
+    Then no calendar is published
+    And the converter reports a conversion failure naming the source
+
+  @givn.added
+  Scenario: An invocation without a plan prints its usage and reports failure
+    When the invocation supplies no duty plan
+    Then the invocation reports failure through a non-zero process exit status
+    And the transcript states "usage: duty2cal <duty-plan.pdf>"
+
+  @givn.added
+  Scenario: A supplied plan that cannot be read fails naming the source
+    Given a supplied duty plan path that does not exist
+    When the crew member converts it
+    Then no calendar is published
+    And the conversion failure names "cannot read the source"
+
+  @givn.added
+  Scenario: Without the construction clock the revision is the current time
+    Given a supported duty plan with no construction clock supplied
+    When the crew member converts it
+    Then the calendar's revision is a current UTC stamp
+
+  @givn.added
+  Scenario: A row with a station but neither a code nor a route rejects the conversion
+    Given a supported duty plan whose row prints only a station
+    When the crew member converts it
+    Then no calendar is published
+    And the conversion failure names "neither an activity code nor a route"
+
+  @givn.added
+  Scenario: A split leg whose arrival alone prints a field keeps that value
+    Given a supported duty plan whose split leg prints its aircraft on the arrival only
+    When the crew member converts it
+    Then the travel activity's description carries "A/C LU7"
+
+  @givn.added
+  Scenario: A source name that yields no usable path fails without writing anything
+    Given a supplied duty plan whose name is not valid text
+    When the crew member converts it
+    Then no calendar is published
+    And the conversion failure names "no unused calendar name is available"
+
+  @givn.added
+  Scenario: A long description that folds across a character boundary still publishes
+    Given a supported duty plan whose travel leg carries a long tag with accented letters
+    When the crew member converts it
+    Then the calendar text carries "DTSTART:20990607T090000Z"
+
+  @givn.added
+  Scenario: A revision footer with an unusable stamp supplies no revision
+    Given a supported duty plan whose revision footer prints an unusable stamp
+    When the crew member converts it
+    Then the calendar's revision is the construction clock

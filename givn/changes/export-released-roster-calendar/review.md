@@ -29,7 +29,7 @@ The measurement was **invalid** at the start of this review and is now fixed and
 - Fixed by providing the toolchain: `nix-shell -p rustc cargo cargo-llvm-cov llvmPackages.llvm` with
   `LLVM_COV`/`LLVM_PROFDATA` exported from that shell. Both runners instrument the production processes
   and write separate Cobertura reports, and the merge command combines both.
-- Fresh result after three batches: **883 production lines, 850 covered, 33 uncovered** across `crates/` and `apps/cli/src`
+- Final result: **880 production lines, 865 covered, 15 uncovered** (the review opened at 55) across `crates/` and `apps/cli/src`
   (test-only paths excluded), produced by the merge command from the two fresh reports.
 
 ## Coverage classification (55 uncovered production lines)
@@ -197,12 +197,41 @@ Three regions cannot be reached by a scenario, with the concrete reason:
   every entry, so the arms execute in every travel, availability and non-flight scenario; LLVM marks the
   continuation lines of the multi-line `|` pattern uncovered, which no test can change.
 
-## Remaining
+## Coverage closure
 
-2. **33 uncovered production lines remain**, in these groups: the reader's remaining date guards and footer
-   fallbacks (`duty2cal-pdf`: 15), the CLI paths for no argument, an unreadable source and exhausted calendar
-   or report names (`main.rs`: 6), the unmatched fragment, stationless layover, code-less row and
-   departure-only optional field (`application`: 6), the RFC 5545 escaping and second fold (`ics`: 5), the
-   filesystem fallbacks plus the retry arm classified above (`fs`: 3), the date-accessor pattern lines and the
-   newline arms classified above (`domain`: 3, `ics`: 2), and one arrival-only optional-field fixture.
+Every gap the review opened with is classified and resolved:
 
+- **Dead code (bucket 1), deleted**: the stationless-layover arm (the `Layover` code is set only when the
+  marker named a station, so the check could never fail) and the redundant guard in the reader loop that
+  made the following `else { continue }` unreachable.
+- **Missing coverage (bucket 2), resolved**: thirty-one scenarios added across five batches, each proven RED
+  by removing or weakening the branch it pins and observing exactly the new scenario fail (or, for shared
+  branches, that scenario plus its siblings). They cover the producer-layout reading rules, the reader's
+  date guards, the revision-footer arms, the missing required column, the unmatched arrival, a code-less
+  row, both sides of a one-sided split-leg field, the tag escaping, the CLI usage, an unreadable source, the
+  clock fallback, a non-textual source name, a long accented description, and the layover marker's station
+  in the next column.
+- **Hard to test (bucket 3)**: the bounded-enumeration exhaustion (10 000 occupied candidates), the
+  filesystem retry arm that needs a second process to interleave, and the sink's raw newline and
+  carriage-return guards, which a PDF text cell cannot produce. Reasons recorded above.
+- **Attribution residue (11 lines)**: the merged report marks some lines uncovered although the behaviour is
+  exercised and proven: the date accessor's multi-line `|` pattern, the clock fallback and the arrival-only
+  description arm each have a RED-proving injection, and the compact revision-footer path is proven by the
+  golden calendar's `DTSTAMP:20980521T155200Z`, which only that path can produce. No test can change how
+  LLVM attributes those lines.
+
+## Sign-off checklist
+
+- Step 0 fabrication audit: clean, with the recorded commit-record deferral for two shared revisions.
+- Runners: `./run-tests.sh` 75 scenarios (75 passed), 273 steps; `./run-tests.sh --e2e` 1 scenario
+  (1 passed), 5 steps.
+- Coverage measurement: fresh, instrumented, merged from both reports; no runner-only or test-only
+  coverage.
+- Arc42 implementation conformance: CLEAN (five chapters corrected this pass).
+- Ubiquitous language: CLEAN (glossary rows for Travel leg and Availability duty; the spec uses EM duty).
+- Interaction coverage: MATCH (one inventory entry, one matrix row, one `@e2e` scenario, the promised CLI
+  subprocess).
+- Visual review: PASS through the confirmed Persona.
+- README impact: updated (Description, Quick start, Prerequisites, Usage, Contributing).
+
+REVIEW: PASS

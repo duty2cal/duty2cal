@@ -91,10 +91,6 @@ impl RosterSource for PdfRosterSource {
                     continue;
                 }
 
-                if areas.is_none() {
-                    continue;
-                }
-
                 if let Some(previous) = last_top {
                     if top - previous > TABLE_GAP {
                         // A gap larger than the row pitch ends the table:
