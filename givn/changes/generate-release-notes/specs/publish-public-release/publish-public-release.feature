@@ -78,7 +78,7 @@ Feature: Publish a public release
     When the maintainer generates the change log for version 0.2.0
     Then the generation fails and names the capability missing from the configuration
 
-  @givn.added @wip
+  @givn.added
   Scenario: A committed change log missing the released version's section is refused
     Given a committed change log that holds no section for version 0.2.0
     When the change log is checked against the released revision

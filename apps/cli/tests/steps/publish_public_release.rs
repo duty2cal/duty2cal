@@ -1426,3 +1426,37 @@ async fn generation_names_the_missing_capability(w: &mut DutyWorld) {
         w.command_transcript
     );
 }
+
+#[given(regex = r"^a committed change log that holds no section for version (\S+)$")]
+async fn a_committed_change_log_without_the_section(w: &mut DutyWorld, version: String) {
+    two_release_history(w);
+    let path = change_log_path(w);
+    w.changelog = Some(path.clone());
+    // The change log is committed before the version's tag, so a committed file
+    // that stops at the previous release is the precondition the check refuses.
+    let committed = "\
+## [0.1.0] - 2026-01-02\n\
+\n\
+### New capabilities\n\
+- Convert a supported plan into a calendar\n";
+    std::fs::write(&path, committed).expect("write the committed change log");
+    assert!(
+        !committed.contains(&format!("## [{version}]")),
+        "the committed change log already holds a section for version {version}"
+    );
+}
+
+#[then(regex = r"^the check fails and names version (\S+)$")]
+async fn the_check_fails_and_names_version(w: &mut DutyWorld, version: String) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the check did not fail: {}",
+        w.command_transcript
+    );
+    assert!(
+        w.command_transcript.contains(&format!("version {version}")),
+        "the failure does not name version {version}: {}",
+        w.command_transcript
+    );
+}
