@@ -1,3 +1,4 @@
+<!-- givn:base-sha256: dc214520a870ece493edb68ff739397d3eb7c730d17dd0af65ca0e7806418e32 -->
 # Use case: publish-public-release
 
 ## Level
