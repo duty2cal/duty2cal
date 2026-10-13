@@ -682,6 +682,32 @@ async fn an_unmatched_travel_fragment(w: &mut DutyWorld) {
 }
 
 #[given(
+    regex = r"^a supported duty plan whose travel leg prints crew position (\w+) and flight number (\w+) from (\w+) to (\w+) with resolved UTC start (\d{2}:\d{2}) and end (\d{2}:\d{2})$"
+)]
+async fn a_travel_leg_with_a_crew_position(
+    w: &mut DutyWorld,
+    position: String,
+    flight_number: String,
+    from: String,
+    to: String,
+    start: String,
+    end: String,
+) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (POS_X, &position),
+            (ACTIVITY_X, &flight_number),
+            (FROM_X, &from),
+            (TO_X, &to),
+            (START_X, &start),
+            (END_X, &end),
+        ],
+    );
+}
+
+#[given(
     "a supported duty plan whose departure fragment prints crew position DH and flight number 124 and whose arrival fragment prints flight number 124 without a crew position"
 )]
 async fn one_fragment_prints_the_crew_position(w: &mut DutyWorld) {
@@ -1794,17 +1820,17 @@ async fn both_older_reports_unchanged(w: &mut DutyWorld) {
     }
 }
 
-/// Split a printed designator into its position marker and rotation number.
-fn split_designator(designator: &str) -> Option<(&str, &str)> {
-    let split = designator.find(|c: char| c.is_ascii_digit())?;
-    let (marker, number) = designator.split_at(split);
+/// Split a printed activity cell into its crew position and flight number.
+fn split_position_and_flight_number(printed: &str) -> Option<(&str, &str)> {
+    let split = printed.find(|c: char| c.is_ascii_digit())?;
+    let (marker, number) = printed.split_at(split);
     (!marker.is_empty() && number.chars().all(|c| c.is_ascii_digit())).then_some((marker, number))
 }
 
 /// The reference plan: the operator's 26-event example month (June 2026).
 ///
 /// All values are generated; the layout reproduces the supported family's
-/// detail table with the local-date, designator, route and printed UTC columns.
+/// detail table with the local-date, flight number, route and printed UTC columns.
 fn reference_plan(w: &mut DutyWorld) {
     let mut items = support::detail_header_row(800.0);
     let mut y = 785.0;
@@ -1816,7 +1842,7 @@ fn reference_plan(w: &mut DutyWorld) {
                    start: &str,
                    end: &str| {
         let mut values: Vec<(f64, &str)> = vec![(DATE_X, date)];
-        match split_designator(activity) {
+        match split_position_and_flight_number(activity) {
             Some((marker, number)) => {
                 values.push((POS_X, marker));
                 values.push((ACTIVITY_X, number));

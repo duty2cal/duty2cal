@@ -88,10 +88,38 @@ RED/GREEN evidence is captured per scenario. Scenarios marked *(guard)* assert b
 
 ### 2. A crew position and its flight number are printed as separate words
 
-- [ ] RED: remove `@wip` from this scenario only; add its `Given` step (a travel leg printing crew position `FB` and flight number `123` from `ABC` to `DEF`); run `./run-tests.sh --name "A crew position and its flight number are printed as separate words"`; paste the output; the scenario must fail with the spliced title `FB123 ABC-DEF`.
-- [ ] GREEN: the two-field model — the travel value carries the plan's printed position and activity, one `printed_identification()` rule reads them together, the travel title uses it, and the deadhead special case plus the retired `Position` are deleted. Regenerate the reference calendar surgically: only the twelve travel `SUMMARY` lines change, each gaining exactly one space, with every `UID`, instant, `LOCATION` and non-travel title byte-identical. Reword the "preserve printed designators" rule in the owning use case. Production files: `crates/duty2cal-core/src/domain/mod.rs`, `crates/duty2cal-core/src/application/mod.rs`. Run the single-scenario command and the golden-oracle scenario; paste both.
-- [ ] REFACTOR: no behaviour change. Run the single-scenario command; paste the output.
-- [ ] COMMIT: `fix(export-duty-plan-calendar): <release note>` with this scenario's title in the body; record the revision identifier.
+- [x] RED: remove `@wip` from this scenario only; add its `Given` step (a travel leg printing crew position `FB` and flight number `123` from `ABC` to `DEF`); run `./run-tests.sh --name "A crew position and its flight number are printed as separate words"`; paste the output; the scenario must fail with the spliced title `FB123 ABC-DEF`.
+
+  ```
+  SUMMARY:FB123 ABC-DEF
+  LOCATION:ABC-DEF
+  1 scenario (1 failed) / 3 steps (2 passed, 1 failed)
+  error: test failed
+  ```
+- [x] GREEN: the two-field model — the travel value carries the plan's printed position and activity, one `printed_identification()` rule reads them together, the travel title uses it, and the deadhead special case plus the retired `Position` are deleted. Regenerate the reference calendar surgically: only the twelve travel `SUMMARY` lines change, each gaining exactly one space, with every `UID`, instant, `LOCATION` and non-travel title byte-identical. Reword the "preserve printed designators" rule in the owning use case. Production files: `crates/duty2cal-core/src/domain/mod.rs`, `crates/duty2cal-core/src/application/mod.rs`. Run the single-scenario command and the golden-oracle scenario; paste both.
+
+  ```
+  Scenario: A crew position and its flight number are printed as separate words
+  ✔ Then that activity's title is "FB 123 ABC-DEF"      1 scenario (1 passed) / 3 steps (3 passed)
+
+  Scenario: The reference roster converts to the expected calendar
+  ✔ Then the published calendar equals the expected calendar after CRLF-to-LF and folding normalisation
+                                                        1 scenario (1 passed) / 3 steps (3 passed)
+
+  git diff --stat apps/cli/tests/fixtures/expected/2098-06.ics
+   1 file changed, 12 insertions(+), 12 deletions(-)
+  ```
+  The fixture diff is surgical: twelve `SUMMARY` lines, each `LU742 …` → `LU 742 …`, and the diff shows no `UID`, `DTSTART`, `DTEND`, `DTSTAMP`, `LOCATION` or non-travel line changed.
+- [x] REFACTOR: no behaviour change — the fixture builder's split helper and its comments name the two printed fields. Run the single-scenario command; paste the output.
+
+  ```
+  ./run-tests.sh (whole suite)
+  3 features
+  100 scenarios (97 passed, 3 failed)
+  372 steps (369 passed, 3 failed)
+  failing: the three delta scenarios still @wip — no permanent scenario regressed, including the deadhead scenario and the golden oracle.
+  ```
+- [x] COMMIT: `fix(export-duty-plan-calendar): <release note>` with this scenario's title in the body; record the revision identifier.
 
 ### 3. An unmatched travel fragment is named with its position and flight number separate
 

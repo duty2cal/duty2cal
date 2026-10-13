@@ -2,7 +2,6 @@
 
 Feature: Export a duty-plan calendar
 
-  @givn.added @wip
   Scenario: A crew position and its flight number are printed as separate words
     Given a supported duty plan whose travel leg prints crew position FB and flight number 123 from ABC to DEF with resolved UTC start 08:00 and end 09:00
     When the crew member converts it

@@ -80,13 +80,17 @@ pub enum FieldValue {
     },
 }
 
-/// The crew assignment on a travel leg.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Position {
-    /// Ordinary operating assignment.
-    Operating,
-    /// Positioning travel in uniform without operating work.
-    Deadhead,
+/// How a travel leg's two printed fields read together.
+///
+/// The plan prints the crew position in its `Pos` column and the flight's
+/// activity in its `Activity` column. They stay two fields; this is the one
+/// rule that reads them together, so the title a crew member sees and the
+/// fragment a failure message names cannot drift apart.
+pub fn printed_identification(position: Option<&str>, activity: &str) -> String {
+    match position {
+        Some(position) if !position.is_empty() => format!("{position} {activity}"),
+        _ => activity.to_string(),
+    }
 }
 
 /// One represented calendar activity.
@@ -109,14 +113,15 @@ pub enum DutyEntry {
     Travel {
         /// Duty-plan date of the departure row.
         date: Date,
-        /// Printed designator, leading zeroes preserved.
-        designator: String,
+        /// The plan's `Activity` cell, as printed: the flight number of a
+        /// flight leg, leading zeroes preserved.
+        activity: String,
+        /// The plan's `Pos` cell, as printed, when the plan prints one.
+        position: Option<String>,
         /// Departure station.
         from: String,
         /// Arrival station.
         to: String,
-        /// Crew assignment.
-        position: Position,
         /// Printed UTC interval.
         interval: UtcInterval,
         /// Roster trip context, when known.
@@ -198,15 +203,15 @@ impl DutyEntry {
         match self {
             Self::AllDay { code, .. } => code.clone(),
             Self::Travel {
-                designator,
+                activity,
+                position,
                 from,
                 to,
-                position,
                 ..
-            } => match position {
-                Position::Deadhead => format!("DH {designator} {from}-{to}"),
-                Position::Operating => format!("{designator} {from}-{to}"),
-            },
+            } => format!(
+                "{} {from}-{to}",
+                printed_identification(position.as_deref(), activity)
+            ),
             Self::Availability { code, .. } | Self::NonFlightDuty { code, .. } => code.clone(),
             Self::Layover { station, .. } => format!("Layover {station}"),
         }

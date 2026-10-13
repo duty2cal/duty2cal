@@ -7,7 +7,7 @@
 use time::{Date, Duration, OffsetDateTime};
 
 use crate::domain::timing;
-use crate::domain::{DutyEntry, FieldValue, Position, Roster, SnapshotId, UtcInterval};
+use crate::domain::{DutyEntry, FieldValue, Roster, SnapshotId, UtcInterval};
 
 /// Raw, position-based content of a supplied document — the anti-corruption
 /// intermediate between the PDF adapter and interpretation.
@@ -92,16 +92,15 @@ const NON_FLIGHT_CODES: [&str; 3] = ["TK", "DTUSA", "EM"];
 struct Row {
     index: usize,
     date: Date,
-    code: String,
+    /// The plan's `Activity` cell, as printed.
+    activity: String,
     from: String,
     to: String,
     start: String,
     end: String,
-    /// The printed position assignment this row's code was derived under.
-    assignment: Position,
     /// The crew position exactly as the plan prints it, when it prints one.
     ///
-    /// The pairing and the title read this cell, not the derived assignment:
+    /// The pairing and the title read this cell, not a derived assignment:
     /// two rows of one leg print the same position, so a row that prints a
     /// different one — or none — is a different printed fragment.
     position: Option<String>,
@@ -158,10 +157,10 @@ fn interpret(table: &RawRosterTable, snapshot: SnapshotId) -> Result<Roster, Con
                 let arrival = &rows[index];
                 let partner = pending.iter().rposition(|departure| {
                     let departure = &rows[*departure];
-                    departure.code == arrival.code && departure.position == arrival.position
+                    departure.activity == arrival.activity && departure.position == arrival.position
                 });
                 let Some(position) = partner else {
-                    return Err(unmatched_fragment(&arrival.code));
+                    return Err(unmatched_fragment(&arrival.activity));
                 };
                 let departure = pending.remove(position);
                 let trip = rows[departure]
@@ -177,7 +176,7 @@ fn interpret(table: &RawRosterTable, snapshot: SnapshotId) -> Result<Roster, Con
     }
 
     if let Some(unmatched) = pending.first() {
-        return Err(unmatched_fragment(&rows[*unmatched].code));
+        return Err(unmatched_fragment(&rows[*unmatched].activity));
     }
 
     // A split leg belongs where it departs, whatever order the fragments appear.
@@ -188,9 +187,9 @@ fn interpret(table: &RawRosterTable, snapshot: SnapshotId) -> Result<Roster, Con
     })
 }
 
-fn unmatched_fragment(designator: &str) -> ConvertError {
+fn unmatched_fragment(fragment: &str) -> ConvertError {
     ConvertError::UnresolvedRequiredActivity(format!(
-        "no unique compatible partner for travel fragment {designator:?}"
+        "no unique compatible partner for travel fragment {fragment:?}"
     ))
 }
 
@@ -201,20 +200,15 @@ fn collect_rows(table: &RawRosterTable) -> Result<Vec<Row>, ConvertError> {
     let mut carried_date: Option<Date> = None;
     for cells in table.rows.iter() {
         let layover = layover_station(cells);
-        let assignment = if value(table, cells, "Pos").eq_ignore_ascii_case("DH") {
-            Position::Deadhead
-        } else {
-            Position::Operating
-        };
+        let mut activity = value(table, cells, "Activity");
         let position = optional(table, cells, "Pos");
-        let mut code = designator(table, cells, assignment);
         let mut from = value(table, cells, "From");
         let to = value(table, cells, "To");
         if let Some(station) = &layover {
-            code = "Layover".to_string();
+            activity = "Layover".to_string();
             from = station.clone();
         }
-        if code.is_empty() && from.is_empty() && to.is_empty() {
+        if activity.is_empty() && from.is_empty() && to.is_empty() {
             continue;
         }
         let date_cell = value(table, cells, "Date");
@@ -242,12 +236,11 @@ fn collect_rows(table: &RawRosterTable) -> Result<Vec<Row>, ConvertError> {
         rows.push(Row {
             index,
             date,
-            code,
+            activity,
             from,
             to,
             start: value(table, cells, "Start"),
             end: value(table, cells, "End"),
-            assignment,
             position,
             trip: own_trip,
             carried_trip: carried_trip.clone(),
@@ -289,24 +282,6 @@ fn layover_station(cells: &[String]) -> Option<String> {
     None
 }
 
-/// The printed designator: the family prints the position marker and the
-/// rotation number in separate columns (`FB` and `568`), which read as one.
-///
-/// A deadhead marker is the `DH` the calendar title already carries, so it
-/// never joins the designator.
-fn designator(table: &RawRosterTable, cells: &[String], assignment: Position) -> String {
-    let activity = value(table, cells, "Activity");
-    let marker = value(table, cells, "Pos");
-    if marker.is_empty()
-        || matches!(assignment, Position::Deadhead)
-        || activity.is_empty()
-        || !activity.chars().all(|c| c.is_ascii_digit())
-    {
-        return activity;
-    }
-    format!("{marker}{activity}")
-}
-
 /// The row's tags, without the all-day marker the family prints beside them.
 fn tags(table: &RawRosterTable, cells: &[String]) -> Option<String> {
     let field = value(table, cells, "Tags");
@@ -319,13 +294,13 @@ fn tags(table: &RawRosterTable, cells: &[String]) -> Option<String> {
 
 /// Classify one detail row into the activity it represents.
 fn classify(table: &RawRosterTable, row: &Row) -> Result<Classified, ConvertError> {
-    let code = row.code.as_str();
+    let code = row.activity.as_str();
     let _ = table;
 
     if ALL_DAY_CODES.contains(&code) {
         return Ok(Classified::Entry(DutyEntry::AllDay {
             date: row.date,
-            code: row.code.clone(),
+            code: row.activity.clone(),
             tags: row.tags.clone(),
         }));
     }
@@ -333,7 +308,7 @@ fn classify(table: &RawRosterTable, row: &Row) -> Result<Classified, ConvertErro
     if AVAILABILITY_CODES.contains(&code) {
         return Ok(Classified::Entry(DutyEntry::Availability {
             date: row.date,
-            code: row.code.clone(),
+            code: row.activity.clone(),
             station: station(row),
             interval: row_interval(row)?,
             tags: row.tags.clone(),
@@ -343,7 +318,7 @@ fn classify(table: &RawRosterTable, row: &Row) -> Result<Classified, ConvertErro
     if NON_FLIGHT_CODES.contains(&code) {
         return Ok(Classified::Entry(DutyEntry::NonFlightDuty {
             date: row.date,
-            code: row.code.clone(),
+            code: row.activity.clone(),
             station: station(row),
             trip: row.trip.clone(),
             interval: row_interval(row)?,
@@ -365,10 +340,10 @@ fn classify(table: &RawRosterTable, row: &Row) -> Result<Classified, ConvertErro
     if has_route && has_endpoints {
         return Ok(Classified::Entry(DutyEntry::Travel {
             date: row.date,
-            designator: row.code.clone(),
+            activity: row.activity.clone(),
+            position: row.position.clone(),
             from: row.from.clone(),
             to: row.to.clone(),
-            position: row.assignment,
             interval: row_interval(row)?,
             trip: row.trip.clone().or_else(|| row.carried_trip.clone()),
             report_lt: single(row.report_lt.clone()),
@@ -390,7 +365,7 @@ fn classify(table: &RawRosterTable, row: &Row) -> Result<Classified, ConvertErro
         if code.is_empty() {
             "a detail row carries neither an activity code nor a route".to_string()
         } else {
-            row.code.clone()
+            row.activity.clone()
         },
     ))
 }
@@ -429,10 +404,10 @@ fn merge_travel(
     let end = resolve(arrival.date, &arrival.end)?;
     Ok(DutyEntry::Travel {
         date: departure.date,
-        designator: departure.code.clone(),
+        activity: departure.activity.clone(),
+        position: departure.position.clone(),
         from: departure.from.clone(),
         to: arrival.to.clone(),
-        position: departure.assignment,
         interval: UtcInterval::new(start, end).map_err(|_| ConvertError::NonPositiveInterval)?,
         trip,
         report_lt: combine(departure.report_lt.clone(), arrival.report_lt.clone()),

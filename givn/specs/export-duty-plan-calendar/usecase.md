@@ -58,7 +58,7 @@ The Crew member supplies one duty-plan PDF for conversion.
 - SBX's window is its own source data, not the cancelled flight's interval. Its replacement meaning does not add the former flight as another current activity or reconcile an older imported snapshot.
 - FRA is the domain expert's stated station for the current standby examples, not a universal default. These accepted semantic rules require later validation against a supplied dated duty-plan row.
 - The SB/RE difference in activation-to-reporting notice time does not create a notification/reporting workflow or alter printed calendar endpoints.
-- DH is a crew assignment on positioning travel, still duty time. It produces one event for the underlying travel and prefixes the title, for example `DH 007 ABC-DEF`.
+- DH is a crew assignment on positioning travel, still duty time. It produces one event for the underlying travel, whose title carries the printed position, for example `DH 007 ABC-DEF`.
 - Missing optional aircraft information or zero accounting Blocktime does not erase a resolvable travel event or make it all-day.
 - A known Trip ID carries across travel legs within one unambiguous roster trip, including blank cells and page/date continuations. It must not leak into unrelated duties or a later trip. This rule does not propagate report times, offsets, or layover/non-flight metadata.
 
@@ -69,7 +69,7 @@ The Crew member supplies one duty-plan PDF for conversion.
 - An unqualified endpoint uses its own source row/date-block context. Resolve start and end independently before applying the narrow unqualified-travel overnight rule. Revision/footer dates, Report (LT), offsets, and accounting durations never supply an activity date.
 - If both travel endpoints are unqualified UTC clocks in one local-date block, there is no separate arrival-date block, and End clock precedes Start, interpret End as the following UTC day. This applies neither to equal clocks nor as a ground-duty or duration-based fallback.
 - Each timed event must have an end strictly after its start. A local-date change alone does not add a UTC day.
-- Preserve printed designators, including leading zeroes; identifying text is not converted into a numeric quantity merely for formatting.
+- Preserve the printed crew position and flight number as the plan prints them, including leading zeroes, with one space between the two printed fields in a title; identifying text is not converted into a numeric quantity merely for formatting.
 
 - **Approved inherited mappings**
 
@@ -105,7 +105,8 @@ The Crew member supplies one duty-plan PDF for conversion.
 - Additional vacation day: 14 January 2099, FZ, 09:00 and 17:00 → one all-day FZ activity; its source code remains distinct.
 - Office/seminar duty: TK, station ABC, resolved 15 January 2099 UTC 08:00–12:00 → one four-hour non-flight duty.
 - Consulate duty: DTUSA, station ABC, resolved 16 January 2099 UTC 09:00–15:00 → one six-hour non-flight visa duty.
-- Deadhead with zero accounting time: Pos DH, designator 007, ABC–DEF, resolved UTC 06:00–07:00, blank aircraft, Blocktime 00:00 → one one-hour travel event titled `DH 007 ABC-DEF`.
+- Printed crew position with its flight number: Pos FB, flight number 123, ABC–DEF, resolved UTC 08:00–09:00 → one one-hour travel event titled `FB 123 ABC-DEF`.
+- Deadhead with zero accounting time: Pos DH, flight number 007, ABC–DEF, resolved UTC 06:00–07:00, blank aircraft, Blocktime 00:00 → one one-hour travel event titled `DH 007 ABC-DEF`.
 - Sparse trip context: legs 007 and 008 belong to T42 and only the first row prints Trip ID → both descriptions contain `Trip T42`, and a later trip T43 does not inherit T42.
 - Explicit next-day departure: local block 12 contains Start (13) 00:20 and arrival block 13 ends 08:10 UTC → one travel event on UTC day 13, lasting 7:50.
 - Split local dates, same UTC day: local block 12 starts 19:15 and block 13 ends (12) 21:05 UTC → one 1:50 travel event on UTC day 12.
