@@ -29,7 +29,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test --workspace
+      # The Gherkin runner takes exactly one feature root, which
+      # ./run-tests.sh assembles from the permanent corpus and the archived
+      # change specs; a bare `cargo test` leaves it looking for
+      # tests/features, which does not exist.
+      - run: ./run-tests.sh
 
   deny:
     runs-on: ubuntu-latest
@@ -63,7 +67,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo install cargo-about --locked
+      # A prebuilt binary: `cargo install cargo-about --locked` either compiles
+      # for minutes or fails outright when the crate's own lockfile does not
+      # match the current cargo, which is what the first CI run showed.
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-about
       - run: cargo about generate about.hbs --output-file THIRD-PARTY-NOTICES.md
       - run: git diff --exit-code THIRD-PARTY-NOTICES.md
 
@@ -130,7 +139,7 @@ jobs:
           imports=$(x86_64-w64-mingw32-objdump -p target/x86_64-pc-windows-gnu/release/duty2cal.exe \
             | awk '/DLL Name/ {print $3}' | sort -u)
           echo "$imports"
-          if echo "$imports" | grep -viE '^(kernel32|user32|advapi32|ntdll|msvcrt|api-ms-win-|ucrtbase|bcrypt|ws2_32|shell32|ole32|oleaut32|combase|powrprof|secur32|crypt32|iphlpapi|userenv|dbghelp)\.dll$'; then
+          if echo "$imports" | grep -viE '^(kernel32|user32|advapi32|ntdll|msvcrt|api-ms-win-.*|ucrtbase|bcrypt|bcryptprimitives|ws2_32|shell32|ole32|oleaut32|combase|powrprof|secur32|crypt32|iphlpapi|userenv|dbghelp)\.dll$'; then
             echo "unexpected non-system DLL import — the executable is not self-contained";
             exit 1;
           fi

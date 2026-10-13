@@ -125,7 +125,7 @@ jobs:
           if (-not $objdump) { throw "llvm-objdump was not found in the toolchain" }
           $imports = & $objdump.FullName -p .\duty2cal.exe | Select-String -Pattern 'DLL Name:' | ForEach-Object { ($_.Line -split '\s+')[-1] } | Sort-Object -Unique
           $imports
-          $allowed = '^(kernel32|user32|advapi32|ntdll|msvcrt|api-ms-win-.*|ucrtbase|bcrypt|ws2_32|shell32|ole32|oleaut32|combase|powrprof|secur32|crypt32|iphlpapi|userenv|dbghelp)\.dll$'
+          $allowed = '^(kernel32|user32|advapi32|ntdll|msvcrt|api-ms-win-.*|ucrtbase|bcrypt|bcryptprimitives|ws2_32|shell32|ole32|oleaut32|combase|powrprof|secur32|crypt32|iphlpapi|userenv|dbghelp)\.dll$'
           $unexpected = $imports | Where-Object { $_ -notmatch $allowed }
           if ($unexpected) {
             throw "unexpected non-system DLL import - the executable is not self-contained: $($unexpected -join ', ')"
