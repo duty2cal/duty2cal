@@ -34,6 +34,7 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
 config="$here/cliff.toml"
 marker='<!-- capability-allow-list:'
+machinery_marker='<!-- machinery-skip-list:'
 remote='https://github.com/kressnerd/duty2cal'
 
 usage() {
@@ -159,6 +160,25 @@ for held in $capabilities; do
   if [ "$matched" = no ]; then
     refuse "a capability is missing from the configured allow-list: $held (in $config)"
   fi
+done
+
+# The allow-list decides which scopes are released; the machinery skip list
+# decides which words are, whatever a revision's scope says — a
+# `fix(<capability>):` revision whose words describe the project's own tooling
+# is still not a change a reader can act on. The list is realized as `skip`
+# parsers in the configuration and marked beside them; the two are compared
+# here so the marked list cannot drift from what the generator applies.
+machinery_line=$(grep -F -- "$machinery_marker" "$config" | head -1 || true)
+if [ -z "$machinery_line" ]; then
+  refuse "the machinery skip list is not recorded in $config"
+fi
+machinery=$(printf '%s\n' "$machinery_line" | sed -e "s|.*$machinery_marker||" -e 's|-->||g')
+parsers=$(grep -v -F -- "$machinery_marker" "$config")
+for term in $machinery; do
+  case "$parsers" in
+    *"$term"*) ;;
+    *) refuse "the machinery skip list names a term the configuration does not skip: $term (in $config)" ;;
+  esac
 done
 
 # A version with no `v*` tag has no released revision to take its date from, so

@@ -896,6 +896,59 @@ async fn notes_omit_invisible_work(w: &mut DutyWorld) {
     }
 }
 
+/// The delta history with one more released revision: a fix that carries the
+/// capability's scope and names the project's own tooling. It passes the
+/// allow-list, so only the machinery skip list can keep it out of the notes.
+const CHANGE_LOG_TOOLING_HISTORY: [(&str, &str, &str); 7] = [
+    (
+        "2026-01-01",
+        "feat(export-duty-plan-calendar): Convert a supported duty plan into a calendar",
+        "",
+    ),
+    ("2026-01-02", "chore(ci): tune the release pipeline", ""),
+    (
+        "2026-01-03",
+        "docs(readme): describe the download route",
+        "",
+    ),
+    (
+        "2026-01-04",
+        "fix(publish-public-release): Name the platform in the refusal",
+        "",
+    ),
+    (
+        "2026-01-05",
+        "fix(publish-public-release): build a clean merged coverage report",
+        "",
+    ),
+    (
+        "2026-01-06",
+        "test(publish-public-release): cover the refusal paths",
+        "v0.2.0",
+    ),
+    ("2026-01-07", "Publish the notes by hand", ""),
+];
+
+/// The release-note words the machinery skip list must keep out of a version's
+/// notes even though the revision carries a capability scope.
+const CHANGE_LOG_TOOLING: [&str; 1] = ["build a clean merged coverage report"];
+
+#[given("a revision typed as a fix of that capability whose words name the project's own tooling")]
+async fn a_revision_naming_the_projects_own_tooling(w: &mut DutyWorld) {
+    build_history(w, &CHANGE_LOG_TOOLING_HISTORY);
+}
+
+#[then("the notes name no revision whose words name the project's own tooling")]
+async fn notes_omit_the_projects_own_tooling(w: &mut DutyWorld) {
+    let notes = change_log_notes(w).join("\n");
+    for tooling in CHANGE_LOG_TOOLING {
+        assert!(
+            !notes.contains(tooling),
+            "the notes carry the project's own tooling {tooling:?}: {notes}"
+        );
+    }
+}
+
 /// A history whose released revisions name only work no user can see.
 const INVISIBLE_HISTORY: [(&str, &str, &str); 3] = [
     ("2026-01-01", "chore(ci): tune the release pipeline", ""),

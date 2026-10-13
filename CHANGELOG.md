@@ -5,6 +5,4 @@
 - Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
 
 ### Fixes
-- Align the design with the implementation and correct the coverage merge
-- Build a clean merged coverage report
 - Read the producer's own export layout
