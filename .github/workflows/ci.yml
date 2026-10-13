@@ -41,6 +41,13 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The permanent preparation scenario drives scripts/prepare-release.sh,
+          # which checks the repository's own committed change log against the
+          # released tag. The shallow default has neither the tag nor the
+          # history to render it from, so the check would refuse for the wrong
+          # reason.
+          fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
       # The suite's change-log scenarios drive scripts/render-changelog.sh as a
       # real subprocess, so the pinned generator must be on PATH — the same
