@@ -159,6 +159,25 @@ Add lint, build, and other project commands alongside these scripts.
 
 <!-- givn:end:development -->
 
+### Releasing a version
+
+Releasing a version gains one step before the tag. The version's section has to
+be in the change log already, because the drift check compares the committed
+`CHANGELOG.md` against a fresh render of the tagged revision, and the release
+workflow draws the release text from that same section.
+
+```sh
+nix-shell -p git-cliff --run \
+  'scripts/render-changelog.sh --version <version> --repo . --out CHANGELOG.md'
+git add CHANGELOG.md
+git commit -m "docs(changelog): record <version>"
+git tag v<version>
+git push origin v<version>
+```
+
+Pushing the tag starts the release workflow: the preparation stages the
+section as the release text and the change log as an asset of the draft
+release, which is inspected before it becomes public.
 
 
 ## Contributing
