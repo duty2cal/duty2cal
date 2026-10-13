@@ -297,15 +297,40 @@ Use-case constraint: byte-identical repeat preparation, so a third party can rep
 
 Use-case constraint: a preparation never replaces what exists; the staged archives keep their earlier modification times.
 
-- [ ] RED — paste the non-zero output:
+- [x] RED — paste the non-zero output:
   ```
+  Feature: Publish a public release
+    Scenario: An already prepared version is not replaced
+     ✔  Given a prepared release for version 0.1.0
+     ✘  When the maintainer prepares version 0.1.0 in the same place again
+        Step panicked. Captured output: not implemented: prepare version 0.1.0 again in the same place
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  2 steps (1 passed, 1 failed)
+  RED_EXIT=101
   ```
-- [ ] GREEN — the occupied-set refusal; paste the output:
+- [x] GREEN — the occupied-set refusal; paste the output:
   ```
+  Feature: Publish a public release
+    Scenario: An already prepared version is not replaced
+     ✔  Given a prepared release for version 0.1.0
+     ✔  When the maintainer prepares version 0.1.0 in the same place again
+     ✔  Then the preparation fails and names version 0.1.0
+     ✔  And the staged archives keep their earlier modification times
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  4 steps (4 passed)
+  GREEN_EXIT=0
   ```
-- [ ] REFACTOR — paste the output:
+  Production code: none new — the occupied-set refusal in `scripts/prepare-release.sh` runs before any write and names the version (`prepare-release: the release for version 0.1.0 is already prepared in <out>: duty2cal-0.1.0-windows-x86_64.tar.gz exists`). The When records every staged archive's modification time before the repeated preparation; the Then asserts each is unchanged, which is the assertion that distinguishes "refused" from "silently rewritten" — byte-identical archives would not (the design review's F7).
+- [x] REFACTOR — paste the output:
   ```
+  apps/cli/tests/steps/publish_public_release.rs FMT OK
+  1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
+  No behaviour change: the two modification-time helpers are used by this scenario only and the file is rustfmt-clean.
 - [ ] COMMIT — `<hash>`:
   ```
   ```

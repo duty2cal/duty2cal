@@ -10,6 +10,7 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::SystemTime;
 
 use cucumber::gherkin::Step;
 use cucumber::{given, then, when};
@@ -196,6 +197,26 @@ pub(crate) fn staged_archive(w: &DutyWorld, platform: &str) -> String {
 fn table_rows(step: &Step) -> Vec<Vec<String>> {
     let table = step.table.as_ref().expect("the step carries a data table");
     table.rows.iter().skip(1).cloned().collect()
+}
+
+/// A file's modification time.
+fn modification_time(path: &Path) -> SystemTime {
+    std::fs::metadata(path)
+        .unwrap_or_else(|error| panic!("no file at {}: {error}", path.display()))
+        .modified()
+        .expect("the file records a modification time")
+}
+
+/// The archives in a directory with their modification times, sorted by name.
+fn archives_with_times(dir: &Path) -> Vec<(String, SystemTime)> {
+    entries(dir)
+        .into_iter()
+        .filter(|name| name.ends_with(".tar.gz"))
+        .map(|name| {
+            let time = modification_time(&dir.join(&name));
+            (name, time)
+        })
+        .collect()
 }
 
 /// The sha256 digest of a file, as `sha256sum` prints it.
@@ -439,6 +460,51 @@ async fn the_archives_are_identical(w: &mut DutyWorld) {
         assert_eq!(
             first_bytes, again_bytes,
             "the archive {archive} differs between the two preparations"
+        );
+    }
+}
+
+#[when("the maintainer prepares version 0.1.0 in the same place again")]
+async fn prepares_in_the_same_place_again(w: &mut DutyWorld) {
+    let out = staged_dir(w);
+    w.staged_snapshot = archives_with_times(&out);
+    assert_eq!(
+        w.staged_snapshot.len(),
+        SUPPORTED.len(),
+        "the first preparation staged no archives: {}",
+        w.command_transcript
+    );
+    w.staged = Some(out);
+    run_prepare(w, "0.1.0");
+}
+
+#[then(regex = r"^the preparation fails and names version (\S+)$")]
+async fn the_preparation_fails_and_names_version(w: &mut DutyWorld, version: String) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the preparation did not fail: {}",
+        w.command_transcript
+    );
+    assert!(
+        w.command_transcript.contains(&version),
+        "the failure does not name version {version}: {}",
+        w.command_transcript
+    );
+}
+
+#[then("the staged archives keep their earlier modification times")]
+async fn keeps_their_earlier_modification_times(w: &mut DutyWorld) {
+    assert!(
+        !w.staged_snapshot.is_empty(),
+        "the scenario captured no staged archive"
+    );
+    let out = staged_dir(w);
+    for (archive, before) in &w.staged_snapshot {
+        let after = modification_time(&out.join(archive));
+        assert_eq!(
+            &after, before,
+            "the refused preparation rewrote the staged archive {archive}"
         );
     }
 }

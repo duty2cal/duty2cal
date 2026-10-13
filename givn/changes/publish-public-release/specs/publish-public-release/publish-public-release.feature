@@ -46,7 +46,7 @@ Feature: Publish a public release
     When the maintainer prepares version 0.1.0 again from the same executables
     Then the archives are identical to the first preparation, byte for byte
 
-  @givn.added @wip
+  @givn.added
   Scenario: An already prepared version is not replaced
     Given a prepared release for version 0.1.0
     When the maintainer prepares version 0.1.0 in the same place again
