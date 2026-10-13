@@ -25,25 +25,36 @@ The release channel adds blocks that sit beside the workspace, not inside it. Th
 ```mermaid
 flowchart TB
   PREP["scripts/prepare-release.sh — completeness, deterministic archives, checksums, release text"]
+  RENDER["scripts/render-changelog.sh — renders a version's section and the change log; --check refuses drift"]
+  CONFIG["cliff.toml — capability allow-list, group order, skip rules, section templates"]
+  LOG["CHANGELOG.md — generated change log; its newest section is the release text"]
   DCO["scripts/dco-check.sh — sign-off over a pull request's commit range"]
-  CI[".github/workflows/ci.yml — the gate; new actionlint and dco jobs"]
+  CI[".github/workflows/ci.yml — the gate; actionlint, dco, public-text and changelog jobs"]
   REL[".github/workflows/release.yml — build matrix, Windows smoke, prepare, publish, verify"]
   COMM["community files — CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, issue and PR templates"]
   STEPS["apps/cli/tests/steps/publish_public_release.rs + steps/e2e/publish_public_release.rs"]
   REL -->|invokes| PREP
+  PREP -->|invokes| RENDER
+  CONFIG -->|configures| RENDER
+  RENDER -->|writes| LOG
   CI -->|invokes| DCO
+  CI -->|invokes| RENDER
   CI -->|actionlint validates| REL
   STEPS -->|real subprocess| PREP
+  STEPS -->|real subprocess| RENDER
 ```
 
 | Release block | Responsibility |
 |---|---|
-| `scripts/prepare-release.sh` | The preparation contract: refuse an incomplete or unrecognised platform set, stage one deterministic `.tar.gz` archive and checksum per supported platform, and write the release text. |
+| `scripts/prepare-release.sh` | The preparation contract: refuse an incomplete or unrecognised platform set, stage one deterministic `.tar.gz` archive and checksum per supported platform, and stage the change log and the release text the renderer produces. |
+| `scripts/render-changelog.sh` | Render one version's section and the change log (and the release text) from the repository's history with the pinned generator; `--check` renders in memory and refuses a committed change log that differs from the released revision, naming the version whose section differs. It also refuses a version with no `v*` tag, a generator that is not the pinned version, an allow-list that differs from `givn/specs/`, and a render that names no change a user can see. |
+| `cliff.toml` | The one configuration the project owns: the capability allow-list (the released scopes), the group order, the skip rules and the templates that render a section. Passed to the generator explicitly so a developer's global configuration cannot change a render. |
+| `CHANGELOG.md` | The generated change log: the newest section is the version being released, every earlier section stays verbatim, and the first section back-fills `0.1.0`; published among a release's assets. |
 | `scripts/dco-check.sh` | Check DCO sign-off over a pull request's commit range; run by the `dco` CI job on pull requests only. |
 | `.github/workflows/release.yml` | On a `v*` tag: build the five platforms, smoke the Windows executable on Windows, prepare the staged set, publish the immutable release with provenance and a bill of materials, then verify the published release by reading it back. |
-| `.github/workflows/ci.yml` | The gate on landing; this change adds the `actionlint` and `dco` jobs and leaves the existing jobs untouched. |
+| `.github/workflows/ci.yml` | The gate on landing; the publishing change added the `actionlint` and `dco` jobs, and this change adds the `changelog` job (the pinned generator plus the drift check) and leaves every existing job untouched. |
 | Community files (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/ISSUE_TEMPLATE/*`, `.github/pull_request_template.md`) | The contributor routes: contribution and sign-off rules, conduct, the confidential reporting route, and issue and pull-request forms that ask for the export family and a stripped sample, never a real plan. |
-| `apps/cli/tests/steps/publish_public_release.rs` and `apps/cli/tests/steps/e2e/publish_public_release.rs` | The step definitions for this capability; the `@e2e` file drives `scripts/prepare-release.sh` as a real subprocess and runs the executable taken out of the produced archive. |
+| `apps/cli/tests/steps/publish_public_release.rs` and `apps/cli/tests/steps/e2e/publish_public_release.rs` | The step definitions for this capability; the `@e2e` file drives `scripts/prepare-release.sh` and `scripts/render-changelog.sh` as real subprocesses, runs the executable taken out of the produced archive, and reads the newest section out of the written change log. |
 
 ## Level 2 — Key building blocks
 

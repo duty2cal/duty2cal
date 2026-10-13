@@ -19,6 +19,10 @@
 | Release packaging is a Linux-only POSIX-shell script (`scripts/prepare-release.sh`) outside the workspace | Packaging is build tooling, not product behaviour; it adds no workspace member and stays off the coverage denominator. |
 | CI validates the workflows with `rhysd/actionlint:1.7.12` and enforces DCO sign-off on pull requests (`scripts/dco-check.sh`) | The release path only fails on the host, so a schema/expression check precedes the push; sign-off is required without granting a third-party app repository access. |
 | Every release archive carries a build provenance attestation and a bill of materials (`actions/attest@v4`, `anchore/sbom-action@v0`) | A downloader can trace the file in hand to the tagged revision and this project's automation. |
+| `git-cliff` 2.14.2 pinned beside `cliff.toml` in the repository, installed in CI with `taiki-e/install-action@v2` (`tool: git-cliff@2.14.2`) | The change-log gate compares generated text byte for byte, so the generator's output shape is part of the contract; an unpinned tool would make the comparison meaningless, as the `cargo-about` 0.9.0 pin already records. |
+| A `changelog` CI job refuses a committed `CHANGELOG.md` that differs from a fresh render of the released revision, naming the version whose section differs | The released version's notes are that file's newest section, so a stale committed change log would publish a claim the repository does not hold. |
+| The capability allow-list — which scopes are released changes — is the set of use-case ids present as directories under `givn/specs/`, materialised in `cliff.toml` and checked against the corpus by the renderer | `fix(ci)` is shaped exactly like `fix(publish-public-release)`, so the corpus, not the subject's shape, is the source of truth for what a capability is. |
+| The change log is rendered by a Linux-only POSIX-shell script (`scripts/render-changelog.sh`) outside the workspace | Rendering is build tooling, not product behaviour; it adds no workspace member and stays off the coverage denominator, like `scripts/prepare-release.sh`. |
 
 ## Organisational constraints
 

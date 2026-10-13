@@ -7,7 +7,7 @@
 - **Determinism scoped to the source snapshot.** Component identity derives from the source snapshot plus the represented activity, not from an output counter or a title (opaque discriminator; the readable date/flight/route recipe was rejected as non-unique).
 - **Create-new publication.** New calendars and diagnostics are written only to an unused name (create-new semantics with retry); existing or concurrently claimed files are never replaced.
 - **Explicit failure as a first-class outcome**: the CLI names the source and the reason in a numbered diagnostic written beside it and reports the failure through its exit status; the use case returns a typed error rather than a partial calendar.
-- **Release strategy.** Each supported platform is built on a machine of its own kind, so the archive is built and started where it must run. Packaging happens once on Linux: `scripts/prepare-release.sh` turns the five already-built executables into one deterministic `.tar.gz` archive and checksum per platform plus the release text, and refuses an incomplete set. The release is published draft-first and immutably from the public repository, with build provenance and a bill of materials attached to every archive, and the published release is then read back and its checksums and attestations verified (ADR-0003; the draft-first immutable publication is ADR-0004).
+- **Release strategy.** Each supported platform is built on a machine of its own kind, so the archive is built and started where it must run. Packaging happens once on Linux: `scripts/prepare-release.sh` turns the five already-built executables into one deterministic `.tar.gz` archive and checksum per platform plus the release text, and refuses an incomplete set. The release text is the newest section of the change log the repository keeps — rendered from the same history, grouped by kind and filtered to what a user can see, and drift-checked against the released revision — so the page and the repository cannot disagree. The release is published draft-first and immutably from the public repository, with build provenance and a bill of materials attached to every archive, and the published release is then read back and its checksums and attestations verified (ADR-0003; the draft-first immutable publication is ADR-0004).
 
 ## Technology choices
 
@@ -20,8 +20,9 @@
 | Licence | MPL-2.0 for the whole project | ADR-0001. |
 | Executable specification | Gherkin `.feature` files run by cucumber-rs (strict) | Chapter 2. |
 | Distribution | One self-contained executable per supported platform (Windows x86_64, Linux x86_64/arm64 musl-static, macOS arm64/x86_64), published as an immutable release from the public repository | ADR-0003, ADR-0004; chapters 2 and 7. |
+| Change-log generation | `git-cliff` 2.14.2, pinned beside `cliff.toml` and rendered by `scripts/render-changelog.sh` | Chapter 2; `design.md`. |
 
-ADR-0001, ADR-0002, ADR-0003 and ADR-0004 are the change's ADRs; the remaining choices are supplied constraints (chapter 2) or product behaviour owned by the capability specification and the glossary.
+ADR-0001, ADR-0002, ADR-0003 and ADR-0004 are the change's ADRs; the remaining choices are supplied constraints (chapter 2), a local mechanism owned by `design.md`, or product behaviour owned by the capability specification and the glossary.
 
 ## Approach to quality goals
 

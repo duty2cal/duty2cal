@@ -28,6 +28,18 @@ Source-code classification (all-day vs timed vs travel vs layover vs unknown) an
 
 Preparing the same five executables and version twice produces byte-identical archives, so a third party can reproduce a release and its checksum is meaningful. The three nondeterministic inputs of `tar` are fixed — ordering (`--sort=name`), time (`--mtime=@0`) and ownership (`--owner=0 --group=0 --numeric-owner`) — and `gzip` is invoked with `-n`, so no name or timestamp is embedded.
 
+## Change-log generation determinism
+
+The generator renders the same history to the same bytes on any machine at any time, or the byte-comparing drift check would have no meaning. Three inputs are fixed: ordering (`--sort oldest` over the released range, so commits are ordered by history rather than by the order a checkout happened to expose), time (the section's date is the released revision's own committer date, never the clock, which is why a version with no `v*` tag is refused), and host paths (no working-directory path, user name or runner name enters the text; the comparison link is built from the repository's public remote and the two `v*` tags).
+
+## Change-log drift checking
+
+The committed `CHANGELOG.md` is checked against a fresh render of the released revision, the same shape the third-party notices drift check already uses: the `changelog` CI job installs the pinned generator and runs `scripts/render-changelog.sh --version <newest v* tag> --check`, and a committed file that differs is refused by name of the version whose section differs. `--check` renders in memory and writes nothing. The pinned generator version and the capability allow-list are checked alongside it, so a stale file, a generator that is not the pinned version, and an allow-list that has drifted from the corpus all fail loudly rather than silently changing what a reader sees.
+
+## What a reader sees
+
+A released change is a revision whose conventional-commit scope names a capability — the use-case ids present as directories under `givn/specs/`. Every other revision is never listed, whatever its type: housekeeping (`chore`, `docs`, `style`), `test`, `build`, `ci`, and any scope outside the allow-list, including the machinery of building, packaging and publishing. Each listed entry states the release-note words the revision carries, never a rewritten summary, so the notes and the history agree, and the groups appear with the group a reader looks for first at the top (breaking changes, new capabilities, fixes, performance, reversals). A version whose render would name no change a user can see is refused rather than published.
+
 ## Completeness refusal in the preparation command
 
 The preparation command is all-or-nothing. It refuses, leaving its output untouched, when a supported platform's executable is missing, when an executable is presented for a platform outside the supported set, when an executable cannot be read, or when that version's set is already staged. It writes nothing until the whole set is valid, so an incomplete preparation publishes nothing and never replaces an existing prepared set.

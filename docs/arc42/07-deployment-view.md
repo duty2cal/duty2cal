@@ -34,7 +34,7 @@ flowchart TB
 | `macos-latest` | Builds the macOS arm64 (`aarch64-apple-darwin`) executable natively. |
 | `macos-15-intel` | Builds the macOS x86_64 (`x86_64-apple-darwin`) executable natively. |
 | `windows-latest` | Starts the cross-built Windows executable: the "started on a machine of that kind" evidence. |
-| GitHub Releases | Serves the published archives, their checksums, their provenance and bill of materials at a stable latest-release address. |
+| GitHub Releases | Serves the published archives, their checksums, their provenance and bill of materials, the release text, and the change log (`CHANGELOG.md`) at a stable latest-release address. |
 | Crew member's machine | Runs the downloaded executable; supplies the plan and receives the calendar or a diagnostic. |
 | Local filesystem | Holds the input plan and the published calendar/report files. |
 
@@ -51,6 +51,10 @@ flowchart TB
 | `duty2cal-<version>-macos-x86_64.tar.gz` | `x86_64-apple-darwin` | `macos-15-intel`, built natively. |
 
 Each archive holds that platform's executable under the name the platform uses (`duty2cal`, or `duty2cal.exe` on Windows) and nothing else; a checksum file covering the archive sits beside it on the release. Packaging into the archives happens once, on `ubuntu-latest`; the release is published and then verified on `ubuntu-latest` as well.
+
+### The change log among the release assets
+
+Beside the five archives and their checksums (and each archive's provenance and bill of materials), a release carries the change log and its newest section: `CHANGELOG.md` is published as an asset, so a downloader reads what changed without visiting the repository, and the release page's text is that same file's newest section. Both come from one render of the released revision, so the page and the published file cannot state different things about what a version contains.
 
 ### The crew member's machine
 
