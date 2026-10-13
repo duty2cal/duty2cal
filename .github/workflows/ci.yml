@@ -5,9 +5,18 @@ on:
   push:
   pull_request:
 
+# Every check here only reads the repository. Stated explicitly rather than
+# inherited, so a changed repository default cannot widen it and the requirement
+# is visible in the file (CodeQL actions/missing-workflow-permissions; the
+# artifact uploads use the run's own token, not this one).
+permissions:
+  contents: read
+
 jobs:
   fmt:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -17,6 +26,8 @@ jobs:
 
   clippy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -26,6 +37,8 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -37,6 +50,8 @@ jobs:
 
   deny:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -45,6 +60,8 @@ jobs:
 
   reuse:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - run: pipx install reuse
@@ -52,18 +69,24 @@ jobs:
 
   license-headers:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - run: bash scripts/license-headers.sh
 
   pii-guard:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - run: bash scripts/pii-guard.sh
 
   notices:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -79,6 +102,8 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -94,6 +119,8 @@ jobs:
 
   actionlint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - name: Check every workflow definition with actionlint
@@ -109,6 +136,8 @@ jobs:
     # sign-off; a direct push by the maintainer is not a contribution.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
         with:
@@ -121,12 +150,16 @@ jobs:
 
   public-text:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - run: bash scripts/public-text-check.sh
 
   windows-gnu-build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -152,6 +185,8 @@ jobs:
   windows-smoke:
     needs: [windows-gnu-build]
     runs-on: windows-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/download-artifact@v8
         with:
