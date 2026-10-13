@@ -79,14 +79,14 @@ impl RosterSource for PdfRosterSource {
             for row in cluster_rows(&words, ROW_TOLERANCE) {
                 let top = row.first().map(|word| word.bbox.top).unwrap_or_default();
 
-                if header_areas(&row).is_some() {
+                if header.is_empty() && starts_header(&row) {
                     header = row.clone();
                     let bands = build_areas(&header);
                     areas = Some(bands.clone());
                     if !columns_frozen {
                         table.columns = labels(&bands);
                     }
-                    family_recognised = true;
+                    family_recognised |= recognises_family(&header);
                     last_top = Some(top);
                     continue;
                 }
@@ -111,6 +111,7 @@ impl RosterSource for PdfRosterSource {
                         // Still label material: the header wraps over several
                         // rows and its later rows carry the trailing columns.
                         header.extend(row.iter().copied());
+                        family_recognised |= recognises_family(&header);
                         let bands = build_areas(&header);
                         areas = Some(bands.clone());
                         if !columns_frozen {
@@ -167,21 +168,30 @@ fn cluster_rows(words: &[Word], tolerance: f64) -> Vec<Vec<&Word>> {
     rows
 }
 
-/// If this row is the detail-table header, say so.
+/// Whether this row opens the detail-table header.
 ///
-/// The supported family's header is recognised by the local-date, local-report
-/// and UTC-time labels; the bands themselves are derived from every word of
-/// the header rows.
-fn header_areas(row: &[&Word]) -> Option<Vec<Area>> {
-    let joined = row
+/// The header always prints the local-date label; the remaining anchor labels
+/// may land on a later print row of the same wrapped header.
+fn starts_header(row: &[&Word]) -> bool {
+    joined_text(row).contains(ANCHOR_LABELS[0])
+}
+
+/// Whether the header rows read so far recognise the supported family.
+///
+/// The family is recognised by the local-date, local-report and UTC-time
+/// labels, which a wrapped header may print on different rows.
+fn recognises_family(header: &[&Word]) -> bool {
+    let joined = joined_text(header);
+    ANCHOR_LABELS.iter().all(|label| joined.contains(label))
+}
+
+/// The lowercased text of a word list, in reading order.
+fn joined_text(words: &[&Word]) -> String {
+    words
         .iter()
         .map(|word| word.text.to_ascii_lowercase())
         .collect::<Vec<_>>()
-        .join(" ");
-    ANCHOR_LABELS
-        .iter()
-        .all(|label| joined.contains(label))
-        .then(|| build_areas(row))
+        .join(" ")
 }
 
 /// Derive the column bands from every word of the header rows.

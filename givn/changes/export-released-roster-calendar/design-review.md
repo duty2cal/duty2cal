@@ -104,3 +104,29 @@ Final confirmation (fresh context): all checks pass — merged coverage structur
 ## Status
 
 DESIGN-REVIEW: PASS — every branch walked, every question resolved, all hardening edits applied; the implementation-phase divergences above were reconciled and re-confirmed.
+
+
+## Re-run after the producer-layout rework
+
+The reader was re-targeted from fixtures invented for this change to the producer's own export layout, and
+the fixtures were re-shaped and their data invented. This re-run covers that rework; the branches were
+walked against `design.md` (`Reading the producer's own layout`), the reader code, the fixtures and the
+local validation script.
+
+Findings and dispositions:
+
+| Finding | Severity | Disposition |
+|---|---|---|
+| The producer-layout reading rules were not covered by any committed scenario; only the out-of-CI local corpus checked them. | blocking (Testability, Missing scenarios) | Fixed. The fixture builder now prints the wrapped two-row header, the `DD Ddd` date spelling and the heading month; the reference plan prints a continuation row without a date, the `Layover: <station>` marker instead of an activity code, and the producer's own revision footer; the all-day scenarios print the `==` marker and assert it never reaches the calendar. |
+| `header_areas` required all three anchor labels in one extracted row, so a wrapped header whose anchors land on different print rows would be rejected as an unsupported family. | blocking (Risk) | Fixed. Recognition now accumulates the header rows and recognises the family once the anchor labels are present across them. |
+| arc42 chapter 11 `R-003` claimed the coverage scripts were absent and named a package-scoped coverage tool. | blocking (arc42) | Fixed: the entry is closed, naming the workspace-wide measurement design.md records. |
+| The claim "nothing above the header is a detail row" did not state the guard for material that follows the table. | advisory | Fixed: the design now names the row-pitch gap for what follows the table and the body-column test as the guard for placement. |
+| The spec's Given steps write ISO dates while the fixture builder prints the family's spelling, so the family's date spelling is invisible in the feature text. | advisory | Accepted: the layout is a design-level reading rule, recorded in `design.md`; the scenarios pin behaviour, and the corpus script pins the real spelling. |
+| The re-drive RED claim was not reproducible because the reader and the fixtures landed in one commit. | advisory | Fixed: `tasks.md` records the fault-injection commands and the observed `41 steps failed`. |
+
+Branches with no issue found: technology choices, use-case and Persona context, the decision ledger
+(`D1`–`D3`, seed references kept), the visual design contract, interface classification, and ADR
+qualification.
+
+Open: one operator question, whether the converted plans cover one producer layout or several. Until it
+is answered this review does not sign off.

@@ -331,7 +331,8 @@ async fn a_plan_with_an_all_day_code(
     start: String,
     end: String,
 ) {
-    let mut cells: Vec<(f64, &str)> = vec![(DATE_X, &date), (ACTIVITY_X, &code)];
+    let mut cells: Vec<(f64, &str)> =
+        vec![(DATE_X, &date), (ACTIVITY_X, &code), (TAGS_X, "==")];
     if !start.is_empty() {
         cells.push((START_X, &start));
     }
@@ -351,6 +352,10 @@ async fn one_all_day_activity(w: &mut DutyWorld, date: String, code: String) {
         calendar.contains(&format!("SUMMARY:{code}"))
             && calendar.contains(&format!("DTSTART;VALUE=DATE:{}", compact(&date))),
         "the all-day {code} activity is missing or wrong: {calendar}"
+    );
+    assert!(
+        !calendar.contains("=="),
+        "the all-day marker reached the calendar: {calendar}"
     );
 }
 
@@ -1837,7 +1842,7 @@ fn reference_plan(w: &mut DutyWorld) {
         "16:45",
         "18:10",
     );
-    row(&mut items, "2098-06-08", "Layover", "Clavius", "", "", "");
+    row(&mut items, "2098-06-08", "Layover: Clavius", "", "", "", "");
     row(
         &mut items,
         "2098-06-09",
@@ -1883,7 +1888,7 @@ fn reference_plan(w: &mut DutyWorld) {
         "18:00",
         "20:10",
     );
-    row(&mut items, "2098-06-14", "Layover", "Kopernik", "", "", "");
+    row(&mut items, "2098-06-14", "Layover: Kopernik", "", "", "", "");
     row(
         &mut items,
         "2098-06-15",
@@ -1921,7 +1926,7 @@ fn reference_plan(w: &mut DutyWorld) {
         "19:30",
         "07:05",
     );
-    row(&mut items, "2098-06-22", "Layover", "Olympia", "", "", "");
+    row(&mut items, "2098-06-22", "Layover: Olympia", "", "", "", "");
     row(
         &mut items,
         "2098-06-23",
@@ -1944,13 +1949,26 @@ fn reference_plan(w: &mut DutyWorld) {
     }
     row(&mut items, "2098-06-30", "OFF", "", "", "", "");
 
+    // The producer's own revision footer, below the table.
+    items.extend(support::at(
+        380.0,
+        &[
+            (DATE_X, "Created"),
+            (DATE_X + 40.0, "21May2098"),
+            (DATE_X + 90.0, "15:52"),
+            (DATE_X + 120.0, "(UTC)"),
+            (DATE_X + 150.0, "by"),
+            (DATE_X + 170.0, "Selene"),
+        ],
+    ));
+
     let dir = fresh_dir();
     let source = dir.join("roster.pdf");
     std::fs::write(&source, support::build_pdf(&items)).expect("write the reference plan");
     w.dir = Some(dir);
     w.source = Some(source);
-    // The oracle states DTSTAMP 20260610T000000Z; the construction clock is the
-    // fallback this plan has no revision footer for.
+    // The footer states the source revision, which outranks the construction
+    // clock this plan sets for reproducibility.
     w.env = vec![(
         "DUTY2CAL_CONSTRUCTION_CLOCK".to_string(),
         "2098-06-10T00:00:00Z".to_string(),

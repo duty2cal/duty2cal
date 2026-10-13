@@ -191,10 +191,14 @@ pub fn detail_header_row(y: f64) -> Vec<(f64, f64, String)> {
             (END_X + 16.0, "(UTC)"),
             (AIRCRAFT_X, "A/C"),
             (BLOCKTIME_X, "Blocktime"),
-            (TZ_X, "Timezone Difference"),
+            (TZ_X, "Timezone"),
             (LAYOVER_X, "Layover"),
             (TAGS_X, "Tags"),
         ],
     ));
+    // The header wraps over several print rows: this one carries the words that
+    // continue a column, and the anchor labels of the family are spread across
+    // both rows only when the producer's own header starts on a later row.
+    items.extend(at(y - 9.0, &[(TZ_X, "Difference")]));
     items
 }
