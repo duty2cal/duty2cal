@@ -191,8 +191,11 @@ done
 if [ -f "$repo/CHANGELOG.md" ]; then
   cp "$repo/CHANGELOG.md" "$staging/CHANGELOG.md"
 fi
+# The renderer's own report names the staging directory, which is a fresh
+# `mktemp` path on every run; its refusals still reach standard error, and this
+# command prints its own deterministic lines for both staged files below.
 "$renderer" --version "$version" --repo "$repo" \
-  --out "$staging/CHANGELOG.md" --release-text "$staging/release-notes.md"
+  --out "$staging/CHANGELOG.md" --release-text "$staging/release-notes.md" >/dev/null
 
 for platform in $PLATFORMS; do
   archive="duty2cal-$version-$platform.tar.gz"
