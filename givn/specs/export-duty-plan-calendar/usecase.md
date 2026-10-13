@@ -45,15 +45,8 @@ The Crew member supplies one duty-plan PDF for conversion.
 
 ## Rules
 
-### Provenance and contract status
-
-Change-side contract for the change to export released roster calendars, named **Export a duty-plan
-calendar**. Created from the approved ideation contract [the use case to export a duty-plan
-calendar](../../../ideation/duty-plan-calendar-conversion/use-cases/export-duty-plan-calendar.md) and the
-proposal's decisions; the source topic is duty-plan calendar conversion
-(`duty-plan-calendar-conversion`). This is the permanent leaf of the corpus.
-
-### Confirmed source and activity rules
+- **Provenance and contract status**: change-side contract for the change to export released roster calendars, named **Export a duty-plan calendar**. Created from the approved ideation contract [the use case to export a duty-plan calendar](../../../ideation/duty-plan-calendar-conversion/use-cases/export-duty-plan-calendar.md) and the proposal's decisions; the source topic is duty-plan calendar conversion (`duty-plan-calendar-conversion`). This is the permanent leaf of the corpus.
+- **Confirmed source and activity rules**
 
 - The first release targets the Released Roster detail-table family represented by the supplied private examples and explicitly validated variations, not every PDF producer layout.
 - Overview diagrams, statistics, and footer records are not independent sources of dated activities. A date-only row does not imply FREE, OFF, or layover.
@@ -69,7 +62,7 @@ proposal's decisions; the source topic is duty-plan calendar conversion
 - Missing optional aircraft information or zero accounting Blocktime does not erase a resolvable travel event or make it all-day.
 - A known Trip ID carries across travel legs within one unambiguous roster trip, including blank cells and page/date continuations. It must not leak into unrelated duties or a later trip. This rule does not propagate report times, offsets, or layover/non-flight metadata.
 
-### Timing and context
+- **Timing and context**
 
 - Timed event instants come from the printed UTC time evidence and independently resolved endpoint dates, not Report (LT), Timezone Difference, Blocktime, or duty/rest accounting values.
 - Explicit UTC day qualifiers remain attached to their own cells. Resolve the marker to the uniquely matching previous, same, or next Gregorian date around that endpoint's local-date block, carrying month/year correctly; reject if there is no unique match.
@@ -78,21 +71,19 @@ proposal's decisions; the source topic is duty-plan calendar conversion
 - Each timed event must have an end strictly after its start. A local-date change alone does not add a UTC day.
 - Preserve printed designators, including leading zeroes; identifying text is not converted into a numeric quantity merely for formatting.
 
-### Approved inherited mappings
+- **Approved inherited mappings**
 
 - An explicit dated station-bearing Layover row produces an all-day layover activity; its printed duration on a travel row remains descriptive and does not create an invented interval.
 - EM is a timed non-flight activity using its printed UTC interval and source station when supplied. No unprovided expansion of EM is asserted.
 
-### Descriptive-field selection
-
-The DESCRIPTION fields, in this order, are Trip ID, Report (LT), A/C, Blocktime, Timezone Difference, Layover duration, and Tags.
+- **Descriptive-field selection**: the DESCRIPTION fields, in this order, are Trip ID, Report (LT), A/C, Blocktime, Timezone Difference, Layover duration, and Tags.
 
 - Omit an optional field that the source does not supply; do not manufacture a report time, aircraft, offset, duration, or tag.
 - Ordinary compatible fragments combine complementary supplied fields; the same selected value repeated on both fragments is represented once.
 - Where otherwise compatible fragments supply genuinely differing selected optional values, the event is published once and the description retains both values, each labelled with the fragment that supplied it (`Report (LT) 07:30 (departure fragment); Report (LT) 08:00 (arrival fragment)`). Neither value computes an instant. This rule never merges conflicting required values (classification, endpoints, route, or explicit crew assignment), which still fail.
 - Source association for non-trip fields must identify the represented activity or contributing fragment; a page/date change or last-read value is not by itself proof of association.
 
-### Calendar representation and publication
+- **Calendar representation and publication**
 
 - The calendar must comply with RFC 5545. Timed events use UTC endpoints; all-day events use date values and a non-inclusive following-day end. Text escaping, CRLF, UTF-8, and octet-aware folding are part of the output contract; UTF-8 characters are not split across folds.
 - Component UIDs must be persistent and globally unique, scoped to the source snapshot and distinct represented activity. Identical-snapshot conversion is deterministic even when an output counter differs; a revised source snapshot has separate component identities, including activities unchanged from its predecessor. Output filename enumeration or DH title formatting is not component identity. No cross-revision activity matching, calendar-client import update, or duplicate-suppression guarantee is provided.
@@ -103,42 +94,38 @@ The DESCRIPTION fields, in this order, are Trip ID, Report (LT), A/C, Blocktime,
 - Failure to save the diagnostic does not hide the original failure or turn it into success. No guarantee of writable storage, power-loss recovery, automatic backup/cleanup, or calendar-client import reconciliation is invented.
 - Private PDFs and real identifying values are never committed. Public examples, fixtures, and golden calendars contain generated or anonymized material.
 
-### Delivery constraints, separate from the Actor goal
-
-Retain the supplied Rust stable/edition-2021 application, exact pdfplumber pin, Windows GNU cross-build, single executable without companion-runtime installation, no native C/C++ PDF extraction dependency, hand-written calendar writer, permitted licenses, and public-repository privacy requirements. These are implementation/release constraints, not extra use cases.
+- **Delivery constraints, separate from the Actor goal**: retain the supplied Rust stable/edition-2021 application, exact pdfplumber pin, the single self-contained executable without companion-runtime installation, the Windows GNU cross-build on Linux/CI, no native C/C++ PDF extraction dependency, hand-written calendar writer, permitted licenses, and public-repository privacy requirements. The platforms a release offers are the concern of the use case to publish a public release; these remain implementation/release constraints, not extra use cases.
+- **Review lenses**: the confirmed accuracy and privacy lens is crew-member--personal-calendar-owner, and the confirmed release-evidence lens is project-maintainer--release-owner, who is the Actor of the use case to publish a public release rather than an Actor of this one.
 
 ## Examples
 
-All values here are generated.
-
-| Example | Supplied facts | Observable outcome |
-|---|---|---|
-| Vacation without times | 12 January 2099, U, blank UTC cells | One all-day vacation activity on the duty-plan date. |
-| Source clocks ignored for a day off | 13 January 2099, OFF, 23:00 and 01:00 | One all-day OFF activity; no overnight timed interval. |
-| Additional vacation day | 14 January 2099, FZ, 09:00 and 17:00 | One all-day FZ activity; its source code remains distinct. |
-| Office/seminar duty | TK, station ABC, resolved 15 January 2099 UTC 08:00–12:00 | One four-hour non-flight duty. |
-| Consulate duty | DTUSA, station ABC, resolved 16 January 2099 UTC 09:00–15:00 | One six-hour non-flight visa duty. |
-| Deadhead with zero accounting time | Pos DH, designator 007, ABC–DEF, resolved UTC 06:00–07:00, blank aircraft, Blocktime 00:00 | One one-hour travel event titled `DH 007 ABC-DEF`. |
-| Sparse trip context | Legs 007 and 008 belong to T42; only the first row prints Trip ID | Both descriptions contain `Trip T42`; a later trip T43 does not inherit T42. |
-| Explicit next-day departure | Local block 12 contains Start (13) 00:20; arrival block 13 ends 08:10 UTC | One travel event on UTC day 13, lasting 7:50. |
-| Split local dates, same UTC day | Local block 12 starts 19:15; block 13 ends (12) 21:05 UTC | One 1:50 travel event on UTC day 12. |
-| Selected unqualified overnight convention | One local block 12, Start 23:10, End 01:05, no day qualifiers or separate arrival block | End is UTC day 13 at 01:05; one 1:55 travel event. |
-| Differing optional fragment values | Compatible departure and arrival fragments with Report (LT) 07:30 and 08:00 | One event described with both values labelled by fragment role. |
-| Name collision | Source roster.pdf; roster.ics and roster-1.ics already exist | Complete new output at roster-2.ics; existing files unchanged. |
-| Interpretation failure with old report | Unknown required code and existing roster.parse-error.txt | No successful new calendar; a new numbered report identifies roster.pdf and the current reason. |
-| Publication failure | Activities resolve, but the new calendar cannot be published | Failure exposed; a new report attempted; existing calendars unchanged. |
-| Diagnostic unavailable | Primary failure occurs and no new report can be saved | Original failure remains visible; no claim an older report is new. |
-| Same snapshot, another output name | Identical source converted again; an older calendar name occupied | New unused output contains the same component identifiers. |
-| Revised source snapshot | Flight 007 changes from 09:00 to 10:00 UTC in a revised PDF | Separate component identifiers; no reconciliation with an imported calendar. |
-| Source timestamp available | Footer states Created 10Jan2099 12:34 (UTC) | That source timestamp supplies UTC DTSTAMP. |
-| Source timestamp unavailable | No usable source revision metadata; controlled construction clock | That construction moment supplies DTSTAMP; activity dates/IDs unaffected. |
-| Dated standby | SB with resolved source UTC endpoints 08:00–16:00 | One eight-hour standby event. |
-| Dated reserve | RE with resolved source UTC endpoints 09:00–17:00 | One eight-hour reserve event. |
-| Standby interrupted by a day off | SB, SB, FREE, SB rows; each SB has its source window | Separate timed availability events and an all-day FREE activity. |
-| Single-day standby | SBX at example station FRA, resolved UTC endpoints 08:00–16:00 | One eight-hour SBX event using its own window. |
-| Previous-year UTC qualifier | Local date 1 January 2099; UTC cell (31) 23:10 | Endpoint 31 December 2098 23:10 UTC. |
-| Next-month UTC qualifier | Local date 31 January 2099; UTC cell (1) 00:20 | Endpoint 1 February 2099 00:20 UTC. |
-| Inconsistent explicit qualifier | Explicit day number matches none of the adjacent dates | Explicit date-resolution failure. |
+- All values here are generated.
+- Vacation without times: 12 January 2099, U, blank UTC cells → one all-day vacation activity on the duty-plan date.
+- Source clocks ignored for a day off: 13 January 2099, OFF, 23:00 and 01:00 → one all-day OFF activity; no overnight timed interval.
+- Additional vacation day: 14 January 2099, FZ, 09:00 and 17:00 → one all-day FZ activity; its source code remains distinct.
+- Office/seminar duty: TK, station ABC, resolved 15 January 2099 UTC 08:00–12:00 → one four-hour non-flight duty.
+- Consulate duty: DTUSA, station ABC, resolved 16 January 2099 UTC 09:00–15:00 → one six-hour non-flight visa duty.
+- Deadhead with zero accounting time: Pos DH, designator 007, ABC–DEF, resolved UTC 06:00–07:00, blank aircraft, Blocktime 00:00 → one one-hour travel event titled `DH 007 ABC-DEF`.
+- Sparse trip context: legs 007 and 008 belong to T42 and only the first row prints Trip ID → both descriptions contain `Trip T42`, and a later trip T43 does not inherit T42.
+- Explicit next-day departure: local block 12 contains Start (13) 00:20 and arrival block 13 ends 08:10 UTC → one travel event on UTC day 13, lasting 7:50.
+- Split local dates, same UTC day: local block 12 starts 19:15 and block 13 ends (12) 21:05 UTC → one 1:50 travel event on UTC day 12.
+- Selected unqualified overnight convention: one local block 12, Start 23:10, End 01:05, no day qualifiers or separate arrival block → End is UTC day 13 at 01:05, one 1:55 travel event.
+- Differing optional fragment values: compatible departure and arrival fragments with Report (LT) 07:30 and 08:00 → one event described with both values labelled by fragment role.
+- Name collision: source roster.pdf, with roster.ics and roster-1.ics already existing → complete new output at roster-2.ics; existing files unchanged.
+- Interpretation failure with old report: an unknown required code and an existing roster.parse-error.txt → no successful new calendar, and a new numbered report identifies roster.pdf and the current reason.
+- Publication failure: activities resolve but the new calendar cannot be published → failure exposed, a new report attempted, existing calendars unchanged.
+- Diagnostic unavailable: the primary failure occurs and no new report can be saved → the original failure remains visible; no claim that an older report is new.
+- Same snapshot, another output name: the identical source converted again with an older calendar name occupied → the new unused output contains the same component identifiers.
+- Revised source snapshot: flight 007 changes from 09:00 to 10:00 UTC in a revised PDF → separate component identifiers; no reconciliation with an imported calendar.
+- Source timestamp available: the footer states Created 10Jan2099 12:34 (UTC) → that source timestamp supplies UTC DTSTAMP.
+- Source timestamp unavailable: no usable source revision metadata with a controlled construction clock → that construction moment supplies DTSTAMP; activity dates and identifiers are unaffected.
+- Dated standby: SB with resolved source UTC endpoints 08:00–16:00 → one eight-hour standby event.
+- Dated reserve: RE with resolved source UTC endpoints 09:00–17:00 → one eight-hour reserve event.
+- Standby interrupted by a day off: SB, SB, FREE, SB rows, each SB with its own source window → separate timed availability events and an all-day FREE activity.
+- Single-day standby: SBX at example station FRA with resolved UTC endpoints 08:00–16:00 → one eight-hour SBX event using its own window.
+- Previous-year UTC qualifier: local date 1 January 2099 with UTC cell (31) 23:10 → endpoint 31 December 2098 23:10 UTC.
+- Next-month UTC qualifier: local date 31 January 2099 with UTC cell (1) 00:20 → endpoint 1 February 2099 00:20 UTC.
+- Inconsistent explicit qualifier: an explicit day number matching none of the adjacent dates → explicit date-resolution failure.
 
 ## Minimal guarantee
 
@@ -153,13 +140,11 @@ This is a changing use case: it creates a new calendar export, not a read-only o
 ## Personas
 
 - crew-member--personal-calendar-owner
-  Crew member exporting their own duty plan — confirmed accuracy and privacy review lens; not a Gherkin Actor biography.
 - project-maintainer--release-owner
-  Maintainer responsible for a public release — confirmed release-evidence review lens; not a product Actor publishing a release through this use case.
 
 ## Capabilities
 
-- export-duty-plan-calendar: the whole-plan conversion of one supported supplied plan.
+- export-duty-plan-calendar
 
 ## Interactions
 
