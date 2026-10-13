@@ -41,12 +41,29 @@ def main(argv):
 
     coverage = ET.Element(
         "coverage",
-        {"branch-rate": "0", "complexity": "0", "line-rate": "0", "version": "2.0.3"},
+        {
+            "branch-rate": "0",
+            "branches-covered": "0",
+            "branches-valid": "0",
+            "complexity": "0",
+            "line-rate": "0",
+            "version": "2.0.3",
+        },
     )
     sources = ET.SubElement(coverage, "sources")
     ET.SubElement(sources, "source").text = "merged"
     packages = ET.SubElement(coverage, "packages")
-    package = ET.SubElement(packages, "package", {"name": "merged", "line-rate": "0"})
+    package = ET.SubElement(
+        packages,
+        "package",
+        {
+            "name": "merged",
+            "line-rate": "0",
+            "branch-rate": "0",
+            "branches-covered": "0",
+            "branches-valid": "0",
+        },
+    )
     classes = ET.SubElement(package, "classes")
 
     covered = valid = 0

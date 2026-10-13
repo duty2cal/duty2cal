@@ -113,6 +113,8 @@ No removed+added pairs: the delta adds nine scenarios and removes none. No scena
 README-IMPACT: updated - Description, Quick start, Prerequisites, Usage, Contributing, License
 (the clone address, the download-and-verify route with the macOS approval, the badges, the sign-off enforcement and the licence statement; the three givn-managed blocks are untouched and `givn readme check` reports OK).
 
+- Second refusal, same phase: the merged coverage report could not be parsed by the gate, because `scripts/merge-cobertura.py` omitted the root `branches-covered` and `branches-valid` attributes the Cobertura parser requires (the two source reports carry them; the merge built a fresh root without them). Both attributes are now written on the root and the package element, and the same run's measurement and merge pass unchanged: two distinct instrumented runs merged into 7 files, 889 lines, 874 covered.
+
 ## Sign-off checklist
 
 - [x] `./run-tests.sh` GREEN — 2 features, 84 scenarios (84 passed), 312 steps.
