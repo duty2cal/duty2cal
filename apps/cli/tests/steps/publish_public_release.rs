@@ -889,6 +889,34 @@ async fn notes_omit_invisible_work(w: &mut DutyWorld) {
     }
 }
 
+/// A history whose released revisions name only work no user can see.
+const INVISIBLE_HISTORY: [(&str, &str); 3] = [
+    ("2026-01-01", "chore(ci): tune the release pipeline"),
+    ("2026-01-02", "docs(readme): describe the download route"),
+    ("2026-01-03", "build(packaging): pin the toolchain"),
+];
+
+#[given("a history whose released revisions name only work no user can see")]
+async fn a_history_with_invisible_work(w: &mut DutyWorld) {
+    build_history(w, &INVISIBLE_HISTORY, &["v0.2.0"]);
+}
+
+#[then("the generation fails and states that the version changes nothing a user can see")]
+async fn generation_refuses_invisible_version(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the generation did not fail: {}",
+        w.command_transcript
+    );
+    assert!(
+        w.command_transcript
+            .contains("version 0.2.0 changes nothing a user can see"),
+        "the failure does not state that the version changes nothing a user can see: {}",
+        w.command_transcript
+    );
+}
+
 #[given(regex = r#"^an executable presented as the unrecognised platform "([^"]+)"$"#)]
 async fn an_unrecognised_platform(w: &mut DutyWorld, platform: String) {
     assert!(

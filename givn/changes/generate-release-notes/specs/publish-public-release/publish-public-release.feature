@@ -13,7 +13,7 @@ Feature: Publish a public release
     And the notes name the new capability before the fix
     And the notes name no revision whose work no user can see
 
-  @givn.added @wip
+  @givn.added
   Scenario: A version that changes nothing a user can see is refused
     Given a history whose released revisions name only work no user can see
     When the maintainer generates the change log for version 0.2.0
