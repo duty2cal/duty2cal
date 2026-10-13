@@ -307,7 +307,7 @@ fn git_dated(repo: &Path, date: &str, args: &[&str]) {
 /// first, with fixed committer dates and `v*` tags. The committed
 /// configuration and the capability directories the allow-list check reads are
 /// copied in, so the renderer runs exactly as it does against the real tree.
-fn build_history(w: &mut DutyWorld, revisions: &[(&str, &str, &str)]) {
+pub(crate) fn build_history(w: &mut DutyWorld, revisions: &[(&str, &str, &str)]) {
     let repo = scenario_dir(w).join("history");
     let _ = std::fs::remove_dir_all(&repo);
     std::fs::create_dir_all(&repo).expect("create the fixture repository");
@@ -1167,7 +1167,7 @@ async fn section_states_the_comparison(w: &mut DutyWorld) {
 /// The first release's fixture history, oldest revision first: a new capability
 /// and work no user can see, the whole history tagged `v0.1.0`. Nothing earlier
 /// exists, so the first version's section covers everything it contains.
-const FIRST_RELEASE_HISTORY: [(&str, &str, &str); 3] = [
+pub(crate) const FIRST_RELEASE_HISTORY: [(&str, &str, &str); 3] = [
     ("2026-01-01", "chore(ci): bootstrap the release channel", ""),
     (
         "2026-01-02",

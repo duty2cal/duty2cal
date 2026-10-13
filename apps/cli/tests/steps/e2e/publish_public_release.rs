@@ -12,8 +12,8 @@ use std::process::Command;
 use cucumber::{given, then, when};
 
 use crate::steps::publish_public_release::{
-    build_binaries, machine_executable, machine_platform, run_command, sha256_of, staged_archive,
-    staged_dir, supported_platforms,
+    build_binaries, build_history, change_log_path, machine_executable, machine_platform,
+    run_command, sha256_of, staged_archive, staged_dir, supported_platforms, FIRST_RELEASE_HISTORY,
 };
 use crate::DutyWorld;
 
@@ -22,6 +22,14 @@ fn transcript_path() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
         "../../givn/archive/publish-public-release/evidence/visual/\
          maintainer-prepares-a-release-and-runs-the-archived-executable/transcript.txt",
+    )
+}
+
+/// Where the render scenario's terminal transcript is committed as evidence.
+fn render_transcript_path() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
+        "../../givn/changes/generate-release-notes/evidence/visual/\
+         maintainer-generates-the-change-log-for-a-version-and-reads-its-newest-section/transcript.txt",
     )
 }
 
@@ -42,6 +50,26 @@ fn commit_transcript(w: &DutyWorld) {
         .replace(&w.working_dir().display().to_string(), "<scenario-dir>");
     evidence.push_str(&format!("exit status: {}\n", w.exit_status.unwrap_or(-1)));
     std::fs::write(&path, evidence).expect("write the transcript");
+}
+
+/// Commit the render scenario's terminal transcript as evidence, with the
+/// run-specific directory replaced by a placeholder, as the design's visual
+/// contract requires.
+fn commit_render_transcript(w: &DutyWorld) {
+    let path = render_transcript_path();
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).expect("create the evidence directory");
+    }
+    let mut evidence = w
+        .scenario_transcript
+        .replace(&w.working_dir().display().to_string(), "<scenario-dir>");
+    evidence.push_str(&format!("exit status: {}\n", w.exit_status.unwrap_or(-1)));
+    std::fs::write(&path, evidence).expect("write the transcript");
+}
+
+/// The change log the render scenario wrote.
+fn rendered_change_log(w: &DutyWorld) -> PathBuf {
+    w.changelog.clone().unwrap_or_else(|| change_log_path(w))
 }
 
 #[given("the executable built for this machine")]
@@ -126,4 +154,49 @@ async fn prints_usage_and_reports_failure(w: &mut DutyWorld, printed: String) {
         w.command_transcript
     );
     commit_transcript(w);
+}
+
+#[given("a repository whose history releases version 0.1.0")]
+async fn a_repository_releasing_version_0_1_0(w: &mut DutyWorld) {
+    build_history(w, &FIRST_RELEASE_HISTORY);
+}
+
+#[then("the change log file holds a section for version 0.1.0")]
+async fn the_change_log_holds_a_section_for_version_0_1_0(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the renderer did not succeed: {}",
+        w.command_transcript
+    );
+    let path = rendered_change_log(w);
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no change log at {}: {error}", path.display()));
+    assert!(
+        text.contains("## [0.1.0]"),
+        "the change log holds no section for version 0.1.0: {text}"
+    );
+}
+
+#[then("that section names the released change a user can see")]
+async fn that_section_names_the_released_change(w: &mut DutyWorld) {
+    let path = rendered_change_log(w);
+    // Read the section out of the file the real command wrote, as a terminal
+    // session would, so the committed transcript shows the newest section.
+    let mut command = Command::new("cat");
+    command.arg(&path);
+    run_command(w, &mut command);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "reading the change log failed: {}",
+        w.command_transcript
+    );
+    assert!(
+        w.command_transcript
+            .contains("Convert a supported duty plan into a calendar"),
+        "the section names no released change a user can see: {}",
+        w.command_transcript
+    );
+    commit_render_transcript(w);
 }

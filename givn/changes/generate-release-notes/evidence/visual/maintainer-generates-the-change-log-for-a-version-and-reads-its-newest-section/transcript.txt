@@ -1,0 +1,10 @@
+$ scripts/render-changelog.sh --version 0.1.0 --repo <scenario-dir>/history --out <scenario-dir>/CHANGELOG.md
+rendered version 0.1.0 into <scenario-dir>/CHANGELOG.md
+
+$ cat <scenario-dir>/CHANGELOG.md
+## [0.1.0] - 2026-01-03
+
+### New capabilities
+- Convert a supported duty plan into a calendar
+
+exit status: 0

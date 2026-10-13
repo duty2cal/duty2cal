@@ -48,7 +48,7 @@ Feature: Publish a public release
     And that section names the new capability
     And that section states no comparison against an earlier version
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Maintainer generates the change log for a version and reads its newest section
     Given a repository whose history releases version 0.1.0
     When the maintainer generates the change log for version 0.1.0
