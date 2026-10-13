@@ -19,7 +19,7 @@ Feature: Publish a public release
       | duty2cal-0.1.0-macos-x86_64.tar.gz   | duty2cal     |
     And every archive holds only its own executable
 
-  @givn.added @wip
+  @givn.added
   Scenario: A platform whose executable was not built stops the release
     Given an executable built for every supported platform except "linux-arm64"
     When the maintainer prepares the release for version 0.1.0

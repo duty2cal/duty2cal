@@ -86,15 +86,39 @@ Use-case constraint: one archive per supported platform, named for the platform,
 
 Use-case constraint: an archive set missing a platform publishes nothing.
 
-- [ ] RED — paste the non-zero output:
+- [x] RED — paste the non-zero output:
   ```
+  Feature: Publish a public release
+    Scenario: A platform whose executable was not built stops the release
+     ✘  Given an executable built for every supported platform except "linux-arm64"
+        Step panicked. Captured output: not implemented: build every supported platform except linux-arm64
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  1 step (1 failed)
+  RED_EXIT=101
   ```
-- [ ] GREEN — the completeness refusal, leaving the output directory untouched; paste the output:
+- [x] GREEN — the completeness refusal, leaving the output directory untouched; paste the output:
   ```
+  Feature: Publish a public release
+    Scenario: A platform whose executable was not built stops the release
+     ✔  Given an executable built for every supported platform except "linux-arm64"
+     ✔  When the maintainer prepares the release for version 0.1.0
+     ✔  Then the preparation fails and names "linux-arm64"
+     ✔  And the prepared release holds no archive
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  4 steps (4 passed)
+  GREEN_EXIT=0
   ```
-- [ ] REFACTOR — paste the output:
+  Production code: none new — `scripts/prepare-release.sh`'s completeness refusal already names the platform whose executable is missing and exits before any write (`prepare-release: no executable was built for platform linux-arm64: <path>`), which this scenario pins; the `holds_no_archive` step asserts the staged directory is still empty, so "nothing is staged" is checked rather than assumed.
+- [x] REFACTOR — paste the output:
   ```
+  apps/cli/tests/steps/publish_public_release.rs FMT OK
+  1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
+  The `except` Given now asserts that the name it leaves out is a supported platform (a typo would otherwise quietly build five), and `the_preparation_fails_and_names`/`holds_no_archive` needed no change.
 - [ ] COMMIT — `<hash>`:
   ```
   ```

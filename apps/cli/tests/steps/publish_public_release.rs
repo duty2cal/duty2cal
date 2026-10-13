@@ -292,3 +292,41 @@ async fn every_archive_holds_only_its_executable(w: &mut DutyWorld) {
         );
     }
 }
+
+#[given(regex = r#"^an executable built for every supported platform except "([^"]+)"$"#)]
+async fn every_supported_platform_except(w: &mut DutyWorld, missing: String) {
+    let platforms: Vec<&str> = supported_platforms()
+        .into_iter()
+        .filter(|platform| *platform != missing.as_str())
+        .collect();
+    assert_eq!(
+        platforms.len(),
+        SUPPORTED.len() - 1,
+        "the step names a supported platform to leave out"
+    );
+    build_binaries(w, &platforms);
+}
+
+#[then(regex = r#"^the preparation fails and names "([^"]+)"$"#)]
+async fn the_preparation_fails_and_names(w: &mut DutyWorld, named: String) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the preparation did not fail: {}",
+        w.command_transcript
+    );
+    assert!(
+        w.command_transcript.contains(&named),
+        "the failure does not name {named}: {}",
+        w.command_transcript
+    );
+}
+
+#[then("the prepared release holds no archive")]
+async fn holds_no_archive(w: &mut DutyWorld) {
+    let staged = entries(&staged_dir(w));
+    assert!(
+        staged.is_empty(),
+        "the refused preparation staged {staged:?}"
+    );
+}
