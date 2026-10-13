@@ -119,8 +119,15 @@ Use-case constraint: an archive set missing a platform publishes nothing.
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
   The `except` Given now asserts that the name it leaves out is a supported platform (a typo would otherwise quietly build five), and `the_preparation_fails_and_names`/`holds_no_archive` needed no change.
-- [ ] COMMIT — `<hash>`:
+- [x] COMMIT — `9378bea`:
   ```
+  feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
+
+  Scenario: A platform whose executable was not built stops the release
+
+  RED: the three steps existed as unimplemented!() stubs; the single-scenario run failed with exit 101.
+  GREEN: the completeness refusal in scripts/prepare-release.sh names the platform whose executable is missing and exits before any write; the steps assert the failure names linux-arm64 and that the staged directory is still empty.
+  REFACTOR: the except-Given asserts the name it leaves out is a supported platform; the single scenario passes 4/4 steps with exit 0.
   ```
 
 ### 3. An executable for an unrecognised platform is refused
