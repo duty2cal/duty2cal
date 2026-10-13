@@ -29,7 +29,7 @@
 # revision's own committer date at any time on any machine. The renderer
 # replaces the placeholder below with that date.
 body = """
-## [{{ version | trim_start_matches(pat="v") }}] - @@DATE@@
+## [{% if version %}{{ version | trim_start_matches(pat="v") }}{% else %}unreleased{% endif %}] - @@DATE@@
 
 {% for entry in commits | commit_groups(groups=commit_parsers_groups) %}### {{ entry.group }}
 {%- for commit in entry.commits %}
