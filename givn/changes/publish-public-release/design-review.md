@@ -72,6 +72,12 @@ Fresh-context grilling of the complete plan (proposal, spec delta, design, arc42
 5. **Design** (F4, F5, F6, F8, F9, F10, F11, F13, F18, F19, F21, `D5`): one pinning convention, the first-release text, the public-text check and its decision, the check-run assertion, the required-check list with the bypass reality, the corrected file table, the corrected dependency claim, and the platform-set ownership sentence.
 6. **Use case** (F13, F20): the public-text rule group and the gate enumeration.
 
+## Post-sign-off correction (implementation phase)
+
+- The implementation slice found the guard red on the change's own evidence file: `evidence/history-rewrite.md` quotes the verification command `git grep 'DTSTART:2026'`, and the year rule matched that partial property reference as a real calendar date — in the tree and in the four revisions that carry the file, so the review's "clean over the tree and over every revision" no longer held when it was re-checked.
+- Only one of the two things involved was wrong, and it was the guard: a bare property reference quoted in a document is not a calendar's content, so the rule was over-broad. It now requires a complete date — all-day (`DTSTART;VALUE=DATE:YYYYMMDD`) or timed (`DTSTART:YYYYMMDDTHHMMSSZ`) — so the evidence file passes while both real shapes still fail. Proven with three planted files: a complete real timestamp (fails), a real all-day date (fails), and the documentation reference that caused the regression (passes). Both the earlier leaked fixture's shape and the fictional 2098 fixtures were re-checked under the new rule.
+- The residual limitation is now recorded, not implied: R-014 in chapter 11 states that the guard recognises identifier-shaped and calendar-shaped content only, and that private material in another shape passes it — which is why the privacy rule and review remain the controls for everything the guard cannot describe.
+
 ## Per-branch coverage after hardening
 
 Scope, Tech choices, Missing scenarios, Testability, E2E fidelity, Visual design contract, Interface classification, Persona disposition, Deferrals (`D5`, recorded), Interaction coverage, Risk, Domain context, ADR qualification, Architecture documentation (twelve rows re-derived, content checked, no placeholder text, Mermaid only), Ubiquitous language: no issue outstanding.
