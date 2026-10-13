@@ -997,7 +997,9 @@ async fn a_revision_borrowing_a_tooling_word(w: &mut DutyWorld) {
     build_history(w, &CHANGE_LOG_BORROWED_WORD_HISTORY);
 }
 
-#[then("the notes name the revision whose subject borrows a tooling word for a crew member's own work")]
+#[then(
+    "the notes name the revision whose subject borrows a tooling word for a crew member's own work"
+)]
 async fn notes_name_the_borrowed_word_revision(w: &mut DutyWorld) {
     let notes = change_log_notes(w).join("\n");
     assert!(
