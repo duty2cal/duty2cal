@@ -169,8 +169,15 @@ Use-case constraint: no invented platform is ever published.
   1 scenario (1 passed), 5 steps (5 passed)   REFACTOR_EXIT=0
   ```
   The Given now asserts the name it presents really is outside the supported set, so the step cannot pass by presenting a supported platform twice.
-- [ ] COMMIT — `<hash>`:
+- [x] COMMIT — `3016612`:
   ```
+  feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
+
+  Scenario: An executable for an unrecognised platform is refused
+
+  RED: the new Given existed as an unimplemented!() stub; the single-scenario run failed with exit 101.
+  GREEN: the platform whitelist refusal in scripts/prepare-release.sh refuses a binaries-directory subdirectory outside the canonical set before any write; the Given presents an executable as freebsd-x86_64 and the scenario asserts the failure names it and stages nothing.
+  REFACTOR: the Given asserts the name it presents is outside the supported set; the single scenario passes 5/5 steps with exit 0.
   ```
 
 ### 4. Each archive's checksum covers that archive
