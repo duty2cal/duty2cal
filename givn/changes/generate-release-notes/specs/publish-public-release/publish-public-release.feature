@@ -54,3 +54,32 @@ Feature: Publish a public release
     When the maintainer generates the change log for version 0.1.0
     Then the change log file holds a section for version 0.1.0
     And that section names the released change a user can see
+
+  @givn.modified @wip
+  Scenario: The release text states the released revisions' release notes
+    Given a history whose released revisions name a new capability, a fix, and work no user can see
+    And one released change is named by several revisions
+    When the maintainer prepares the release for version 0.2.0
+    Then the release text names version 0.2.0
+    And the release text names the new capability before the fix
+    And the release text names the released change once
+    And the release text omits the work no user can see
+
+  @givn.added @wip
+  Scenario: The prepared release carries the change log its section came from
+    Given a history whose released revisions name a new capability and work no user can see
+    When the maintainer prepares the release for version 0.2.0
+    Then the prepared release stages the change log for version 0.2.0
+    And the staged change log holds the section the release text states
+
+  @givn.added @wip
+  Scenario: A capability missing from the configured allow-list is refused
+    Given a capability the repository holds that the configuration does not name
+    When the maintainer generates the change log for version 0.2.0
+    Then the generation fails and names the capability missing from the configuration
+
+  @givn.added @wip
+  Scenario: A committed change log missing the released version's section is refused
+    Given a committed change log that holds no section for version 0.2.0
+    When the change log is checked against the released revision
+    Then the check fails and names version 0.2.0

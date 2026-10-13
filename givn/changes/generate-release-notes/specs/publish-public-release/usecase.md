@@ -75,6 +75,9 @@ The maintainer decides a version is ready and prepares its release.
   - The notes are the newest section of the change log the repository keeps, and every earlier version stays unchanged beside it.
   - Each section states its own date and, where an earlier version exists, the comparison against the immediately preceding version.
   - The section is rendered from the repository's history by the project's own generator, whose version is recorded beside its configuration; a committed change log that differs from a fresh render of the released revision is refused.
+  - The configuration that decides which subjects are released names every capability the repository holds; a capability present under `givn/specs/` and absent from it is refused rather than left out of every release.
+  - The version being released already has its section in the committed change log, because the change log is committed before the version's tag; a committed change log that lacks that version's section is refused.
+  - Writing a version's section replaces that version's section where it already exists and places it above the earlier versions where it does not, so a version prepared twice has one section rather than two.
 - **The public home and its gate**
   - A change reaches the default branch only after the project's checks pass: formatting, lint, tests, dependency licences, licence compliance of the whole tree, per-file licence headers, third-party notices drift, the private-data guard over both the tree and the published history, coverage, the check of the project's own automation definitions, and the Windows cross-build with its smoke run. The revision a reader is looking at shows the result, and the checks the branch requires are the ones that report on a pushed revision.
   - A leaked credential cannot be pushed into the public history, and any secret that still lands raises an alert.
