@@ -207,9 +207,12 @@ for platform in $PLATFORMS; do
   archive="duty2cal-$version-$platform.tar.gz"
   # Ownership, ordering and time are tar's three nondeterministic inputs; gzip
   # embeds no name or timestamp, so the same inputs reproduce the same bytes.
+  # The mode is forced because CI's artifact transport does not carry file
+  # permissions: without it a binary that arrives without the execute bit is
+  # published unexecutable, which is what the v0.1.0 archives did.
   (
     cd "$binaries/$platform"
-    tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner -cf - "$exe" | gzip -n
+    tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner --mode=755 -cf - "$exe" | gzip -n
   ) > "$staging/$archive"
   (
     cd "$staging"
