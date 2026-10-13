@@ -63,6 +63,9 @@ Fifteen lines, fourteen judged legitimately hard to test with the reasons above 
 
 Interface: terminal, so the evidence is the committed transcript rather than screenshots. One fresh-context reviewer per confirmed Persona read the transcript, the use case, the contract and the public download route.
 
+PERSONAS: project-maintainer--release-owner
+The capability's second confirmed Persona, `crew-member--personal-calendar-owner`, is dispositioned the same way and reviewed separately in the table below.
+
 | Persona | Verdict | Findings (all advisory) |
 |---|---|---|
 | `project-maintainer--release-owner` | `PERSONA-REVIEW: PASS` | A1: four of the five staged archives wrap stand-in payloads locally, so their checksums attest stand-ins; the transcript claims nothing about them, and the real per-platform evidence is the host pipeline's build matrix and smoke job. A2: the version is shown in two of its three loci (archive names, release text); the tag is host-side by design. A3: the host half of the release promises has no recorded run yet, which the change names as the pipeline's own evidence rather than asserting it. |
@@ -97,13 +100,15 @@ Every term the delta and the design use normatively is in `docs/arc42/12-glossar
 
 ## Overlap dispositions
 
-| Finding | Disposition |
-|---|---|
-| `SHAPE` — "A platform whose executable was not built stops the release" and "An executable for an unrecognised platform is refused" share a shape | KEEP BOTH. They pin different invariants: one is the completeness refusal (no promise without an archive), the other the whitelist refusal (no invented platform). Merging them would let one fail while the other passes unnoticed. |
-| `SHAPE` — the same pair against "An unreadable executable stops the preparation" | KEEP ALL THREE. The third pins atomicity (an unreadable input stages nothing), which is exactly the target's second bullet, and it is the only one of the three whose trigger is an I/O failure. |
-| No removed+added pairs | The delta adds nine scenarios and removes none. |
+| Scenario A | Scenario B | Decision |
+|---|---|---|
+| A platform whose executable was not built stops the release | An executable for an unrecognised platform is refused | variant |
+| A platform whose executable was not built stops the release | An unreadable executable stops the preparation | variant |
+| An executable for an unrecognised platform is refused | An unreadable executable stops the preparation | variant |
 
-Split-or-keep: no scenario in the delta is long enough to warrant splitting; each asserts one behaviour with three to five steps.
+Each pair is a **variant**, not a duplicate. The three refusals share a shape but pin different invariants — the completeness refusal (no platform promise without an archive), the whitelist refusal (no invented platform) and atomicity (an unreadable input stages nothing) — and each failure stays separately attributable in the message. Merging them would let a regression in one hide behind a pass in another.
+
+No removed+added pairs: the delta adds nine scenarios and removes none. No scenario in the delta is long enough to warrant a split-or-keep row; each asserts one behaviour in three to five steps.
 
 README-IMPACT: updated - Description, Quick start, Prerequisites, Usage, Contributing, License
 (the clone address, the download-and-verify route with the macOS approval, the badges, the sign-off enforcement and the licence statement; the three givn-managed blocks are untouched and `givn readme check` reports OK).

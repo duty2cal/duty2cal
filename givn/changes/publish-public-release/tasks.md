@@ -71,7 +71,7 @@ Use-case constraint: one archive per supported platform, named for the platform,
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
   Two format-neutral rewrites in `fresh_dir` and `run_prepare` so the file is stable under rustfmt 1.98 (the toolchain in this environment), and the not-yet-used `machine_executable` helper removed. Honest tooling note: `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` do not run clean here, but every finding is in files this change does not touch (`crates/duty2cal-pdf/src/lib.rs`, `apps/cli/tests/steps/support.rs`, `apps/cli/tests/steps/export_duty_plan_calendar.rs`); rustfmt 1.98 and clippy 1.98 are newer than whatever formatted them, and the repository pins `channel = "stable"`.
-- [x] COMMIT — `80cefb4` — subject is the release note, body names this scenario:
+- [x] COMMIT: `80cefb4` — subject is the release note, body names this scenario:
   ```
   feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
 
@@ -119,7 +119,7 @@ Use-case constraint: an archive set missing a platform publishes nothing.
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
   The `except` Given now asserts that the name it leaves out is a supported platform (a typo would otherwise quietly build five), and `the_preparation_fails_and_names`/`holds_no_archive` needed no change.
-- [x] COMMIT — `9378bea`:
+- [x] COMMIT: `9378bea`:
   ```
   feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
 
@@ -169,7 +169,7 @@ Use-case constraint: no invented platform is ever published.
   1 scenario (1 passed), 5 steps (5 passed)   REFACTOR_EXIT=0
   ```
   The Given now asserts the name it presents really is outside the supported set, so the step cannot pass by presenting a supported platform twice.
-- [x] COMMIT — `3016612`:
+- [x] COMMIT: `3016612`:
   ```
   feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
 
@@ -216,7 +216,7 @@ Use-case constraint: a downloader verifies what they received before extracting 
   1 scenario (1 passed), 3 steps (3 passed)   REFACTOR_EXIT=0
   ```
   No tidy was needed: the steps read as one command per step, `sha256_of` is the only new helper, and the file is rustfmt-clean; the checks above are the whole REFACTOR.
-- [x] COMMIT — `84c1648`:
+- [x] COMMIT: `84c1648`:
   ```
   feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
 
@@ -282,7 +282,7 @@ Use-case constraint: byte-identical repeat preparation, so a third party can rep
   1 scenario (1 passed), 3 steps (3 passed)   REFACTOR_EXIT=0
   ```
   No behaviour change: the second preparation's read is a `match` rather than a closure around `panic!`, which keeps the file rustfmt-clean under both the older and the current formatter.
-- [x] COMMIT — `1aba314`:
+- [x] COMMIT: `1aba314`:
   ```
   feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
 
@@ -331,7 +331,7 @@ Use-case constraint: a preparation never replaces what exists; the staged archiv
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
   No behaviour change: the two modification-time helpers are used by this scenario only and the file is rustfmt-clean.
-- [x] COMMIT — `cb1af7a`:
+- [x] COMMIT: `cb1af7a`:
   ```
   feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
 
@@ -379,7 +379,7 @@ Use-case constraint: an unreadable input stages nothing and names the cause.
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
   No behaviour change: the permission change is one `#[cfg(unix)]` block with an explicit `#[cfg(not(unix))]` refusal, since the preparation itself is Linux-only.
-- [x] COMMIT — `30681d5`:
+- [x] COMMIT: `30681d5`:
   ```
   feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
 
@@ -450,7 +450,7 @@ Use-case constraint: release-note subjects in release order, housekeeping and un
   1 scenario (1 passed), 5 steps (5 passed)   REFACTOR_EXIT=0
   ```
   No behaviour change: the fixture's `git` helper no longer returns a transcript no caller reads, and the file is rustfmt-clean.
-- [x] COMMIT — `7efe9c2`:
+- [x] COMMIT: `7efe9c2`:
   ```
   feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
 
@@ -541,7 +541,7 @@ Use-case constraint: the assertion is on what the preparation command reported a
   12 steps (12 passed)   E2E_SUITE_EXIT=0
   ```
   Two tidy-ups with no behaviour change: the preparation is now invoked as `scripts/prepare-release.sh` from the repository root (the command the design documents, and the only form whose transcript carries no local path), and `run_command` records each command line so the committed transcript reads as a terminal session. The long step attribute is wrapped as the existing steps wrap theirs.
-- [x] COMMIT — `03bf20f`:
+- [x] COMMIT: `03bf20f`:
   ```
   feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
 
