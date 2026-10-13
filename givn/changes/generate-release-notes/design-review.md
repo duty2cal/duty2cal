@@ -82,4 +82,59 @@ Question 2's answer above is left as it was written; these notes correct the rec
 - The reader lens found a realization gap in the permanent rule it had already stated: a `fix(<capability>):` revision whose words name the project's own tooling passed the type-plus-scope allow-list and reached the page (the two coverage entries in the 0.1.0 section). A marked machinery skip list now keeps those words out of every release, whatever a revision's scope says.
 - The `publish` job refuses only a check run that has already concluded non-green, so the release preparation now runs the drift check on the committed change log itself, before it stages anything.
 
+## Design-review re-run (2026-10-14)
+
+A fresh context re-ran the review over the corrected design and the finished implementation. Everything below is the re-run's own record; the first pass and its corrections above are left intact.
+
+### What the re-run read
+
+`design.md` (corrected), `proposal.md`, the delta `specs/publish-public-release/publish-public-release.feature` and its `usecase.md`, the permanent `givn/specs/publish-public-release/publish-public-release.feature` and `usecase.md`, `tasks.md` (the review-fix items F1–F9), `arc42.md`, every chapter under `docs/arc42/` (all twelve read; unicode box-drawing scan clean), and the code the design drives: `cliff.toml`, `scripts/render-changelog.sh`, `scripts/prepare-release.sh`, `.github/workflows/ci.yml`, `.github/workflows/release.yml`, the README `### Releasing a version` section, `apps/cli/tests/features_runner.rs`, both `publish_public_release.rs` step files, and the committed `CHANGELOG.md`. The pinned generator (`git-cliff 2.14.2` via `nix-shell -p git-cliff`) was run against throwaway fixtures rather than trusted from the design's description.
+
+### Branches walked, with a verdict each
+
+| Branch | Verdict |
+|---|---|
+| Scope | No issue: the delta's eleven scenarios cover the proposal's four gaps plus the refusals, the date, the comparison and the back-fill; the out-of-scope items stay out. Unchanged by the re-run. |
+| Tech choices | Correct after hardening: the generator, the extraction-from-whole-history render, the literal comparison URL, the date rule and the per-type allow-list all behave as the design states. The machinery skip list did **not** — see H1. |
+| Missing scenarios | Hardened: the skip list's narrowness was unobservable, so the grouping scenario now drives a revision that merely borrows a tooling word for a crew member's own work and asserts it stays in the notes (H1). |
+| Testability | Sound: every scenario fails RED on its own name without production code, and the two new steps assert concrete subjects, not "it ran". |
+| E2E fidelity | Sound: the `@e2e` scenario drives the renderer as a real subprocess and asserts the section it wrote; the release host stays the host's business. |
+| Visual design contract | Sound: terminal interface, no viewports, transcript path recorded, baseline stated. |
+| Interface classification | Tested the opposite: nothing renders HTML/CSS/JS in a browser — the change produces Markdown text — so the terminal classification holds. |
+| Persona disposition | Both confirmed Personas recorded with what the change gives them; none invented or promoted. |
+| Deferrals | None: every promise is driven locally or by the existing pipeline. |
+| Risk | Sound, and now complete: the most likely failure (the generator not delivering the specified behaviour) is settled; the publish gate's remaining window is recorded as TD-009 (H4). |
+| Use-case and Persona context | Confirmed: `publish-public-release` extended, typed relationships still `none`, Actors distinct from Personas; the new delta scenario is this change's own. |
+| Decision ledger | No issue: the proposal carries no `D<n>` (its Open Questions state none remain and records two unnumbered decisions), and both are carried in `design.md` with their rejected alternatives. |
+| ADR qualification | `NOT_QUALIFIED`, routed once to `design.md`; the register and chapter 09 untouched. Re-confirmed against the corrected design. |
+| Architecture documentation | Hardened: twelve rows re-derived independently and diffed against `arc42.md`. Two under-declarations fixed in `arc42.md` (H2, H3) and one missing residual row added to chapter 11 (H4); every Yes row's chapter content matches the design; all twelve chapter files exist with real content and no ASCII art. |
+| Ubiquitous language | The glossary already carries change log, released change, drift check and capability allow-list; no term changed with the hardening. No issue. |
+
+### Findings, and where each landed
+
+| # | Finding | Disposition |
+|---|---|---|
+| H1 | **The machinery skip list was not narrow.** `cliff.toml` realized the terms as bare subject-anchored words (`coverage`, `cobertura`, `clippy`, `rustfmt`, `notices`, `workflow`, `transcript`), so a genuine crew-facing subject that merely borrowed one was silently dropped. Demonstrated: a fixture whose released subjects were `Support the crew's ramp workflow`, `Handle notices from the roster`, `Record the coverage of a plan` and `Fix the transcript of the planning notes` rendered a 0.1.0 section naming **only** `Support night duties` — the four others vanished, against the use-case rule that a revision naming a capability is a released change. | **Fixed.** Each term is now a distinctive tooling phrase (`coverage report`, `coverage merge`, `cobertura`, `clippy`, `rustfmt`, `third-party notices`, `ci workflow`, `release workflow`, `e2e transcript`); the marked list is comma-separated so a term may contain spaces, and the renderer splits on commas and refuses a phrase the configuration does not realize (`scripts/render-changelog.sh`). The two real 0.1.0 machinery entries (`…coverage merge`, `…merged coverage report`) are still dropped, so `CHANGELOG.md` is unchanged (drift check still exits 0), while the four borrowed-word subjects now survive. The grouping scenario gained `And a revision whose subject borrows a tooling word for a crew member's own work` and its Then; `design.md`, the delta use case and `docs/arc42/02`/`08` carry the narrowed wording. |
+| H2 | `arc42.md` row 2 under-declared what `docs/arc42/02-architecture-constraints.md` holds: it did not name the marked machinery skip list, nor the drift check the release preparation itself runs. | **Fixed.** Both added to `arc42.md` row 2. |
+| H3 | `arc42.md` row 11 did not name TD-008, which the review added to chapter 11 and `design.md`'s file table names. | **Fixed.** TD-008 named in `arc42.md` row 11. |
+| H4 | The publish gate's remaining window was unrecorded: the `publish` job refuses only a check run that has already concluded non-green, so an in-progress run is neither green nor refused and publication does not wait for it (the change log alone is covered by the preparation's own check). | **Fixed.** Added TD-009 to `docs/arc42/11-risks-and-technical-debt.md`, naming the residual and the follow-up (make the publish job wait for the tagged revision's check suite to conclude, or require the named checks); `arc42.md` row 11 names it. |
+| H5 | `design.md`'s "New or changed files" table was stale for `docs/arc42/02-architecture-constraints.md`, which the review phase changed alongside 05, 06, 08, 11 and 12; and it omitted the assessment-phase chapters 01, 03, 04, 07 and 10, which this change genuinely modified (visible in `git log`, and claimed by `arc42.md`'s Yes rows). | **Fixed.** The row now names every durable chapter this change changed — the review-re-derived `02`/`05`/`06`/`08`/`11`/`12` and the assessment-updated `01`/`03`/`04`/`07`/`10` — so the table and `arc42.md` agree. |
+| H6 | The documented push was not atomic: `git push origin <branch> v<version>` can publish the tag even when the branch push is rejected, starting the release workflow for a revision that never reached the default branch. | **Fixed.** README and `design.md` now use `git push --atomic origin <branch> v<version>` and say why in one clause. |
+| H7 | The README procedure named `nix-shell -p git-cliff`, which resolves to whatever the channel carries, while the renderer refuses anything but the pinned version. | **Fixed.** The README now states the pin (`git-cliff` 2.14.2, recorded in `cliff.toml`) before the commands. |
+| H8 | The first pass's findings F1–F9 were re-checked against the implementation. | **F1 (machinery words reached the page)** fixed, and further hardened by H1; **F2 (procedure could not run)** fixed — the renderer dates an untagged version from `HEAD`; **F3 (stale release could ship)** fixed by the preparation's own check, whose residual window is now TD-009; **F4 (check scope overstated)** fixed in the renderer section, the `--check` bullet and the glossary; **F5 (comparison link built by the renderer, not the template)** fixed in every place that said otherwise; **F6 (file table incomplete)** fixed for the code files, and the arc42 row further corrected by H5; **F7 (durable chapters stale)** fixed, plus chapter 11's TD-009 (H4); **F8 (bullet counts disagreed)** fixed; **F9 (the item set)** closed. |
+| H9 | **TD-008** (a version's notes are only as clear as the released revisions' own subjects) — is it still true after H1? | **Holds.** The narrowed skip list removes only the phrases that name the project's own tooling, not a subject written in the project's vocabulary; TD-008 is unchanged and now named in `arc42.md` row 11 (H3). |
+
+### Operator questions
+
+None. H1 was settled from the artifacts rather than by asking: the delta use case already states that a revision whose subject names a capability — a crew member's own work — is a released change, and that a revision naming the project's automation is not, so the bare-word skip list contradicted a rule the operator had already fixed. The first pass's Questions 1–3 and their dispositions stand unchanged.
+
+### Verification after hardening
+
+- Full suite — `nix-shell -p rustc cargo git-cliff --run './run-tests.sh'`: `3 features`, `96 scenarios (96 passed)`, `367 steps (367 passed)`, exit 0.
+- `givn lint --change generate-release-notes`: `1 file(s) checked — clean`, exit 0.
+- The drift check on the committed change log — `nix-shell -p git-cliff --run 'scripts/render-changelog.sh --version 0.1.0 --repo . --out CHANGELOG.md --check'`: `change log is current for version 0.1.0`, exit 0 (the narrowed list leaves the committed file byte-identical).
+- Negative controls run during the re-run: a fixture whose released subjects borrow the tooling words now keeps them; a copy of the configuration with one realized phrase removed still refuses (`the machinery skip list names a term the configuration does not skip: cobertura`).
+
+All findings dispositioned, no question outstanding, and no item carried to a later phase:
+
 DESIGN-REVIEW: PASS
