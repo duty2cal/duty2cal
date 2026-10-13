@@ -255,9 +255,7 @@ archive over further probing:
 - the use-case document and the delta feature are merged into the permanent corpus at
   `givn/specs/export-duty-plan-calendar/`, with the delta and `@givn.added` markers stripped and `@e2e`
   kept;
-- the change moved to `givn/changes/archive/export-released-roster-calendar/`;
-- `scripts/assemble-features.sh` excludes the archive directory, so an archived delta is not assembled
-  twice;
+- the change moved to `givn/archive/export-released-roster-calendar/`, where givn reads archived changes;
 - the committed e2e transcript path follows the change into the archive.
 
 Effects match what the tool's archive performs; the tool's refusal is recorded here because a manual
