@@ -99,11 +99,46 @@ their code symbols.
 | "An explicit qualifier with no unique adjacent date rejects the conversion" ⊂ "A required travel leg without a compatible partner rejects the conversion" | keep — the subset scenario names a distinct cause (a qualifier with no unique adjacent date) even though both surface as the same rejection class; splitting it would lose the qualifier case |
 | "The revision timestamp comes from the source's Created footer" ⊂ "Without usable source metadata the construction time is the revision timestamp" | keep — the two assert opposite provenance outcomes from one another's setup (source stamp versus clock fallback) |
 
+## Interaction coverage and interface classification
+
+The inventory lives in `usecase.md`'s `## Interactions` table (the canonical specs policy puts it there;
+the `.feature` carries no inventory comment). One inventory entry maps to exactly one Interaction Coverage
+Matrix row and one `@e2e` scenario, and the promised mechanism is the one implemented:
+
+| Inventory entry | Matrix row | `@e2e` scenario | Mechanism promised | Mechanism found | Verdict |
+|---|---|---|---|---|---|
+| supply a duty plan for conversion (`usecase.md`) | 1 row (`design.md`) | "Crew member converts a supported duty plan and receives a calendar file" | CLI: run the built binary with the plan path | `std::process::Command` on `CARGO_BIN_EXE_duty2cal` | MATCH |
+
+No missing or extra rows, and no over-produced `@e2e` coverage.
+
+`Interface: terminal`, viewports n/a, evidence kind transcript. The opposite classification was tested: a
+rendered page would be a Web UI even with no controls, but this product is one `cli` binary that renders no
+HTML, so no browser driver is valid or expected. Evidence is complete for the declared interface: one
+`@e2e` scenario and one committed transcript matching the declared baseline. The per-Persona judgement of
+that transcript is recorded below.
+
+## Fabrication audit, remaining checks
+
+| # | Check | Result |
+|---|---|---|
+| 5 | `@e2e` Then steps assert the real interface | PASS, 0 downgraded: the Then steps read the published `roster.ics` from disk and assert its VCALENDAR/VEVENT/SUMMARY/DTSTART content, assert the child process's stdout/stderr names the written path, and assert the captured exit status |
+| 6 | Browser driver fidelity | N/A: no browser interface; the CLI subprocess is the interface and the steps drive it |
+| 7 | Exact files `verify.e2e_command` invokes, and any second implementation | CLEAN: `./run-tests.sh --e2e` → `cargo test -p duty2cal --test features_runner -- --tags @e2e` → the one e2e step file; a tree search including untracked files found no parallel implementation |
+| 11 | Implementation matches what design.md names | CLEAN: file split, tag filter, runner command and framework match exactly |
+
+## Publication correctness (blocking finding, fixed)
+
+The review pass found the publication non-atomic: a path was probed for existence and then written, so a run
+racing another could replace a file the other had just created, and chapter 8 called the rule create-new.
+The write now creates the file itself (`create_new`): an existing calendar or report is never replaced, an
+occupied name is enumerated past, and a name that only looks free is attempted with its failure reported
+rather than hidden behind a later name. The closing scenarios (publication failure, unsavable diagnostic,
+occupied diagnostic name) keep their behaviour; suite 51 of 51, e2e 1 of 1.
+
 ## Pending before sign-off
 
-1. `design.md` changed in this pass, so **design-review must be re-run** over it (the review instruction makes that mandatory) before `REVIEW: PASS`.
-2. The 55 classified coverage gaps need their scenarios (RED, then GREEN, then one commit each); they are
-   named in the classification table above.
-3. Checks 5, 6, 11 and 13 (interaction coverage cross-reference, driving mechanism, design-versus-implementation
-   deviation) are not yet recorded here; the conformance pass returned the arc42 section only, and the rest
-   is requested.
+1. `design.md` changed in this pass, so **design-review must be re-run** over it before `REVIEW: PASS`.
+2. The 55 classified coverage gaps need their scenarios (RED, then GREEN, one commit each); they are named
+   in the classification table above.
+3. The per-Persona visual verdict line lands with the judgement now in flight; until it is recorded this
+   review does not sign off.
