@@ -70,7 +70,7 @@ The change is ready for the maintainer to release only when its claims are backe
 
 | Proposed capability | Decision | Rationale |
 |---|---|---|
-| Export a duty-plan calendar (whole-plan conversion of one supported supplied plan) | `NEW in export-duty-plan-calendar` | No permanent specification exists yet. The confirmed Handoff maps this single actor goal to its own leaf at `givn/specs/export-duty-plan-calendar/usecase.md`; extraction, date assembly, calendar writing, output naming, diagnostics, and release packaging are contributions to that one complete outcome, not separately shipping capabilities. |
+| export-duty-plan-calendar — Export a duty-plan calendar (whole-plan conversion of one supported supplied plan) | `NEW in export-duty-plan-calendar` | No permanent specification exists yet. The confirmed Handoff maps this single actor goal to its own leaf at `givn/specs/export-duty-plan-calendar/usecase.md`; extraction, date assembly, calendar writing, output naming, diagnostics, and release packaging are contributions to that one complete outcome, not separately shipping capabilities. |
 
 ## Out of Scope
 
