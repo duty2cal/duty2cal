@@ -1187,9 +1187,40 @@ pub(crate) const FIRST_RELEASE_HISTORY: [(&str, &str, &str); 3] = [
     ),
 ];
 
+/// The non-`@e2e` change-log scenarios' fixture history, oldest revision first:
+/// a first release (tagged `v0.1.0`) whose released revisions name a new
+/// capability and work no user can see, then a second release (tagged `v0.2.0`)
+/// whose released revisions name another new capability and more work no user
+/// can see. Both sections are renderable from it, which is what the two
+/// scenarios that share this step need.
+const CAPABILITY_AND_INVISIBLE_HISTORY: [(&str, &str, &str); 6] = [
+    ("2026-01-01", "chore(ci): bootstrap the release channel", ""),
+    (
+        "2026-01-02",
+        "docs(readme): describe the download route",
+        "",
+    ),
+    (
+        "2026-01-03",
+        "feat(export-duty-plan-calendar): Convert a supported duty plan into a calendar",
+        "v0.1.0",
+    ),
+    ("2026-02-01", "chore(ci): tune the release pipeline", ""),
+    (
+        "2026-02-02",
+        "feat(publish-public-release): Offer an archive per supported platform",
+        "",
+    ),
+    (
+        "2026-02-03",
+        "test(publish-public-release): cover the refusal paths",
+        "v0.2.0",
+    ),
+];
+
 #[given("a history whose released revisions name a new capability and work no user can see")]
 async fn a_history_with_a_capability_and_invisible_work(w: &mut DutyWorld) {
-    build_history(w, &FIRST_RELEASE_HISTORY);
+    build_history(w, &CAPABILITY_AND_INVISIBLE_HISTORY);
 }
 
 #[given("no change log exists yet")]
@@ -1327,4 +1358,35 @@ async fn release_text_omits_the_invisible_work(w: &mut DutyWorld) {
             "the release text carries the invisible subject {omitted:?}: {text}"
         );
     }
+}
+
+#[then("the prepared release stages the change log for version 0.2.0")]
+async fn stages_the_change_log_for_0_2_0(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the preparation did not succeed: {}",
+        w.command_transcript
+    );
+    let path = staged_dir(w).join("CHANGELOG.md");
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no staged change log at {}: {error}", path.display()));
+    assert!(
+        text.contains("## [0.2.0]"),
+        "the staged change log holds no section for version 0.2.0: {text}"
+    );
+}
+
+#[then("the staged change log holds the section the release text states")]
+async fn staged_change_log_holds_the_section(w: &mut DutyWorld) {
+    let path = staged_dir(w).join("CHANGELOG.md");
+    let staged = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no staged change log at {}: {error}", path.display()));
+    let section = section_of(&staged, "0.2.0");
+    let text = release_text(w);
+    assert_eq!(
+        section.trim(),
+        text.trim(),
+        "the staged change log's section is not the release text: {staged}"
+    );
 }

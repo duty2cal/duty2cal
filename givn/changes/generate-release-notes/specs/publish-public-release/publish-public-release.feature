@@ -65,7 +65,7 @@ Feature: Publish a public release
     And the release text names the released change once
     And the release text omits the work no user can see
 
-  @givn.added @wip
+  @givn.added
   Scenario: The prepared release carries the change log its section came from
     Given a history whose released revisions name a new capability and work no user can see
     When the maintainer prepares the release for version 0.2.0
