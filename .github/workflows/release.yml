@@ -233,13 +233,17 @@ jobs:
         run: |
           set -euo pipefail
           find staged -maxdepth 1 -type f | sort
+      - name: Make the bill-of-materials directory
+        run: mkdir -p sbom
       - name: Generate the bill of materials
         uses: anchore/sbom-action@v0
         with:
           path: .
           format: spdx-json
+          # A directory that must exist first: the action writes the file but
+          # does not create its parents, which is where the first release run
+          # failed.
           output-file: sbom/duty2cal-${{ env.version }}.spdx.json
-          artifact-name: ""
           upload-artifact: false
           upload-release-assets: false
       - name: Attest the build provenance of every archive
