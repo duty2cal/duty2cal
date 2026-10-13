@@ -144,6 +144,41 @@ occupied name is enumerated past, and a name that only looks free is attempted w
 rather than hidden behind a later name. The closing scenarios (publication failure, unsavable diagnostic,
 occupied diagnostic name) keep their behaviour; suite 51 of 51, e2e 1 of 1.
 
+## Commit-record deviation (operator decision)
+
+The review gate's integrity check requires one atomic commit per scenario and reports two shared revisions:
+`d477233` covers 10 tasks and `75551d1` covers 9. The work itself is complete and green; only the record
+grouping differs.
+
+The states between those scenarios were never committed, so a per-scenario split could only be
+*reconstructed* by attributing hunks from the task records, producing commits that may never have built.
+The operator was asked and chose to record the deviation rather than rewrite history, so this finding is a
+recorded deferral, not an unresolved gap.
+
+Tasks carried by each shared commit (task line, scenario):
+
+| tasks.md line | scenario | commit |
+|---|---|---|
+| 191 | 6. All-day codes ignore printed clocks | d477233 |
+| 206 | 7. Office or seminar duty uses its printed UTC window | d477233 |
+| 221 | 8. Consulate visa duty uses its printed UTC window | d477233 |
+| 236 | 9. EM duty uses its printed UTC window | d477233 |
+| 251 | 10. Standby duty uses its own UTC window | d477233 |
+| 266 | 11. Reserve duty uses its own UTC window | d477233 |
+| 281 | 12. Consecutive standby days interrupted by a day off stay separate | d477233 |
+| 296 | 13. Single-day standby uses its own window rather than a cancelled flight | d477233 |
+| 311 | 14. Deadhead positioning travel keeps one event and marks the assignment in its title | d477233 |
+| 326 | 15. A dated station-bearing layover row becomes an all-day activity | d477233 |
+| 341 | 16. An unknown required activity code rejects the conversion | 75551d1 |
+| 356 | 17. A required travel leg without a compatible partner rejects the conversion | 75551d1 |
+| 371 | 18. An explicit next-day qualifier moves the endpoint to the following UTC day | 75551d1 |
+| 386 | 19. A split across local dates can remain on the same UTC day | 75551d1 |
+| 401 | 20. Unqualified endpoints that appear to cross midnight roll to the next UTC day | 75551d1 |
+| 416 | 21. A zero-length travel interval is not repaired | 75551d1 |
+| 431 | 22. A previous-year UTC qualifier resolves across the year boundary | 75551d1 |
+| 446 | 23. A next-month UTC qualifier resolves across the month boundary | 75551d1 |
+| 461 | 24. An explicit qualifier with no unique adjacent date rejects the conversion | 75551d1 |
+
 ## Pending before sign-off
 
 1. `design.md` changed in this pass, so **design-review must be re-run** over it before `REVIEW: PASS`.

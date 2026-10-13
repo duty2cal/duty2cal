@@ -79,7 +79,7 @@ Use-case constraint: Extensions 2: an unreadable/unsupported source fails explic
   cargo clippy --workspace --all-targets -- -D warnings -> clean
   1 scenario (1 passed), 6 steps (6 passed)   REFACTOR_EXIT=0
   ```
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: A source outside the supported family is rejected`; hash: `8166734`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.`; body `Scenario: A source outside the supported family is rejected`; hash: `8166734`
 
 ### 2. Overview and statistics material supplies no dated activities
 
@@ -107,7 +107,7 @@ Use-case constraint: Rule: overview, statistics, footer, and date-only rows supp
   full suite -> 51 scenarios (2 passed, 49 failed)
   ```
   Found and fixed a real defect: cucumber executes scenarios in parallel, so the shared per-process working directory made the suite interfere with itself (1 passed, 50 failed). Each scenario now gets its own directory.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Overview and statistics material supplies no dated activities`; hash: `053163f`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Overview and statistics material supplies no dated activities`; hash: `053163f`
 
 ### 3. Footer records supply no dated activities
 
@@ -133,7 +133,7 @@ Use-case constraint: Rule: overview, statistics, footer, and date-only rows supp
   full suite -> 51 scenarios (3 passed, 48 failed)
   ```
   Real defects found and fixed here: (1) the gap rule cleared the column areas, and the family-recognition check then read them — so a footer rejected the whole document; recognition is now tracked separately and the column areas are page-local; (2) a failing calendar assertion now surfaces the converter transcript and the diagnostic, which is how (1) was found.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Footer records supply no dated activities`; hash: `d81f34a`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Footer records supply no dated activities`; hash: `d81f34a`
 
 ### 4. A date-only row is not turned into an activity
 
@@ -158,7 +158,7 @@ Use-case constraint: Rule: overview, statistics, footer, and date-only rows supp
   cargo clippy --workspace --all-targets -- -D warnings -> clean
   full suite -> 51 scenarios (4 passed, 47 failed)
   ```
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: A date-only row is not turned into an activity`; hash: `fb164c8`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: A date-only row is not turned into an activity`; hash: `fb164c8`
 
 ### 5. A mixed plan represents every required activity
 
@@ -173,7 +173,7 @@ Use-case constraint: Minimal guarantee: every required activity is accounted for
   1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d59cd70`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d59cd70`
 
 ### 6. All-day codes ignore printed clocks
 
@@ -188,7 +188,7 @@ Use-case constraint: Rule: FREE, OFF, U, FZ are all-day; source clocks do not de
   4 scenarios (4 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 7. Office or seminar duty uses its printed UTC window
 
@@ -203,7 +203,7 @@ Use-case constraint: Rule: TK/DTUSA/EM are timed non-flight duty using their pri
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 8. Consulate visa duty uses its printed UTC window
 
@@ -218,7 +218,7 @@ Use-case constraint: Rule: TK/DTUSA/EM are timed non-flight duty using their pri
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 9. EM duty uses its printed UTC window
 
@@ -233,7 +233,7 @@ Use-case constraint: Rule: TK/DTUSA/EM are timed non-flight duty using their pri
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 10. Standby duty uses its own UTC window
 
@@ -248,7 +248,7 @@ Use-case constraint: Rule: SB/RE/SBX use their own UTC availability window (SBX 
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 11. Reserve duty uses its own UTC window
 
@@ -263,7 +263,7 @@ Use-case constraint: Rule: SB/RE/SBX use their own UTC availability window (SBX 
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 12. Consecutive standby days interrupted by a day off stay separate
 
@@ -278,7 +278,7 @@ Use-case constraint: Rule: consecutive SB windows and FREE interruptions stay se
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 13. Single-day standby uses its own window rather than a cancelled flight
 
@@ -293,7 +293,7 @@ Use-case constraint: Rule: SB/RE/SBX use their own UTC availability window (SBX 
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 14. Deadhead positioning travel keeps one event and marks the assignment in its title
 
@@ -308,7 +308,7 @@ Use-case constraint: Rule: DH is one travel event with a DH title prefix; zero B
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 15. A dated station-bearing layover row becomes an all-day activity
 
@@ -323,7 +323,7 @@ Use-case constraint: Rule: an explicit dated station-bearing Layover row is an a
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 18 passed, 33 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `d477233`
 
 ### 16. An unknown required activity code rejects the conversion
 
@@ -338,7 +338,7 @@ Use-case constraint: Extensions 3/4: unknown required code or unmatched fragment
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 17. A required travel leg without a compatible partner rejects the conversion
 
@@ -353,7 +353,7 @@ Use-case constraint: Extensions 3/4: unknown required code or unmatched fragment
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 18. An explicit next-day qualifier moves the endpoint to the following UTC day
 
@@ -368,7 +368,7 @@ Use-case constraint: Timing rule: resolve each endpoint date independently to th
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 19. A split across local dates can remain on the same UTC day
 
@@ -383,7 +383,7 @@ Use-case constraint: Timing rule: resolve each endpoint date independently to th
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 20. Unqualified endpoints that appear to cross midnight roll to the next UTC day
 
@@ -398,7 +398,7 @@ Use-case constraint: Timing rule: the narrow unqualified overnight rollover; equ
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 21. A zero-length travel interval is not repaired
 
@@ -413,7 +413,7 @@ Use-case constraint: Timing rule: the narrow unqualified overnight rollover; equ
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 22. A previous-year UTC qualifier resolves across the year boundary
 
@@ -428,7 +428,7 @@ Use-case constraint: Timing rule: resolve each endpoint date independently to th
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 23. A next-month UTC qualifier resolves across the month boundary
 
@@ -443,7 +443,7 @@ Use-case constraint: Timing rule: resolve each endpoint date independently to th
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 24. An explicit qualifier with no unique adjacent date rejects the conversion
 
@@ -458,7 +458,7 @@ Use-case constraint: Timing rule: resolve each endpoint date independently to th
   1 scenario (1 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 27 passed, 24 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: <title>`; hash: `75551d1` (shared batch commit).
 
 ### 25. A known trip identifier is carried across the legs of one roster trip
 
@@ -473,7 +473,7 @@ Use-case constraint: Rule: a known Trip ID carries within one unambiguous roster
   1 scenario (1 passed), 4 steps (4 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; scenario still 4/4; full suite 28 passed, 23 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: A known trip identifier is carried across the legs of one roster trip`; hash: `2b63075`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: A known trip identifier is carried across the legs of one roster trip`; hash: `2b63075`
 
 ### 26. An unsupplied optional description field is omitted
 
@@ -488,7 +488,7 @@ Use-case constraint: Descriptive-field selection: approved field order; omit uns
   7 scenarios (7 passed), 21 steps (21 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — real defect fixed: relaxed label-prefix matching made `A/C` resolve to `Activity`; matching now requires an exact name, a real boundary, or an exact normalised name. fmt/clippy clean; suite 35 passed, 16 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: An unsupplied optional description field is omitted`; hash: `8054e9e`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: An unsupplied optional description field is omitted`; hash: `8054e9e`
 
 ### 27. Complementary optional values from compatible fragments combine
 
@@ -503,7 +503,7 @@ Use-case constraint: Descriptive-field selection: approved field order; omit uns
   1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; suite 36 passed, 15 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Complementary optional values from compatible fragments combine`; hash: `b89e222`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Complementary optional values from compatible fragments combine`; hash: `b89e222`
 
 ### 28. Description fields follow the approved order
 
@@ -520,7 +520,7 @@ Use-case constraint: Descriptive-field selection: approved field order; omit uns
   1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — nothing to clean; `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; suite 37 passed, 14 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Description fields follow the approved order`; hash: `fcb95e0`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Description fields follow the approved order`; hash: `fcb95e0`
 
 ### 29. Differing optional values are both retained with their fragment roles
 
@@ -535,7 +535,7 @@ Use-case constraint: Decides D1 (seed Q28): differing optional values are both r
   1 scenario (1 passed), 4 steps (4 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — allowed the large travel variant (boxing would add an indirection per entry). fmt/clippy clean; scenario 27 still green; suite 38 passed, 13 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Differing optional values are both retained with their fragment roles`; hash: `1a5d0ae`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Differing optional values are both retained with their fragment roles`; hash: `1a5d0ae`
 
 ### 30. All-day activities use dates with a non-inclusive following-day end
 
@@ -552,7 +552,7 @@ Use-case constraint: Calendar representation: all-day events use a date with a n
   1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — nothing to clean; fmt/clippy clean; suite 39 passed, 12 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: All-day activities use dates with a non-inclusive following-day end`; hash: `3d6ad9b`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: All-day activities use dates with a non-inclusive following-day end`; hash: `3d6ad9b`
 
 ### 31. The published calendar is a valid RFC 5545 file
 
@@ -567,7 +567,7 @@ Use-case constraint: Calendar representation: RFC 5545 byte contract (CRLF, esca
   1 scenario (1 passed), 6 steps (6 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — folding exposed that a reader must unfold first; the test helper now joins continuation lines. fmt/clippy clean; suite 40 passed, 11 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: The published calendar is a valid RFC 5545 file`; hash: `d9c1d9d`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: The published calendar is a valid RFC 5545 file`; hash: `d9c1d9d`
 
 ### 32. An identical source snapshot keeps its component identifiers
 
@@ -584,7 +584,7 @@ Use-case constraint: Calendar representation: UIDs are snapshot-scoped, globally
   1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — nothing to clean; the converter invocation was factored into `run_converter` for reuse. fmt/clippy clean; suite 41 passed, 10 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: An identical source snapshot keeps its component identifiers`; hash: `29f8b74`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: An identical source snapshot keeps its component identifiers`; hash: `29f8b74`
 
 ### 33. A revised source snapshot has separate component identifiers
 
@@ -601,7 +601,7 @@ Use-case constraint: Calendar representation: UIDs are snapshot-scoped, globally
   1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — nothing to clean; fmt/clippy clean; suite 42 passed, 9 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: A revised source snapshot has separate component identifiers`; hash: `a42e728`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: A revised source snapshot has separate component identifiers`; hash: `a42e728`
 
 ### 34. The revision timestamp comes from the source's Created footer
 
@@ -616,7 +616,7 @@ Use-case constraint: Calendar representation: DTSTAMP prefers the source Created
   1 scenario (1 passed), 3 steps (3 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; suite 43 passed, 8 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: The revision timestamp comes from the source's Created footer`; hash: `4bbe9a0`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: The revision timestamp comes from the source's Created footer`; hash: `4bbe9a0`
 
 ### 35. Without usable source metadata the construction time is the revision timestamp
 
@@ -631,7 +631,7 @@ Use-case constraint: Calendar representation: DTSTAMP prefers the source Created
   1 scenario (1 passed), 4 steps (4 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — fmt/clippy clean; scenario 34 still green; suite 44 passed, 7 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Without usable source metadata the construction time is the revision timestamp`; hash: `77b6864`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: Without usable source metadata the construction time is the revision timestamp`; hash: `77b6864`
 
 ### 36. An occupied calendar name yields a new unused numbered name
 
@@ -648,7 +648,7 @@ Use-case constraint: Minimal guarantee: publish under an unused enumerated name;
   1 scenario (1 passed), 4 steps (4 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — nothing to clean; fmt/clippy clean; suite 45 passed, 6 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: An occupied calendar name yields a new unused numbered name`; hash: `89bee7c`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: An occupied calendar name yields a new unused numbered name`; hash: `89bee7c`
 
 ### 37. An interpretation failure preserves an older diagnostic
 
@@ -665,7 +665,7 @@ Use-case constraint: Minimal guarantee: every failure attempts a new numbered di
   1 scenario (1 passed), 6 steps (6 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — nothing to clean; fmt/clippy clean; suite 46 passed, 5 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: An interpretation failure preserves an older diagnostic`; hash: `53ddb9d`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: An interpretation failure preserves an older diagnostic`; hash: `53ddb9d`
 
 ### 38. A publication failure is exposed and a diagnostic is attempted
 
@@ -683,7 +683,7 @@ Use-case constraint: Minimal guarantee: every failure attempts a new numbered di
   ```
   Fixture technique: the candidate calendar name is a dangling symbolic link — it reports as non-existent so it is chosen, and writing it fails while the directory stays writable, which keeps the diagnostic saveable and distinguishes this scenario from the unsavable-diagnostic one.
 - [x] REFACTOR — nothing to clean; fmt/clippy clean; suite 47 passed, 4 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: A publication failure is exposed and a diagnostic is attempted`; hash: `970f46d`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: A publication failure is exposed and a diagnostic is attempted`; hash: `970f46d`
 
 ### 39. An unsavable diagnostic keeps the original failure visible
 
@@ -701,7 +701,7 @@ Use-case constraint: Minimal guarantee: every failure attempts a new numbered di
   ```
   Fixture technique: a dangling symbolic link as the diagnostic candidate makes the report unsavable while an older report stays in place.
 - [x] REFACTOR — nothing to clean; fmt/clippy clean; suite 48 passed, 3 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: An unsavable diagnostic keeps the original failure visible`; hash: `4ce0999`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: An unsavable diagnostic keeps the original failure visible`; hash: `4ce0999`
 
 ### 40. An occupied diagnostic name yields a new unused numbered report
 
@@ -718,7 +718,7 @@ Use-case constraint: Minimal guarantee: every failure attempts a new numbered di
   1 scenario (1 passed), 4 steps (4 passed)   GREEN_EXIT=0
   ```
 - [x] REFACTOR — nothing to clean; fmt/clippy clean; suite 49 passed, 2 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: An occupied diagnostic name yields a new unused numbered report`; hash: `e0c075d`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: An occupied diagnostic name yields a new unused numbered report`; hash: `e0c075d`
 
 ### 41. The reference roster converts to the expected calendar
 
@@ -734,7 +734,7 @@ Use-case constraint: Success guarantee plus the operator's 26-event oracle — t
   ```
   The committed fixture was verified line by line against the operator's oracle before being committed: 26 events, matching summaries, all-day activities with following-day non-inclusive ends, and the three overnight legs resolving to the next UTC day.
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; suite 50 passed, 1 failed.
-- [x] COMMIT — subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: The reference roster converts to the expected calendar`; hash: `af93202`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): …` (release note); body `Scenario: The reference roster converts to the expected calendar`; hash: `af93202`
 
 ## E2E setup task (before the first @e2e scenario)
 
@@ -765,7 +765,7 @@ Use-case constraint: Success guarantee — complete RFC 5545 calendar beside the
   ```
   Transcript: `Written: <scenario-dir>/roster.ics` / `exit status: 0`.
 - [x] REFACTOR — `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` clean; full suite 51 scenarios, 51 passed.
-- [x] COMMIT — subject `test(e2e): Convert a supported Released Roster duty-plan PDF …` (release note); body `Scenario: Crew member converts a supported duty plan and receives a calendar file`; hash: `26c9002`
+- [x] COMMIT: subject `test(e2e): Convert a supported Released Roster duty-plan PDF …` (release note); body `Scenario: Crew member converts a supported duty plan and receives a calendar file`; hash: `26c9002`
 
 ## Completion
 
@@ -783,6 +783,10 @@ Use-case constraint: Success guarantee — complete RFC 5545 calendar beside the
 - [x] `./run-tests.sh --e2e` scenario count (1) is strictly less than `./run-tests.sh` (51), recorded in the e2e setup task.
 
 ## Re-target: the real export layout (found after implementation)
+
+> Commit-record deviation: two commits of the archived session carry several scenarios each instead of one
+> atomic commit per scenario. The operator decided (2026-10-13) to record the deviation rather than rewrite
+> history; the affected tasks and their scenarios are listed in `review.md`.
 
 Running the finished converter against the operator's five real duty plans (local, uncommitted) fails for
 every one of them: `a required activity could not be resolved: the detail table carries no From column`,
