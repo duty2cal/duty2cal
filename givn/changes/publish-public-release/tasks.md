@@ -379,8 +379,15 @@ Use-case constraint: an unreadable input stages nothing and names the cause.
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
   No behaviour change: the permission change is one `#[cfg(unix)]` block with an explicit `#[cfg(not(unix))]` refusal, since the preparation itself is Linux-only.
-- [ ] COMMIT — `<hash>`:
+- [x] COMMIT — `30681d5`:
   ```
+  feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
+
+  Scenario: An unreadable executable stops the preparation
+
+  RED: the new Given existed as an unimplemented!() stub; the single-scenario run failed with exit 101.
+  GREEN: the script's readability check names the platform whose executable cannot be read, after completeness and before any write; the Given builds all five platforms and removes every permission bit from linux-x86_64, so the readability check is the one that fires.
+  REFACTOR: the permission change is one #[cfg(unix)] block with an explicit #[cfg(not(unix))] refusal; the single scenario passes 4/4 steps with exit 0.
   ```
 
 ### 8. The release text states the released revisions' release notes
