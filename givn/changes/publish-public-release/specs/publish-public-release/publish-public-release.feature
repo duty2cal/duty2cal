@@ -10,7 +10,7 @@ Feature: Publish a public release
   Scenario: A prepared release offers one archive for every supported platform
     Given an executable built for every supported platform
     When the maintainer prepares the release for version 0.1.0
-    Then the prepared release holds exactly these archives
+    Then the prepared release holds exactly these archives, each with its checksum file
       | archive                              | executable   |
       | duty2cal-0.1.0-windows-x86_64.tar.gz | duty2cal.exe |
       | duty2cal-0.1.0-linux-x86_64.tar.gz   | duty2cal     |
@@ -51,7 +51,7 @@ Feature: Publish a public release
     Given a prepared release for version 0.1.0
     When the maintainer prepares version 0.1.0 in the same place again
     Then the preparation fails and names version 0.1.0
-    And the prepared release still holds exactly its five archives
+    And the staged archives keep their earlier modification times
 
   @givn.added @wip
   Scenario: An unreadable executable stops the preparation
@@ -62,19 +62,21 @@ Feature: Publish a public release
 
   @givn.added @wip
   Scenario: The release text states the released revisions' release notes
-    Given a history whose released revisions carry release-note subjects, including one subject repeated by several revisions, and whose housekeeping revisions do not
+    Given a history whose released revisions carry release-note subjects, including one subject repeated by several revisions and one subject that carries no release-note type, and whose housekeeping revisions do not
     When the maintainer prepares the release for version 0.2.0
     Then the release text names version 0.2.0
     And the release text lists these release notes in release order
       | release note                               |
       | Offer an archive for every supported platform |
       | Publish only an archive the evidence supports |
-    And the release text omits the housekeeping revisions
+    And the release text omits the housekeeping revisions and the subject that carries no release-note type
 
   @givn.added @e2e @wip
   Scenario: Maintainer prepares a release and runs the archived executable
     Given the executable built for this machine
-    And a prepared release for version 0.1.0 holding this machine's archive
+    When the maintainer prepares the release for version 0.1.0
+    Then the preparation reports the archive and its checksum for this machine's platform
+    And the release text names version 0.1.0
     When the maintainer extracts the archive for this machine's platform
     And runs the executable taken from that archive
-    Then the executable states its usage and names the duty plan it expects
+    Then the executable prints "usage: duty2cal <duty-plan.pdf>" and reports failure through its process exit status

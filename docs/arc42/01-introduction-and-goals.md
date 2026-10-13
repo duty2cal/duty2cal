@@ -12,7 +12,7 @@ Top requirements, from the stakeholder perspective:
 4. **Privacy** — private duty plans and identifying values never reach the public repository; fixtures and golden calendars are generated or anonymized.
 5. **Distributable release** — one self-contained executable per supported platform (Windows x86_64, Linux x86_64 and arm64, macOS arm64 and x86_64), published from one public repository as a verifiable, immutable release, licensed MPL-2.0 project-wide (weak file-level copyleft; App-Store distributable), with claims backed by evidence.
 
-The authoritative behaviour specification is the change's feature files under `givn/changes/export-released-roster-calendar/specs/` (merged to `givn/specs/export-duty-plan-calendar/` on archive).
+The authoritative behaviour specification lives in the merged corpus `givn/specs/export-duty-plan-calendar/`; the change to export released roster calendars holds the historical home of that delta at `givn/archive/export-released-roster-calendar/specs/`.
 
 ## Quality goals
 

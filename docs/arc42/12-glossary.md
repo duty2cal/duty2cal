@@ -2,7 +2,7 @@
 
 Confirmed vocabulary promoted by the user's Handoff on **2026-10-12**, plus
 five terms added by the change to export released roster calendars
-(export-released-roster-calendar) and twelve release-channel terms added by the
+(export-released-roster-calendar) and sixteen release-channel terms added by the
 change to publish a public release (publish-public-release).
 Source: [Duty-plan calendar conversion](../ideation/duty-plan-calendar-conversion.md),
 [introduction/collision records](../../givn/ideation/duty-plan-calendar-conversion/domain-terms.md),
@@ -14,6 +14,7 @@ This is vocabulary/required behavior, not an implemented enforcement claim.
 | Term | Definition | Contract use | Code symbol | Contrast / anti-terms |
 |---|---|---|---|---|
 | Additional vacation day | FZ roster activity denoting an additional vacation-related day off. | All-day; source times ignored. | `DutyEntry::AllDay`, `ALL_DAY_CODES` (`crates/duty2cal-core/src/application/mod.rs`) | Distinct from U; no verified entitlement/quota or acronym expansion. |
+| Availability duty | Bounded standby or reserve window the crew member must be reachable in (SB, SBX, RE). | One timed availability activity with its own UTC window and station. | `DutyEntry::Availability`, `AVAILABILITY_CODES` (`crates/duty2cal-core/src/application/mod.rs`) | Not an all-day day off, not a flight, not a non-flight duty. |
 | Build provenance | A signed attestation tying a published archive to the tagged revision and the automation that built it. | Published with every archive; a downloader checks it with `gh attestation verify`. | `actions/attest@v4` (`.github/workflows/release.yml`) | Not the checksum, which covers bytes only; not the bill of materials. |
 | Checksum | A SHA-256 digest covering one archive, published beside it and naming the file it covers. | A downloader verifies what they received before extracting it. | `sha256sum`, `duty2cal-<version>-<platform>.tar.gz.sha256` | Not the archive's size; not the release attestation. |
 | Consulate visa duty | Non-flight DTUSA duty for a consulate visit to obtain a USA visa. | Own printed UTC interval. | `DutyEntry::NonFlightDuty`, `NON_FLIGHT_CODES` (`application/mod.rs`) | Not a flight, converter-performed visa application, or generic DT-suffix rule. |
@@ -23,6 +24,7 @@ This is vocabulary/required behavior, not an implemented enforcement claim.
 | Duty-plan calendar | Complete activity composition from one supplied duty plan governing readiness to export. | Success only after required activities/dates/fields resolve. | `Roster` (`domain/mod.rs`) | Aggregate, not PDF, output file, request record, service, or snapshot. |
 | EM duty | Non-flight duty represented from its printed UTC interval and source station; the code's expansion is not asserted. | Timed activity using its own printed UTC window. | `DutyEntry::NonFlightDuty`, `NON_FLIGHT_CODES` (`application/mod.rs`) | Not a flight, vacation, or an asserted code expansion. |
 | Gate (on landing) | The requirement that a change pass all the project's checks before it can land on the default branch, enforced by the repository. | Formatting, lint, tests, licences, SPDX headers, notices drift, private-data guard, coverage, Windows cross-build and actionlint; DCO on pull requests. | `.github/workflows/ci.yml`, the required ruleset on `main` | Not a convention or a habit; not the release pipeline. |
+| Housekeeping revision | A released revision whose conventional-commit type is not a release note (`chore`, `docs`, `test`, `build`, `ci`, `style`). | Its subject is omitted from the release text, though the revision is still part of the released history. | `scripts/prepare-release.sh` (housekeeping-type filter) | Not a release note; not removed from the history, only from the release text. |
 | Immutable release | A published release whose assets cannot be replaced or deleted and whose version tag cannot be moved. | Once public, a correction is the next version, never a repair in place. | `gh release` draft-then-publish flow; the release-immutability setting; the verify job's `immutable: true` assertion | Not a mutable release whose assets can be re-uploaded. |
 | Layover | Explicit dated station-bearing source row representing a rest stop. | All-day activity on its date; a travel row's printed duration stays descriptive. | `DutyEntry::Layover`, `layover_station` (`application/mod.rs`) | Not a travel leg, all-day absence, or an invented interval. |
 | Office or seminar duty | TK non-flight duty requiring office/development/team-information attendance. | Printed UTC Start/End; no flight route required. | `DutyEntry::NonFlightDuty`, `NON_FLIGHT_CODES` (`application/mod.rs`) | Not vacation/flight; no unprovided acronym expansion. |
@@ -31,6 +33,7 @@ This is vocabulary/required behavior, not an implemented enforcement claim.
 | Release attestation | The attestation GitHub issues for an immutable release as a whole. | The published release carries it; the verify job asserts the release is immutable. | GitHub Releases; the verify job in `.github/workflows/release.yml` | Not a per-archive build-provenance attestation. |
 | Release preparation | The step that turns the built executables into the staged archive set and the release text, before anything is public. | Run by the maintainer and by the packaging job; refuses an incomplete or unrecognised set. | `scripts/prepare-release.sh` | Not publication itself; not a hand-attached asset. |
 | Release text | The human-readable statement of what a version changed, quoting the released revisions' release-note subjects. | States the version and lists the release notes in release order, omitting housekeeping revisions. | `git log` over `<previous v* tag>..HEAD`; `release-notes.md` | Not a bare asset list; not a changelog of every revision. |
+| Release-note subject | The commit subject that states what a released revision changed, taken after `<type>(<scope>): ` from a conventional-commit subject. | Quoted in the release text when its type is a release-note type; identical subjects from several revisions collapse to one occurrence. | `git log` over `<previous v* tag>..HEAD` (`scripts/prepare-release.sh`) | Not the raw conventional-commit subject; not a housekeeping revision's subject. |
 | Released Roster detail-table family | The supported source layout: the monthly crew duty-plan detail table, with repeated headers and page continuations. | The first release's supported source; an unrecognized family fails explicitly. | `PdfRosterSource`, `SourceError::UnsupportedFamily` (`crates/duty2cal-pdf/src/lib.rs`) | Not every PDF producer layout; not the overview, statistics, or footer tables. |
 | Reserve duty | Bounded RE availability differing from SB in activation-to-report notice time. | Own UTC window; no notice calculator. | `DutyEntry::Availability`, `AVAILABILITY_CODES` (`application/mod.rs`) | Not an activation workflow or all-day default. |
 | Roster trip | Source grouping of assigned travel legs associated with one Trip ID. | Carry known ID within one unambiguous travel trip. | the Trip ID column cell and `Row::carried_trip` (`application/mod.rs`) | Not one leg, leisure trip, or independent aggregate. |
@@ -38,9 +41,12 @@ This is vocabulary/required behavior, not an implemented enforcement claim.
 | Software bill of materials | The machine-readable list of what went into an archive's build. | Published with every archive alongside its build provenance. | `anchore/sbom-action@v0` (syft reads `Cargo.lock`) | Not the checksum; not the provenance attestation. |
 | Source revision timestamp | UTC snapshot revision metadata using the user-accepted Created footer convention for this family. | Preferred DTSTAMP; actual construction-time fallback. | `SourceDocument::revision`, `created_footer` (`crates/duty2cal-pdf/src/lib.rs`) | Not activity start, month-first constant, or universal Created/Last-Modified equivalence. |
 | Source snapshot | Fixed input PDF version scoping its component identities. | Identical snapshot is deterministic; revised snapshot has separate IDs. | `SnapshotId`, `fingerprint` (`application/mod.rs`) | Not numbered output copy, another aggregate, or calendar-data anonymization. |
+| Stable latest-release address | The fixed URL `https://github.com/kressnerd/duty2cal/releases/latest` that keeps resolving to the latest published release as later versions are published. | A README link or a colleague's link does not rot as versions change. | `https://github.com/kressnerd/duty2cal/releases/latest` (chapter 7) | Not a version-pinned release URL; not a package registry. |
 | Standby duty | Bounded SB/Stby availability with start/end times for possible activation. | Separate dated UTC windows with FREE interruptions preserved. | `DutyEntry::Availability`, `AVAILABILITY_CODES` (`application/mod.rs`) | Not time off, continuous multi-day block, or annual-statistic event. |
 | Supported platform | One of the five platform/architecture combinations offered for download: Windows x86_64, Linux x86_64, Linux arm64, macOS arm64, macOS x86_64. | A version offers exactly one archive for each; nothing else is promised. | the platform set in `scripts/prepare-release.sh` | Not every platform the tool could be built for; not Windows on ARM or 32-bit Windows. |
+| Travel leg | One flight from a departure station to an arrival station, printed either as a whole row or as a departure row and an arrival row that the converter pairs. | One timed travel activity titled by designator and route. | `DutyEntry::Travel` (`crates/duty2cal-core/src/domain/mod.rs`) | Not a printed row, not two activities when a leg is split across rows, not an all-day absence. |
 | Vacation day | U/Urlaub activity denoting vacation on its duty-plan date. | All-day; source times ignored. | `DutyEntry::AllDay`, `ALL_DAY_CODES` (`application/mod.rs`) | Distinct from FREE/OFF/FZ; no entitlement inference. |
+| Version tag | The `v<version>` Git tag that names the revision a release publishes; pushing it triggers the release pipeline. | Stated identically to the version in the archive names and the release text; a tag used by a published immutable release is never reusable. | `release.yml` (`push` of `v*`); `duty2cal-<version>-<platform>.tar.gz` | Not the bare version string (a leading `v` is refused in the preparation command); not a branch. |
 
 ## Aggregates / boundaries
 
@@ -79,8 +85,6 @@ invariants do not silently choose their retention/merge handling.
 | Calendar export publication failed | Completion did not produce a successful new output; failure is explicit. |
 | Conversion diagnostic written | A new current-run report was actually persisted at an unused numbered path. |
 | Conversion diagnostic unavailable | The current failure could not save a new report; old files prove no new write. |
-| Travel leg | One flight from a departure station to an arrival station, printed either as a whole row or as a departure row and an arrival row that the converter pairs. | One timed travel activity titled by designator and route. | `DutyEntry::Travel` (`crates/duty2cal-core/src/domain/mod.rs`) | Not a printed row, not two activities when a leg is split across rows, not an all-day absence. |
-| Availability duty | Bounded standby or reserve window the crew member must be reachable in (SB, SBX, RE). | One timed availability activity with its own UTC window and station. | `DutyEntry::Availability`, `AVAILABILITY_CODES` (`crates/duty2cal-core/src/application/mod.rs`) | Not an all-day day off, not a flight, not a non-flight duty. |
 
 ## Promotion boundary and unverified terms
 
@@ -89,12 +93,14 @@ Eighteen confirmed introductions are promoted: the thirteen Handoff terms plus
 and **Availability duty**, added by
 the change to export released roster calendars (export-released-roster-calendar)
 through its design-review glossary-scope decision. The change to publish a
-public release adds twelve release-channel terms — **Build provenance**,
-**Checksum**, **Default branch**, **Gate (on landing)**, **Immutable release**,
-**Public home**, **Release archive**, **Release attestation**, **Release
-preparation**, **Release text**, **Software bill of materials** and **Supported
-platform** — as technical vocabulary of the distribution channel, not domain
-rules of the conversion. Raw source-column labels
+public release adds sixteen release-channel terms — **Build provenance**,
+**Checksum**, **Default branch**, **Gate (on landing)**, **Housekeeping
+revision**, **Immutable release**, **Public home**, **Release archive**,
+**Release attestation**, **Release preparation**, **Release text**,
+**Release-note subject**, **Software bill of materials**, **Stable
+latest-release address**, **Supported platform** and **Version tag** — as
+technical vocabulary of the distribution channel, not domain rules of the
+conversion. Raw source-column labels
 (A/C, Blocktime, Report (LT), Timezone Difference, Tags) and the FREE/OFF day
 codes are used verbatim in the specification and are not confirmed domain terms.
 

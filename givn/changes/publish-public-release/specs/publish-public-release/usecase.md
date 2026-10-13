@@ -54,7 +54,7 @@ The maintainer decides a version is ready and prepares its release.
 - **What a published archive guarantees**
   - The executable in a published archive runs on its platform with no runtime installation and no companion library beyond that platform's own.
   - Each archive is published with a checksum covering that archive, so a downloader verifies what they received before extracting it, and the checksum names the file it covers.
-  - A platform's archive is published only after its executable was built and started on a machine of that platform's kind.
+  - A platform's archive is published only after its executable was built for that platform and started on a machine of that platform's kind. The Windows executable is cross-built on Linux, as the confirmed distribution constraint requires, so its start — not its build — happens on Windows.
   - Each archive carries build provenance and a bill of materials naming what went into the build, and a published release carries a release attestation, so the file in hand can be traced to the revision and the automation that produced it.
   - A version's release stays reachable after later versions are published, so a link to the latest release does not rot as versions change.
 - **Publication**
@@ -62,14 +62,22 @@ The maintainer decides a version is ready and prepares its release.
   - A published release is immutable: its archives cannot be replaced or deleted and its version tag cannot be moved, so a correction is the next version rather than a repair in place.
   - A version tag that has been published cannot be reused, not even after the release is deleted.
   - The release text states the release-note subjects carried by the revisions being released, in release order, and omits housekeeping revisions. It never claims work that the released revision does not contain.
+  - For a version that is the first one published, the revisions being released are all those reachable from the tagged revision, so a first release announces everything it contains.
+  - A revision whose subject carries neither a release-note type nor a housekeeping type is omitted, and a commit message never makes a preparation fail.
   - Publishing a version states the version once, in the archive names, the release text and the tag, so no two places disagree about what was released.
 - **The public home and its gate**
-  - A change reaches the default branch only after the project's checks pass: formatting, lint, tests, dependency licences, per-file licence headers, third-party notices drift, the private-data guard, coverage and the Windows cross-build. The result is visible on the revision a reader is looking at.
+  - A change reaches the default branch only after the project's checks pass: formatting, lint, tests, dependency licences, licence compliance of the whole tree, per-file licence headers, third-party notices drift, the private-data guard over both the tree and the published history, coverage, the check of the project's own automation definitions, and the Windows cross-build with its smoke run. The revision a reader is looking at shows the result, and the checks the branch requires are the ones that report on a pushed revision.
   - A leaked credential cannot be pushed into the public history, and any secret that still lands raises an alert.
   - A dependency that becomes known-vulnerable or malicious raises an alert, and dependency updates arrive as reviewable proposals; the deliberately pinned extraction and architecture-test crates are excluded from automatic bumps, and nothing is merged automatically.
   - Someone who finds a defect that could expose private plan data has a confidential reporting route, and the project states that route publicly.
   - A contributor finds the contribution route, the behaviour-before-implementation rule, the sign-off requirement, a code of conduct, an issue form that asks for the export family and a stripped sample rather than a real plan, and a pull-request template that asks for the same.
   - The project's code and its own automation are scanned for vulnerabilities on the way in, and findings appear as reviewable alerts.
+- **The public text a reader lands on**
+  - The project's README states the repository's own clone address, so the first command a reader runs works.
+  - It names the archive for each supported platform and gives the command that verifies an archive's checksum and the command that verifies its build provenance, so a downloader can act on a release without asking anyone.
+  - It states the project's licence and links the licence text, and it keeps the third-party Unicode data file's own licence attributed rather than presenting two competing project licences.
+  - The repository's description and topics, and its page's statement of the checks' state, are the host's rendering of that same text.
+  - This text is checked by the project's own machinery before it is published, not merely written once.
 - **Privacy and evidence**
   - Private duty plans and real identifying values never enter the public history or a public asset; committed examples and fixtures are generated or anonymised.
   - No platform, gate or provenance promise is made before the evidence for it exists; the owner-applied settings are confirmed by the operator who applied them, and the remaining promises are exercised by the project's automation and recorded as the change's evidence.
@@ -88,6 +96,8 @@ The maintainer decides a version is ready and prepares its release.
 - Version already prepared: preparing version 0.1.0 where it is already staged refuses, and the existing archives stay untouched.
 - Unreadable executable: an executable path that cannot be read stages nothing, and the failure names the cause.
 - Release text: revisions carrying two `feat(…): <release note>` subjects plus `chore(…)` and `docs(…)` revisions produce a text that names the version and lists the two release notes in release order, omitting the housekeeping revisions.
+- First release: a tagged revision with no earlier release tag produces a text that lists the release notes of every revision it contains, housekeeping revisions omitted.
+- Subject carrying no release-note type: a revision whose subject carries neither a release-note type nor a housekeeping type is omitted from the text, and the preparation still succeeds.
 - Published release: a version published from an inspected set cannot have its archives or tag changed, so a correction appears as the next version.
 - Downloading for a machine: a Mac on Apple Silicon selects the macOS arm64 archive, the one whose name matches that machine.
 - Missing platform archive on the page: a Windows executable that failed to build stops the version from being published at all, rather than publishing it without Windows.
