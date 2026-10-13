@@ -31,16 +31,43 @@ pub(crate) const SUPPORTED: [(&str, &str); 5] = [
 
 /// The release-text scenario's fixture history, oldest revision first: two
 /// release-note subjects (one of them repeated by three revisions), three
-/// housekeeping subjects, and one subject that carries no type at all.
-const HISTORY: [&str; 8] = [
-    "chore(release): bootstrap the release channel",
-    "feat(release): Offer an archive for every supported platform",
-    "docs(release): describe the download routes for readers",
-    "feat(release): Offer an archive for every supported platform",
-    "fix(release): Publish only an archive the evidence supports",
-    "Publish the notes by hand",
-    "test(release): cover the refusal paths",
-    "feat(release): Offer an archive for every supported platform",
+/// housekeeping subjects, and one subject that carries no type at all. The
+/// scopes are capabilities the repository holds and the whole history is the
+/// version released, tagged `v0.2.0`, so the section rendered from it is the
+/// release text.
+const HISTORY: [(&str, &str, &str); 8] = [
+    ("2026-01-01", "chore(ci): bootstrap the release channel", ""),
+    (
+        "2026-01-02",
+        "feat(publish-public-release): Offer an archive for every supported platform",
+        "",
+    ),
+    (
+        "2026-01-03",
+        "docs(readme): describe the download routes for readers",
+        "",
+    ),
+    (
+        "2026-01-04",
+        "feat(publish-public-release): Offer an archive for every supported platform",
+        "",
+    ),
+    (
+        "2026-01-05",
+        "fix(publish-public-release): Publish only an archive the evidence supports",
+        "",
+    ),
+    ("2026-01-06", "Publish the notes by hand", ""),
+    (
+        "2026-01-07",
+        "test(publish-public-release): cover the refusal paths",
+        "",
+    ),
+    (
+        "2026-01-08",
+        "feat(publish-public-release): Offer an archive for every supported platform",
+        "v0.2.0",
+    ),
 ];
 
 /// The subjects the release text must not carry: the housekeeping revisions'
@@ -514,14 +541,15 @@ async fn holds_exactly_these_archives(w: &mut DutyWorld, step: &Step) {
         expected.push(archive.clone());
         expected.push(format!("{archive}.sha256"));
     }
-    // The staged set is exactly the archives, their checksums and the release
-    // text — no other archive in it.
+    // The staged set is exactly the archives, their checksums, the release
+    // text and the change log — no other archive in it.
     expected.push("release-notes.md".to_string());
+    expected.push("CHANGELOG.md".to_string());
     expected.sort();
     assert_eq!(
         entries(&out),
         expected,
-        "the staged set is not the five archives, their checksums and the release text"
+        "the staged set is not the five archives, their checksums, the release text and the change log"
     );
 }
 
@@ -744,32 +772,10 @@ async fn an_unreadable_executable(w: &mut DutyWorld, platform: String) {
 
 #[given("a history whose released revisions carry release-note subjects, including one subject repeated by several revisions and one subject that carries no release-note type, and whose housekeeping revisions do not")]
 async fn a_history_with_release_note_subjects(w: &mut DutyWorld) {
-    let repo = scenario_dir(w).join("history");
-    let _ = std::fs::remove_dir_all(&repo);
-    std::fs::create_dir_all(&repo).expect("create the fixture repository");
-    git(&repo, &["init", "--quiet"]);
-    for (index, subject) in HISTORY.iter().enumerate() {
-        let file = repo.join(format!("revision-{index}.txt"));
-        std::fs::write(&file, format!("{subject}\n")).expect("write the revision's file");
-        git(&repo, &["add", "--all"]);
-        git(
-            &repo,
-            &[
-                "-c",
-                "user.name=duty2cal tests",
-                "-c",
-                "user.email=tests@example.invalid",
-                "-c",
-                "commit.gpgsign=false",
-                "commit",
-                "--quiet",
-                "--no-verify",
-                "-m",
-                subject,
-            ],
-        );
-    }
-    w.fixture_repo = Some(repo);
+    // The preparation renders the release text out of this history, so the
+    // fixture carries the committed configuration, the capability directories
+    // the allow-list check reads, fixed committer dates and the `v0.2.0` tag.
+    build_history(w, &HISTORY);
 }
 
 #[then(regex = r"^the release text names version (\S+)$")]
@@ -1238,4 +1244,87 @@ async fn that_section_states_no_comparison(w: &mut DutyWorld) {
         !section.contains("compare/"),
         "the first version's section states a comparison against an earlier version: {section}"
     );
+}
+
+/// The release-text scenario's fixture: the delta history with one released
+/// change named by several revisions, which the release text must state once.
+/// The capability scopes are ones the repository holds and the whole history is
+/// the version released, so every revision here is released.
+const RELEASE_TEXT_HISTORY: [(&str, &str, &str); 7] = [
+    (
+        "2026-01-01",
+        "feat(export-duty-plan-calendar): Convert a supported duty plan into a calendar",
+        "",
+    ),
+    ("2026-01-02", "chore(ci): tune the release pipeline", ""),
+    (
+        "2026-01-03",
+        "docs(readme): describe the download route",
+        "",
+    ),
+    (
+        "2026-01-04",
+        "fix(publish-public-release): Name the platform in the refusal",
+        "",
+    ),
+    (
+        "2026-01-05",
+        "feat(export-duty-plan-calendar): Convert a supported duty plan into a calendar",
+        "",
+    ),
+    (
+        "2026-01-06",
+        "test(publish-public-release): cover the refusal paths",
+        "v0.2.0",
+    ),
+    ("2026-01-07", "Publish the notes by hand", ""),
+];
+
+#[given("one released change is named by several revisions")]
+async fn one_released_change_is_named_by_several_revisions(w: &mut DutyWorld) {
+    build_history(w, &RELEASE_TEXT_HISTORY);
+}
+
+#[then("the release text names the new capability before the fix")]
+async fn release_text_names_capability_before_fix(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the preparation did not succeed: {}",
+        w.command_transcript
+    );
+    let text = release_text(w);
+    let capability = text
+        .find("Convert a supported duty plan into a calendar")
+        .unwrap_or_else(|| panic!("the release text names no new capability: {text}"));
+    let fix = text
+        .find("Name the platform in the refusal")
+        .unwrap_or_else(|| panic!("the release text names no fix: {text}"));
+    assert!(
+        capability < fix,
+        "the release text names the fix before the new capability: {text}"
+    );
+}
+
+#[then("the release text names the released change once")]
+async fn release_text_names_the_change_once(w: &mut DutyWorld) {
+    let text = release_text(w);
+    let occurrences = text
+        .matches("- Convert a supported duty plan into a calendar")
+        .count();
+    assert_eq!(
+        occurrences, 1,
+        "the release text does not name the released change exactly once: {text}"
+    );
+}
+
+#[then("the release text omits the work no user can see")]
+async fn release_text_omits_the_invisible_work(w: &mut DutyWorld) {
+    let text = release_text(w);
+    for omitted in CHANGE_LOG_OMITTED {
+        assert!(
+            !text.contains(omitted),
+            "the release text carries the invisible subject {omitted:?}: {text}"
+        );
+    }
 }

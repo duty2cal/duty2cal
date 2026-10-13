@@ -55,7 +55,7 @@ Feature: Publish a public release
     Then the change log file holds a section for version 0.1.0
     And that section names the released change a user can see
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The release text states the released revisions' release notes
     Given a history whose released revisions name a new capability, a fix, and work no user can see
     And one released change is named by several revisions
