@@ -140,6 +140,14 @@ The producer's export, as the operator's real plans print it — the only eviden
 - **Footer.** `Created DDMonYYYY HH:MM (UTC) by <producer>`, with the per-page number after it, supplying the revision stamp; the ISO spelling stays accepted.
 - **Row identity.** A row carries its position in the reachable-row list, not among every row the table prints, because the fragment pairing indexes that list once any row is skipped (a date-only day, a layover marker, a statistics row).
 
+The read rules describe **one** producer template: the Released Roster export whose header carries the
+`Date`/`(LT)`/`(UTC)` anchors and whose dated rows print `DD Ddd` under a `Month: <Month> <Year>` heading.
+A plan whose header does not carry those anchors is rejected as an unsupported family, with the numbered
+diagnostic naming the source and the reason. The operator confirmed (design-review, 2026-10-13) that a
+second template is expected soon: recognising it is a later change with its own committed fixture and its
+own local plans, because a template validated only against invented fixtures is how this reader was
+mis-shaped once already.
+
 Verification: `scripts/validate-local-corpus.sh` converts the operator's local plans from a temporary directory, writes nothing into `private/` or the repository, stays out of CI, and is the standing check that the rules above still hold (`5 passed, 0 failed`).
 
 ## Step definition locations

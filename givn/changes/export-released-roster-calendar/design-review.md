@@ -128,5 +128,11 @@ Branches with no issue found: technology choices, use-case and Persona context, 
 (`D1`–`D3`, seed references kept), the visual design contract, interface classification, and ADR
 qualification.
 
-Open: one operator question, whether the converted plans cover one producer layout or several. Until it
-is answered this review does not sign off.
+Operator question and answer: does the converter serve one producer template or several? Answered
+**one template now, a second expected soon** — the reader keeps rejecting an unrecognised header explicitly,
+`design.md` records the single supported template, and recognising the second is a later change with its own
+committed fixture and its own local plans.
+
+All blocking findings are fixed, every branch has been walked, and the operator question is answered.
+
+DESIGN-REVIEW: PASS
