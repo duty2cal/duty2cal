@@ -26,7 +26,7 @@ async fn a_supported_plan(w: &mut DutyWorld) {
         w,
         &[
             (DATE_X, "2099-06-07"),
-            (ACTIVITY_X, "FB568"),
+            (ACTIVITY_X, "LU742"),
             (FROM_X, "ABC"),
             (TO_X, "DEF"),
             (START_X, "09:00"),
@@ -46,7 +46,7 @@ async fn a_complete_calendar_is_published(w: &mut DutyWorld) {
     assert!(
         calendar.contains("BEGIN:VCALENDAR")
             && calendar.contains("BEGIN:VEVENT")
-            && calendar.contains("SUMMARY:FB568 ABC-DEF")
+            && calendar.contains("SUMMARY:LU742 ABC-DEF")
             && calendar.contains("DTSTART:20990607T090000Z"),
         "the published calendar is not complete: {calendar}"
     );

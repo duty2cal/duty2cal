@@ -28,10 +28,97 @@ fn escape(text: &str) -> String {
         .replace(')', "\\)")
 }
 
+/// The roster month and year a fixture's dates belong to, and its heading.
+///
+/// A fixture writes its dates as `YYYY-MM-DD`; the builder prints them the way
+/// the producer does, so the reader always faces the producer's spelling.
+fn producer_layout(
+    items: &[(f64, f64, String)],
+) -> (Vec<(f64, f64, String)>, Option<Vec<(f64, f64, String)>>) {
+    const MONTHS: [&str; 12] = [
+        "January", "February", "March", "April", "May", "June", "July", "August", "September",
+        "October", "November", "December",
+    ];
+    let mut months: Vec<(i32, u32)> = Vec::new();
+    let mut printed = Vec::with_capacity(items.len());
+    // A revision footer prints its own stamp, which is not a roster date.
+    let footer_rows: Vec<f64> = items
+        .iter()
+        .filter(|(_, _, text)| text.contains("Created"))
+        .map(|(_, y, _)| *y)
+        .collect();
+    for (x, y, text) in items {
+        let Some((year, month, day)) = iso_date(text) else {
+            printed.push((*x, *y, text.clone()));
+            continue;
+        };
+        if footer_rows
+            .iter()
+            .any(|footer_y| (footer_y - y).abs() < 1.0)
+        {
+            printed.push((*x, *y, text.clone()));
+            continue;
+        }
+        if !months.contains(&(year, month)) {
+            months.push((year, month));
+        }
+        printed.push((*x, *y, format!("{day:02} {}", weekday_abbreviation(year, month, day))));
+    }
+    assert!(
+        months.len() <= 1,
+        "a fixture must print one roster month, found {months:?}"
+    );
+    let heading = months.first().map(|(year, month)| {
+        at(
+            830.0,
+            &[
+                (DATE_X, "Month:"),
+                (DATE_X + 40.0, MONTHS[(month - 1) as usize]),
+                // Clear of the longest month name, so the two never touch.
+                (DATE_X + 100.0, &year.to_string()),
+            ],
+        )
+    });
+    (printed, heading)
+}
+
+/// A `YYYY-MM-DD` cell as its calendar date.
+fn iso_date(text: &str) -> Option<(i32, u32, u32)> {
+    if text.len() != 10 || &text[4..5] != "-" || &text[7..8] != "-" {
+        return None;
+    }
+    let year = text[..4].parse::<i32>().ok()?;
+    let month = text[5..7].parse::<u32>().ok()?;
+    let day = text[8..10].parse::<u32>().ok()?;
+    (1..=12).contains(&month).then_some((year, month, day))
+}
+
+/// The weekday of a calendar date, as the producer abbreviates it.
+pub fn weekday_abbreviation(year: i32, month: u32, day: u32) -> &'static str {
+    const SHIFTS: [i32; 12] = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
+    let mut shifted = year;
+    if month < 3 {
+        shifted -= 1;
+    }
+    let index = (shifted
+        + shifted / 4
+        - shifted / 100
+        + shifted / 400
+        + SHIFTS[(month - 1) as usize]
+        + day as i32)
+        .rem_euclid(7) as usize;
+    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][index]
+}
+
 /// Build a one-page PDF placing each `(x, y, text)` item with Helvetica 9pt.
 ///
 /// Coordinates are in page space (origin bottom-left); the page is A4-sized.
+/// The heading and the date spelling are the producer's, never the fixture's.
 pub fn build_pdf(items: &[(f64, f64, String)]) -> Vec<u8> {
+    let (printed, heading) = producer_layout(items);
+    let mut all = heading.unwrap_or_default();
+    all.extend(printed);
+    let items = &all;
     let mut content = String::from("BT\n/F1 9 Tf\n");
     for (x, y, text) in items {
         content.push_str(&format!("1 0 0 1 {x} {y} Tm ({}) Tj\n", escape(text)));

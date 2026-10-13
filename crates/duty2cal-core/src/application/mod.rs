@@ -190,21 +190,46 @@ fn unmatched_fragment(designator: &str) -> ConvertError {
 fn collect_rows(table: &RawRosterTable) -> Result<Vec<Row>, ConvertError> {
     let mut rows = Vec::new();
     let mut carried_trip: Option<String> = None;
-    for (index, cells) in table.rows.iter().enumerate() {
-        let code = value(table, cells, "Activity");
-        let from = value(table, cells, "From");
+    let mut carried_date: Option<Date> = None;
+    for cells in table.rows.iter() {
+        let layover = layover_station(cells);
+        let position = if value(table, cells, "Pos").eq_ignore_ascii_case("DH") {
+            Position::Deadhead
+        } else {
+            Position::Operating
+        };
+        let mut code = designator(table, cells, position);
+        let mut from = value(table, cells, "From");
         let to = value(table, cells, "To");
-        let date_cell = value(table, cells, "Date");
+        if let Some(station) = &layover {
+            code = "Layover".to_string();
+            from = station.clone();
+        }
         if code.is_empty() && from.is_empty() && to.is_empty() {
             continue;
         }
-        let date = timing::parse_iso_date(&date_cell).ok_or_else(|| {
-            ConvertError::UnresolvedRequiredActivity(format!("unresolved date: {date_cell:?}"))
-        })?;
+        let date_cell = value(table, cells, "Date");
+        let date = if date_cell.is_empty() {
+            // A continuation row prints no date of its own: the local date it
+            // belongs to is the one the row above carries.
+            carried_date.ok_or_else(|| {
+                ConvertError::UnresolvedRequiredActivity(
+                    "a detail row prints no date and no earlier row supplies one".to_string(),
+                )
+            })?
+        } else {
+            timing::parse_iso_date(&date_cell).ok_or_else(|| {
+                ConvertError::UnresolvedRequiredActivity(format!("unresolved date: {date_cell:?}"))
+            })?
+        };
+        carried_date = Some(date);
         let own_trip = optional(table, cells, "Trip");
         if let Some(trip) = &own_trip {
             carried_trip = Some(trip.clone());
         }
+        // The pairing works on this list, so a row carries its position in it,
+        // not its position among every row the table prints.
+        let index = rows.len();
         rows.push(Row {
             index,
             date,
@@ -213,11 +238,7 @@ fn collect_rows(table: &RawRosterTable) -> Result<Vec<Row>, ConvertError> {
             to,
             start: value(table, cells, "Start"),
             end: value(table, cells, "End"),
-            position: if value(table, cells, "Pos").eq_ignore_ascii_case("DH") {
-                Position::Deadhead
-            } else {
-                Position::Operating
-            },
+            position,
             trip: own_trip,
             carried_trip: carried_trip.clone(),
             report_lt: optional(table, cells, "Report"),
@@ -225,10 +246,62 @@ fn collect_rows(table: &RawRosterTable) -> Result<Vec<Row>, ConvertError> {
             blocktime: optional(table, cells, "Blocktime"),
             tz_diff: optional(table, cells, "Timezone Difference"),
             layover: optional(table, cells, "Layover"),
-            tags: optional(table, cells, "Tags"),
+            tags: tags(table, cells),
         });
     }
     Ok(rows)
+}
+
+/// The station of a row that prints the family's `Layover:` marker.
+///
+/// The marker row prints no activity code and no route; its station follows the
+/// marker in the same cell or in the next one the row prints.
+fn layover_station(cells: &[String]) -> Option<String> {
+    const MARKER: &str = "layover:";
+    for (index, cell) in cells.iter().enumerate() {
+        let lower = cell.to_ascii_lowercase();
+        let Some(at) = lower.find(MARKER) else {
+            continue;
+        };
+        let tail = cell[at + MARKER.len()..].trim().trim_end_matches(',').trim();
+        if !tail.is_empty() {
+            return Some(tail.to_string());
+        }
+        return cells[index + 1..]
+            .iter()
+            .map(|next| next.trim())
+            .find(|next| !next.is_empty())
+            .map(str::to_string);
+    }
+    None
+}
+
+/// The printed designator: the family prints the position marker and the
+/// rotation number in separate columns (`FB` and `568`), which read as one.
+///
+/// A deadhead marker is the `DH` the calendar title already carries, so it
+/// never joins the designator.
+fn designator(table: &RawRosterTable, cells: &[String], position: Position) -> String {
+    let activity = value(table, cells, "Activity");
+    let marker = value(table, cells, "Pos");
+    if marker.is_empty()
+        || matches!(position, Position::Deadhead)
+        || activity.is_empty()
+        || !activity.chars().all(|c| c.is_ascii_digit())
+    {
+        return activity;
+    }
+    format!("{marker}{activity}")
+}
+
+/// The row's tags, without the all-day marker the family prints beside them.
+fn tags(table: &RawRosterTable, cells: &[String]) -> Option<String> {
+    let field = value(table, cells, "Tags");
+    let kept: Vec<&str> = field
+        .split_whitespace()
+        .filter(|tag| *tag != "==")
+        .collect();
+    (!kept.is_empty()).then(|| kept.join(" "))
 }
 
 /// Classify one detail row into the activity it represents.

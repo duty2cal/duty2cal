@@ -127,6 +127,21 @@ Input `&[u8]`, output `String` — no path or file handle crosses the boundary, 
 
 **Error mapping across crates:** the orphan rule forbids `impl From<pdfplumber::Error> for SourceError` in `duty2cal-pdf`; use explicit `map_err` with a crate-local conversion. Never re-export a third-party error type through a port.
 
+### Reading the producer's own layout
+
+The producer's export, as the operator's real plans print it — the only evidence that counts, since the change's first fixture set was invented:
+
+- **Heading.** `Month: June 2026` once per page supplies the roster month and year; dated rows print `DD Ddd` (`07 Sun`) only. The adapter resolves the cell to a calendar date and checks the weekday against it, so a misaligned cell is never accepted as activity timing. This is why the reader needs no per-row month.
+- **Wrapped header.** The header spans several rows, and word extraction may or may not merge adjacent label words (`Date (LT)` or `Date(LT)`, `Start (UTC)`). A band therefore runs from one label word to the next, and a word that continues a column (`(LT)`, `(UTC)`, `ID`, `Difference`) joins the band that contains it. Bands are frozen at the first row that prints in a body column (Date, Pos, Activity, From, To); the rows after the header and before that row are label material. Nothing above the header on a page is a detail row, so the overview grid and the statistics tables can never supply an activity.
+- **Continuation rows.** A row that prints no date carries the local date above it; a leg that crosses midnight prints its arrival in a second row with no departure airport or start clock, and the fragment pairing merges the two.
+- **Designator.** `Pos` and `Activity` are separate columns (`FB` and `568`); an operating leg reads them as one designator (`LU742`), while a deadhead `DH` never joins it, because the calendar title already carries `DH`.
+- **Layover.** The producer prints a `Layover: <station>` row instead of an activity code; the marker supplies the station.
+- **All-day rows.** Their `00:00` clocks belong to accounting columns (LSW, BZW, Blocktime) and their `==` marker is not a tag.
+- **Footer.** `Created DDMonYYYY HH:MM (UTC) by <producer>`, with the per-page number after it, supplying the revision stamp; the ISO spelling stays accepted.
+- **Row identity.** A row carries its position in the reachable-row list, not among every row the table prints, because the fragment pairing indexes that list once any row is skipped (a date-only day, a layover marker, a statistics row).
+
+Verification: `scripts/validate-local-corpus.sh` converts the operator's local plans from a temporary directory, writes nothing into `private/` or the repository, stays out of CI, and is the standing check that the rules above still hold (`5 passed, 0 failed`).
+
 ## Step definition locations
 
 One file per capability:

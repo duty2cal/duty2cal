@@ -12,8 +12,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use cucumber::{given, then, when};
 
 use crate::steps::support::{
-    self, ACTIVITY_X, AIRCRAFT_X, BLOCKTIME_X, DATE_X, END_X, FROM_X, LAYOVER_X, START_X, TAGS_X,
-    TO_X, TZ_X,
+    self, ACTIVITY_X, AIRCRAFT_X, BLOCKTIME_X, DATE_X, END_X, FROM_X, LAYOVER_X, POS_X, START_X,
+    TAGS_X, TO_X, TZ_X,
 };
 use crate::DutyWorld;
 
@@ -223,9 +223,9 @@ async fn a_mixed_plan(w: &mut DutyWorld) {
         585.0,
         &[
             (DATE_X, "2099-06-07"),
-            (ACTIVITY_X, "FB568"),
-            (FROM_X, "FRA"),
-            (TO_X, "LOS"),
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "Tychon"),
+            (TO_X, "Mareum"),
             (START_X, "09:25"),
             (END_X, "15:45"),
         ],
@@ -257,7 +257,7 @@ async fn three_activities_of_the_right_kinds(w: &mut DutyWorld) {
         "expected three activities: {calendar}"
     );
     assert!(
-        calendar.contains("SUMMARY:FB568 FRA-LOS")
+        calendar.contains("SUMMARY:LU742 Tychon-Mareum")
             && calendar.contains("DTSTART:20990607T092500Z")
             && calendar.contains("DTEND:20990607T154500Z"),
         "the timed travel activity is missing or wrong: {calendar}"
@@ -670,7 +670,7 @@ async fn an_unmatched_travel_fragment(w: &mut DutyWorld) {
         w,
         &[
             (DATE_X, "2099-06-07"),
-            (ACTIVITY_X, "FB569"),
+            (ACTIVITY_X, "LU743"),
             (FROM_X, "ABC"),
             (START_X, "10:00"),
         ],
@@ -693,7 +693,7 @@ async fn split_leg_with_qualified_departure(
         585.0,
         &[
             (DATE_X, &departure_date),
-            (ACTIVITY_X, "FB569"),
+            (ACTIVITY_X, "LU743"),
             (FROM_X, "ABC"),
             (START_X, &format!("({qualifier}) {departure_clock}")),
         ],
@@ -702,7 +702,7 @@ async fn split_leg_with_qualified_departure(
         570.0,
         &[
             (DATE_X, &arrival_date),
-            (ACTIVITY_X, "FB569"),
+            (ACTIVITY_X, "LU743"),
             (TO_X, "DEF"),
             (END_X, &arrival_clock),
         ],
@@ -731,7 +731,7 @@ async fn split_leg_with_qualified_arrival(
         585.0,
         &[
             (DATE_X, &departure_date),
-            (ACTIVITY_X, "FB569"),
+            (ACTIVITY_X, "LU743"),
             (FROM_X, "ABC"),
             (START_X, &departure_clock),
         ],
@@ -740,7 +740,7 @@ async fn split_leg_with_qualified_arrival(
         570.0,
         &[
             (DATE_X, "2099-01-13"),
-            (ACTIVITY_X, "FB569"),
+            (ACTIVITY_X, "LU743"),
             (TO_X, "DEF"),
             (END_X, &format!("({qualifier}) {arrival_clock}")),
         ],
@@ -780,7 +780,7 @@ async fn unqualified_overnight(w: &mut DutyWorld, date: String, start: String, e
         w,
         &[
             (DATE_X, &date),
-            (ACTIVITY_X, "FB568"),
+            (ACTIVITY_X, "LU742"),
             (FROM_X, "ABC"),
             (TO_X, "DEF"),
             (START_X, &start),
@@ -825,7 +825,7 @@ async fn zero_length_interval(w: &mut DutyWorld) {
         w,
         &[
             (DATE_X, "2099-01-12"),
-            (ACTIVITY_X, "FB568"),
+            (ACTIVITY_X, "LU742"),
             (FROM_X, "ABC"),
             (TO_X, "DEF"),
             (START_X, "10:00"),
@@ -847,7 +847,7 @@ async fn boundary_qualified_cell(
         w,
         &[
             (DATE_X, &date),
-            (ACTIVITY_X, "FB100"),
+            (ACTIVITY_X, "LU900"),
             (FROM_X, "ABC"),
             (TO_X, "DEF"),
             (START_X, &format!("({qualifier}) {clock}")),
@@ -878,7 +878,7 @@ async fn no_unique_adjacent_date(w: &mut DutyWorld) {
         w,
         &[
             (DATE_X, "2099-01-15"),
-            (ACTIVITY_X, "FB100"),
+            (ACTIVITY_X, "LU900"),
             (FROM_X, "ABC"),
             (TO_X, "DEF"),
             (START_X, "(9) 10:00"),
@@ -982,7 +982,7 @@ async fn a_travel_leg_missing_one_field(w: &mut DutyWorld, omitted: String) {
     ];
     let mut values: Vec<(f64, String)> = vec![
         (DATE_X, "2099-06-07".to_string()),
-        (ACTIVITY_X, "FB568".to_string()),
+        (ACTIVITY_X, "LU742".to_string()),
         (FROM_X, "ABC".to_string()),
         (TO_X, "DEF".to_string()),
         (START_X, "09:00".to_string()),
@@ -1039,7 +1039,7 @@ async fn complementary_fragments(w: &mut DutyWorld) {
         585.0,
         &[
             (DATE_X, "2099-06-07"),
-            (ACTIVITY_X, "FB568"),
+            (ACTIVITY_X, "LU742"),
             (FROM_X, "ABC"),
             (START_X, "09:00"),
             (AIRCRAFT_X, "ABC"),
@@ -1049,7 +1049,7 @@ async fn complementary_fragments(w: &mut DutyWorld) {
         570.0,
         &[
             (DATE_X, "2099-06-07"),
-            (ACTIVITY_X, "FB568"),
+            (ACTIVITY_X, "LU742"),
             (TO_X, "DEF"),
             (END_X, "10:00"),
             (BLOCKTIME_X, "02:00"),
@@ -1077,7 +1077,7 @@ async fn a_leg_supplying_every_selected_field(w: &mut DutyWorld) {
         &[
             (DATE_X, "2099-06-07"),
             (support::TRIP_X, "T42"),
-            (ACTIVITY_X, "FB568"),
+            (ACTIVITY_X, "LU742"),
             (FROM_X, "ABC"),
             (TO_X, "DEF"),
             (START_X, "09:00"),
@@ -1129,7 +1129,7 @@ async fn differing_report_times(w: &mut DutyWorld) {
         585.0,
         &[
             (DATE_X, "2099-06-07"),
-            (ACTIVITY_X, "FB568"),
+            (ACTIVITY_X, "LU742"),
             (FROM_X, "ABC"),
             (START_X, "09:00"),
             (support::REPORT_X, "07:30"),
@@ -1139,7 +1139,7 @@ async fn differing_report_times(w: &mut DutyWorld) {
         570.0,
         &[
             (DATE_X, "2099-06-07"),
-            (ACTIVITY_X, "FB568"),
+            (ACTIVITY_X, "LU742"),
             (TO_X, "DEF"),
             (END_X, "10:00"),
             (support::REPORT_X, "08:00"),
@@ -1208,7 +1208,7 @@ async fn a_plan_with_timed_and_all_day_activities(w: &mut DutyWorld) {
         585.0,
         &[
             (DATE_X, "2099-06-07"),
-            (ACTIVITY_X, "FB568"),
+            (ACTIVITY_X, "LU742"),
             (FROM_X, "ABC"),
             (TO_X, "DEF"),
             (START_X, "09:00"),
@@ -1221,7 +1221,7 @@ async fn a_plan_with_timed_and_all_day_activities(w: &mut DutyWorld) {
         570.0,
         &[
             (DATE_X, "2099-06-08"),
-            (ACTIVITY_X, "FB569"),
+            (ACTIVITY_X, "LU743"),
             (FROM_X, "DEF"),
             (TO_X, "ABC"),
             (START_X, "11:00"),
@@ -1311,7 +1311,7 @@ async fn the_same_plan_converted_twice(w: &mut DutyWorld) {
         w,
         &[
             (DATE_X, "2099-06-07"),
-            (ACTIVITY_X, "FB568"),
+            (ACTIVITY_X, "LU742"),
             (FROM_X, "ABC"),
             (TO_X, "DEF"),
             (START_X, "09:00"),
@@ -1359,7 +1359,7 @@ fn revision_pdf(start: &str, end: &str) -> Vec<(f64, f64, String)> {
         585.0,
         &[
             (DATE_X, "2099-06-07"),
-            (ACTIVITY_X, "FB568"),
+            (ACTIVITY_X, "LU742"),
             (FROM_X, "ABC"),
             (TO_X, "DEF"),
             (START_X, start),
@@ -1442,7 +1442,7 @@ async fn a_plan_with_a_revision_footer(w: &mut DutyWorld, date: String, time: St
         585.0,
         &[
             (DATE_X, "2099-06-07"),
-            (ACTIVITY_X, "FB568"),
+            (ACTIVITY_X, "LU742"),
             (FROM_X, "ABC"),
             (TO_X, "DEF"),
             (START_X, "09:00"),
@@ -1482,7 +1482,7 @@ async fn a_plan_without_a_revision_footer(w: &mut DutyWorld, date: String, time:
         w,
         &[
             (DATE_X, "2099-06-07"),
-            (ACTIVITY_X, "FB568"),
+            (ACTIVITY_X, "LU742"),
             (FROM_X, "ABC"),
             (TO_X, "DEF"),
             (START_X, "09:00"),
@@ -1514,7 +1514,7 @@ async fn a_source_beside_existing_calendars(w: &mut DutyWorld) {
         w,
         &[
             (DATE_X, "2099-06-07"),
-            (ACTIVITY_X, "FB568"),
+            (ACTIVITY_X, "LU742"),
             (FROM_X, "ABC"),
             (TO_X, "DEF"),
             (START_X, "09:00"),
@@ -1534,7 +1534,7 @@ async fn published_as_roster_two(w: &mut DutyWorld) {
     assert!(
         calendar.contains("BEGIN:VCALENDAR")
             && calendar.contains("BEGIN:VEVENT")
-            && calendar.contains("SUMMARY:FB568 ABC-DEF"),
+            && calendar.contains("SUMMARY:LU742 ABC-DEF"),
         "the published calendar is not complete: {calendar}"
     );
 }
@@ -1614,7 +1614,7 @@ async fn a_plan_that_cannot_be_published(w: &mut DutyWorld) {
         w,
         &[
             (DATE_X, "2099-06-07"),
-            (ACTIVITY_X, "FB568"),
+            (ACTIVITY_X, "LU742"),
             (FROM_X, "ABC"),
             (TO_X, "DEF"),
             (START_X, "09:00"),
@@ -1763,6 +1763,13 @@ async fn both_older_reports_unchanged(w: &mut DutyWorld) {
     }
 }
 
+/// Split a printed designator into its position marker and rotation number.
+fn split_designator(designator: &str) -> Option<(&str, &str)> {
+    let split = designator.find(|c: char| c.is_ascii_digit())?;
+    let (marker, number) = designator.split_at(split);
+    (!marker.is_empty() && number.chars().all(|c| c.is_ascii_digit())).then_some((marker, number))
+}
+
 /// The reference plan: the operator's 26-event example month (June 2026).
 ///
 /// All values are generated; the layout reproduces the supported family's
@@ -1777,7 +1784,14 @@ fn reference_plan(w: &mut DutyWorld) {
                    to: &str,
                    start: &str,
                    end: &str| {
-        let mut values: Vec<(f64, &str)> = vec![(DATE_X, date), (ACTIVITY_X, activity)];
+        let mut values: Vec<(f64, &str)> = vec![(DATE_X, date)];
+        match split_designator(activity) {
+            Some((marker, number)) => {
+                values.push((POS_X, marker));
+                values.push((ACTIVITY_X, number));
+            }
+            None => values.push((ACTIVITY_X, activity)),
+        }
         if !from.is_empty() {
             values.push((FROM_X, from));
         }
@@ -1797,7 +1811,7 @@ fn reference_plan(w: &mut DutyWorld) {
     for day in 1..=4 {
         row(
             &mut items,
-            &format!("2026-06-0{day}"),
+            &format!("2098-06-0{day}"),
             "FREE",
             "",
             "",
@@ -1807,120 +1821,120 @@ fn reference_plan(w: &mut DutyWorld) {
     }
     row(
         &mut items,
-        "2026-06-07",
-        "FB568",
-        "FRA",
-        "LOS",
+        "2098-06-07",
+        "LU742",
+        "Tychon",
+        "Mareum",
         "09:25",
         "15:45",
     );
     row(
         &mut items,
-        "2026-06-07",
-        "FB568",
-        "LOS",
-        "SSG",
+        "2098-06-07",
+        "LU742",
+        "Mareum",
+        "Clavius",
         "16:45",
         "18:10",
     );
-    row(&mut items, "2026-06-08", "Layover", "SSG", "", "", "");
+    row(&mut items, "2098-06-08", "Layover", "Clavius", "", "", "");
     row(
         &mut items,
-        "2026-06-09",
-        "FB569",
-        "SSG",
-        "LOS",
+        "2098-06-09",
+        "LU743",
+        "Clavius",
+        "Mareum",
         "19:35",
         "21:00",
     );
     row(
         &mut items,
-        "2026-06-09",
-        "FB569",
-        "LOS",
-        "FRA",
+        "2098-06-09",
+        "LU743",
+        "Mareum",
+        "Tychon",
         "22:10",
         "04:25",
     );
     row(
         &mut items,
-        "2026-06-13",
-        "FB1466",
-        "FRA",
-        "IBZ",
+        "2098-06-13",
+        "LU402",
+        "Tychon",
+        "Utopis",
         "11:00",
         "13:25",
     );
     row(
         &mut items,
-        "2026-06-13",
-        "FB1467",
-        "IBZ",
-        "FRA",
+        "2098-06-13",
+        "LU401",
+        "Utopis",
+        "Tychon",
         "14:25",
         "16:50",
     );
     row(
         &mut items,
-        "2026-06-13",
-        "FB892",
-        "FRA",
-        "RIX",
+        "2098-06-13",
+        "LU302",
+        "Tychon",
+        "Kopernik",
         "18:00",
         "20:10",
     );
-    row(&mut items, "2026-06-14", "Layover", "RIX", "", "", "");
+    row(&mut items, "2098-06-14", "Layover", "Kopernik", "", "", "");
     row(
         &mut items,
-        "2026-06-15",
-        "FB893",
-        "RIX",
-        "FRA",
+        "2098-06-15",
+        "LU301",
+        "Kopernik",
+        "Tychon",
         "04:00",
         "06:20",
     );
     row(
         &mut items,
-        "2026-06-15",
-        "FB1186",
-        "FRA",
-        "ZRH",
+        "2098-06-15",
+        "LU502",
+        "Tychon",
+        "Argyra",
         "07:30",
         "08:25",
     );
     row(
         &mut items,
-        "2026-06-15",
-        "FB1187",
-        "ZRH",
-        "FRA",
+        "2098-06-15",
+        "LU501",
+        "Argyra",
+        "Tychon",
         "09:05",
         "10:10",
     );
-    row(&mut items, "2026-06-18", "EM", "", "", "06:00", "10:00");
+    row(&mut items, "2098-06-18", "EM", "", "", "06:00", "10:00");
     row(
         &mut items,
-        "2026-06-20",
-        "FB732",
-        "FRA",
-        "PVG",
+        "2098-06-20",
+        "LU304",
+        "Tychon",
+        "Olympia",
         "19:30",
         "07:05",
     );
-    row(&mut items, "2026-06-22", "Layover", "PVG", "", "", "");
+    row(&mut items, "2098-06-22", "Layover", "Olympia", "", "", "");
     row(
         &mut items,
-        "2026-06-23",
-        "FB733",
-        "PVG",
-        "FRA",
+        "2098-06-23",
+        "LU303",
+        "Olympia",
+        "Tychon",
         "15:50",
         "05:30",
     );
     for day in 25..=29 {
         row(
             &mut items,
-            &format!("2026-06-{day}"),
+            &format!("2098-06-{day}"),
             "FREE",
             "",
             "",
@@ -1928,7 +1942,7 @@ fn reference_plan(w: &mut DutyWorld) {
             "",
         );
     }
-    row(&mut items, "2026-06-30", "OFF", "", "", "", "");
+    row(&mut items, "2098-06-30", "OFF", "", "", "", "");
 
     let dir = fresh_dir();
     let source = dir.join("roster.pdf");
@@ -1939,7 +1953,7 @@ fn reference_plan(w: &mut DutyWorld) {
     // fallback this plan has no revision footer for.
     w.env = vec![(
         "DUTY2CAL_CONSTRUCTION_CLOCK".to_string(),
-        "2026-06-10T00:00:00Z".to_string(),
+        "2098-06-10T00:00:00Z".to_string(),
     )];
 }
 
@@ -1956,7 +1970,7 @@ async fn converts_the_reference_roster(w: &mut DutyWorld) {
 #[then("the published calendar equals the expected calendar after CRLF-to-LF and folding normalisation")]
 async fn equals_the_expected_calendar(w: &mut DutyWorld) {
     let expected_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures/expected/2026-06.ics");
+        .join("tests/fixtures/expected/2098-06.ics");
     let published = calendar(w);
     let expected = std::fs::read_to_string(&expected_path).unwrap_or_else(|error| {
         panic!(

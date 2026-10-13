@@ -781,3 +781,29 @@ Use-case constraint: Success guarantee — complete RFC 5545 calendar beside the
   probes non-zero: crates/duty2cal-core/src/domain/timing.rs (non-e2e), apps/cli/src/fs.rs (e2e)
   ```
 - [x] `./run-tests.sh --e2e` scenario count (1) is strictly less than `./run-tests.sh` (51), recorded in the e2e setup task.
+
+## Re-target: the real export layout (found after implementation)
+
+Running the finished converter against the operator's five real duty plans (local, uncommitted) fails for
+every one of them: `a required activity could not be resolved: the detail table carries no From column`,
+and no calendar is produced. The committed suite is green only against fixtures shaped to this parser.
+
+Measured divergences from the real export (structural facts only):
+
+- dates are `DD Ddd` (for example `07 Sun`) and the month/year comes from the document heading `Month: June 2026`;
+- the date cell is empty on continuation rows, so the current local date must carry across rows;
+- the header is several wrapped rows, with `Timezone` and `Difference` on separate rows at the same x;
+- the designator is split across `Pos` (`LU`) and `Activity` (`742`) and is printed as `LU742`;
+- a layover row is `Layover: <station>` in the row text, not an activity code with a station column;
+- all-day rows carry `00:00 00:00 ==`;
+- the revision footer is `Created DDMonYYYY HH:MM (UTC) by <producer>`;
+- the overview grid and the statistics tables interleave with the detail table on the same page.
+
+- [x] Add the local validation script `scripts/validate-local-corpus.sh`: reads `private/*.pdf`, converts copies in a temporary directory, prints a per-file verdict and a summary, writes nothing into `private/` and nothing into the repository, and is not part of CI. Result after the reader was adapted: **5 passed, 0 failed**.
+- [x] Adapt the reader to the real layout: heading-derived month/year, `DD Ddd` date cells, local-date carry across continuation rows, multi-row header bands, `Pos`+`Activity` designator, `Layover: <station>` rows, `Created DDMonYYYY HH:MM (UTC)` footer, and region-aware row selection so the overview/statistics tables are never activity sources. The bands now run from label to label across the wrapped header (`Date (LT)`, `Trip ID`, `Start (UTC)`, `Timezone Difference`) instead of merging by whitespace gap, and a row carries its position in the reachable-row list, which the fragment pairing needs.
+- [x] The five real duty plans convert: `scripts/validate-local-corpus.sh` reports **5 passed, 0 failed**, and the plan for the operator's example month yields its 26 events.
+- [x] Re-shape the reference fixture to the producer's layout (heading `Month: June 2026`, `DD Ddd` date cells, `Pos`/`Activity` printed apart): the golden end-to-end scenario now exercises the producer's spelling, its content is unchanged, and only the source-identity fingerprint in the 26 UIDs moved because the fixture bytes changed.
+- [ ] Re-shape the remaining scenario fixtures. They still print ISO dates, so they pin the reading rules rather than the producer's spelling; a regression of the producer-layout reading would be caught by `scripts/validate-local-corpus.sh` and by the golden scenario, not by them.
+- [x] Record the producer-layout reading rules in design.md (heading month, wrapped header bands, continuation rows, designator, layover marker, all-day rows, footer, row identity) with the local validation script as their standing check.
+- [ ] Re-run design-review over the updated design.md and the reader changes.
+- [ ] Re-drive the scenarios RED/GREEN/REFACTOR through the re-shaped fixtures. The failure was driven RED by the local corpus (five real plans, no calendar) rather than by a committed scenario, and the suite is green at 51 of 51 with the corpus at 5 passed, 0 failed; the scenario-level RED/GREEN redrive still owes its own evidence.

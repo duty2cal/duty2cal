@@ -2,23 +2,46 @@
 //! PDF driven adapter: `pdfplumber` positioned content → `RosterSource`.
 //! The only crate that depends on the extraction dependency.
 //!
-//! Column bands are derived from the detail-table header row and rows are
+//! Column bands are derived from the detail-table header and rows are
 //! clustered by vertical position; reading order is never treated as table
-//! structure (guardrail), and no column coordinate is hard-coded.
+//! structure (guardrail), and no column coordinate is hard-coded. The family's
+//! header wraps over several rows, so a band runs from one label to the next
+//! and the label words that continue a column (`(LT)`, `ID`, `Difference`)
+//! join the band that contains them.
 
 use std::cmp::Ordering;
 
 use duty2cal_core::application::{RawRosterTable, RosterSource, SourceDocument, SourceError};
 use duty2cal_core::domain::timing;
 use pdfplumber::{Pdf, TextOptions, Word, WordOptions};
-use time::OffsetDateTime;
+use time::{Date, Month, OffsetDateTime, Weekday};
 
 /// Vertical tolerance in points for clustering words into one row.
 const ROW_TOLERANCE: f64 = 4.0;
-/// Maximum horizontal gap in points for merging header words into one label.
-const LABEL_GAP: f64 = 12.0;
 /// Vertical gap in points larger than the row pitch that ends the detail table.
 const TABLE_GAP: f64 = 20.0;
+/// Header words that continue the column to their left instead of starting one.
+const CONTINUATION_TOKENS: [&str; 4] = ["(lt)", "(utc)", "id", "difference"];
+/// The labels that recognise the detail-table header of the supported family.
+const ANCHOR_LABELS: [&str; 3] = ["date", "(lt)", "(utc)"];
+/// The labels rows print in: the first row that prints one ends the header.
+const BODY_LABELS: [&str; 5] = ["date", "pos", "activity", "from", "to"];
+/// The English month abbreviations the family prints in its heading.
+const MONTH_NAMES: [&str; 12] = [
+    "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec",
+];
+/// The English weekday abbreviations the family prints beside the day number.
+const WEEKDAY_NAMES: [&str; 7] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+/// The weekday each name above denotes, in the same order.
+const WEEKDAYS: [Weekday; 7] = [
+    Weekday::Monday,
+    Weekday::Tuesday,
+    Weekday::Wednesday,
+    Weekday::Thursday,
+    Weekday::Friday,
+    Weekday::Saturday,
+    Weekday::Sunday,
+];
 
 /// Reads a supplied document with the pinned extraction crate.
 #[derive(Debug, Default)]
@@ -32,48 +55,84 @@ impl RosterSource for PdfRosterSource {
 
         let mut table = RawRosterTable::default();
         let mut revision: Option<OffsetDateTime> = None;
+        let mut roster_month: Option<(i32, Month)> = None;
         let mut family_recognised = false;
 
         for page in pdf.pages() {
             let page = page.map_err(|error| SourceError::Unreadable(error.to_string()))?;
             let words = page.extract_words(&options);
+            let text = page.extract_text(&TextOptions::default());
             if revision.is_none() {
-                revision = created_footer(&page.extract_text(&TextOptions::default()));
+                revision = created_footer(&text);
+            }
+            if roster_month.is_none() {
+                roster_month = heading_month(&text);
             }
 
             // A continuation page repeats the detail-table header, so nothing is
             // a detail row before that header on its own page.
             let mut areas: Option<Vec<Area>> = None;
+            let mut header: Vec<&Word> = Vec::new();
             let mut last_top: Option<f64> = None;
+            let mut columns_frozen = !table.columns.is_empty();
 
             for row in cluster_rows(&words, ROW_TOLERANCE) {
                 let top = row.first().map(|word| word.bbox.top).unwrap_or_default();
 
-                if let Some(header) = header_areas(&row) {
-                    if table.columns.is_empty() {
-                        table.columns = header.iter().map(|area| area.label.clone()).collect();
+                if header_areas(&row).is_some() {
+                    header = row.clone();
+                    let bands = build_areas(&header);
+                    areas = Some(bands.clone());
+                    if !columns_frozen {
+                        table.columns = labels(&bands);
                     }
-                    areas = Some(header);
                     family_recognised = true;
                     last_top = Some(top);
                     continue;
                 }
 
-                if areas.is_some() {
-                    if let Some(previous) = last_top {
-                        if top - previous > TABLE_GAP {
-                            // A gap larger than the row pitch ends the table:
-                            // whatever follows on the page is footer material.
-                            areas = None;
-                            continue;
-                        }
+                if areas.is_none() {
+                    continue;
+                }
+
+                if let Some(previous) = last_top {
+                    if top - previous > TABLE_GAP {
+                        // A gap larger than the row pitch ends the table:
+                        // whatever follows on the page is footer material.
+                        areas = None;
+                        header.clear();
+                        continue;
                     }
+                }
+
+                if !header.is_empty() {
+                    let bands = build_areas(&header);
+                    if !prints_body_word(&row, &bands) {
+                        // Still label material: the header wraps over several
+                        // rows and its later rows carry the trailing columns.
+                        header.extend(row.iter().copied());
+                        let bands = build_areas(&header);
+                        areas = Some(bands.clone());
+                        if !columns_frozen {
+                            table.columns = labels(&bands);
+                        }
+                        last_top = Some(top);
+                        continue;
+                    }
+                    areas = Some(bands.clone());
+                    if !columns_frozen {
+                        table.columns = labels(&bands);
+                        columns_frozen = true;
+                    }
+                    header.clear();
                 }
 
                 let Some(current) = areas.as_ref() else {
                     continue;
                 };
-                table.rows.push(assign_cells(&row, current));
+                let mut cells = assign_cells(&row, current);
+                resolve_date(&mut cells, current, roster_month);
+                table.rows.push(cells);
                 last_top = Some(top);
             }
         }
@@ -108,41 +167,167 @@ fn cluster_rows(words: &[Word], tolerance: f64) -> Vec<Vec<&Word>> {
     rows
 }
 
-/// If this row is the detail-table header, return its column bands.
+/// If this row is the detail-table header, say so.
 ///
 /// The supported family's header is recognised by the local-date, local-report
-/// and UTC-time labels; word extraction merges adjacent label words, so
-/// recognition works on the row's joined text.
+/// and UTC-time labels; the bands themselves are derived from every word of
+/// the header rows.
 fn header_areas(row: &[&Word]) -> Option<Vec<Area>> {
     let joined = row
         .iter()
-        .map(|word| word.text.as_str())
+        .map(|word| word.text.to_ascii_lowercase())
         .collect::<Vec<_>>()
         .join(" ");
-    let recognised = joined.contains("Date") && joined.contains("(LT)") && joined.contains("(UTC)");
-    if !recognised {
-        return None;
-    }
+    ANCHOR_LABELS
+        .iter()
+        .all(|label| joined.contains(label))
+        .then(|| build_areas(row))
+}
 
-    let mut sorted = row.to_vec();
-    sorted.sort_by(|a, b| cmp(a.bbox.x0, b.bbox.x0));
+/// Derive the column bands from every word of the header rows.
+///
+/// A band starts at a label word and reaches to the next label word, so a
+/// header that wraps over several rows still yields one band per column; a
+/// word that continues a column joins the band that contains it.
+fn build_areas(words: &[&Word]) -> Vec<Area> {
+    let mut starts: Vec<(f64, &Word)> = words
+        .iter()
+        .filter(|word| !is_continuation(&word.text))
+        .map(|word| (word.bbox.x0, *word))
+        .collect();
+    starts.sort_by(|a, b| cmp(a.0, b.0));
 
-    let mut areas: Vec<Area> = Vec::new();
-    for word in sorted {
-        match areas.last_mut() {
-            Some(area) if word.bbox.x0 - area.x1 <= LABEL_GAP => {
-                area.label.push(' ');
-                area.label.push_str(&word.text);
-                area.x1 = word.bbox.x1;
+    let mut columns: Vec<Area> = Vec::new();
+    for (x0, word) in starts {
+        match columns.last_mut() {
+            Some(area) if (x0 - area.x0).abs() <= 1.0 => {}
+            Some(area) => {
+                area.x1 = x0;
+                columns.push(Area {
+                    label: word.text.clone(),
+                    x0,
+                    x1: f64::INFINITY,
+                });
             }
-            _ => areas.push(Area {
+            None => columns.push(Area {
                 label: word.text.clone(),
-                x0: word.bbox.x0,
-                x1: word.bbox.x1,
+                x0,
+                x1: f64::INFINITY,
             }),
         }
     }
-    Some(areas)
+
+    for word in words.iter().filter(|word| is_continuation(&word.text)) {
+        let centre = (word.bbox.x0 + word.bbox.x1) / 2.0;
+        if let Some(area) = columns
+            .iter_mut()
+            .find(|area| centre >= area.x0 && centre < area.x1)
+        {
+            area.label.push(' ');
+            area.label.push_str(&word.text);
+        }
+    }
+    columns
+}
+
+/// The labels of a band list, in band order.
+fn labels(areas: &[Area]) -> Vec<String> {
+    areas.iter().map(|area| area.label.clone()).collect()
+}
+
+/// Whether this header word continues the column to its left.
+fn is_continuation(text: &str) -> bool {
+    let lower = text.to_ascii_lowercase();
+    CONTINUATION_TOKENS.contains(&lower.as_str())
+}
+
+/// Whether this row prints a word inside one of the labels rows print in.
+fn prints_body_word(row: &[&Word], areas: &[Area]) -> bool {
+    row.iter().any(|word| {
+        let centre = (word.bbox.x0 + word.bbox.x1) / 2.0;
+        areas.iter().any(|area| {
+            centre >= area.x0 && centre < area.x1 && is_body_label(&area.label)
+        })
+    })
+}
+
+/// Whether a band label is one of the labels rows print in.
+fn is_body_label(label: &str) -> bool {
+    BODY_LABELS
+        .iter()
+        .any(|wanted| label_matches(label, wanted))
+}
+
+/// Whether a derived label denotes the wanted column.
+///
+/// Word extraction merges adjacent label words without a space, so a label
+/// matches when it equals the wanted name or continues it at a real boundary.
+fn label_matches(label: &str, wanted: &str) -> bool {
+    let lower = label.to_ascii_lowercase();
+    lower == wanted
+        || lower.starts_with(&format!("{wanted} "))
+        || lower.starts_with(&format!("{wanted}("))
+}
+
+/// Replace the family's `DD Ddd` date cell with its calendar date.
+///
+/// The family prints the day and weekday in the row and the month and year once
+/// in the document heading; the weekday is checked against the resolved date, so
+/// a misaligned cell is never accepted as activity timing.
+fn resolve_date(cells: &mut [String], areas: &[Area], month: Option<(i32, Month)>) {
+    let Some((year, month)) = month else {
+        return;
+    };
+    let Some(index) = areas.iter().position(|area| is_body_label_of(area, "date")) else {
+        return;
+    };
+    let mut parts = cells[index].split_whitespace();
+    let (Some(day), Some(weekday), None) = (parts.next(), parts.next(), parts.next()) else {
+        return;
+    };
+    let Ok(day) = day.parse::<u8>() else {
+        return;
+    };
+    let Some(wanted) = WEEKDAY_NAMES
+        .iter()
+        .position(|name| name.eq_ignore_ascii_case(weekday))
+        .map(|index| WEEKDAYS[index])
+    else {
+        return;
+    };
+    let Ok(date) = Date::from_calendar_date(year, month, day) else {
+        return;
+    };
+    if date.weekday() != wanted {
+        return;
+    }
+    cells[index] = format!("{:04}-{:02}-{:02}", date.year(), u8::from(date.month()), date.day());
+}
+
+/// Whether a band is the named body label.
+fn is_body_label_of(area: &Area, label: &str) -> bool {
+    label_matches(&area.label, &label.to_ascii_lowercase())
+}
+
+/// The document heading's month and year, printed as `Month: June 2026`.
+fn heading_month(text: &str) -> Option<(i32, Month)> {
+    let rest = text.split("Month:").nth(1)?;
+    let mut parts = rest.split_whitespace();
+    // The month and the year are separate prints, but a long month name can
+    // touch the year, and the extraction then joins them.
+    let stamp = parts.next()?;
+    let letters: String = stamp.chars().take_while(char::is_ascii_alphabetic).collect();
+    let digits = stamp.get(letters.len()..).unwrap_or_default();
+    let year = if digits.is_empty() {
+        parts.next()?.parse::<i32>().ok()?
+    } else {
+        digits.parse::<i32>().ok()?
+    };
+    let name = letters.to_ascii_lowercase();
+    let index = MONTH_NAMES
+        .iter()
+        .position(|month| name.starts_with(month))?;
+    Some((year, Month::try_from(index as u8 + 1).ok()?))
 }
 
 /// Assign each word of a data row to the nearest column band.
@@ -168,19 +353,46 @@ fn assign_cells(row: &[&Word], areas: &[Area]) -> Vec<String> {
     cells
 }
 
-/// The source's own revision stamp, written as `Created YYYY-MM-DD HH:MM UTC`.
+/// The source's own revision stamp, written as `Created DDMonYYYY HH:MM (UTC)`.
 ///
 /// This is source metadata, not activity timing: it never supplies an activity
-/// date (the change's timestamp-provenance decision).
+/// date (the change's timestamp-provenance decision). The ISO spelling is also
+/// accepted, for sources that print it that way.
 fn created_footer(text: &str) -> Option<OffsetDateTime> {
     let rest = text.split("Created").nth(1)?;
     let mut parts = rest.split_whitespace();
-    let date = timing::parse_iso_date(parts.next()?)?;
+    let stamp = parts.next()?;
+    let date = match timing::parse_iso_date(stamp) {
+        Some(date) => date,
+        None => {
+            let (year, month, day) = compact_date(stamp)?;
+            Date::from_calendar_date(year, month, day).ok()?
+        }
+    };
     let clock = timing::parse_clock(parts.next()?)?;
-    if !parts.next()?.eq_ignore_ascii_case("UTC") {
+    let zone = parts.next()?.trim_matches(['(', ')']);
+    if !zone.eq_ignore_ascii_case("UTC") {
         return None;
     }
     Some(date.with_time(clock).assume_utc())
+}
+
+/// A date printed as `DDMonYYYY`, the family's footer spelling.
+fn compact_date(token: &str) -> Option<(i32, Month, u8)> {
+    let digits: String = token.chars().take_while(char::is_ascii_digit).collect();
+    if digits.is_empty() || digits.len() > 2 {
+        return None;
+    }
+    let rest = token.get(digits.len()..)?;
+    let (name, year) = rest.split_at_checked(3)?;
+    let index = MONTH_NAMES
+        .iter()
+        .position(|month| name.eq_ignore_ascii_case(month))?;
+    Some((
+        year.parse::<i32>().ok()?,
+        Month::try_from(index as u8 + 1).ok()?,
+        digits.parse::<u8>().ok()?,
+    ))
 }
 
 /// Distance from a point to a band, zero when inside it.
