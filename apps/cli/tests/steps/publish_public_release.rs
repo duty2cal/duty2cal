@@ -1390,3 +1390,39 @@ async fn staged_change_log_holds_the_section(w: &mut DutyWorld) {
         "the staged change log's section is not the release text: {staged}"
     );
 }
+
+/// The capability the fixture repository holds and the committed configuration
+/// does not name: the subject of the allow-list refusal.
+const UNLISTED_CAPABILITY: &str = "check-duty-plan";
+
+#[given("a capability the repository holds that the configuration does not name")]
+async fn a_capability_the_configuration_does_not_name(w: &mut DutyWorld) {
+    build_history(w, &CAPABILITY_AND_INVISIBLE_HISTORY);
+    let repo = w
+        .fixture_repo
+        .clone()
+        .expect("the scenario built no fixture repository");
+    let config =
+        std::fs::read_to_string(repo.join("cliff.toml")).expect("read the committed configuration");
+    assert!(
+        !config.contains(UNLISTED_CAPABILITY),
+        "the committed configuration already names {UNLISTED_CAPABILITY}"
+    );
+    std::fs::create_dir_all(repo.join("givn/specs").join(UNLISTED_CAPABILITY))
+        .expect("create the unlisted capability directory");
+}
+
+#[then("the generation fails and names the capability missing from the configuration")]
+async fn generation_names_the_missing_capability(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the generation did not fail: {}",
+        w.command_transcript
+    );
+    assert!(
+        w.command_transcript.contains(UNLISTED_CAPABILITY),
+        "the failure does not name the capability missing from the configuration: {}",
+        w.command_transcript
+    );
+}

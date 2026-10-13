@@ -72,7 +72,7 @@ Feature: Publish a public release
     Then the prepared release stages the change log for version 0.2.0
     And the staged change log holds the section the release text states
 
-  @givn.added @wip
+  @givn.added
   Scenario: A capability missing from the configured allow-list is refused
     Given a capability the repository holds that the configuration does not name
     When the maintainer generates the change log for version 0.2.0
