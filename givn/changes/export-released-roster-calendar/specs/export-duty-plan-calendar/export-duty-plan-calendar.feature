@@ -301,3 +301,10 @@ Feature: Export a duty-plan calendar
     Given the generated reference roster PDF and its expected calendar fixture
     When the crew member converts the reference roster
     Then the published calendar equals the expected calendar after CRLF-to-LF and folding normalisation
+
+  @givn.added
+  Scenario: A detail row printed before any dated row rejects the conversion
+    Given a supported duty plan whose first detail row prints no date
+    When the crew member converts it
+    Then no calendar is published
+    And the conversion failure names "no earlier row supplies one"

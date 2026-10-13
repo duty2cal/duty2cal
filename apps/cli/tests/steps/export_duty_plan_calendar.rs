@@ -2007,3 +2007,30 @@ async fn equals_the_expected_calendar(w: &mut DutyWorld) {
 fn normalise(calendar: &str) -> String {
     calendar.replace("\r\n ", "").replace("\r\n", "\n")
 }
+
+#[given("a supported duty plan whose first detail row prints no date")]
+async fn a_plan_whose_first_row_prints_no_date(w: &mut DutyWorld) {
+    // The row carries a route and a clock, so it is an activity, but no row
+    // above it prints a local date: nothing can date it.
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "ABC"),
+            (TO_X, "NEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then(regex = r#"^the conversion failure names "([^"]+)"$"#)]
+async fn the_conversion_failure_names(w: &mut DutyWorld, reason: String) {
+    let text = transcript(w);
+    assert!(
+        text.contains(&reason),
+        "the failure does not name {reason:?}: {text}"
+    );
+}

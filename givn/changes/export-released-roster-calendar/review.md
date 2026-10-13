@@ -42,7 +42,7 @@ scenario it needs.
 |---|---|---|---|
 | `crates/duty2cal-core/src/application/mod.rs` | 136-138 | the required-column failure ("the detail table carries no {label} column") | a plan whose header omits a required label fails with that message and a numbered diagnostic |
 | | 156 | an arrival fragment with no matching departure | an arrival-only row fails with "no unique compatible partner" |
-| | 215-219 | a continuation row with no dated row above it | a plan whose first detail row prints no date fails, naming the reason |
+| | 215-219 | a continuation row with no dated row above it | **closed**: scenario "A detail row printed before any dated row rejects the conversion" (RED proven by removing the carry branch, then GREEN) |
 | | 222-223 | an unreadable date cell | a row whose date cell cannot be read fails, naming the cell |
 | | 269-274 | a `Layover:` marker whose station sits in the following column | a layover marker with the station in the next cell still yields the layover station |
 | | 347-349 | a `Layover:` marker with no station at all | a stationless layover marker fails explicitly |
