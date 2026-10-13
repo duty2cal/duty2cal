@@ -61,15 +61,16 @@ fn main() -> ExitCode {
 }
 
 /// Write the complete calendar beside the source under an unused name.
+///
+/// The write creates the file, so a name taken since the check is skipped
+/// rather than overwritten.
 fn publish(source: &Path, calendar: &str) -> ExitCode {
-    let Some(path) = fs::unused_calendar_path(source) else {
-        return reject(source, "no unused calendar name is available");
-    };
-    match std::fs::write(&path, calendar) {
-        Ok(()) => {
+    match fs::publish(source, fs::Kind::Calendar, calendar) {
+        Ok(Some(path)) => {
             println!("Written: {}", path.display());
             ExitCode::SUCCESS
         }
+        Ok(None) => reject(source, "no unused calendar name is available"),
         Err(error) => reject(
             source,
             &format!("the calendar could not be written: {error}"),
@@ -85,19 +86,13 @@ fn reject(source: &Path, reason: &str) -> ExitCode {
 
 fn report(source: &Path, reason: &str) {
     let message = format!("conversion failed for {}: {reason}", source.display());
-    match fs::unused_diagnostic_path(source) {
-        Some(path) => {
-            let body = format!(
-                "Source PDF: {}\nReason: {reason}\n",
-                source.file_name().unwrap_or_default().to_string_lossy()
-            );
-            match std::fs::write(&path, body) {
-                Ok(()) => println!("{message}\nDiagnostic: {}", path.display()),
-                Err(error) => {
-                    println!("{message}\nDiagnostic: no new report was saved: {error}");
-                }
-            }
-        }
-        None => println!("{message}\nDiagnostic: no unused report name is available"),
+    let body = format!(
+        "Source PDF: {}\nReason: {reason}\n",
+        source.file_name().unwrap_or_default().to_string_lossy()
+    );
+    match fs::publish(source, fs::Kind::Diagnostic, &body) {
+        Ok(Some(path)) => println!("{message}\nDiagnostic: {}", path.display()),
+        Err(error) => println!("{message}\nDiagnostic: no new report was saved: {error}"),
+        Ok(None) => println!("{message}\nDiagnostic: no unused report name is available"),
     }
 }

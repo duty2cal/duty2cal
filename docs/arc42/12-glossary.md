@@ -75,7 +75,10 @@ the change to export released roster calendars (export-released-roster-calendar)
 through its design-review glossary-scope decision. Raw source-column labels
 (A/C, Blocktime, Report (LT), Timezone Difference, Tags) and the FREE/OFF day
 codes are used verbatim in the specification and are not confirmed domain terms.
-Candidate **Duty plan**, **Flight leg**, and **Calendar export** remain topic
+| Travel leg | One flight from a departure station to an arrival station, printed either as a whole row or as a departure row and an arrival row that the converter pairs. | One timed travel activity titled by designator and route. | `DutyEntry::Travel` (`crates/duty2cal-core/src/domain/mod.rs`) | Not a printed row, not two activities when a leg is split across rows, not an all-day absence. |
+| Availability duty | Bounded standby or reserve window the crew member must be reachable in (SB, SBX, RE). | One timed availability activity with its own UTC window and station. | `DutyEntry::Availability`, `AVAILABILITY_CODES` (`crates/duty2cal-core/src/application/mod.rs`) | Not an all-day day off, not a flight, not a non-flight duty. |
+
+Candidate **Duty plan** and **Calendar export** remain topic
 candidates, not silently confirmed here. No rejected entry exists to remove.
 Suggested FZ expansion and agreement/age/quota provenance remain background, not
 leave/eligibility rules.

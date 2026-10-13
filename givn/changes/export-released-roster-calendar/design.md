@@ -15,7 +15,7 @@ This design incorporates the operator's external brief; the conflict-by-conflict
 | Language | Rust, edition 2021; toolchain `stable` via `rust-toolchain.toml` (resolved latest at setup; rustc 1.98.1 used so far). | Supplied constraint. |
 | Name | Product and binary `duty2cal`; crates `duty2cal-core`, `duty2cal-pdf`. | Operator rename (reconciliation conflict 1/5a): the tool is not limited to iCalendar output. |
 | PDF extraction | `pdfplumber = "=0.4.1"` (Apache-2.0), the only crate depending on it being `duty2cal-pdf`. | Supplied pin updated by the brief (conflict 2); verified on crates.io and compiled on rustc 1.98.1. |
-| Calendar writing | Hand-written RFC 5545 serializer in `duty2cal-core/src/adapters/ics`; the `icalendar` crate is a test-only parser for cross-checking. | Supplied constraint; byte-level determinism for the golden scenario. |
+| Calendar writing | Hand-written RFC 5545 serializer in `duty2cal-core/src/adapters/ics`, with no calendar library dependency in the product or the tests; the golden scenario compares the published file byte for byte after normalisation. | Supplied constraint; byte-level determinism for the golden scenario, and no third-party licence obligation. |
 | Gherkin runner | `cucumber` 0.23 as a `harness = false` test target. | .feature files are the executable specification. |
 | Architecture test | `archunit = "=0.0.2"` (dev-dependency, dev-dep of core), Dependabot ignores its minor/major updates. | Brief §4 level 3; pre-1.0 API pinned exactly. |
 | Errors | `thiserror` 2 for typed errors; no `unwrap()`/`expect()` outside tests. | Brief conventions. |
