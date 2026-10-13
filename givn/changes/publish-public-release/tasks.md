@@ -282,8 +282,15 @@ Use-case constraint: byte-identical repeat preparation, so a third party can rep
   1 scenario (1 passed), 3 steps (3 passed)   REFACTOR_EXIT=0
   ```
   No behaviour change: the second preparation's read is a `match` rather than a closure around `panic!`, which keeps the file rustfmt-clean under both the older and the current formatter.
-- [ ] COMMIT — `<hash>`:
+- [x] COMMIT — `1aba314`:
   ```
+  feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
+
+  Scenario: Preparing the same release twice produces the same archives
+
+  RED: the two steps existed as unimplemented!() stubs; the single-scenario run failed with exit 101.
+  GREEN: the fixed tar ownership, ordering and time plus gzip -n make a repeated preparation byte-identical; the When prepares the version a second time into a second directory and the Then compares every archive byte for byte. A two-run shell proof from the real built executable is pasted in tasks.md with both digest lists.
+  REFACTOR: the second read is a match instead of a closure around panic!, keeping the step file rustfmt-clean; the single scenario passes 3/3 steps with exit 0.
   ```
 
 ### 6. An already prepared version is not replaced
