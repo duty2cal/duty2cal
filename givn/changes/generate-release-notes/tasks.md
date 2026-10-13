@@ -33,61 +33,196 @@ Each scenario's production code is `scripts/render-changelog.sh` (new) and, for 
 
 Use-case constraint: a new capability groups above a fix; work no user can see is listed nowhere.
 
-- [ ] RED — remove `@wip` from this scenario only; write the step definitions with `unimplemented!(...)` bodies; run the single-scenario command; paste the non-zero output:
+- [x] RED — remove `@wip` from this scenario only; write the step definitions with `unimplemented!(...)` bodies; run the single-scenario command; paste the non-zero output:
   ```
+  Feature: Publish a public release
+    Scenario: A version's notes group the changes a reader can see
+     ✘  Given a history whose released revisions name a new capability, a fix, and work no user can see
+        Step panicked. Captured output: not implemented: build a history naming a new capability, a fix, and work no user can see
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  1 step (1 failed)
+  RED_EXIT=101
   ```
-- [ ] GREEN — the renderer, the configuration and the fixture; run the single-scenario command; paste the passing output. List every production file touched:
+  Step file extended in RED: `apps/cli/tests/steps/publish_public_release.rs` (the fixture helpers `git_dated`, `build_history`, `change_log_path`, `run_render` and the five stubs); `apps/cli/tests/features_runner.rs` gained the `changelog` field the render scenarios carry.
+- [x] GREEN — the renderer, the configuration and the fixture; run the single-scenario command; paste the passing output. List every production file touched:
   ```
+  Feature: Publish a public release
+    Scenario: A version's notes group the changes a reader can see
+     ✔  Given a history whose released revisions name a new capability, a fix, and work no user can see
+     ✔  When the maintainer generates the change log for version 0.2.0
+     ✔  Then the notes for version 0.2.0 name the new capability and the fix
+     ✔  And the notes name the new capability before the fix
+     ✔  And the notes name no revision whose work no user can see
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  5 steps (5 passed)
+  GREEN_EXIT=0
   ```
-- [ ] REFACTOR — tidy without changing behaviour; run again; paste the output:
+  Production files touched: `scripts/render-changelog.sh` (new — the argument contract, the pinned-version refusal, the capability allow-list against `givn/specs/`, the range and heading date, the collapse of identical subjects, the replace-or-prepend write, the visibility refusal and `--check`), `cliff.toml` (new — the per-type allow-list, the group order, the skip rules and the section template), `CHANGELOG.md` (new, generated). The steps build the fixture history (`git init`, six revisions with fixed committer dates and conventional subjects, `git tag v0.2.0`) and the committed `cliff.toml` plus the two capability directories it copies, then drive `scripts/render-changelog.sh` as a real subprocess. The renderer is invoked through the pinned tool, so the run command is `nix-shell -p rustc cargo --run "nix-shell -p git-cliff --run './run-tests.sh --name \"<title>\"'"`; `./run-tests.sh` alone leaves `git-cliff` off `PATH` and the renderer refuses with its own message.
+- [x] REFACTOR — tidy without changing behaviour; run again; paste the output:
   ```
+  rustfmt --edition 2021 --check apps/cli/tests/steps/publish_public_release.rs
+  apps/cli/tests/steps/publish_public_release.rs FMT OK
+  1 scenario (1 passed), 5 steps (5 passed)   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: `<hash>` — subject is the release note, body names this scenario.
+  No production change. The `git` helper was left for the permanent scenario's un-dated history; the new fixture path uses `git_dated`, so the two do not share a body.
+- [x] COMMIT: `b6dc609` — subject is the release note, body names this scenario:
+  ```
+  feat(generate-release-notes): Record what each released version of the tool changed in a change log a reader can scan, group the released changes by kind, and refuse to publish a version whose notes say nothing a user can see.
+
+  Scenario: A version's notes group the changes a reader can see
+
+  RED: the five steps existed as unimplemented!() stubs; the single-scenario run failed with exit 101 under strict mode. The step file gained the fixture helpers (git_dated, build_history, change_log_path, run_render) and the world gained the changelog field.
+  GREEN: scripts/render-changelog.sh renders one version from the history with the pinned git-cliff 2.14.2 and the committed cliff.toml, checking the pin and the capability allow-list against givn/specs before it renders; cliff.toml carries the per-type allow-list, the group order, and the skip rules, and the renderer collapses identical release-note subjects. The steps build the fixture history with fixed committer dates and run the renderer as a real subprocess.
+  REFACTOR: the step file is rustfmt-clean and the single scenario passes 5/5 steps with exit 0.
+  ```
 
 ### 2. A version that changes nothing a user can see is refused
 
 Use-case constraint: a version whose notes would name no change a user can see is refused rather than published.
 
-- [ ] RED — remove `@wip` from this scenario only; write the steps with `unimplemented!(...)` bodies; paste the non-zero output:
+- [x] RED — remove `@wip` from this scenario only; write the steps with `unimplemented!(...)` bodies; paste the non-zero output:
   ```
+  Feature: Publish a public release
+    Scenario: A version that changes nothing a user can see is refused
+     ✘  Given a history whose released revisions name only work no user can see
+        Step panicked. Captured output: not implemented: build a history naming only work no user can see
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  1 step (1 failed)
+  RED_EXIT=101
   ```
-- [ ] GREEN — the empty-section refusal; paste the passing output. List every production file touched:
+- [x] GREEN — the empty-section refusal; paste the passing output. List every production file touched:
   ```
+  Feature: Publish a public release
+    Scenario: A version that changes nothing a user can see is refused
+     ✔  Given a history whose released revisions name only work no user can see
+     ✔  When the maintainer generates the change log for version 0.2.0
+     ✔  Then the generation fails and states that the version changes nothing a user can see
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  3 steps (3 passed)
+  GREEN_EXIT=0
   ```
-- [ ] REFACTOR — paste the output:
+  Production files touched: none new — the empty-section refusal in `scripts/render-changelog.sh` (a render whose section names no `- ` entry) already covers this; the steps build a history of `chore`, `docs` and `build` subjects tagged `v0.2.0` and assert the refusal names the version and that no output was written.
+- [x] REFACTOR — paste the output:
   ```
+  apps/cli/tests/steps/publish_public_release.rs FMT OK
+  1 scenario (1 passed), 3 steps (3 passed)   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: `<hash>` — subject is the release note, body names this scenario.
+  No tidy needed: the two steps are one fixture builder and one assertion, and the file is rustfmt-clean.
+- [x] COMMIT: `53e0cbc` — subject is the release note, body names this scenario:
+  ```
+  feat(generate-release-notes): Record what each released version of the tool changed in a change log a reader can scan, group the released changes by kind, and refuse to publish a version whose notes say nothing a user can see.
+
+  Scenario: A version that changes nothing a user can see is refused
+
+  RED: the two steps existed as unimplemented!() stubs; the single-scenario run failed with exit 101.
+  GREEN: no production code new — scripts/render-changelog.sh already refuses a render that names no change a user can see (an empty visible-change set), so this scenario pins the refusal: a history of chore, docs and build subjects tagged v0.2.0 fails with "version 0.2.0 changes nothing a user can see" and writes nothing.
+  REFACTOR: no tidy needed; the step file is rustfmt-clean and the single scenario passes 3/3 steps with exit 0.
+  ```
 
 ### 3. The change log keeps the earlier versions beside the new one
 
 Use-case constraint: a render replaces its own version's section and places a new version's section above the earlier ones, which stay verbatim.
 
-- [ ] RED — paste the non-zero output:
+- [x] RED — remove `@wip` from this scenario only; write the steps with `unimplemented!(...)` bodies; paste the non-zero output:
   ```
+  Feature: Publish a public release
+    Scenario: The change log keeps the earlier versions beside the new one
+     ✘  Given a change log whose newest section is version 0.1.0
+        Step panicked. Captured output: not implemented: build a change log whose newest section is version 0.1.0
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  1 step (1 failed)
+  RED_EXIT=101
   ```
-- [ ] GREEN — the replace-or-prepend write; paste the passing output. List every production file touched:
+- [x] GREEN — the replace-or-prepend write; paste the passing output. List every production file touched:
   ```
+  Feature: Publish a public release
+    Scenario: The change log keeps the earlier versions beside the new one
+     ✔  Given a change log whose newest section is version 0.1.0
+     ✔  When the maintainer generates the change log for version 0.2.0
+     ✔  Then version 0.2.0 is the newest section of the change log
+     ✔  And the section for version 0.1.0 is unchanged
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  4 steps (4 passed)
+  GREEN_EXIT=0
   ```
-- [ ] REFACTOR — paste the output:
+  Production files touched: `scripts/render-changelog.sh` (the `awk` write: a render whose version already has a section replaces it in place and one not yet present is prepended, earlier sections verbatim).
+- [x] REFACTOR — paste the output:
   ```
+  apps/cli/tests/steps/publish_public_release.rs FMT OK
+  1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: `<hash>` — subject is the release note, body names this scenario.
+- [x] COMMIT: `8b83037` — subject is the release note, body names this scenario:
+  ```
+  feat(generate-release-notes): Record what each released version of the tool changed in a change log a reader can scan, group the released changes by kind, and refuse to publish a version whose notes say nothing a user can see.
+
+  Scenario: The change log keeps the earlier versions beside the new one
+
+  RED: the three steps existed as unimplemented!() stubs; the single-scenario run failed with exit 101.
+  GREEN: the renderer replaces the section that already carries the released version and prepends a version not yet present, keeping every earlier section verbatim. The fixture builds two tagged releases with fixed committer dates, each tag on its own release commit, so the earlier section is unchanged and each version has one section.
+  DEVIATION: the design prescribes the range <previous v* tag>..<released revision> and never --tag. git-cliff 2.14.2 mis-groups a render carried by --tag under the newest tag when a later tag exists (reproduced on the fixtures and the real tree), and a positional range shares that flaw; the renderer renders the whole history once and takes the released version's section from it, stamping the heading from the released revision's own commit date. The observable contract is unchanged and the production case renders exactly its range. Recorded above.
+  REFACTOR: the step file is rustfmt-clean and the single scenario passes 4/4 steps with exit 0.
+  ```
+
+  **Deviation recorded (design.md "Range").** The design says the render "never passes `--tag`" and expresses the released range as `<previous v* tag>..<released revision>`. Rendering with `--tag` was reproduced to mis-group a whole history under the newest tag when a later tag exists — the fixtures and the real tree both showed a release's own section replaced by the newest release's. Passing the range to the generator positionally (or `--current`) shares that flaw. The renderer therefore renders the whole history once with the committed configuration and takes the released version's section from it, stamping the heading from the released revision's own commit date. The observable contract the design fixes is unchanged: the section holds exactly the released version's released changes, dated from its own revision, and the case that matters in production — the version being released, which is the newest — renders exactly its range. This is the design correction the grilling's F4 branch was aimed at; the design was wrong in the form it prescribed, so it is recorded here rather than improvised.
 
 ### 4. A change log that does not match the released revision is refused
 
 Use-case constraint: a committed change log differing from a fresh render of the released revision is refused, naming the version whose section differs.
 
-- [ ] RED — paste the non-zero output:
+- [x] RED — remove `@wip` from this scenario only; write the steps with `unimplemented!(...)` bodies; paste the non-zero output:
   ```
+  Feature: Publish a public release
+    Scenario: A change log that does not match the released revision is refused
+     ✘  Given a committed change log whose newest section differs from what the history states
+        Step panicked. Captured output: not implemented: write a committed change log whose newest section differs from the history
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  1 step (1 failed)
+  RED_EXIT=101
   ```
-- [ ] GREEN — `--check`'s render-and-compare; paste the passing output. List every production file touched:
+- [x] GREEN — `--check`'s render-and-compare; paste the passing output. List every production file touched:
   ```
+  Feature: Publish a public release
+    Scenario: A change log that does not match the released revision is refused
+     ✔  Given a committed change log whose newest section differs from what the history states
+     ✔  When the change log is checked against the released revision
+     ✔  Then the check fails and names the version whose section differs
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  3 steps (3 passed)
+  GREEN_EXIT=0
   ```
-- [ ] REFACTOR — paste the output:
+  Production files touched: `scripts/render-changelog.sh` (the `--check` mode: render in memory, `diff` the whole file against the committed change log, refuse naming the version).
+- [x] REFACTOR — paste the output:
   ```
+  apps/cli/tests/steps/publish_public_release.rs FMT OK
+  1 scenario (1 passed), 3 steps (3 passed)   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: `<hash>` — subject is the release note, body names this scenario.
+  No tidy needed: the check step shares the renderer invocation helper and the file is rustfmt-clean.
+- [x] COMMIT: `c9437ad` — subject is the release note, body names this scenario:
+  ```
+  feat(generate-release-notes): Record what each released version of the tool changed in a change log a reader can scan, group the released changes by kind, and refuse to publish a version whose notes say nothing a user can see.
+
+  Scenario: A change log that does not match the released revision is refused
+
+  RED: the three steps existed as unimplemented!() stubs; the single-scenario run failed with exit 101.
+  GREEN: the renderer check mode renders in memory and compares the rendered whole file against the committed change log, writing nothing; the steps commit a change log whose newest section states a different note and assert the check fails naming version 0.2.0.
+  REFACTOR: the step file is rustfmt-clean and the single scenario passes 3/3 steps with exit 0.
+  ```
 
 ### 5. Each version's section is dated and compared with the one before it
 
