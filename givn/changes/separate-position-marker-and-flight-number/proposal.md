@@ -2,7 +2,7 @@
 
 ## Release note
 
-> A travel activity's calendar title prints the crew position and the flight number as two words separated by a space — an operating leg reads `FB 568 ABC-DEF` instead of `FB568 ABC-DEF`, while positioning travel keeps reading `DH 007 ABC-DEF`.
+> A travel activity's calendar title prints the crew position and the flight number as two words separated by a space — an operating leg reads `FB 123 ABC-DEF` instead of `FB123 ABC-DEF`, while positioning travel keeps reading `DH 007 ABC-DEF`.
 
 ## Use-Case Context
 
@@ -15,7 +15,7 @@
 
 A supported published plan prints two separate detail columns for a travel row: the **position** column carries the crew position the plan assigns (in the operator's examples `FB`, Flugbegleiter — German for flight attendant — and `DH` for positioning travel), and the **activity** column carries the **flight number**.
 
-The converter's travel title splices the two into one token. Against the operator's local plans (redacted), every operating leg yields a title of the form `<position><number> <from>-<to>`, for example `FB568 ABC-DEF`. A reader cannot tell where the crew position ends and the flight number begins, and the run-together text reads like a single flight designator — an airline code followed by a number — rather than a crew position followed by a flight number.
+The converter's travel title splices the two into one token. Against the operator's local plans (redacted), every operating leg yields a title of the form `<position><number> <from>-<to>`, for example `FB123 ABC-DEF`. A reader cannot tell where the crew position ends and the flight number begins, and the run-together text reads like a single flight designator — an airline code followed by a number — rather than a crew position followed by a flight number.
 
 Positioning travel does not share the defect: it already reads `DH 007 ABC-DEF`, because the position marker is printed ahead of the flight number there. So the two travel titles disagree in shape, and the operating one is the reported defect.
 
@@ -25,10 +25,10 @@ The operator's correction, in their words: the numbers behind `FB` or `DH` are f
 
 A travel activity's calendar title prints the crew position and the flight number as two words separated by a single space.
 
-- An operating leg whose plan prints position `FB` and flight number `568` reads `FB 568 ABC-DEF`; the same leg currently reads `FB568 ABC-DEF`.
+- An operating leg whose plan prints position `FB` and flight number `123` reads `FB 123 ABC-DEF`; the same leg currently reads `FB123 ABC-DEF`.
 - Positioning travel is unchanged in appearance: position `DH`, flight number `007` reads `DH 007 ABC-DEF`.
 - The rule follows the plan, not a fixed list of markers. Whatever the position column prints (`FB`, `DH`, `AK`, …) is kept verbatim, separated from the flight number by one space. A marker the converter does not recognise is still printed as the plan prints it; no position value selects an activity kind or a timing.
-- A row that prints no position keeps its printed activity text unchanged, exactly as today: the flight number alone reads `568 ABC-DEF`, and an all-activity-cell code such as `LU900` is not split.
+- A row that prints no position keeps its printed activity text unchanged, exactly as today: the flight number alone reads `123 ABC-DEF`, and an all-activity-cell code such as `LU900` is not split.
 - Printed leading zeroes survive, as the permanent use case already requires: `DH 007 ABC-DEF`.
 - The separation holds wherever the converter prints the two together, including a failure message that names an unmatched travel fragment, so no output splices them.
 - A position that is not a crew position stays as the plan prints it: the `EM` row of the operator's plans prints position `AK` beside activity `EM`, and its title remains `EM`.

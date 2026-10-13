@@ -97,7 +97,14 @@ struct Row {
     to: String,
     start: String,
     end: String,
-    position: Position,
+    /// The printed position assignment this row's code was derived under.
+    assignment: Position,
+    /// The crew position exactly as the plan prints it, when it prints one.
+    ///
+    /// The pairing and the title read this cell, not the derived assignment:
+    /// two rows of one leg print the same position, so a row that prints a
+    /// different one — or none — is a different printed fragment.
+    position: Option<String>,
     /// The identifier printed on this row, when it prints one.
     trip: Option<String>,
     /// The identifier of the roster trip this row belongs to, carried from an
@@ -149,10 +156,11 @@ fn interpret(table: &RawRosterTable, snapshot: SnapshotId) -> Result<Roster, Con
             Classified::Departure(index) => pending.push(index),
             Classified::Arrival(index) => {
                 let arrival = &rows[index];
-                let position = pending
-                    .iter()
-                    .rposition(|departure| rows[*departure].code == arrival.code);
-                let Some(position) = position else {
+                let partner = pending.iter().rposition(|departure| {
+                    let departure = &rows[*departure];
+                    departure.code == arrival.code && departure.position == arrival.position
+                });
+                let Some(position) = partner else {
                     return Err(unmatched_fragment(&arrival.code));
                 };
                 let departure = pending.remove(position);
@@ -193,12 +201,13 @@ fn collect_rows(table: &RawRosterTable) -> Result<Vec<Row>, ConvertError> {
     let mut carried_date: Option<Date> = None;
     for cells in table.rows.iter() {
         let layover = layover_station(cells);
-        let position = if value(table, cells, "Pos").eq_ignore_ascii_case("DH") {
+        let assignment = if value(table, cells, "Pos").eq_ignore_ascii_case("DH") {
             Position::Deadhead
         } else {
             Position::Operating
         };
-        let mut code = designator(table, cells, position);
+        let position = optional(table, cells, "Pos");
+        let mut code = designator(table, cells, assignment);
         let mut from = value(table, cells, "From");
         let to = value(table, cells, "To");
         if let Some(station) = &layover {
@@ -238,6 +247,7 @@ fn collect_rows(table: &RawRosterTable) -> Result<Vec<Row>, ConvertError> {
             to,
             start: value(table, cells, "Start"),
             end: value(table, cells, "End"),
+            assignment,
             position,
             trip: own_trip,
             carried_trip: carried_trip.clone(),
@@ -284,11 +294,11 @@ fn layover_station(cells: &[String]) -> Option<String> {
 ///
 /// A deadhead marker is the `DH` the calendar title already carries, so it
 /// never joins the designator.
-fn designator(table: &RawRosterTable, cells: &[String], position: Position) -> String {
+fn designator(table: &RawRosterTable, cells: &[String], assignment: Position) -> String {
     let activity = value(table, cells, "Activity");
     let marker = value(table, cells, "Pos");
     if marker.is_empty()
-        || matches!(position, Position::Deadhead)
+        || matches!(assignment, Position::Deadhead)
         || activity.is_empty()
         || !activity.chars().all(|c| c.is_ascii_digit())
     {
@@ -358,7 +368,7 @@ fn classify(table: &RawRosterTable, row: &Row) -> Result<Classified, ConvertErro
             designator: row.code.clone(),
             from: row.from.clone(),
             to: row.to.clone(),
-            position: row.position,
+            position: row.assignment,
             interval: row_interval(row)?,
             trip: row.trip.clone().or_else(|| row.carried_trip.clone()),
             report_lt: single(row.report_lt.clone()),
@@ -422,7 +432,7 @@ fn merge_travel(
         designator: departure.code.clone(),
         from: departure.from.clone(),
         to: arrival.to.clone(),
-        position: departure.position,
+        position: departure.assignment,
         interval: UtcInterval::new(start, end).map_err(|_| ConvertError::NonPositiveInterval)?,
         trip,
         report_lt: combine(departure.report_lt.clone(), arrival.report_lt.clone()),

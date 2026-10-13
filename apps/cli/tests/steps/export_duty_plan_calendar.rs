@@ -682,6 +682,33 @@ async fn an_unmatched_travel_fragment(w: &mut DutyWorld) {
 }
 
 #[given(
+    "a supported duty plan whose departure fragment prints crew position DH and flight number 124 and whose arrival fragment prints flight number 124 without a crew position"
+)]
+async fn one_fragment_prints_the_crew_position(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (POS_X, "DH"),
+            (ACTIVITY_X, "124"),
+            (FROM_X, "ABC"),
+            (START_X, "10:00"),
+        ],
+    ));
+    items.extend(support::at(
+        570.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "124"),
+            (TO_X, "DEF"),
+            (END_X, "12:00"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[given(
     regex = r#"^a supported duty plan whose local block for (\d{4}-\d{2}-\d{2}) carries a departure start "\((\d+)\) (\d{2}:\d{2})" and whose arrival block for (\d{4}-\d{2}-\d{2}) ends at (\d{2}:\d{2}) UTC$"#
 )]
 async fn split_leg_with_qualified_departure(

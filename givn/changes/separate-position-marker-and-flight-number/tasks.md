@@ -1,6 +1,6 @@
 # Tasks: separate-position-marker-and-flight-number
 
-Release note (commit subject): A travel activity's calendar title prints the crew position and the flight number as two words separated by a space — an operating leg reads `FB 568 ABC-DEF` instead of `FB568 ABC-DEF`, while positioning travel keeps reading `DH 007 ABC-DEF`.
+Release note (commit subject): A travel activity's calendar title prints the crew position and the flight number as two words separated by a space — an operating leg reads `FB 123 ABC-DEF` instead of `FB123 ABC-DEF`, while positioning travel keeps reading `DH 007 ABC-DEF`.
 
 Owning use case: [Export a duty-plan calendar](specs/export-duty-plan-calendar/usecase.md) (`export-duty-plan-calendar`). Confirmed Personas: `crew-member--personal-calendar-owner` (accuracy lens — the title and the failure text a crew member reads), `project-maintainer--release-owner` (release-evidence lens — untouched by this change). Actors in scenarios stay distinct from Personas.
 
@@ -19,7 +19,7 @@ Interaction coverage (checked before writing tasks): the permanent inventory hol
 
 ## Setup task — environment, runner, strict mode
 
-- [ ] Confirm the toolchain and the runner the design names, and record the proof that strict mode is on.
+- [x] Confirm the toolchain and the runner the design names, and record the proof that strict mode is on.
   - The toolchain is the nix-store Rust 1.95.0 with a gcc 15.3.0 linker (this machine has no cargo/cc on `PATH`).
   - The change-log scenarios of the release capability drive `scripts/render-changelog.sh`, which refuses any `git-cliff` other than the pinned 2.14.2; the nix-store `git-cliff 2.14.2` is placed on `PATH` for every run below. Without it, five scenarios of `publish-public-release` fail for a reason unrelated to this change.
   - Strict mode is `.fail_on_skipped()` in `apps/cli/tests/features_runner.rs`; the step definition files already exist, one per capability (`apps/cli/tests/steps/export_duty_plan_calendar.rs`, `apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs`), and `givn/commands.yaml` already names `verify.command: ./run-tests.sh` and `verify.e2e_command: ./run-tests.sh --e2e`.
@@ -52,12 +52,39 @@ Interaction coverage (checked before writing tasks): the permanent inventory hol
 
 RED/GREEN evidence is captured per scenario. Scenarios marked *(guard)* assert behaviour the current production code already produces; their RED is the undefined step, and their GREEN requires no production code — they exist so the new rule cannot over-reach (see `design-review.md` R3).
 
-### 1. A crew position printed on one travel fragment only leaves it without a partner
+### 1. A positioning departure fragment has no partner when its arrival fragment prints no crew position
 
-- [ ] RED: remove `@wip` from this scenario only; add its `Given` step (a departure fragment printing `Pos=FB` and flight number `124`, an arrival fragment printing flight number `124` and no `Pos`); run `./run-tests.sh --name "A crew position printed on one travel fragment only leaves it without a partner"`; paste the output; the scenario must fail because a calendar is published where the delta expects a refusal.
-- [ ] GREEN: make the pairing key the printed pair — a `Row` carries the printed position cell beside the joined code, and a departure pairs with an arrival only when both the code and the printed position are equal. Production files: `crates/duty2cal-core/src/application/mod.rs`. Run the same single-scenario command; paste the output.
-- [ ] REFACTOR: no behaviour change; keep the doc comments truthful. Run the same single-scenario command; paste the output.
-- [ ] COMMIT: `fix(export-duty-plan-calendar): <release note>` with this scenario's title in the body; record the revision identifier.
+- [x] RED: remove `@wip` from this scenario only; add its `Given` step (a departure fragment printing `Pos=DH` and flight number `124`, an arrival fragment printing flight number `124` and no `Pos`); run `./run-tests.sh --name "A positioning departure fragment has no partner when its arrival fragment prints no crew position"`; paste the output; the scenario must fail because a calendar is published where the delta expects a refusal.
+
+  ```
+  Feature: Export a duty-plan calendar
+    Scenario: A positioning departure fragment has no partner when its arrival fragment prints no crew position
+     ✔  Given a supported duty plan whose departure fragment prints crew position DH and flight number 124 and whose arrival fragment prints flight number 124 without a crew position
+     ✔  When the crew member converts it
+     ✘  Then no calendar is published
+        Step failed:
+        Matched: apps/cli/tests/steps/export_duty_plan_calendar.rs:109:1
+        Step panicked. Captured output: a calendar was published: ["roster.ics"]
+  1 scenario (1 failed) / 3 steps (2 passed, 1 failed)
+  error: test failed
+  ```
+
+  The first attempt at this scenario printed `FB` on the departure fragment and passed unchanged: an operating fragment already had to match the partner's printed position, so the only behaviour this change moves is the positioning leg, whose marker the old code suppressed. The scenario was reworded to `DH` and is RED as pasted.
+- [x] GREEN: make the pairing key the printed pair — a `Row` carries the printed position cell beside the joined code, and a departure pairs with an arrival only when both the code and the printed position are equal. Production files: `crates/duty2cal-core/src/application/mod.rs`. Run the same single-scenario command; paste the output.
+
+  ```
+  1 scenario (1 passed) / 4 steps (4 passed)
+  ```
+- [x] REFACTOR: no behaviour change; keep the doc comments truthful. Run the same single-scenario command; paste the output.
+
+  ```
+  ./run-tests.sh  (whole suite, after the edit)
+  3 features
+  100 scenarios (96 passed, 4 failed)
+  370 steps (366 passed, 4 failed)
+  failing: the four delta scenarios that are still @wip — no permanent scenario regressed.
+  ```
+- [x] COMMIT: `fix(export-duty-plan-calendar): <release note>` with this scenario's title in the body; record the revision identifier.
 
 ### 2. A crew position and its flight number are printed as separate words
 
