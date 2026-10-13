@@ -2034,3 +2034,110 @@ async fn the_conversion_failure_names(w: &mut DutyWorld, reason: String) {
         "the failure does not name {reason:?}: {text}"
     );
 }
+
+#[given("a supported duty plan with a layover marker whose station sits in the following column")]
+async fn a_plan_with_a_split_layover_marker(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "ABC"),
+            (TO_X, "NEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    ));
+    // The marker and its station land in different columns.
+    items.extend(support::at(
+        570.0,
+        &[(DATE_X, "2099-06-08"), (LAYOVER_X, "Layover:"), (TAGS_X, "ABC")],
+    ));
+    write_fixture(w, &items);
+}
+
+#[given("a supported duty plan whose dated row prints a weekday that contradicts the day")]
+async fn a_plan_with_a_contradicting_weekday(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        830.0,
+        &[
+            (DATE_X, "Month:"),
+            (DATE_X + 40.0, "June"),
+            (DATE_X + 100.0, "2099"),
+        ],
+    ));
+    // 2099-06-07 is a Sunday, so the printed weekday cannot date the row.
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "07 Mon"),
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "ABC"),
+            (TO_X, "NEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[given("a supported duty plan whose dated rows print no roster month heading")]
+async fn a_plan_without_a_roster_heading(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    // The family's own spelling, with no heading to supply the month.
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "07 Sun"),
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "ABC"),
+            (TO_X, "NEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[given("a supported duty plan whose detail-table header omits the From label")]
+async fn a_plan_without_the_from_column(w: &mut DutyWorld) {
+    let mut items = support::at(
+        600.0,
+        &[
+            (DATE_X, "Date"),
+            (DATE_X + 20.0, "(LT)"),
+            (ACTIVITY_X, "Activity"),
+            (TO_X, "To"),
+            (START_X, "Start"),
+            (START_X + 24.0, "(UTC)"),
+            (END_X, "End"),
+            (END_X + 16.0, "(UTC)"),
+        ],
+    );
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "LU742"),
+            (TO_X, "NEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then(regex = r"^the calendar contains a layover activity on (\d{4}-\d{2}-\d{2}) at (\w+)$")]
+async fn a_layover_activity_on(w: &mut DutyWorld, date: String, station: String) {
+    let calendar = calendar(w);
+    assert!(
+        calendar.contains(&format!("SUMMARY:Layover {station}")),
+        "the layover for {station} is missing: {calendar}"
+    );
+    assert!(
+        calendar.contains(&format!("DTSTART;VALUE=DATE:{}", compact(&date))),
+        "the layover is not dated {date}: {calendar}"
+    );
+}

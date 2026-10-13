@@ -308,3 +308,30 @@ Feature: Export a duty-plan calendar
     When the crew member converts it
     Then no calendar is published
     And the conversion failure names "no earlier row supplies one"
+
+  @givn.added
+  Scenario: A layover station printed in the next column is still read
+    Given a supported duty plan with a layover marker whose station sits in the following column
+    When the crew member converts it
+    Then the calendar contains a layover activity on 2099-06-08 at ABC
+
+  @givn.added
+  Scenario: A date cell whose weekday contradicts the day is not accepted as activity timing
+    Given a supported duty plan whose dated row prints a weekday that contradicts the day
+    When the crew member converts it
+    Then no calendar is published
+    And the conversion failure names "unresolved date"
+
+  @givn.added
+  Scenario: A dated row in a plan with no roster month heading rejects the conversion
+    Given a supported duty plan whose dated rows print no roster month heading
+    When the crew member converts it
+    Then no calendar is published
+    And the conversion failure names "unresolved date"
+
+  @givn.added
+  Scenario: A detail table without a required column rejects the conversion
+    Given a supported duty plan whose detail-table header omits the From label
+    When the crew member converts it
+    Then no calendar is published
+    And the conversion failure names "carries no From column"

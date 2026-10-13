@@ -29,7 +29,7 @@ The measurement was **invalid** at the start of this review and is now fixed and
 - Fixed by providing the toolchain: `nix-shell -p rustc cargo cargo-llvm-cov llvmPackages.llvm` with
   `LLVM_COV`/`LLVM_PROFDATA` exported from that shell. Both runners instrument the production processes
   and write separate Cobertura reports, and the merge command combines both.
-- Fresh result: **885 production lines, 830 covered, 55 uncovered** across `crates/` and `apps/cli/src`
+- Fresh result after the first two batches: **887 production lines, 849 covered, 38 uncovered** across `crates/` and `apps/cli/src`
   (test-only paths excluded), produced by the merge command from the two fresh reports.
 
 ## Coverage classification (55 uncovered production lines)
@@ -44,12 +44,12 @@ scenario it needs.
 | | 156 | an arrival fragment with no matching departure | an arrival-only row fails with "no unique compatible partner" |
 | | 215-219 | a continuation row with no dated row above it | **closed**: scenario "A detail row printed before any dated row rejects the conversion" (RED proven by removing the carry branch, then GREEN) |
 | | 222-223 | an unreadable date cell | a row whose date cell cannot be read fails, naming the cell |
-| | 269-274 | a `Layover:` marker whose station sits in the following column | a layover marker with the station in the next cell still yields the layover station |
+| | 269-274 | a `Layover:` marker whose station sits in the following column | **closed**: "A layover station printed in the next column is still read" (RED: removing the next-cell branch fails exactly that step) |
 | | 347-349 | a `Layover:` marker with no station at all | a stationless layover marker fails explicitly |
 | | 381 | a row that prints in a body column but carries neither code nor route | such a row fails explicitly rather than being dropped |
 | | 402 | a split leg where only the departure prints an optional field | a leg whose departure alone prints the timezone difference keeps that value |
 | `crates/duty2cal-pdf/src/lib.rs` | 106, 132, 142 | the header-continuation exit, the gap branch, the unsupported-family rejection | a plan with no detail header fails as an unsupported family; material below the table is ignored |
-| | 289-312 | the date-resolution guards (no heading month, no date band, unexpected token count, unparsable day, unknown weekday, weekday mismatch, invalid calendar date) | a date cell whose weekday contradicts the day is not accepted as timing; a plan with no heading month fails explicitly |
+| | 292, 296, 299, 306, 309 | the remaining date-resolution guards (no date band, unexpected token count, unparsable day, unknown weekday, invalid calendar date) | one scenario per guard; the no-month guard and the weekday mismatch are **closed** by "A dated row in a plan with no roster month heading rejects the conversion" and "A date cell whose weekday contradicts the day is not accepted as activity timing" (both RED-proven) |
 | | 334 | the joined month-and-year stamp (`January2099`) | a heading whose month touches its year still supplies the month |
 | | 361, 379, 385, 394, 403-404 | the footer fallbacks (no `Created` stamp, ISO stamp, unparsable compact stamp) | a plan without a revision footer falls back to the construction clock; an ISO-stamped footer is read |
 | `crates/duty2cal-core/src/adapters/ics/mod.rs` | 85-89, 125-126 | text escaping (`\\`, newline, carriage return) and the second fold boundary | a description carrying a backslash or newline escapes correctly; a long description folds twice |
@@ -182,6 +182,11 @@ Tasks carried by each shared commit (task line, scenario):
 ## Pending before sign-off
 
 1. `design.md` changed in this pass, so **design-review must be re-run** over it before `REVIEW: PASS`.
-2. The 55 classified coverage gaps need their scenarios (RED, then GREEN, one commit each); they are named
-   in the classification table above.
+2. **38 uncovered production lines remain**, in these groups: the reader's remaining date guards and footer
+   fallbacks (`duty2cal-pdf`: 15), the CLI paths for no argument, an unreadable source and exhausted calendar
+   or report names (`main.rs`: 6), the unmatched fragment, stationless layover, code-less row and
+   departure-only optional field (`application`: 6), the RFC 5545 escaping and second fold (`ics`: 5), the
+   filesystem fallbacks plus the retry arm a single-process suite cannot interleave (`fs`: 3), and the date
+   accessor arms for travel, availability and non-flight duty (`domain`: 3, which look like dead arms and
+   are candidates for deletion rather than tests).
 
