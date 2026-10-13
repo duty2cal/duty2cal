@@ -39,7 +39,7 @@ Feature: Publish a public release
     Then the section for version 0.2.0 states its own date
     And the section for version 0.2.0 states the comparison against version 0.1.0
 
-  @givn.added @wip
+  @givn.added
   Scenario: The first released version is recorded from the history
     Given a history whose released revisions name a new capability and work no user can see
     And no change log exists yet

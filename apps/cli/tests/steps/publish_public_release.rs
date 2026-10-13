@@ -1163,3 +1163,79 @@ async fn section_states_the_comparison(w: &mut DutyWorld) {
         "the section does not state the comparison against version 0.1.0: {section}"
     );
 }
+
+/// The first release's fixture history, oldest revision first: a new capability
+/// and work no user can see, the whole history tagged `v0.1.0`. Nothing earlier
+/// exists, so the first version's section covers everything it contains.
+const FIRST_RELEASE_HISTORY: [(&str, &str, &str); 3] = [
+    ("2026-01-01", "chore(ci): bootstrap the release channel", ""),
+    (
+        "2026-01-02",
+        "docs(readme): describe the download route",
+        "",
+    ),
+    (
+        "2026-01-03",
+        "feat(export-duty-plan-calendar): Convert a supported duty plan into a calendar",
+        "v0.1.0",
+    ),
+];
+
+#[given("a history whose released revisions name a new capability and work no user can see")]
+async fn a_history_with_a_capability_and_invisible_work(w: &mut DutyWorld) {
+    build_history(w, &FIRST_RELEASE_HISTORY);
+}
+
+#[given("no change log exists yet")]
+async fn no_change_log_exists_yet(w: &mut DutyWorld) {
+    let path = change_log_path(w);
+    assert!(
+        !path.exists(),
+        "a change log already exists at {}",
+        path.display()
+    );
+    w.changelog = Some(path);
+}
+
+#[then("the change log holds one section, for version 0.1.0")]
+async fn one_section_for_version_0_1_0(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the generation did not succeed: {}",
+        w.command_transcript
+    );
+    let text = change_log(w);
+    let headings: Vec<&str> = text
+        .lines()
+        .filter(|line| line.starts_with("## ["))
+        .collect();
+    assert_eq!(
+        headings.len(),
+        1,
+        "the change log holds more than one section: {text}"
+    );
+    assert!(
+        headings[0].starts_with("## [0.1.0]"),
+        "the section is not version 0.1.0: {}",
+        headings[0]
+    );
+}
+
+#[then("that section names the new capability")]
+async fn that_section_names_the_new_capability(w: &mut DutyWorld) {
+    let section = section_of(&change_log(w), "0.1.0");
+    assert!(
+        section.contains("Convert a supported duty plan into a calendar"),
+        "the section names no new capability: {section}"
+    );
+}
+
+#[then("that section states no comparison against an earlier version")]
+async fn that_section_states_no_comparison(w: &mut DutyWorld) {
+    let section = section_of(&change_log(w), "0.1.0");
+    assert!(
+        !section.contains("compare/"),
+        "the first version's section states a comparison against an earlier version: {section}"
+    );
+}
