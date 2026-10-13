@@ -23,3 +23,23 @@ Real duty plans are read for analysis but never committed. Fixtures, golden cale
 ## Classification and timing as pure rules
 
 Source-code classification (all-day vs timed vs travel vs layover vs unknown) and UTC endpoint date resolution are pure functions over source-derived data. Keeping them free of I/O lets return-driven edge cases (adjacent-day qualifiers, the narrow overnight rollover, zero-length intervals) be specified and tested without a real PDF, and prevents the extraction dependency from leaking into the domain.
+
+## Release determinism
+
+Preparing the same five executables and version twice produces byte-identical archives, so a third party can reproduce a release and its checksum is meaningful. The three nondeterministic inputs of `tar` are fixed — ordering (`--sort=name`), time (`--mtime=@0`) and ownership (`--owner=0 --group=0 --numeric-owner`) — and `gzip` is invoked with `-n`, so no name or timestamp is embedded.
+
+## Completeness refusal in the preparation command
+
+The preparation command is all-or-nothing. It refuses, leaving its output untouched, when a supported platform's executable is missing, when an executable is presented for a platform outside the supported set, when an executable cannot be read, or when that version's set is already staged. It writes nothing until the whole set is valid, so an incomplete preparation publishes nothing and never replaces an existing prepared set.
+
+## Supply-chain provenance and immutability
+
+Every archive is published with build provenance and a bill of materials (`actions/attest@v4` over the archive, plus an `anchore/sbom-action@v0` SBOM), and the release itself is immutable: once public, its assets cannot be replaced or deleted and its version tag cannot be moved. The verify job reads the published release back and runs `gh attestation verify` on every archive, so the file a downloader holds is tied to the tagged revision and this project's automation. A correction is the next version, never a repair in place.
+
+## Secret handling on a public repository
+
+A public repository adds a credential surface the local private-data guard does not cover. Push protection blocks a leaked credential before it enters the history, and secret scanning raises an alert if one still lands; the existing private-data guard continues to block duty-plan data. Private duty plans and real identifying values never enter the public history or a public asset.
+
+## Version, tag and archive-name consistency
+
+The version is stated once and nowhere disagrees: the archive names, the release text and the version tag all carry the same bare version. The preparation command refuses a version with a leading `v`, so the archive name, the release text and the tag cannot diverge about what was released.

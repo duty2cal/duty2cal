@@ -14,6 +14,11 @@
 | `archunit = "=0.0.2"` architecture tests for the intra-crate layer direction | ADR-0002, level 3. |
 | Typed errors (`thiserror`); no `unwrap()`/`expect()` outside test code | Operator brief conventions. |
 | No network I/O at runtime | The converter is local and offline. |
+| Five supported platform targets: `x86_64-pc-windows-gnu`, `x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl`, `aarch64-apple-darwin`, `x86_64-apple-darwin` | One executable per supported platform; nothing outside this set is offered for download. |
+| Linux archives are musl-static; macOS archives are built natively on macOS runners | "No runtime installation" must not depend on a glibc version or a distribution; the only way to build and start a macOS binary is a macOS machine. |
+| Release packaging is a Linux-only POSIX-shell script (`scripts/prepare-release.sh`) outside the workspace | Packaging is build tooling, not product behaviour; it adds no workspace member and stays off the coverage denominator. |
+| CI validates the workflows with `rhysd/actionlint:1.7.12` and enforces DCO sign-off on pull requests (`scripts/dco-check.sh`) | The release path only fails on the host, so a schema/expression check precedes the push; sign-off is required without granting a third-party app repository access. |
+| Every release archive carries a build provenance attestation and a bill of materials (`actions/attest@v4`, `anchore/sbom-action@v0`) | A downloader can trace the file in hand to the tagged revision and this project's automation. |
 
 ## Organisational constraints
 
@@ -24,6 +29,11 @@
 | Per-file SPDX header; `REUSE.toml` for binary/data files; `cargo-about` notices; DCO sign-off, no CLA | ADR-0001 obligations. |
 | Private duty-plan PDFs are read for analysis but never committed; fixtures and golden calendars are generated/anonymised | Privacy. |
 | Changes follow the givn workflow; `.feature` files are the executable specification | Specification and tests are one artifact. |
+| Public repository at `kressnerd/duty2cal` | The project's public home and release channel; standard GitHub-hosted runners, attestations and secret scanning are free there. |
+| Published releases are immutable; a version tag is never reused | A downloader's file and the provenance covering it must not be replaceable after publication. |
+| DCO sign-off enforced on pull requests (`scripts/dco-check.sh`), no CLA | The project's contribution terms; a change without sign-off does not land. |
+| Contributor routes published: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, and the issue and pull-request templates | A contributor finds the contribution route, the sign-off, the conduct policy and the confidential reporting route without asking. |
+| No private material in public assets: push protection and secret scanning block credentials, the private-data guard blocks duty-plan data | A public repository adds a credential surface; private duty plans must never enter the public history or a public asset. |
 
 ## Conventions
 

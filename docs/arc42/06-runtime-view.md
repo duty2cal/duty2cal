@@ -85,3 +85,50 @@ sequenceDiagram
 3. The CLI reports the failure and the diagnostic outcome; existing files are untouched.
 
 **Notes:** Completeness and publication are distinct: a completed composition that fails to publish is not a success.
+
+## Scenario: A version tag becomes a verified published release
+
+**Trigger:** The maintainer decides a version is ready and pushes its `v*` tag.
+
+```mermaid
+flowchart TB
+  tag["Maintainer pushes a v* tag"] --> rel["release.yml"]
+  rel --> build["build matrix: five platforms, each built and started on a machine of its own kind"]
+  rel --> smoke["smoke-windows on windows-latest: start the cross-built executable"]
+  build --> prep["prepare on ubuntu-latest: run scripts/prepare-release.sh over the five binaries"]
+  smoke --> prep
+  prep -->|"incomplete or unrecognised set"| nostage["nothing staged, no release"]
+  prep --> pub["publish on ubuntu-latest: generate the SBOM, attest every archive, create the draft release, check its asset set, then publish"]
+  pub --> ver["verify: download the assets back, compare checksums, run gh attestation verify, assert immutable"]
+  ver --> done["verified immutable release, reachable at the stable latest address"]
+```
+
+**Steps:**
+
+1. The tag starts `release.yml`; the build matrix builds and starts each platform's executable where it must run, and the Windows smoke job starts the cross-built executable on `windows-latest`.
+2. The `prepare` job runs `scripts/prepare-release.sh` over the five binaries; it refuses and stages nothing when a supported platform is missing or unrecognised.
+3. The `publish` job generates the SBOM, attests every archive, creates a draft release with the archives and the release text, checks the draft's asset set against the staged set, and publishes it.
+4. The `verify` job reads the published release back: it compares every checksum, runs `gh attestation verify` on each archive, and asserts the release reports `immutable: true`.
+
+**Notes:** Publication cannot be undone, so every check that can precede publication does, and the one that cannot — reading the public record — fails the run loudly.
+
+## Scenario: A pushed change reaches the gated default branch
+
+**Trigger:** A change is pushed, or a pull request is opened.
+
+```mermaid
+flowchart TB
+  push["Maintainer pushes a change or opens a pull request"] --> ci["ci.yml: formatting, lint, tests, dependency licences, SPDX headers, third-party notices drift, private-data guard, coverage, Windows cross-build, actionlint; dco on pull requests"]
+  ci -->|"any check fails"| blocked["the change cannot land"]
+  ci -->|"all checks pass"| rules{"required ruleset on main"}
+  rules -->|"checks green"| land["the change lands on the default branch"]
+  rules -->|"maintainer bypass"| land
+```
+
+**Steps:**
+
+1. Every push and pull request runs the project's checks; the pull-request-only `dco` job additionally checks sign-off over the commit range.
+2. A change whose checks are not green cannot land: the default branch's ruleset requires the CI status checks and blocks force pushes and deletion.
+3. The maintainer keeps an explicit bypass route for an urgent correction.
+
+**Notes:** The gate is enforced by the repository, not by habit, and a reader sees the outcome on the revision they are looking at.
