@@ -34,7 +34,7 @@ Feature: Publish a public release
     Then the preparation fails and names "freebsd-x86_64"
     And the prepared release holds no archive
 
-  @givn.added @wip
+  @givn.added
   Scenario: Each archive's checksum covers that archive
     Given a prepared release for version 0.1.0
     When anyone verifies the checksum against the archive for "linux-x86_64"

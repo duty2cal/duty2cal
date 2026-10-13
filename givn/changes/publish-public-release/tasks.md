@@ -184,15 +184,38 @@ Use-case constraint: no invented platform is ever published.
 
 Use-case constraint: a downloader verifies what they received before extracting it, and the checksum names the file it covers.
 
-- [ ] RED — paste the non-zero output:
+- [x] RED — paste the non-zero output:
   ```
+  Feature: Publish a public release
+    Scenario: Each archive's checksum covers that archive
+     ✘  Given a prepared release for version 0.1.0
+        Step panicked. Captured output: not implemented: prepare a release for version 0.1.0
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  1 step (1 failed)
+  RED_EXIT=101
   ```
-- [ ] GREEN — `sha256sum` output beside each archive, verified with `sha256sum --check`; paste the output:
+- [x] GREEN — `sha256sum` output beside each archive, verified with `sha256sum --check`; paste the output:
   ```
+  Feature: Publish a public release
+    Scenario: Each archive's checksum covers that archive
+     ✔  Given a prepared release for version 0.1.0
+     ✔  When anyone verifies the checksum against the archive for "linux-x86_64"
+     ✔  Then the checksum matches the archive it names
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  3 steps (3 passed)
+  GREEN_EXIT=0
   ```
-- [ ] REFACTOR — paste the output:
+  Production code: none new — the script writes `sha256sum`'s own output beside each archive with the archive's own name, from inside the staged directory, so the recorded name is the file a downloader holds. The When runs `sha256sum --check` with the staged directory as its working directory; the Then asserts exactly one `<archive>: OK` line, that the named file is staged, that the checksum file names that archive, and that a freshly computed digest equals the recorded one.
+- [x] REFACTOR — paste the output:
   ```
+  apps/cli/tests/steps/publish_public_release.rs FMT OK
+  1 scenario (1 passed), 3 steps (3 passed)   REFACTOR_EXIT=0
   ```
+  No tidy was needed: the steps read as one command per step, `sha256_of` is the only new helper, and the file is rustfmt-clean; the checks above are the whole REFACTOR.
 - [ ] COMMIT — `<hash>`:
   ```
   ```

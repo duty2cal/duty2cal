@@ -198,6 +198,25 @@ fn table_rows(step: &Step) -> Vec<Vec<String>> {
     table.rows.iter().skip(1).cloned().collect()
 }
 
+/// The sha256 digest of a file, as `sha256sum` prints it.
+fn sha256_of(path: &Path) -> String {
+    let output = Command::new("sha256sum")
+        .arg(path)
+        .output()
+        .expect("compute the digest with sha256sum");
+    assert!(
+        output.status.success(),
+        "sha256sum could not read {}: {}",
+        path.display(),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout)
+        .split_whitespace()
+        .next()
+        .expect("sha256sum printed a digest")
+        .to_string()
+}
+
 /// The member names of an archive, as `tar` lists them.
 fn archive_members(archive: &Path) -> Vec<String> {
     let output = Command::new("tar")
@@ -328,6 +347,68 @@ async fn holds_no_archive(w: &mut DutyWorld) {
     assert!(
         staged.is_empty(),
         "the refused preparation staged {staged:?}"
+    );
+}
+
+#[given(regex = r"^a prepared release for version (\S+)$")]
+async fn a_prepared_release(w: &mut DutyWorld, version: String) {
+    run_prepare(w, &version);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the preparation did not succeed: {}",
+        w.command_transcript
+    );
+}
+
+#[when(regex = r#"^anyone verifies the checksum against the archive for "([^"]+)"$"#)]
+async fn anyone_verifies_the_checksum(w: &mut DutyWorld, platform: String) {
+    let out = staged_dir(w);
+    let archive = staged_archive(w, &platform);
+    let mut command = Command::new("sha256sum");
+    command
+        .arg("--check")
+        .arg(format!("{archive}.sha256"))
+        .current_dir(&out);
+    run_command(w, &mut command);
+}
+
+#[then("the checksum matches the archive it names")]
+async fn the_checksum_matches_the_archive_it_names(w: &mut DutyWorld) {
+    let out = staged_dir(w);
+    let transcript = w.command_transcript.clone();
+    let verified: Vec<&str> = transcript
+        .lines()
+        .filter_map(|line| line.strip_suffix(": OK"))
+        .collect();
+    assert_eq!(
+        verified.len(),
+        1,
+        "the verification did not report exactly one verified file: {transcript}"
+    );
+    let archive = verified[0];
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the verification did not succeed: {transcript}"
+    );
+    assert!(
+        out.join(archive).is_file(),
+        "the verified archive is not in the staged set: {archive}"
+    );
+    let checksum = std::fs::read_to_string(out.join(format!("{archive}.sha256")))
+        .expect("read the checksum file");
+    let mut fields = checksum.split_whitespace();
+    let digest = fields.next().expect("the checksum file carries a digest");
+    let named = fields.next().expect("the checksum file names its archive");
+    assert_eq!(
+        named, archive,
+        "the checksum does not name the archive it covers: {checksum}"
+    );
+    assert_eq!(
+        sha256_of(&out.join(archive)),
+        digest,
+        "the checksum does not cover the archive: {checksum}"
     );
 }
 
