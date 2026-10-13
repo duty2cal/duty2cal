@@ -1,15 +1,5 @@
 # Use case: export-duty-plan-calendar
 
-## Status
-
-Change-side contract for the change to export released roster calendars. Created from the approved
-ideation contract [the use case to export a duty-plan calendar](../../../ideation/duty-plan-calendar-conversion/use-cases/export-duty-plan-calendar.md)
-and the proposal's decisions. On archive it becomes the permanent leaf at
-`givn/specs/export-duty-plan-calendar/usecase.md`.
-
-Name: Export a duty-plan calendar.
-Source topic: Duty-plan calendar conversion (`duty-plan-calendar-conversion`).
-
 ## Level
 
 !
@@ -54,6 +44,15 @@ The Crew member supplies one duty-plan PDF for conversion.
 - 2–6: the new diagnostic cannot be saved → retain the primary failure in the error message/non-success outcome and state that no new report was saved.
 
 ## Rules
+
+### Provenance and contract status
+
+Change-side contract for the change to export released roster calendars, named **Export a duty-plan
+calendar**. Created from the approved ideation contract [the use case to export a duty-plan
+calendar](../../../ideation/duty-plan-calendar-conversion/use-cases/export-duty-plan-calendar.md) and the
+proposal's decisions; the source topic is duty-plan calendar conversion
+(`duty-plan-calendar-conversion`). On archive it becomes the permanent leaf at
+`givn/specs/export-duty-plan-calendar/usecase.md`.
 
 ### Confirmed source and activity rules
 
