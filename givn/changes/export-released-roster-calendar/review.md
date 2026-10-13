@@ -117,6 +117,15 @@ HTML, so no browser driver is valid or expected. Evidence is complete for the de
 `@e2e` scenario and one committed transcript matching the declared baseline. The per-Persona judgement of
 that transcript is recorded below.
 
+A fresh-context judge read the transcript through the confirmed Persona
+(`crew-member-personal-calendar-owner`): the transcript names the calendar published under an unused name
+beside the source and records the exit status, and the scenario's Then steps assert that published file's
+VCALENDAR/VEVENT/SUMMARY/DTSTART content, so the artifact the Persona opens is the representation it seeks.
+The `<scenario-dir>` redaction is the disclosed reproducibility measure recorded in `tasks.md`, not an
+internal identifier. No failed Persona goal, no contract rule broken, no finding.
+
+VISUAL-REVIEW: PASS
+
 ## Fabrication audit, remaining checks
 
 | # | Check | Result |
@@ -140,5 +149,4 @@ occupied diagnostic name) keep their behaviour; suite 51 of 51, e2e 1 of 1.
 1. `design.md` changed in this pass, so **design-review must be re-run** over it before `REVIEW: PASS`.
 2. The 55 classified coverage gaps need their scenarios (RED, then GREEN, one commit each); they are named
    in the classification table above.
-3. The per-Persona visual verdict line lands with the judgement now in flight; until it is recorded this
-   review does not sign off.
+
