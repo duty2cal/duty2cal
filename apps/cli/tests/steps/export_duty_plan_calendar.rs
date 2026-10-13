@@ -2141,3 +2141,87 @@ async fn a_layover_activity_on(w: &mut DutyWorld, date: String, station: String)
         "the layover is not dated {date}: {calendar}"
     );
 }
+
+#[given("a supported duty plan whose arrival row has no departure partner")]
+async fn a_plan_with_a_lone_arrival(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "LU900"),
+            (TO_X, "NEF"),
+            (END_X, "10:00"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[given("a supported duty plan with an unknown activity code and no route")]
+async fn a_plan_with_a_codeless_route(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(585.0, &[(DATE_X, "2099-06-07"), (ACTIVITY_X, "LU900")]));
+    write_fixture(w, &items);
+}
+
+#[given("a supported duty plan whose split leg prints its aircraft on the departure only")]
+async fn a_plan_with_a_one_sided_field(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "ABC"),
+            (START_X, "09:00"),
+            (AIRCRAFT_X, "LU7"),
+        ],
+    ));
+    items.extend(support::at(
+        570.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "LU742"),
+            (TO_X, "NEF"),
+            (END_X, "10:00"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[given(regex = r#"^a supported duty plan whose travel leg carries the tag "([^"]*)"$"#)]
+async fn a_plan_with_a_tag(w: &mut DutyWorld, tag: String) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "ABC"),
+            (TO_X, "NEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+            (TAGS_X, &tag),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then(regex = r#"^the travel activity's description carries "([^"]*)"$"#)]
+async fn the_description_carries(w: &mut DutyWorld, value: String) {
+    let calendar = calendar(w);
+    let unfolded = calendar.replace("\r\n ", "");
+    assert!(
+        unfolded.contains(&value),
+        "the description does not carry {value:?}: {calendar}"
+    );
+}
+
+#[then(regex = r#"^the calendar text carries "([^"]*)"$"#)]
+async fn the_calendar_text_carries(w: &mut DutyWorld, value: String) {
+    let calendar = calendar(w);
+    assert!(
+        calendar.contains(&value),
+        "the calendar text does not carry {value:?}: {calendar}"
+    );
+}

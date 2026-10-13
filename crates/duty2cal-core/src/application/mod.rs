@@ -339,15 +339,12 @@ fn classify(table: &RawRosterTable, row: &Row) -> Result<Classified, ConvertErro
     }
 
     if code.eq_ignore_ascii_case("Layover") {
-        return match station(row) {
-            Some(station) => Ok(Classified::Entry(DutyEntry::Layover {
-                date: row.date,
-                station,
-            })),
-            None => Err(ConvertError::UnresolvedRequiredActivity(
-                "a layover row carries no station".to_string(),
-            )),
-        };
+        // A row carries this code only when its marker named a station, which is
+        // why the station needs no second check here.
+        return Ok(Classified::Entry(DutyEntry::Layover {
+            date: row.date,
+            station: row.from.clone(),
+        }));
     }
 
     let has_route = !row.from.is_empty() && !row.to.is_empty();

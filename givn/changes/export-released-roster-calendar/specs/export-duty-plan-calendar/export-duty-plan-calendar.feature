@@ -335,3 +335,29 @@ Feature: Export a duty-plan calendar
     When the crew member converts it
     Then no calendar is published
     And the conversion failure names "carries no From column"
+
+  @givn.added
+  Scenario: An arrival row with no departure partner rejects the conversion
+    Given a supported duty plan whose arrival row has no departure partner
+    When the crew member converts it
+    Then no calendar is published
+    And the conversion failure names "no unique compatible partner"
+
+  @givn.added
+  Scenario: An unknown activity code with no route rejects the conversion
+    Given a supported duty plan with an unknown activity code and no route
+    When the crew member converts it
+    Then no calendar is published
+    And the conversion failure names "LU900"
+
+  @givn.added
+  Scenario: A split leg whose departure alone prints a field keeps that value
+    Given a supported duty plan whose split leg prints its aircraft on the departure only
+    When the crew member converts it
+    Then the travel activity's description carries "A/C LU7"
+
+  @givn.added
+  Scenario: A tag carrying a backslash is escaped in the calendar text
+    Given a supported duty plan whose travel leg carries the tag "3_OFF\"
+    When the crew member converts it
+    Then the calendar text carries "3_OFF\\"

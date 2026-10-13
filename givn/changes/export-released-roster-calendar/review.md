@@ -29,7 +29,7 @@ The measurement was **invalid** at the start of this review and is now fixed and
 - Fixed by providing the toolchain: `nix-shell -p rustc cargo cargo-llvm-cov llvmPackages.llvm` with
   `LLVM_COV`/`LLVM_PROFDATA` exported from that shell. Both runners instrument the production processes
   and write separate Cobertura reports, and the merge command combines both.
-- Fresh result after the first two batches: **887 production lines, 849 covered, 38 uncovered** across `crates/` and `apps/cli/src`
+- Fresh result after three batches: **883 production lines, 850 covered, 33 uncovered** across `crates/` and `apps/cli/src`
   (test-only paths excluded), produced by the merge command from the two fresh reports.
 
 ## Coverage classification (55 uncovered production lines)
@@ -41,18 +41,18 @@ scenario it needs.
 | File | Lines | What the uncovered code is | Scenario it needs |
 |---|---|---|---|
 | `crates/duty2cal-core/src/application/mod.rs` | 136-138 | the required-column failure ("the detail table carries no {label} column") | a plan whose header omits a required label fails with that message and a numbered diagnostic |
-| | 156 | an arrival fragment with no matching departure | an arrival-only row fails with "no unique compatible partner" |
+| | 156 | an arrival fragment with no matching departure | **closed**: "An arrival row with no departure partner rejects the conversion" (RED: skipping the unmatched arrival publishes a calendar, failing exactly that step) |
 | | 215-219 | a continuation row with no dated row above it | **closed**: scenario "A detail row printed before any dated row rejects the conversion" (RED proven by removing the carry branch, then GREEN) |
 | | 222-223 | an unreadable date cell | a row whose date cell cannot be read fails, naming the cell |
 | | 269-274 | a `Layover:` marker whose station sits in the following column | **closed**: "A layover station printed in the next column is still read" (RED: removing the next-cell branch fails exactly that step) |
-| | 347-349 | a `Layover:` marker with no station at all | a stationless layover marker fails explicitly |
-| | 381 | a row that prints in a body column but carries neither code nor route | such a row fails explicitly rather than being dropped |
-| | 402 | a split leg where only the departure prints an optional field | a leg whose departure alone prints the timezone difference keeps that value |
+| | 347-349 | a `Layover:` marker with no station at all | **deleted as dead code** (bucket 1): the code `Layover` is set only when the marker named a station, so the station check could never fail. `classify` now builds the entry directly |
+| | 378 | a row that prints in a body column but carries neither code nor route | **closed**: "An unknown activity code with no route rejects the conversion" (RED: treating an unknown code as all-day fails that scenario plus four sibling error-path scenarios) |
+| | 399 | a split leg whose arrival alone prints an optional field | **open**: the departure-only side is covered by "A split leg whose departure alone prints a field keeps that value" (RED: dropping the one-sided arm fails that scenario and one existing description scenario); the arrival-only side still needs its own fixture |
 | `crates/duty2cal-pdf/src/lib.rs` | 106, 132, 142 | the header-continuation exit, the gap branch, the unsupported-family rejection | a plan with no detail header fails as an unsupported family; material below the table is ignored |
 | | 292, 296, 299, 306, 309 | the remaining date-resolution guards (no date band, unexpected token count, unparsable day, unknown weekday, invalid calendar date) | one scenario per guard; the no-month guard and the weekday mismatch are **closed** by "A dated row in a plan with no roster month heading rejects the conversion" and "A date cell whose weekday contradicts the day is not accepted as activity timing" (both RED-proven) |
 | | 334 | the joined month-and-year stamp (`January2099`) | a heading whose month touches its year still supplies the month |
 | | 361, 379, 385, 394, 403-404 | the footer fallbacks (no `Created` stamp, ISO stamp, unparsable compact stamp) | a plan without a revision footer falls back to the construction clock; an ISO-stamped footer is read |
-| `crates/duty2cal-core/src/adapters/ics/mod.rs` | 85-89, 125-126 | text escaping (`\\`, newline, carriage return) and the second fold boundary | a description carrying a backslash or newline escapes correctly; a long description folds twice |
+| `crates/duty2cal-core/src/adapters/ics/mod.rs` | 85, 88-89, 125-126 | text escaping (`\\`, newline, carriage return) and the second fold boundary | the backslash arm is **closed** by "A tag carrying a backslash is escaped in the calendar text" |
 | `crates/duty2cal-core/src/domain/mod.rs` | 179-181 | the date accessor for travel, availability and non-flight duty | a scenario that reads the date of each of those entries |
 | `apps/cli/src/main.rs` | 28, 48-49, 55, 67, 102 | no-argument usage, unreadable source, no unused calendar name, no unused report name | invocation without an argument prints usage and exits 2; an unreadable source, an exhausted calendar name and an exhausted report name each fail explicitly |
 | `apps/cli/src/fs.rs` | 26, 46 | the fallback arms of the path helpers | a source whose name yields no usable calendar or report name |
@@ -182,11 +182,27 @@ Tasks carried by each shared commit (task line, scenario):
 ## Pending before sign-off
 
 1. `design.md` changed in this pass, so **design-review must be re-run** over it before `REVIEW: PASS`.
-2. **38 uncovered production lines remain**, in these groups: the reader's remaining date guards and footer
+## Hard-to-test classifications (bucket 3)
+
+Three regions cannot be reached by a scenario, with the concrete reason:
+
+- `apps/cli/src/main.rs` "no unused calendar name is available" and the matching diagnostic line: the
+  enumeration is bounded at 9 999 candidates, so reaching these needs ten thousand occupied names.
+- `apps/cli/src/fs.rs` retry arm: it fires only when another process claims the name between the existence
+  check and the create; a single-process suite cannot interleave a second writer, and the neighbouring
+  failure arm (a name that only looks free) is covered.
+- `crates/duty2cal-core/src/adapters/ics/mod.rs` newline and carriage-return arms: a PDF text cell cannot
+  carry a raw newline or carriage return, so the sink's guard is defensive.
+- `crates/duty2cal-core/src/domain/mod.rs` date accessor pattern lines: the sink calls `entry.date()` for
+  every entry, so the arms execute in every travel, availability and non-flight scenario; LLVM marks the
+  continuation lines of the multi-line `|` pattern uncovered, which no test can change.
+
+## Remaining
+
+2. **33 uncovered production lines remain**, in these groups: the reader's remaining date guards and footer
    fallbacks (`duty2cal-pdf`: 15), the CLI paths for no argument, an unreadable source and exhausted calendar
    or report names (`main.rs`: 6), the unmatched fragment, stationless layover, code-less row and
    departure-only optional field (`application`: 6), the RFC 5545 escaping and second fold (`ics`: 5), the
-   filesystem fallbacks plus the retry arm a single-process suite cannot interleave (`fs`: 3), and the date
-   accessor arms for travel, availability and non-flight duty (`domain`: 3, which look like dead arms and
-   are candidates for deletion rather than tests).
+   filesystem fallbacks plus the retry arm classified above (`fs`: 3), the date-accessor pattern lines and the
+   newline arms classified above (`domain`: 3, `ics`: 2), and one arrival-only optional-field fixture.
 
