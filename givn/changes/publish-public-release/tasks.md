@@ -450,8 +450,15 @@ Use-case constraint: release-note subjects in release order, housekeeping and un
   1 scenario (1 passed), 5 steps (5 passed)   REFACTOR_EXIT=0
   ```
   No behaviour change: the fixture's `git` helper no longer returns a transcript no caller reads, and the file is rustfmt-clean.
-- [ ] COMMIT — `<hash>`:
+- [x] COMMIT — `7efe9c2`:
   ```
+  feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
+
+  Scenario: The release text states the released revisions' release notes
+
+  RED: the four steps existed as unimplemented!() stubs; the single-scenario run failed with exit 101.
+  GREEN: the script collects the release text from the previous v* tag's range (or every revision reachable from HEAD when there is none), quotes feat/fix/perf/refactor/revert subjects, drops housekeeping and untyped subjects, collapses repeated notes and names the version; the steps build the fixture history with git init plus eight revisions and drive the preparation through --repo.
+  REFACTOR: the fixture's git helper no longer returns a transcript no caller reads; the single scenario passes 5/5 steps with exit 0.
   ```
 
 ### 9. Maintainer prepares a release and runs the archived executable (`@e2e`)
