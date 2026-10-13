@@ -114,7 +114,7 @@ The first release is cut at the version the workspace already carries, `v0.1.0`,
 - Options:
   1. **The repository's confidential reporting route, plus a conduct address the operator names** — gain: security reports arrive as private advisories attached to the repository, and conduct reports have a stated destination; cost: a public address has to be chosen and will be harvested; in practice: a plan-data exposure report arrives as a draft advisory, and a conduct report arrives by mail.
   2. **Confidential reporting only, with no mail address anywhere** — gain: no address to harvest and one route to watch; cost: the code of conduct cannot name a reporting method, which is precisely what it is for; in practice: a contributor with a conduct concern finds no route and opens a public issue instead.
-- Disposition: **carried** — owner: the operator; decided in this change's `tasks.md` before the security policy and the code of conduct are written. The confidential reporting route is already settled: the repository provides it and the security policy points at it.
+- Disposition: **answered** — the operator supplied the conduct route on 2026-10-13, answering the design review's third question: a direct message to the maintainer's Mastodon account `@kressnerd@chaos.social` (checked to exist at `https://chaos.social/@kressnerd`), alongside the repository's private vulnerability reporting for plan-exposure reports. Rejected: publishing no route at all, which is the opposite of what a code of conduct is for. A mailbox was not adopted because the maintainer publishes none, and a GitHub `noreply` address cannot receive mail.
 
 ### D3 — Whether a published release can be changed after publication
 
