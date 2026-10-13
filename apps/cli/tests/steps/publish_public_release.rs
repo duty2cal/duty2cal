@@ -1044,6 +1044,68 @@ async fn earlier_section_is_unchanged(w: &mut DutyWorld) {
     );
 }
 
+/// Run the renderer in `--check` mode for a version, recording the transcript.
+fn run_check(w: &mut DutyWorld, version: &str) {
+    let repo = w
+        .fixture_repo
+        .clone()
+        .expect("the scenario built no fixture repository");
+    let out = w.changelog.clone().unwrap_or_else(|| change_log_path(w));
+    let mut command = Command::new("scripts/render-changelog.sh");
+    command
+        .current_dir(repository_root())
+        .arg("--version")
+        .arg(version)
+        .arg("--repo")
+        .arg(&repo)
+        .arg("--out")
+        .arg(&out)
+        .arg("--check");
+    run_command(w, &mut command);
+}
+
+#[given("a committed change log whose newest section differs from what the history states")]
+#[allow(dead_code)]
+async fn a_committed_change_log_that_differs(w: &mut DutyWorld) {
+    two_release_history(w);
+    let path = w.changelog.clone().unwrap_or_else(|| change_log_path(w));
+    w.changelog = Some(path.clone());
+    let committed = "\
+## [0.2.0] - 2026-02-02\n\
+\n\
+### New capabilities\n\
+- Offer an archive for every supported platform\n\
+\n\
+[0.1.0...0.2.0](https://github.com/kressnerd/duty2cal/compare/v0.1.0...v0.2.0)\n\
+\n\
+## [0.1.0] - 2026-01-02\n\
+\n\
+### New capabilities\n\
+- Convert a supported plan into a calendar\n";
+    std::fs::write(&path, committed).expect("write the committed change log");
+}
+
+#[when("the change log is checked against the released revision")]
+async fn the_change_log_is_checked(w: &mut DutyWorld) {
+    run_check(w, "0.2.0");
+}
+
+#[then(regex = r"^the check fails and names the version whose section differs$")]
+#[allow(dead_code)]
+async fn the_check_fails_and_names_the_version(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the check did not fail: {}",
+        w.command_transcript
+    );
+    assert!(
+        w.command_transcript.contains("version 0.2.0"),
+        "the failure does not name the version whose section differs: {}",
+        w.command_transcript
+    );
+}
+
 #[given(regex = r#"^an executable presented as the unrecognised platform "([^"]+)"$"#)]
 async fn an_unrecognised_platform(w: &mut DutyWorld, platform: String) {
     assert!(

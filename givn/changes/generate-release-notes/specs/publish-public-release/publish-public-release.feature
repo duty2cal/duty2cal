@@ -26,7 +26,7 @@ Feature: Publish a public release
     Then version 0.2.0 is the newest section of the change log
     And the section for version 0.1.0 is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: A change log that does not match the released revision is refused
     Given a committed change log whose newest section differs from what the history states
     When the change log is checked against the released revision
