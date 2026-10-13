@@ -3,8 +3,10 @@
 //!
 //! One file per capability. The steps drive the real preparation command
 //! (`scripts/prepare-release.sh`) as a subprocess, as the conversion
-//! capability's steps drive the built binary. A step body is never empty: the
-//! RED phase writes each new step as a stub that panics with its own name.
+//! capability's steps drive the built binary. The change-log scenarios drive
+//! `scripts/render-changelog.sh` as a subprocess, as `design.md` requires. A
+//! step body is never empty: the RED phase writes each new step as a stub that
+//! panics with its own name.
 #![allow(clippy::too_many_arguments)] // step signatures mirror the captured step text
 
 use std::path::{Path, PathBuf};
@@ -245,6 +247,121 @@ fn table_rows(step: &Step) -> Vec<Vec<String>> {
     table.rows.iter().skip(1).cloned().collect()
 }
 
+/// The delta change-log scenarios' fixture history, oldest revision first: a
+/// new capability, a fix, and work no user can see (housekeeping and an
+/// unrecognised type). The capability scope is one the repository holds, so the
+/// allow-list accepts it.
+const CHANGE_LOG_HISTORY: [(&str, &str); 6] = [
+    (
+        "2026-01-01",
+        "feat(export-duty-plan-calendar): Convert a supported duty plan into a calendar",
+    ),
+    ("2026-01-02", "chore(ci): tune the release pipeline"),
+    ("2026-01-03", "docs(readme): describe the download route"),
+    (
+        "2026-01-04",
+        "fix(publish-public-release): Name the platform in the refusal",
+    ),
+    (
+        "2026-01-05",
+        "test(publish-public-release): cover the refusal paths",
+    ),
+    ("2026-01-06", "Publish the notes by hand"),
+];
+
+/// The notes the delta history must not carry: the housekeeping revisions and
+/// the subject that carries no release-note type.
+const CHANGE_LOG_OMITTED: [&str; 4] = [
+    "tune the release pipeline",
+    "describe the download route",
+    "cover the refusal paths",
+    "Publish the notes by hand",
+];
+
+/// Run one git command in the fixture repository with a fixed committer date,
+/// asserting it succeeded.
+fn git_dated(repo: &Path, date: &str, args: &[&str]) {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(repo)
+        .args(args)
+        .env("GIT_AUTHOR_DATE", format!("{date}T00:00:00+00:00"))
+        .env("GIT_COMMITTER_DATE", format!("{date}T00:00:00+00:00"))
+        .output()
+        .expect("run git in the fixture repository");
+    assert!(
+        output.status.success(),
+        "git {args:?} failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+/// Build a fixture repository whose history is the revisions named, oldest
+/// first, with fixed committer dates and `v*` tags. The committed
+/// configuration and the capability directories the allow-list check reads are
+/// copied in, so the renderer runs exactly as it does against the real tree.
+fn build_history(w: &mut DutyWorld, revisions: &[(&str, &str)], tags: &[&str]) {
+    let repo = scenario_dir(w).join("history");
+    let _ = std::fs::remove_dir_all(&repo);
+    std::fs::create_dir_all(&repo).expect("create the fixture repository");
+    std::fs::copy(
+        repository_root().join("cliff.toml"),
+        repo.join("cliff.toml"),
+    )
+    .expect("copy the committed configuration");
+    for capability in ["export-duty-plan-calendar", "publish-public-release"] {
+        std::fs::create_dir_all(repo.join("givn/specs").join(capability))
+            .expect("create a capability directory");
+    }
+    git(&repo, &["init", "--quiet"]);
+    for (index, (date, subject)) in revisions.iter().enumerate() {
+        let file = repo.join(format!("revision-{index}.txt"));
+        std::fs::write(&file, format!("{subject}\n")).expect("write the revision's file");
+        git(&repo, &["add", "--all"]);
+        git_dated(
+            &repo,
+            date,
+            &[
+                "-c",
+                "user.name=duty2cal tests",
+                "-c",
+                "user.email=tests@example.invalid",
+                "-c",
+                "commit.gpgsign=false",
+                "commit",
+                "--quiet",
+                "--no-verify",
+                "-m",
+                subject,
+            ],
+        );
+    }
+    for tag in tags {
+        git(&repo, &["tag", tag]);
+    }
+    w.fixture_repo = Some(repo);
+}
+
+/// The change log path for a scenario's working directory.
+pub(crate) fn change_log_path(w: &DutyWorld) -> PathBuf {
+    w.working_dir().join("CHANGELOG.md")
+}
+
+/// Run the renderer for a version against the fixture repository, recording the
+/// transcript as an `@e2e` scenario commits it.
+fn run_render(w: &mut DutyWorld, version: &str, repo: &Path, out: &Path) {
+    let mut command = Command::new("scripts/render-changelog.sh");
+    command
+        .current_dir(repository_root())
+        .arg("--version")
+        .arg(version)
+        .arg("--repo")
+        .arg(repo)
+        .arg("--out")
+        .arg(out);
+    run_command(w, &mut command);
+}
+
 /// Run one git command in the fixture repository, asserting it succeeded.
 fn git(repo: &Path, args: &[&str]) {
     let output = Command::new("git")
@@ -267,6 +384,17 @@ fn release_text(w: &DutyWorld) -> String {
         Ok(text) => text,
         Err(error) => panic!("no release text at {}: {error}", path.display()),
     }
+}
+
+/// The release text the scenario asserts against: the staged release text when
+/// the preparation produced one, otherwise the change log the scenario
+/// rendered.
+fn release_text_or_change_log(w: &DutyWorld) -> String {
+    let staged = staged_dir(w).join("release-notes.md");
+    if staged.is_file() {
+        return std::fs::read_to_string(&staged).expect("read the staged release text");
+    }
+    change_log(w)
 }
 
 /// A file's modification time.
@@ -648,7 +776,7 @@ async fn the_release_text_names_version(w: &mut DutyWorld, version: String) {
 
 #[then("the release text lists these release notes in release order")]
 async fn the_release_text_lists_these_release_notes(w: &mut DutyWorld, step: &Step) {
-    let text = release_text(w);
+    let text = release_text_or_change_log(w);
     let expected: Vec<String> = table_rows(step)
         .into_iter()
         .map(|row| row[0].clone())
@@ -666,11 +794,97 @@ async fn the_release_text_lists_these_release_notes(w: &mut DutyWorld, step: &St
 
 #[then("the release text omits the housekeeping revisions and the subject that carries no release-note type")]
 async fn the_release_text_omits_the_others(w: &mut DutyWorld) {
-    let text = release_text(w);
+    let text = release_text_or_change_log(w);
     for omitted in OMITTED {
         assert!(
             !text.contains(omitted),
             "the release text carries the omitted subject {omitted:?}: {text}"
+        );
+    }
+}
+
+/// The change-log notes of the file the scenario rendered, in order: the
+/// bullets of the section the scenario names. The set of subjects a release
+/// lists is what the group and collapse assertions read.
+fn change_log_notes(w: &DutyWorld) -> Vec<String> {
+    let path = w.changelog.clone().unwrap_or_else(|| change_log_path(w));
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no change log at {}: {error}", path.display()));
+    text.lines()
+        .filter_map(|line| line.strip_prefix("- "))
+        .map(str::to_string)
+        .collect()
+}
+
+/// The newest section of the change log the scenario rendered.
+fn change_log(w: &DutyWorld) -> String {
+    let path = w.changelog.clone().unwrap_or_else(|| change_log_path(w));
+    std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no change log at {}: {error}", path.display()))
+}
+
+#[given(
+    "a history whose released revisions name a new capability, a fix, and work no user can see"
+)]
+async fn a_history_grouping(w: &mut DutyWorld) {
+    build_history(w, &CHANGE_LOG_HISTORY, &["v0.2.0"]);
+}
+
+#[when("the maintainer generates the change log for version 0.2.0")]
+async fn generates_the_change_log(w: &mut DutyWorld) {
+    let repo = w
+        .fixture_repo
+        .clone()
+        .expect("the scenario built no fixture repository");
+    let out = change_log_path(w);
+    w.changelog = Some(out.clone());
+    run_render(w, "0.2.0", &repo, &out);
+}
+
+#[then("the notes for version 0.2.0 name the new capability and the fix")]
+async fn notes_name_capability_and_fix(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the generation did not succeed: {}",
+        w.command_transcript
+    );
+    let notes = change_log_notes(w);
+    let joined = notes.join("\n");
+    assert!(
+        joined.contains("Convert a supported duty plan into a calendar"),
+        "the notes name no new capability: {joined}"
+    );
+    assert!(
+        joined.contains("Name the platform in the refusal"),
+        "the notes name no fix: {joined}"
+    );
+}
+
+#[then("the notes name the new capability before the fix")]
+async fn capability_before_fix(w: &mut DutyWorld) {
+    let notes = change_log_notes(w);
+    let capability = notes
+        .iter()
+        .position(|note| note.contains("Convert a supported duty plan into a calendar"))
+        .expect("the notes name no new capability");
+    let fix = notes
+        .iter()
+        .position(|note| note.contains("Name the platform in the refusal"))
+        .expect("the notes name no fix");
+    assert!(
+        capability < fix,
+        "the fix is named before the new capability: {notes:?}"
+    );
+}
+
+#[then("the notes name no revision whose work no user can see")]
+async fn notes_omit_invisible_work(w: &mut DutyWorld) {
+    let notes = change_log_notes(w).join("\n");
+    for omitted in CHANGE_LOG_OMITTED {
+        assert!(
+            !notes.contains(omitted),
+            "the notes carry the invisible subject {omitted:?}: {notes}"
         );
     }
 }

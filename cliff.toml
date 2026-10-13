@@ -1,0 +1,93 @@
+# SPDX-License-Identifier: MPL-2.0
+# git-cliff configuration for the change log (design.md "The renderer").
+#
+# The project owns one configuration; `scripts/render-changelog.sh` always
+# passes it explicitly (`--config cliff.toml`), so a render never picks up a
+# developer's global configuration and a local render matches CI's.
+#
+# The pinned generator is git-cliff 2.14.2. Its output shape changes between
+# versions and the drift check compares bytes, so the version is part of the
+# contract: `scripts/render-changelog.sh` refuses a `git-cliff` whose version
+# differs from the one named here. CI installs exactly this version
+# (taiki-e/install-action@v2, tool: git-cliff@2.14.2).
+# git-cliff version: 2.14.2
+#
+# The capability allow-list is the use-case ids present as directories under
+# `givn/specs/`. A revision whose conventional-commit type carries one of those
+# scopes is a released change; every other revision — housekeeping, tests,
+# documentation, CI, tooling and the machinery of building, packaging and
+# publishing — is not, and is skipped. The renderer compares this list against
+# the corpus and refuses a difference, so a new capability cannot be left out of
+# every release quietly. The allow-list is repeated inside each type's parser
+# because `git-cliff` groups by the parser a revision matches: one shared
+# `field = "scope"` parser cannot separate a new capability from a chore.
+
+[changelog]
+# The template renders one section. The heading's date is stamped by the
+# renderer, not taken from the generator: `git-cliff`'s release timestamp falls
+# back to "now" for a revision it cannot date, and the date must be the released
+# revision's own committer date at any time on any machine. The renderer
+# replaces the placeholder below with that date.
+body = """
+## [{{ version | trim_start_matches(pat="v") }}] - @@DATE@@
+
+{% for entry in commits | commit_groups(groups=commit_parsers_groups) %}### {{ entry.group }}
+{%- for commit in entry.commits %}
+- {{ commit.message | upper_first }}
+{%- endfor %}
+
+{% endfor -%}
+"""
+trim = false
+render_always = true
+
+[git]
+# The capability allow-list, read by the renderer and compared against the
+# use-case ids under `givn/specs/`.
+# <!-- capability-allow-list: export-duty-plan-calendar publish-public-release -->
+conventional_commits = true
+filter_unconventional = true
+# Keep a breaking revision even when its type is not listed below: a breaking
+# change is visible to a user whatever the type it carries.
+protect_breaking_commits = true
+
+commit_preprocessors = [
+  # `git-cliff`'s conventional parser does not know `revert`; marking the type
+  # lets the `^revert` parser below reach it.
+  { pattern = "(?m)^revert", replace = "xrevert" },
+]
+
+commit_parsers = [
+  # Breaking changes first: a reader looks for what may stop working before
+  # what is new.
+  { message = "^feat\\(export-duty-plan-calendar\\)!:", group = "<!-- 0 -->Breaking changes" },
+  { message = "^feat\\(publish-public-release\\)!:", group = "<!-- 0 -->Breaking changes" },
+  { message = "^fix\\(export-duty-plan-calendar\\)!:", group = "<!-- 0 -->Breaking changes" },
+  { message = "^fix\\(publish-public-release\\)!:", group = "<!-- 0 -->Breaking changes" },
+  { message = "^perf\\(export-duty-plan-calendar\\)!:", group = "<!-- 0 -->Breaking changes" },
+  { message = "^perf\\(publish-public-release\\)!:", group = "<!-- 0 -->Breaking changes" },
+  { message = "^xrevert\\(export-duty-plan-calendar\\)!:", group = "<!-- 0 -->Breaking changes" },
+  { message = "^xrevert\\(publish-public-release\\)!:", group = "<!-- 0 -->Breaking changes" },
+
+  # A new capability: a feature whose scope is a capability the repository
+  # holds.
+  { message = "^feat\\(export-duty-plan-calendar\\):", group = "<!-- 1 -->New capabilities" },
+  { message = "^feat\\(publish-public-release\\):", group = "<!-- 1 -->New capabilities" },
+
+  # Fixes.
+  { message = "^fix\\(export-duty-plan-calendar\\):", group = "<!-- 2 -->Fixes" },
+  { message = "^fix\\(publish-public-release\\):", group = "<!-- 2 -->Fixes" },
+
+  # Performance.
+  { message = "^perf\\(export-duty-plan-calendar\\):", group = "<!-- 3 -->Performance" },
+  { message = "^perf\\(publish-public-release\\):", group = "<!-- 3 -->Performance" },
+
+  # Reversals.
+  { message = "^xrevert\\(export-duty-plan-calendar\\):", group = "<!-- 4 -->Reversals" },
+  { message = "^xrevert\\(publish-public-release\\):", group = "<!-- 4 -->Reversals" },
+
+  # Everything else is not a change a user can see: housekeeping, tests,
+  # documentation, CI, tooling, and any scope outside the allow-list — the
+  # machinery of building, packaging and publishing among them.
+  { message = ".*", skip = true },
+]

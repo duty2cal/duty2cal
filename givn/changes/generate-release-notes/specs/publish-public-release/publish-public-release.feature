@@ -5,7 +5,7 @@ Feature: Publish a public release
   A released version states the changes a user can see, grouped by kind, drawn
   from the newest section of the change log the repository keeps.
 
-  @givn.added @wip
+  @givn.added
   Scenario: A version's notes group the changes a reader can see
     Given a history whose released revisions name a new capability, a fix, and work no user can see
     When the maintainer generates the change log for version 0.2.0

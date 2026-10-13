@@ -43,6 +43,8 @@ pub struct DutyWorld {
     /// Modification times of the staged archives, captured before a repeated
     /// preparation.
     pub staged_snapshot: Vec<(String, SystemTime)>,
+    /// The change log a change-log scenario rendered.
+    pub changelog: Option<PathBuf>,
 }
 
 impl DutyWorld {
