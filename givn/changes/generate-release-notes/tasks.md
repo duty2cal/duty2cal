@@ -31,7 +31,7 @@ Use-case constraints carried into every scenario task: the section is rendered f
   3 scenarios (3 passed)
   16 steps (16 passed)
   ```
-  Pinned version: **git-cliff 2.14.2**, which nixpkgs supplies and which the renderer's pin refusal accepts against the line in `cliff.toml`. Rust comes from `nix-shell -p rustc cargo`. The suite drives `scripts/render-changelog.sh` and `scripts/prepare-release.sh` as real subprocesses against fixture repositories built under `/tmp`, so a run touches only the filesystem, the pinned binary and local git — no network, no credentials, no GitHub; the `@e2e` render scenario's transcript is the committed proof. The design resolved crates.io `max_version` 2.14.2 on 2026-10-13; re-checking that here would need the network this environment does not carry, so it is recorded as the design's resolution and confirmed locally against nixpkgs.
+  Pinned version: **git-cliff 2.14.2**, which nixpkgs supplies and which the renderer's pin refusal accepts against the line in `cliff.toml`. The counts above moved to `96 scenarios (96 passed), 365 steps (365 passed)` once the review added the render-before-tag scenario; the final verification above carries the later run. Rust comes from `nix-shell -p rustc cargo`. The suite drives `scripts/render-changelog.sh` and `scripts/prepare-release.sh` as real subprocesses against fixture repositories built under `/tmp`, so a run touches only the filesystem, the pinned binary and local git — no network, no credentials, no GitHub; the `@e2e` render scenario's transcript is the committed proof. The design resolved crates.io `max_version` 2.14.2 on 2026-10-13; re-checking that here would need the network this environment does not carry, so it is recorded as the design's resolution and confirmed locally against nixpkgs.
 - [x] Add the `DutyWorld` fields the new steps need (fixture repository, change log path, command transcript as the render scenario's evidence) in `apps/cli/tests/features_runner.rs`; the step files already declared in `apps/cli/tests/steps/mod.rs` and `apps/cli/tests/steps/e2e/mod.rs` are extended, never replaced (one step-definition file per capability).
   ```
   $ grep -n 'changelog' apps/cli/tests/features_runner.rs
@@ -600,7 +600,7 @@ Not observable through a Gherkin scenario; each is verified by running it or by 
   $ grep -n 'git-cliff version' cliff.toml
   13:# git-cliff version: 2.14.2
   ```
-  The file is unchanged by this change's work (committed with scenario 1): the allow-list line `<!-- capability-allow-list: export-duty-plan-calendar publish-public-release -->` is what the renderer reads and compares against `givn/specs/`, each of `feat`, `fix`, `perf` and `xrevert` carries the allow-list in its own parser for both the plain and the breaking-change form, the group markers order the groups `<!-- 0 -->` to `<!-- 4 -->`, `{ message = ".*", skip = true }` closes the list so housekeeping, tests, CI, tooling and every scope outside the allow-list are skipped, the comparison link is built as a literal URL in the renderer and no `[remote.github]` section exists.
+  The file is unchanged by this change's work (committed with scenario 1): the allow-list line `<!-- capability-allow-list: export-duty-plan-calendar publish-public-release -->` is what the renderer reads and compares against `givn/specs/`, each of `feat`, `fix`, `perf` and `xrevert` carries the allow-list in its own parser for both the plain and the breaking-change form, the group markers order the groups `<!-- 0 -->` to `<!-- 4 -->`, `{ message = ".*", skip = true }` closes the list so housekeeping, tests, CI, tooling and every scope outside the allow-list are skipped, the comparison link is a literal URL the renderer appends (`cliff.toml` carries only the `@@DATE@@` placeholder), and no `[remote.github]` section exists. The review later added the marked machinery skip list ahead of the type parsers (see F1 below).
 - [x] `CHANGELOG.md` at the repository root, generated with the pinned tool — never hand-written — with the `0.1.0` section back-filled under the new rules: it holds about five bullets rather than the published page's thirty-seven, because identical subjects collapse. Evidence: `nix-shell -p git-cliff --run 'scripts/render-changelog.sh --version 0.1.0 --repo . --out CHANGELOG.md'` and `--check` clean; the bullet count pasted.
   ```
   $ nix-shell -p git-cliff --run 'scripts/render-changelog.sh --version 0.1.0 --repo . --out CHANGELOG.md'
@@ -609,13 +609,13 @@ Not observable through a Gherkin scenario; each is verified by running it or by 
   $ grep -c '^- ' CHANGELOG.md
   5
   ```
-  The section holds two new capabilities and three fixes — five bullets against the published page's thirty-seven, because identical release-note subjects collapse. The re-render leaves the file byte-identical (`git status --short CHANGELOG.md` prints nothing) and `--check` passes on it.
+  The count was five at this point — two new capabilities and three fixes — against the published page's sixteen entries and the thirty-seven bullets a render without the collapse would list (thirty-four duplicate revisions plus two capabilities plus one fix). The machinery skip list the review forced (see the review-fix items below) then removed the two coverage entries, so the committed section holds three; the re-render leaves the file byte-identical (`git status --short CHANGELOG.md` prints nothing) and `--check` passes on it.
 - [x] `.github/workflows/ci.yml`: a `changelog` job (pushes and pull requests) that checks out with `fetch-depth: 0`, installs `git-cliff@2.14.2` with `taiki-e/install-action@v2` and runs `scripts/render-changelog.sh --version <newest v* tag> --check`; the `test` job installs the pinned generator on `PATH` because the suite's steps drive the renderer as a real subprocess. Every existing job keeps its name and steps. Evidence: `nix-shell -p actionlint --run 'actionlint .github/workflows/*.yml'` clean.
   ```
   $ nix-shell -p actionlint --run 'actionlint .github/workflows/*.yml'
   actionlint=0
   ```
-  Committed as `7447a57`. Every existing job keeps its name and steps; `test` gains only the `taiki-e/install-action@v2` step with `tool: git-cliff@2.14.2` before `./run-tests.sh`.
+  Committed as `7447a57`. `test` gains only the `taiki-e/install-action@v2` step with `tool: git-cliff@2.14.2` before `./run-tests.sh` (see F7 below: the chapter that claimed every existing job was untouched was corrected); no other existing job changes.
 - [x] `.github/workflows/release.yml`: `staged/CHANGELOG.md` joins the `gh release create` asset list so the draft carries the change log among its assets. Evidence: the same actionlint run; the staged-versus-draft comparison still matches, since `release-notes.md` stays excluded from it.
   ```
   $ nix-shell -p actionlint --run 'actionlint .github/workflows/*.yml'
@@ -631,19 +631,19 @@ Not observable through a Gherkin scenario; each is verified by running it or by 
   public-text-check: clean - all 12 public-text promises present in /home/dan/dev/PRIVATE/duty2ical/README.md
   public_text=0
   ```
-  Committed as `7447a57`. The subsection `### Releasing a version` sits immediately after `<!-- givn:end:development -->`, outside the managed markers, so it reads as part of the Development section without editing it; the givn-managed blocks are untouched and `givn readme check` stays OK.
+  Committed as `7447a57`. The subsection `### Releasing a version` sits immediately after `<!-- givn:end:development -->`, outside the managed markers, so it reads as part of the Development section without editing it; the givn-managed blocks are untouched and `givn readme check` stays OK. The procedure inside it was corrected by the review (see F2 below): the renderer can run before the tag exists, the change log commit carries the tagged revision's own committer date, and the push sends the branch and the tag.
 
-## Final verification (the delta's eleven scenarios green)
+## Final verification (the delta's twelve scenarios green)
 
 - [x] Full suite — `nix-shell -p rustc cargo --run './run-tests.sh'`:
   ```
   $ nix-shell -p rustc cargo git-cliff --run './run-tests.sh'
   3 features
-  95 scenarios (95 passed)
-  358 steps (358 passed)
+  96 scenarios (96 passed)
+  365 steps (365 passed)
   FULL_EXIT=0
   ```
-  The permanent corpus is 84 scenarios (`givn/specs/`: 75 scenario instances from `export-duty-plan-calendar`, counting its two `Scenario Outline`s' four and seven examples, plus 9 from `publish-public-release`), and the delta adds 11, so 95 while the change is active. The one `@givn.modified` scenario runs beside the permanent scenario it replaces by title — the `@givn.modified` merge happens at archive, not during the change — which is why the delta's eleven all count here. `git-cliff` is added to the `nix-shell` packages because the change-log scenarios drive `scripts/render-changelog.sh` as a real subprocess and the renderer refuses a host without the pinned generator on `PATH`; that is the same environment the CI `test` job now provides.
+  The permanent corpus is 84 scenarios (`givn/specs/`: 75 scenario instances from `export-duty-plan-calendar`, counting its two `Scenario Outline`s' four and seven examples, plus 9 from `publish-public-release`); the delta contributes 12 while the change is active — the 11 it started with plus the render-before-tag scenario the review added — so 96. The one `@givn.modified` scenario runs beside the permanent scenario it replaces by title — the `@givn.modified` merge happens at archive, not during the change — which is why the delta's scenarios all count here. `git-cliff` is added to the `nix-shell` packages because the change-log scenarios drive `scripts/render-changelog.sh` as a real subprocess and the renderer refuses a host without the pinned generator on `PATH`; that is the same environment the CI `test` job now provides.
 - [x] E2E suite — `nix-shell -p rustc cargo --run './run-tests.sh --e2e'`:
   ```
   $ nix-shell -p rustc cargo git-cliff --run './run-tests.sh --e2e'
@@ -700,7 +700,7 @@ Not observable through a Gherkin scenario; each is verified by running it or by 
   change log is current for version 0.1.0
   check=0
   ```
-  Run against the real checkout, whose newest `v*` tag is `v0.1.0`: the committed `CHANGELOG.md` equals a fresh render, and its 0.1.0 section holds five bullets.
+  Run against the real checkout, whose newest `v*` tag is `v0.1.0`: the committed `CHANGELOG.md` equals a fresh render, and its 0.1.0 section holds three bullets (two new capabilities and one fix — the machinery skip list removed the two coverage entries, see the review-fix items below). The re-render above leaves the file byte-identical (`git status --short CHANGELOG.md` prints nothing).
 - [x] The pinned generator's version, recorded where the design says (`cliff.toml`, `# git-cliff version: 2.14.2`), and the version the render actually ran:
   ```
   $ grep -n 'git-cliff version' cliff.toml
@@ -709,6 +709,101 @@ Not observable through a Gherkin scenario; each is verified by running it or by 
   git-cliff 2.14.2
   ```
   The two agree, which is what lets the drift check compare bytes: the renderer refuses a `git-cliff` whose version differs from the one recorded beside the configuration, and every render this change ran went through `nix-shell -p git-cliff` (2.14.2).
+
+## Review fixes (the review phase's findings, landed after the first verification)
+
+Each item below was found by the review phase and is ticked with the evidence that closed it and the revision that landed it. The scenarios they touched were re-run by the full suite after every change; the suite counts in the section above are from after the last of them.
+
+- [x] **F1 — machinery words still reached a version's page.** A revision typed `fix(<capability>): …` whose words describe the project's own machinery passed the type-plus-scope allow-list and reached the 0.1.0 section (`Align the design with the implementation and correct the coverage merge`, `Build a clean merged coverage report`). `cliff.toml` now carries a marked, documented machinery skip list (`<!-- machinery-skip-list: coverage cobertura clippy rustfmt notices workflow transcript -->`), realized as `skip` parsers **ahead of** the type parsers and anchored at the start of the message with `.` unable to cross a newline, so the terms are matched against the revision's subject only; `scripts/render-changelog.sh` reads the marked line where it already reads the capability allow-list and refuses a term the configuration does not realize. Scenario 1 grew the `And a revision typed as a fix of that capability whose words name the project's own tooling` step and its `Then`. Committed as `57da16b`; `CHANGELOG.md` re-rendered in the same revision.
+  ```
+  $ nix-shell -p rustc cargo git-cliff --run './run-tests.sh --name "A version's notes group the changes a reader can see"'
+  ✔  Given a history whose released revisions name a new capability, a fix, and work no user can see
+  ✔  And a revision typed as a fix of that capability whose words name the project's own tooling
+  ✔  When the maintainer generates the change log for version 0.2.0
+  ✔  Then the notes for version 0.2.0 name the new capability and the fix
+  ✔  And the notes name the new capability before the fix
+  ✔  And the notes name no revision whose work no user can see
+  ✔  And the notes name no revision whose words name the project's own tooling
+  1 scenario (1 passed), 7 steps (7 passed)   GREEN_EXIT=0
+  ```
+  The 0.1.0 section, before and after:
+  ```
+  before (5 bullets)                                  after (3 bullets)
+  ### New capabilities                                ### New capabilities
+  - Convert a supported Released Roster duty-plan      - Convert a supported Released Roster duty-plan
+    PDF into one complete RFC 5545 calendar file         PDF into one complete RFC 5545 calendar file
+    saved beside the source …                            saved beside the source …
+  - Publish duty2cal from one public repository …      - Publish duty2cal from one public repository …
+  ### Fixes                                            ### Fixes
+  - Align the design with the implementation and       - Read the producer's own export layout
+    correct the coverage merge
+  - Build a clean merged coverage report
+  - Read the producer's own export layout
+  ```
+  Exactly the two machinery entries vanish; every remaining entry is one a reader can act on. The two reader-actionable subjects the review named but which the 0.1.0 section never carried (they sit on the published page under the older flat rule, because their subjects carry no capability scope: `fix: publish calendars and diagnostics with create-new writes` and `fix(privacy): make the private-data guard see the published history and stop failing on calendar syntax`) were proven to survive the skip list by rendering a throwaway fixture in which they *do* carry the capability scope:
+  ```
+  ## [0.2.0] - @@DATE@@
+  - Publish calendars and diagnostics with create-new writes
+  - Make the private-data guard see the published history and stop failing on calendar syntax
+  - Read the producer's own export layout
+  ```
+  (`build a clean merged coverage report`, given the same scope, was dropped — the skip list's whole point.) A first attempt matched the whole commit message, which dropped a capability note whose *body* mentioned the coverage reports; anchoring the patterns at the message start and never across a newline fixed it, and the comment beside the parsers records why.
+- [x] **F2 — the documented release procedure could not run.** The renderer refused a version whose `v*` tag did not exist yet, so "render the section, commit the change log, then push the tag" exited 1 on its first command, and the only working order needed an undocumented tag move that the use case forbids. The renderer now takes the released revision as the `v<version>` tag when it exists and otherwise `HEAD`, the revision the tag will point at, and stamps the heading from that revision's own committer date — never the clock, and never a refusal. For the untagged case it passes `--tag v<version>`, which the generator needs to name the newest release at all:
+  ```
+  $ git-cliff --config cliff.toml --repository . --sort oldest          # untagged newest revision
+  ERROR git_cliff > Template render error: Filter call 'trim_start_matches' failed
+  Filter `trim_start_matches` was called on an incorrect value: got `null` but expected a String
+  $ git-cliff --config cliff.toml --repository . --sort oldest --tag v0.2.0
+  ## [0.2.0] - @@DATE@@
+  ### <!-- 2 -->Fixes
+  - Name the platform in the refusal
+  ## [0.1.0] - @@DATE@@
+  ### <!-- 1 -->New capabilities
+  - Convert a supported plan into a calendar
+  ```
+  New delta scenario `A version's section can be rendered before its tag exists` (a fixture with no `v*` tag at all, newest revision committed 2026-03-03):
+  ```
+  Feature: Publish a public release
+    Scenario: A version's section can be rendered before its tag exists
+     ✔  Given a history whose newest revision names a new capability and carries its own date
+     ✔  And the version is not tagged yet
+     ✔  When the maintainer generates the change log for version 0.1.0
+     ✔  Then the change log holds one section, for version 0.1.0
+     ✔  And that section states the date of the revision it will be tagged at
+  1 scenario (1 passed), 5 steps (5 passed)   GREEN_EXIT=0
+  ```
+  Committed as `57cf2ae` (renderer, scenario, steps). The procedure, its one-sentence reason and the ordering are corrected in `README.md`, `design.md` and the delta use case in `8bd9c6c`; the README now carries exactly the sequence the review prescribed:
+  ```
+  released=$(git rev-parse HEAD)
+  nix-shell -p git-cliff --run \
+    'scripts/render-changelog.sh --version <version> --repo . --out CHANGELOG.md'
+  git add CHANGELOG.md
+  GIT_COMMITTER_DATE="$(git log -1 --date=iso-strict --format=%cd "$released")" \
+    git commit -m "docs(changelog): record <version>"
+  git tag v<version>
+  git push origin <branch> v<version>
+  ```
+- [x] **F3 — the release could ship a stale change log.** The `publish` job refuses only a check run that has already concluded non-green, so a `changelog` job still running when the tag is pushed let a stale release go public. `scripts/prepare-release.sh` now runs `scripts/render-changelog.sh --check` against the repository's committed `CHANGELOG.md` for the version being released after every other refusal and before it stages anything; a checkout with no committed change log has nothing that could be stale (the fixture checkouts in the suite are exactly that), so there the render alone produces the staged files. Committed as `d02b08b`, with the permanent `@e2e` transcript refreshed (the check prints one deterministic line on success). No scenario asserts this refusal — the delta's prepare scenarios build fixtures with no committed change log — so it was proven by a throwaway run against a fixture whose committed change log was made stale by hand:
+  ```
+  $ scripts/prepare-release.sh --version 0.2.0 --binaries <bins> --repo <fixture> --out <out>
+  --- <fixture>/CHANGELOG.md  2026-10-13 ...
+  +++ /tmp/tmp.HoFmducJWt  2026-10-13 ...
+  @@ -1,4 +1,5 @@
+   ## [0.2.0] - 2026-02-02
+   ### Fixes
+  -- Name the platform in the wrong words
+  +- Name the platform in the refusal
+  +[0.1.0...0.2.0](https://github.com/kressnerd/duty2cal/compare/v0.1.0...v0.2.0)
+  render-changelog: the committed change log differs from a fresh render of version 0.2.0
+  exit 1, and no output directory was created at all
+  ```
+  With the same fixture's change log made current by a render, the same command exits 0, prints `change log is current for version 0.2.0` and stages the archives, the release text and the change log.
+- [x] **F4 — the check's scope was overstated.** `design.md` said `--check` compares the *whole file*; it compares the target version's section and keeps every earlier section verbatim (verified when they were newest). The renderer section, the `--check` bullet and the glossary's Drift check row now say that, and the check itself is unchanged. Committed as `8bd9c6c` and `4a5770b`.
+- [x] **F5 — the comparison link is built by the renderer, not the template.** `cliff.toml` carries a `@@DATE@@` placeholder and the renderer strips the group markers, collapses repeated subjects and appends the markdown comparison link. Every place that said otherwise — the technology table's Comparison links row, the determinism Host-paths bullet, the decisions ledger and the traceability row — now says the renderer appends a literal URL built from the previous `v*` tag and the version, none for the first version; the ledger entry keeps its meaning and its rejected alternatives. Committed as `8bd9c6c` (plus the same claim in `08-crosscutting-concepts.md`, committed as `4a5770b`).
+- [x] **F6 — the design's file table was incomplete.** It now also names `apps/cli/tests/features_runner.rs` (the `DutyWorld` gained the `changelog` field; the strict-mode builder is unchanged), `README.md`, and the five durable `docs/arc42/` chapters this change updates; and its `.github/workflows/release.yml` row says what is true — the `prepare` job also installs the pinned generator, because the preparation now renders the release text and the change log. Committed as `8bd9c6c`.
+- [x] **F7 — the durable architecture documents were stale.** Corrected and re-derived, each claim checked against the implementation: `05-building-block-view.md` (the renderer's date rule, its refusal list and the machinery skip list; the `cliff.toml` row; the `ci.yml` row no longer claims every existing job is untouched), `06-runtime-view.md` (the generator renders the history and the renderer extracts the version's section; the released revision is the tag or `HEAD`; the prepare job installs the pinned generator; the landing-gate list gains the `public-text` job), `08-crosscutting-concepts.md` (the determinism time and host-path inputs; the drift paragraph gains the preparation's check and the machinery list; what a reader sees gains the machinery skip and the collapse; the preparation's refusal list gains the stale change log), `12-glossary.md` (the gate list gains `public-text`; Housekeeping revision and Release-note subject point at `cliff.toml` and `scripts/render-changelog.sh` instead of the filter `prepare-release.sh` no longer has; Release preparation, Release text, Released change and Drift check re-derived), `02-architecture-constraints.md` (the changelog gate row gains the preparation's check; a new row records the machinery skip list), and the review's own last addition: `11-risks-and-technical-debt.md` gains **TD-008**, the limit the reader lens proved — a version's notes are only as clear as its released revisions' own subjects, and the machinery skip list catches only the words that name the project's own tooling — with the follow-up (commit subjects for released revisions written in a crew member's vocabulary, and a check that would notice a version whose notes name a change no reader can act on). Committed as `4a5770b`; `reuse lint` 134/134, `givn readme check` OK and `pii-guard` clean after the edits.
+- [x] **F8 — the two bullet counts disagreed.** `design.md`'s "thirty-seven" is now stated exactly: what a render without the collapse would list — thirty-four duplicate revisions plus two capabilities plus one fix — against the published page's sixteen entries and the committed section's three. The published page's real count (16, not the fifteen the review's Question 2 recorded) and the correction are appended to `design-review.md` as a correction note ahead of its sign-off line, which is untouched and the review is not re-run. Committed as `8bd9c6c`.
+- [x] **F9 — this item set.** The tasks for F1 to F8 and the durable-chapter updates are recorded above, each ticked with its evidence and the revision that landed it (`57da16b`, `57cf2ae`, `d02b08b`, `8bd9c6c`, `4a5770b`). The final verification above was re-run after the last of these revisions, and every count in it is from that run.
 
 ## Evidence pointers
 
