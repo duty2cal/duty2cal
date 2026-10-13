@@ -251,9 +251,9 @@ fn is_continuation(text: &str) -> bool {
 fn prints_body_word(row: &[&Word], areas: &[Area]) -> bool {
     row.iter().any(|word| {
         let centre = (word.bbox.x0 + word.bbox.x1) / 2.0;
-        areas.iter().any(|area| {
-            centre >= area.x0 && centre < area.x1 && is_body_label(&area.label)
-        })
+        areas
+            .iter()
+            .any(|area| centre >= area.x0 && centre < area.x1 && is_body_label(&area.label))
     })
 }
 
@@ -307,7 +307,12 @@ fn resolve_date(cells: &mut [String], areas: &[Area], month: Option<(i32, Month)
     if date.weekday() != wanted {
         return;
     }
-    cells[index] = format!("{:04}-{:02}-{:02}", date.year(), u8::from(date.month()), date.day());
+    cells[index] = format!(
+        "{:04}-{:02}-{:02}",
+        date.year(),
+        u8::from(date.month()),
+        date.day()
+    );
 }
 
 /// Whether a band is the named body label.
@@ -322,7 +327,10 @@ fn heading_month(text: &str) -> Option<(i32, Month)> {
     // The month and the year are separate prints, but a long month name can
     // touch the year, and the extraction then joins them.
     let stamp = parts.next()?;
-    let letters: String = stamp.chars().take_while(char::is_ascii_alphabetic).collect();
+    let letters: String = stamp
+        .chars()
+        .take_while(char::is_ascii_alphabetic)
+        .collect();
     let digits = stamp.get(letters.len()..).unwrap_or_default();
     let year = if digits.is_empty() {
         parts.next()?.parse::<i32>().ok()?

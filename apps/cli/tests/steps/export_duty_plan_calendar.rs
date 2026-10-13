@@ -331,8 +331,7 @@ async fn a_plan_with_an_all_day_code(
     start: String,
     end: String,
 ) {
-    let mut cells: Vec<(f64, &str)> =
-        vec![(DATE_X, &date), (ACTIVITY_X, &code), (TAGS_X, "==")];
+    let mut cells: Vec<(f64, &str)> = vec![(DATE_X, &date), (ACTIVITY_X, &code), (TAGS_X, "==")];
     if !start.is_empty() {
         cells.push((START_X, &start));
     }
@@ -1888,7 +1887,15 @@ fn reference_plan(w: &mut DutyWorld) {
         "18:00",
         "20:10",
     );
-    row(&mut items, "2098-06-14", "Layover: Kopernik", "", "", "", "");
+    row(
+        &mut items,
+        "2098-06-14",
+        "Layover: Kopernik",
+        "",
+        "",
+        "",
+        "",
+    );
     row(
         &mut items,
         "2098-06-15",
@@ -2052,7 +2059,11 @@ async fn a_plan_with_a_split_layover_marker(w: &mut DutyWorld) {
     // The marker and its station land in different columns.
     items.extend(support::at(
         570.0,
-        &[(DATE_X, "2099-06-08"), (LAYOVER_X, "Layover:"), (TAGS_X, "ABC")],
+        &[
+            (DATE_X, "2099-06-08"),
+            (LAYOVER_X, "Layover:"),
+            (TAGS_X, "ABC"),
+        ],
     ));
     write_fixture(w, &items);
 }
@@ -2160,7 +2171,10 @@ async fn a_plan_with_a_lone_arrival(w: &mut DutyWorld) {
 #[given("a supported duty plan with an unknown activity code and no route")]
 async fn a_plan_with_a_codeless_route(w: &mut DutyWorld) {
     let mut items = support::detail_header_row(600.0);
-    items.extend(support::at(585.0, &[(DATE_X, "2099-06-07"), (ACTIVITY_X, "LU900")]));
+    items.extend(support::at(
+        585.0,
+        &[(DATE_X, "2099-06-07"), (ACTIVITY_X, "LU900")],
+    ));
     write_fixture(w, &items);
 }
 
@@ -2232,7 +2246,11 @@ fn plan_with_a_printed_date_cell(w: &mut DutyWorld, heading: Option<&[&str]>, ce
     if let Some(parts) = heading {
         items.extend(support::at(
             830.0,
-            &[(DATE_X, "Month:"), (DATE_X + 40.0, parts[0]), (DATE_X + 100.0, parts[1])],
+            &[
+                (DATE_X, "Month:"),
+                (DATE_X + 40.0, parts[0]),
+                (DATE_X + 100.0, parts[1]),
+            ],
         ));
     }
     items.extend(support::at(
@@ -2398,7 +2416,7 @@ async fn the_revision_is_current(w: &mut DutyWorld) {
         .find_map(|line| line.strip_prefix("DTSTAMP:").map(str::to_string))
         .expect("the calendar carries a revision stamp");
     assert!(
-        stamp.len() == 16 && stamp.ends_with('Z') && stamp >= "20260101T000000Z".to_string(),
+        stamp.len() == 16 && stamp.ends_with('Z') && stamp.as_str() >= "20260101T000000Z",
         "the revision is not a current UTC stamp: {stamp}"
     );
 }
@@ -2406,7 +2424,10 @@ async fn the_revision_is_current(w: &mut DutyWorld) {
 #[given("a supported duty plan whose row prints only a station")]
 async fn a_plan_with_a_station_only_row(w: &mut DutyWorld) {
     let mut items = support::detail_header_row(600.0);
-    items.extend(support::at(585.0, &[(DATE_X, "2099-06-07"), (FROM_X, "ABC")]));
+    items.extend(support::at(
+        585.0,
+        &[(DATE_X, "2099-06-07"), (FROM_X, "ABC")],
+    ));
     write_fixture(w, &items);
 }
 

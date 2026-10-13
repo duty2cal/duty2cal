@@ -263,7 +263,10 @@ fn layover_station(cells: &[String]) -> Option<String> {
         let Some(at) = lower.find(MARKER) else {
             continue;
         };
-        let tail = cell[at + MARKER.len()..].trim().trim_end_matches(',').trim();
+        let tail = cell[at + MARKER.len()..]
+            .trim()
+            .trim_end_matches(',')
+            .trim();
         if !tail.is_empty() {
             return Some(tail.to_string());
         }

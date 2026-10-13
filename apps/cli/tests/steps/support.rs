@@ -28,16 +28,27 @@ fn escape(text: &str) -> String {
         .replace(')', "\\)")
 }
 
+/// A positioned piece of text in a generated fixture: x, y, and the text.
+pub type TextItem = (f64, f64, String);
+
 /// The roster month and year a fixture's dates belong to, and its heading.
 ///
 /// A fixture writes its dates as `YYYY-MM-DD`; the builder prints them the way
 /// the producer does, so the reader always faces the producer's spelling.
-fn producer_layout(
-    items: &[(f64, f64, String)],
-) -> (Vec<(f64, f64, String)>, Option<Vec<(f64, f64, String)>>) {
+fn producer_layout(items: &[TextItem]) -> (Vec<TextItem>, Option<Vec<TextItem>>) {
     const MONTHS: [&str; 12] = [
-        "January", "February", "March", "April", "May", "June", "July", "August", "September",
-        "October", "November", "December",
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
     ];
     let mut months: Vec<(i32, u32)> = Vec::new();
     let mut printed = Vec::with_capacity(items.len());
@@ -62,7 +73,11 @@ fn producer_layout(
         if !months.contains(&(year, month)) {
             months.push((year, month));
         }
-        printed.push((*x, *y, format!("{day:02} {}", weekday_abbreviation(year, month, day))));
+        printed.push((
+            *x,
+            *y,
+            format!("{day:02} {}", weekday_abbreviation(year, month, day)),
+        ));
     }
     assert!(
         months.len() <= 1,
@@ -100,9 +115,7 @@ pub fn weekday_abbreviation(year: i32, month: u32, day: u32) -> &'static str {
     if month < 3 {
         shifted -= 1;
     }
-    let index = (shifted
-        + shifted / 4
-        - shifted / 100
+    let index = (shifted + shifted / 4 - shifted / 100
         + shifted / 400
         + SHIFTS[(month - 1) as usize]
         + day as i32)
