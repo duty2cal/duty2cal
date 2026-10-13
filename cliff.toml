@@ -61,20 +61,25 @@ commit_parsers = [
   # The project's own machinery, even when a revision carries a capability
   # scope: a revision whose words name a tool, a workflow, a check, a test, a
   # document or the machinery of building, packaging and publishing is not a
-  # change a reader can act on. The terms are kept narrow and distinctive so no
-  # sentence a reader can act on matches; `scripts/render-changelog.sh` reads
-  # the marked list below and refuses a term it cannot find realized here.
-  # <!-- machinery-skip-list: coverage cobertura clippy rustfmt notices workflow transcript -->
+  # change a reader can act on. Each term is a distinctive phrase that names
+  # that tooling rather than a bare common word, so a subject that merely
+  # borrows the word for a crew member's own work ("Support the crew's ramp
+  # workflow", "Handle notices from the roster") stays a released change. A
+  # term is a comma-separated phrase; `scripts/render-changelog.sh` reads the
+  # marked list below and refuses a term it cannot find realized here.
+  # <!-- machinery-skip-list: coverage report, coverage merge, cobertura, clippy, rustfmt, third-party notices, ci workflow, release workflow, e2e transcript -->
   # Each pattern is anchored at the start of the message and `.` never crosses a
   # newline, so the terms are matched against the revision's subject only: a
   # body that happens to discuss the tooling must not silence a released change.
-  { message = "(?i)^.*coverage", skip = true },
+  { message = "(?i)^.*coverage report", skip = true },
+  { message = "(?i)^.*coverage merge", skip = true },
   { message = "(?i)^.*cobertura", skip = true },
   { message = "(?i)^.*clippy", skip = true },
   { message = "(?i)^.*rustfmt", skip = true },
-  { message = "(?i)^.*notices", skip = true },
-  { message = "(?i)^.*workflow", skip = true },
-  { message = "(?i)^.*transcript", skip = true },
+  { message = "(?i)^.*third-party notices", skip = true },
+  { message = "(?i)^.*ci workflow", skip = true },
+  { message = "(?i)^.*release workflow", skip = true },
+  { message = "(?i)^.*e2e transcript", skip = true },
 
   # Breaking changes first: a reader looks for what may stop working before
   # what is new.

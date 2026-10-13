@@ -69,7 +69,7 @@ The maintainer decides a version is ready and prepares its release.
   - Publishing a version states the version once, in the archive names, the release text and the tag, so no two places disagree about what was released.
 - **What a release states**
   - A version's notes name the changes a user can see, grouped by kind — new capabilities first, then fixes, then performance and reversals — with the group a reader looks for first at the top.
-  - A revision whose subject names a capability is a released change; a revision whose subject names a tool, a workflow, a check, a test, a document, or the machinery of building, packaging and publishing is not, and it is never listed.
+  - A revision whose subject names a capability is a released change; a revision whose subject names a tool, the project's own automation workflow, a check, a test, a document, or the machinery of building, packaging and publishing is not, and it is never listed — and a subject that merely borrows one of those words for a crew member's own work is still a released change.
   - Each entry states the change in the release-note words the revision carries, so the notes and the history agree, and the notes never claim work that the released revision does not contain.
   - A version whose notes would name no change a user can see is refused rather than published.
   - The notes are the newest section of the change log the repository keeps, and every earlier version stays unchanged beside it.

@@ -949,6 +949,63 @@ async fn notes_omit_the_projects_own_tooling(w: &mut DutyWorld) {
     }
 }
 
+/// The delta history with one more released revision: a feature that borrows a
+/// machinery skip-list word for a crew member's own work. The word names the
+/// crew's work, not the project's tooling, so only a skip list narrowed to
+/// distinctive tooling phrases leaves it in the notes.
+const CHANGE_LOG_BORROWED_WORD_HISTORY: [(&str, &str, &str); 8] = [
+    (
+        "2026-01-01",
+        "feat(export-duty-plan-calendar): Convert a supported duty plan into a calendar",
+        "",
+    ),
+    ("2026-01-02", "chore(ci): tune the release pipeline", ""),
+    (
+        "2026-01-03",
+        "docs(readme): describe the download route",
+        "",
+    ),
+    (
+        "2026-01-04",
+        "fix(publish-public-release): Name the platform in the refusal",
+        "",
+    ),
+    (
+        "2026-01-05",
+        "fix(publish-public-release): build a clean merged coverage report",
+        "",
+    ),
+    (
+        "2026-01-06",
+        "feat(export-duty-plan-calendar): Support the crew's ramp workflow",
+        "",
+    ),
+    (
+        "2026-01-07",
+        "test(publish-public-release): cover the refusal paths",
+        "v0.2.0",
+    ),
+    ("2026-01-08", "Publish the notes by hand", ""),
+];
+
+/// The released subject that merely borrows a tooling word for a crew member's
+/// own work; the narrowed skip list must still name it.
+const BORROWED_TOOLING_WORD_SUBJECT: &str = "Support the crew's ramp workflow";
+
+#[given("a revision whose subject borrows a tooling word for a crew member's own work")]
+async fn a_revision_borrowing_a_tooling_word(w: &mut DutyWorld) {
+    build_history(w, &CHANGE_LOG_BORROWED_WORD_HISTORY);
+}
+
+#[then("the notes name the revision whose subject borrows a tooling word for a crew member's own work")]
+async fn notes_name_the_borrowed_word_revision(w: &mut DutyWorld) {
+    let notes = change_log_notes(w).join("\n");
+    assert!(
+        notes.contains(BORROWED_TOOLING_WORD_SUBJECT),
+        "the notes dropped a released change whose subject merely borrows a tooling word: {notes}"
+    );
+}
+
 /// A history whose released revisions name only work no user can see.
 const INVISIBLE_HISTORY: [(&str, &str, &str); 3] = [
     ("2026-01-01", "chore(ci): tune the release pipeline", ""),

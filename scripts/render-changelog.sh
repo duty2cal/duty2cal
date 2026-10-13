@@ -174,16 +174,19 @@ done
 # The allow-list decides which scopes are released; the machinery skip list
 # decides which words are, whatever a revision's scope says — a
 # `fix(<capability>):` revision whose words describe the project's own tooling
-# is still not a change a reader can act on. The list is realized as `skip`
-# parsers in the configuration and marked beside them; the two are compared
-# here so the marked list cannot drift from what the generator applies.
+# is still not a change a reader can act on. Each term is a distinctive tooling
+# phrase (comma-separated in the marked line, so a term may contain spaces) and
+# is realized as a `skip` parser in the configuration; the two are compared here
+# so the marked list cannot drift from what the generator applies.
 machinery_line=$(grep -F -- "$machinery_marker" "$config" | head -1 || true)
 if [ -z "$machinery_line" ]; then
   refuse "the machinery skip list is not recorded in $config"
 fi
 machinery=$(printf '%s\n' "$machinery_line" | sed -e "s|.*$machinery_marker||" -e 's|-->||g')
 parsers=$(grep -v -F -- "$machinery_marker" "$config")
-for term in $machinery; do
+printf '%s\n' "$machinery" | tr ',' '\n' | while IFS= read -r term; do
+  term=$(printf '%s' "$term" | sed -e 's|^[[:space:]]*||' -e 's|[[:space:]]*$||')
+  [ -n "$term" ] || continue
   case "$parsers" in
     *"$term"*) ;;
     *) refuse "the machinery skip list names a term the configuration does not skip: $term (in $config)" ;;

@@ -9,11 +9,13 @@ Feature: Publish a public release
   Scenario: A version's notes group the changes a reader can see
     Given a history whose released revisions name a new capability, a fix, and work no user can see
     And a revision typed as a fix of that capability whose words name the project's own tooling
+    And a revision whose subject borrows a tooling word for a crew member's own work
     When the maintainer generates the change log for version 0.2.0
     Then the notes for version 0.2.0 name the new capability and the fix
     And the notes name the new capability before the fix
     And the notes name no revision whose work no user can see
     And the notes name no revision whose words name the project's own tooling
+    And the notes name the revision whose subject borrows a tooling word for a crew member's own work
 
   @givn.added
   Scenario: A version that changes nothing a user can see is refused
