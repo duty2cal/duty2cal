@@ -3,8 +3,8 @@
 //!
 //! One file per capability. The steps drive the real preparation command
 //! (`scripts/prepare-release.sh`) as a subprocess, as the conversion
-//! capability's steps drive the built binary. RED-phase steps use the
-//! `unimplemented!("<step>")` stub; a step body is never empty.
+//! capability's steps drive the built binary. A step body is never empty: the
+//! RED phase writes each new step as a stub that panics with its own name.
 #![allow(clippy::too_many_arguments)] // step signatures mirror the captured step text
 
 use std::path::{Path, PathBuf};

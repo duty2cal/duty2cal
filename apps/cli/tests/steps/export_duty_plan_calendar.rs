@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
 //! Step definitions for the capability `export-duty-plan-calendar`.
 //!
-//! One file per capability. RED-phase steps use the `unimplemented!("<step>")`
-//! stub; a step body is never empty.
+//! One file per capability. A step body is never empty: the RED phase writes a
+//! new step as a stub that panics with its own name.
 #![allow(clippy::too_many_arguments)] // step signatures mirror the captured step text
 
 use std::path::PathBuf;

@@ -541,9 +541,46 @@ Use-case constraint: the assertion is on what the preparation command reported a
   12 steps (12 passed)   E2E_SUITE_EXIT=0
   ```
   Two tidy-ups with no behaviour change: the preparation is now invoked as `scripts/prepare-release.sh` from the repository root (the command the design documents, and the only form whose transcript carries no local path), and `run_command` records each command line so the committed transcript reads as a terminal session. The long step attribute is wrapped as the existing steps wrap theirs.
-- [ ] COMMIT — `<hash>`:
+- [x] COMMIT — `03bf20f`:
   ```
+  feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
+
+  Scenario: Maintainer prepares a release and runs the archived executable
+
+  RED: the five e2e steps existed as unimplemented!() stubs and the single-scenario run failed with exit 101. The prescribed ./run-tests.sh --e2e --name "<title>" exits 2 because cucumber-rs 0.23 refuses --tags together with --name; the scenario's unique title is selected with --name, and the e2e suite is run separately.
+  GREEN: the Given puts the real built binary under this machine's platform and stand-ins under the other four; the scenario asserts the preparation's own report (this machine's archive and its digest, recomputed independently), the version in the release text, then extracts the archive with tar and runs the extracted executable, asserting the printed usage line and a non-zero exit status. The transcript is committed at givn/changes/publish-public-release/evidence/visual/maintainer-prepares-a-release-and-runs-the-archived-executable/transcript.txt with the run-specific directory replaced by <scenario-dir>.
+  REFACTOR: the preparation is invoked as scripts/prepare-release.sh from the repository root so the transcript carries no local path, and run_command records each command line; the single scenario passes 7/7 steps and ./run-tests.sh --e2e passes 2 scenarios.
   ```
+
+## Final verification (all nine scenarios green)
+
+- [x] Full suite — `nix-shell -p rustc cargo --run './run-tests.sh'`:
+  ```
+  [Summary]
+  2 features
+  84 scenarios (84 passed)
+  312 steps (312 passed)
+  FULL_EXIT=0
+  ```
+- [x] E2E suite — `nix-shell -p rustc cargo --run './run-tests.sh --e2e'`:
+  ```
+  [Summary]
+  2 features
+  2 scenarios (2 passed)
+  12 steps (12 passed)
+  E2E_EXIT=0
+  ```
+- [x] Corpus lint — `givn lint --change publish-public-release`:
+  ```
+  [SHAPE] advisory  … scenarios 'A platform whose executable was not built stops the release' and 'An executable for an unrecognised platform is refused' share a shape — consider merging
+  [SHAPE] advisory  … scenarios 'A platform whose executable was not built stops the release' and 'An unreadable executable stops the preparation' share a shape — consider merging
+  [SHAPE] advisory  … scenarios 'An executable for an unrecognised platform is refused' and 'An unreadable executable stops the preparation' share a shape — consider merging
+  givn lint: 1 file(s) checked — clean
+  LINT_EXIT=0
+  ```
+  The three advisories are suggestions about the refusal scenarios' deliberately parallel shapes; with no `@wip` left the verdict is clean and the exit code is 0.
+- [x] Acceptance greps: `grep -c '@wip' …/publish-public-release.feature` → `0`; every `@givn.added` untouched and `@e2e` still on `Maintainer prepares a release and runs the archived executable`; `grep -rn 'unimplemented!' apps/cli/tests/steps/` → no output (the two doc comments that used the token as an example now describe the stub without it).
+- [x] Preparation determinism, proved once outside the steps with the real executable: the two digest lists in scenario 5's GREEN box are identical for all five archives, and `cmp` reports no difference.
 
 ## Non-scenario work (host automation and the public surface)
 
