@@ -24,6 +24,10 @@ Real duty plans are read for analysis but never committed. Fixtures, golden cale
 
 Source-code classification (all-day vs timed vs travel vs layover vs unknown) and UTC endpoint date resolution are pure functions over source-derived data. Keeping them free of I/O lets return-driven edge cases (adjacent-day qualifiers, the narrow overnight rollover, zero-length intervals) be specified and tested without a real PDF, and prevents the extraction dependency from leaking into the domain.
 
+## Printed identification of a travel leg
+
+A plan prints a travel row's crew position (`Pos`) and the flight's activity (`Activity`) in two separate columns. The row keeps both, and one pure rule reads them together: `printed_identification()` in the domain is used for the travel title and for the failure message that names an unmatched travel fragment, so the text a crew member reads and the text a failure reports cannot drift apart. A departure row and an arrival row belong to the same leg when both printed fields are equal, so a fragment printing a different position — or none while its partner prints one — has no compatible partner and the conversion refuses it instead of guessing. The `DH` marker needs no second mechanism: it reaches the title exactly as the plan prints it.
+
 ## Release determinism
 
 Preparing the same five executables and version twice produces byte-identical archives, so a third party can reproduce a release and its checksum is meaningful. The three nondeterministic inputs of `tar` are fixed — ordering (`--sort=name`), time (`--mtime=@0`) and ownership (`--owner=0 --group=0 --numeric-owner`) — and `gzip` is invoked with `-n`, so no name or timestamp is embedded.

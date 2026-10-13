@@ -42,6 +42,7 @@ flowchart TB
 | QS-010 | Release immutability | A published release's asset is replaced, deleted, or its version tag moved. | The published release rejects the change: assets cannot be replaced or deleted and the tag cannot be moved, so a correction appears as the next version. |
 | QS-011 | Release notes / releasability | A history whose released revisions name a new capability, a fix, and work no user can see is released as version 0.2.0. | The release text is version 0.2.0's newest section of the change log, names the new capability before the fix, names no revision whose work no user can see, and states the comparison against version 0.1.0; a version whose notes would name no visible change is refused before publication. |
 | QS-012 | Release integrity (repository-history currency) | A committed `CHANGELOG.md` whose newest section differs from what the released revision's history states. | The check refuses and names the version whose section differs, so a release is not published from a stale change log. |
+| QS-013 | Correctness (printed fidelity) | A supported plan prints a crew position beside a flight number on a travel leg. | The published travel title prints the two as separate words (`FB 123 ABC-DEF`); a leg that prints no crew position keeps the flight number alone (`123 ABC-DEF`), and a crew position printed beside a non-flight activity stays out of that activity's title. |
 
 **Stimulus / response / metric** for the primary scenario:
 
