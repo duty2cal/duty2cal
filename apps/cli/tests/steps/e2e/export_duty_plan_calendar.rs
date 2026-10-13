@@ -15,7 +15,7 @@ use crate::DutyWorld;
 /// Where the scenario's terminal transcript is committed as evidence.
 fn transcript_path() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
-        "../../givn/changes/export-released-roster-calendar/evidence/visual/\
+        "../../givn/changes/archive/export-released-roster-calendar/evidence/visual/\
          crew-member-converts-a-supported-duty-plan/transcript.txt",
     )
 }

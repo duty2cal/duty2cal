@@ -235,3 +235,30 @@ Every gap the review opened with is classified and resolved:
 - README impact: updated (Description, Quick start, Prerequisites, Usage, Contributing).
 
 REVIEW: PASS
+
+## Archive record
+
+`givn archive --change export-released-roster-calendar` passed the gate hooks, the run declaration and the
+README completeness gate, then refused:
+
+```
+error: invalid use-case document '…/specs/export-duty-plan-calendar/usecase.md':
+       interaction references undeclared capability 'export-duty-plan-calendar'
+```
+
+The document declares that capability five ways (id-first bullet, `NEW in` bullet, routing notation, colon,
+backticks) and the proposal's Capability Routing row now leads with the id; every shape is rejected. An
+earlier refusal named `## Diagram`, a heading that exists in givn's own ideation template and nowhere in
+this repository, which is what the validator appeared to read. The operator was asked and chose a manual
+archive over further probing:
+
+- the use-case document and the delta feature are merged into the permanent corpus at
+  `givn/specs/export-duty-plan-calendar/`, with the delta and `@givn.added` markers stripped and `@e2e`
+  kept;
+- the change moved to `givn/changes/archive/export-released-roster-calendar/`;
+- `scripts/assemble-features.sh` excludes the archive directory, so an archived delta is not assembled
+  twice;
+- the committed e2e transcript path follows the change into the archive.
+
+Effects match what the tool's archive performs; the tool's refusal is recorded here because a manual
+archive is otherwise silent.
