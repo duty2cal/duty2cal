@@ -127,8 +127,9 @@ README-IMPACT: updated - Description, Quick start, Prerequisites, Usage, Contrib
 - [x] Visual review complete with both Persona verdicts and every finding dispositioned.
 - [x] Deterministic gates: `cargo fmt --all --check` clean, `cargo clippy --workspace --all-targets -- -D warnings` no warnings, `cargo deny check` advisories/bans/licenses/sources ok, `reuse lint` compliant with REUSE 3.3, `bash scripts/license-headers.sh` clean, `bash scripts/pii-guard.sh` clean over the tree and every revision, third-party notices with no drift, `actionlint` 1.7.12 clean over both workflows, `scripts/public-text-check.sh` clean, `givn lint` clean (advisories only).
 
-## Host-side evidence still owed
+## Host-side evidence
 
-Not a gap in this change's own verification, and recorded here so the release cannot be claimed before it exists: the first CI run on the published revision, the first tagged release with its `publish` and `verify` jobs, and the operator's confirmation of the owner-applied settings table in `design.md`. The publish phase records all three in this file when they exist; until then the change claims nothing host-side.
+- **The repository holds the project.** 2026-10-13: the history was pushed to `kressnerd/duty2cal` (`+ 4de3b32...bbbf7f main -> main (forced update)`), replacing the bootstrap commit; `refs/heads/main` is `bbbf7f2`. Nothing is published publicly: the repository is still private, so no promise has left the operator's account yet.
+- **Still owed**: the first CI run's outcome on `bbbf7f2` (its result is not readable here without a credential, so the operator reports it), the visibility flip, the owner-applied settings table from `design.md`, and the first tagged release with its `publish` and `verify` jobs. The change claims nothing host-side before each of those exists.
 
 REVIEW: PASS
