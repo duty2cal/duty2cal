@@ -48,8 +48,8 @@ third-party notices drift check (`cargo about generate about.hbs
 scripts (`./measure-coverage.sh`, `./merge-coverages.sh`). A change does not land
 while any of them fails.
 
-Every source file carries an SPDX header on line 1 (or on line 2 after a
-shebang): `SPDX-License-Identifier: MPL-2.0`.
+Every source file carries an SPDX licence header on line 1 (or on line 2 after a
+shebang), naming MPL-2.0 in the standard SPDX licence tag.
 
 ## Privacy: never attach a real duty plan
 
