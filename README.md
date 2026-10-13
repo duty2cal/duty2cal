@@ -1,7 +1,7 @@
 # duty2cal
 
 <!-- givn:begin:coverage-badge -->
-[![Line Coverage: n/a](https://img.shields.io/badge/line%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
+[![Line Coverage: 98%](https://img.shields.io/badge/line%20coverage-98%25-brightgreen)](coverage/cobertura-coverage.xml)
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
 
@@ -33,12 +33,16 @@ target/release/duty2cal ./2026-06.pdf
 The calendar appears beside the source as `./2026-06.ics`.
 
 <!-- givn:begin:run -->
-Start the built product on one plan:
+## Run
+
+Run the tool:
 
 ```sh
-cargo run --release -p duty2cal -- ./2026-06.pdf
+cargo run --release -p duty2cal -- <duty-plan.pdf>
 ```
+
 <!-- givn:end:run -->
+
 
 
 ## Download a release
@@ -147,15 +151,10 @@ Run the project-owned scripts configured in `givn/commands.yaml`:
 `./merge-coverages.sh` combines them into the merged report linked by the
 badges above.
 
-Quality gates, clean before a change is proposed:
-
-```sh
-cargo fmt --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo build --workspace --all-targets
-```
+Add lint, build, and other project commands alongside these scripts.
 
 <!-- givn:end:development -->
+
 
 
 ## Contributing
@@ -187,3 +186,19 @@ project. The complete third-party list is in
 
 Contributions are signed off under the DCO (`git commit -s`); there is no CLA
 (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+
+<!-- givn:begin:coverage -->
+## Coverage
+
+Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
+
+Line coverage: 98% (874/889)
+Branch coverage: n/a (0/0)
+
+Reproduce the result:
+
+```sh
+./measure-coverage.sh
+./merge-coverages.sh
+```
+<!-- givn:end:coverage -->

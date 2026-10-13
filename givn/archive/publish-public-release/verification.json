@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "publish-public-release",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
-  "started_at_unix": 1791874297,
-  "finished_at_unix": null
+  "status": "proven",
+  "candidate_revision": "331a4cfb7382a485b68a2caa353a9ccfc2abfec7",
+  "tested_revision": "331a4cfb7382a485b68a2caa353a9ccfc2abfec7",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 2.8387055549999998
+    },
+    "regular": {
+      "status": "passed",
+      "total": 84,
+      "passed": 84,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 16.364603047
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 874,
+    "line_valid": 889,
+    "line_percent": 98
+  },
+  "started_at_unix": 1791874534,
+  "finished_at_unix": 1791874605
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <!DOCTYPE coverage SYSTEM "https://cobertura.sourceforge.net/xml/coverage-04.dtd">
-<coverage branch-rate="0" branches-covered="0" branches-valid="0" complexity="0" line-rate="0.6951631046119235" lines-covered="618" lines-valid="889" timestamp="1791874488" version="2.0.3">
+<coverage branch-rate="0" branches-covered="0" branches-valid="0" complexity="0" line-rate="0.6951631046119235" lines-covered="618" lines-valid="889" timestamp="1791874605" version="2.0.3">
     <sources>
         <source>/home/dan/dev/PRIVATE/duty2ical</source>
     </sources>
@@ -179,344 +179,8 @@
                 </class>
             </classes>
         </package>
-        <package line-rate="0.6" branch-rate="0" name="crates.duty2cal-core.src.domain" complexity="0">
-            <classes>
-                <class branch-rate="0" complexity="0" filename="crates/duty2cal-core/src/domain/timing.rs" line-rate="0.5166666666666667" name="crates.duty2cal-core.src.domain.timing.rs">
-                    <methods>
-                        <method name="duty2cal_core::domain::timing::parse_cell::{closure#0}" signature="" complexity="0" line-rate="0" branch-rate="0">
-                            <lines>
-                                <line hits="0" number="43" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="duty2cal_core::domain::timing::parse_cell::{closure#2}" signature="" complexity="0" line-rate="0" branch-rate="0">
-                            <lines>
-                                <line hits="0" number="54" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="duty2cal_core::domain::timing::parse_cell::{closure#1}" signature="" complexity="0" line-rate="0" branch-rate="0">
-                            <lines>
-                                <line hits="0" number="47" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="duty2cal_core::domain::timing::parse_clock::{closure#0}" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="1" number="65" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="duty2cal_core::domain::timing::adjacent_date::{closure#0}" signature="" complexity="0" line-rate="0" branch-rate="0">
-                            <lines>
-                                <line hits="0" number="89" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="duty2cal_core::domain::timing::parse_cell" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="2" number="38" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="duty2cal_core::domain::timing::parse_clock" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="3" number="59" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="duty2cal_core::domain::timing::is_qualified" signature="" complexity="0" line-rate="0" branch-rate="0">
-                            <lines>
-                                <line hits="0" number="23" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="duty2cal_core::domain::timing::adjacent_date" signature="" complexity="0" line-rate="0" branch-rate="0">
-                            <lines>
-                                <line hits="0" number="80" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="duty2cal_core::domain::timing::parse_iso_date" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="2" number="71" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="duty2cal_core::domain::timing::resolve_endpoint" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="2" number="28" branch="false"/>
-                            </lines>
-                        </method>
-                    </methods>
-                    <lines>
-                        <line branch="false" hits="0" number="23"/>
-                        <line branch="false" hits="0" number="24"/>
-                        <line branch="false" hits="0" number="25"/>
-                        <line branch="false" hits="2" number="28"/>
-                        <line branch="false" hits="2" number="29"/>
-                        <line branch="false" hits="2" number="30"/>
-                        <line branch="false" hits="2" number="31"/>
-                        <line branch="false" hits="0" number="32"/>
-                        <line branch="false" hits="2" number="34"/>
-                        <line branch="false" hits="2" number="35"/>
-                        <line branch="false" hits="2" number="38"/>
-                        <line branch="false" hits="2" number="39"/>
-                        <line branch="false" hits="2" number="40"/>
-                        <line branch="false" hits="0" number="41"/>
-                        <line branch="false" hits="0" number="42"/>
-                        <line branch="false" hits="0" number="43"/>
-                        <line branch="false" hits="0" number="44"/>
-                        <line branch="false" hits="0" number="45"/>
-                        <line branch="false" hits="0" number="46"/>
-                        <line branch="false" hits="0" number="47"/>
-                        <line branch="false" hits="0" number="48"/>
-                        <line branch="false" hits="2" number="50"/>
-                        <line branch="false" hits="2" number="53"/>
-                        <line branch="false" hits="2" number="54"/>
-                        <line branch="false" hits="2" number="55"/>
-                        <line branch="false" hits="2" number="56"/>
-                        <line branch="false" hits="3" number="59"/>
-                        <line branch="false" hits="3" number="60"/>
-                        <line branch="false" hits="3" number="61"/>
-                        <line branch="false" hits="3" number="62"/>
-                        <line branch="false" hits="3" number="63"/>
-                        <line branch="false" hits="3" number="64"/>
-                        <line branch="false" hits="3" number="65"/>
-                        <line branch="false" hits="3" number="66"/>
-                        <line branch="false" hits="3" number="67"/>
-                        <line branch="false" hits="3" number="68"/>
-                        <line branch="false" hits="2" number="71"/>
-                        <line branch="false" hits="2" number="72"/>
-                        <line branch="false" hits="2" number="73"/>
-                        <line branch="false" hits="2" number="74"/>
-                        <line branch="false" hits="2" number="75"/>
-                        <line branch="false" hits="2" number="76"/>
-                        <line branch="false" hits="2" number="77"/>
-                        <line branch="false" hits="0" number="80"/>
-                        <line branch="false" hits="0" number="81"/>
-                        <line branch="false" hits="0" number="82"/>
-                        <line branch="false" hits="0" number="83"/>
-                        <line branch="false" hits="0" number="84"/>
-                        <line branch="false" hits="0" number="85"/>
-                        <line branch="false" hits="0" number="86"/>
-                        <line branch="false" hits="0" number="87"/>
-                        <line branch="false" hits="0" number="88"/>
-                        <line branch="false" hits="0" number="89"/>
-                        <line branch="false" hits="0" number="90"/>
-                        <line branch="false" hits="0" number="91"/>
-                        <line branch="false" hits="0" number="92"/>
-                        <line branch="false" hits="0" number="93"/>
-                        <line branch="false" hits="0" number="94"/>
-                        <line branch="false" hits="0" number="95"/>
-                        <line branch="false" hits="0" number="97"/>
-                    </lines>
-                </class>
-                <class branch-rate="0" complexity="0" filename="crates/duty2cal-core/src/domain/mod.rs" line-rate="0.6588235294117647" name="crates.duty2cal-core.src.domain.mod.rs">
-                    <methods>
-                        <method name="&lt;duty2cal_core::domain::UtcInterval&gt;::end" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="1" number="41" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="&lt;duty2cal_core::domain::UtcInterval&gt;::new" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="1" number="27" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="&lt;duty2cal_core::domain::UtcInterval&gt;::start" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="1" number="36" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="&lt;duty2cal_core::domain::DutyEntry&gt;::description_fields" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="1" number="217" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="&lt;duty2cal_core::domain::DutyEntry&gt;::date" signature="" complexity="0" line-rate="0" branch-rate="0">
-                            <lines>
-                                <line hits="0" number="176" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="&lt;duty2cal_core::domain::DutyEntry&gt;::summary" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="1" number="197" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="&lt;duty2cal_core::domain::DutyEntry&gt;::interval" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="1" number="187" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="&lt;duty2cal_core::domain::DutyEntry&gt;::location" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="1" number="242" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="duty2cal_core::domain::push_field" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="1" number="47" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="duty2cal_core::domain::push_value" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="6" number="54" branch="false"/>
-                            </lines>
-                        </method>
-                    </methods>
-                    <lines>
-                        <line branch="false" hits="1" number="27"/>
-                        <line branch="false" hits="1" number="28"/>
-                        <line branch="false" hits="1" number="29"/>
-                        <line branch="false" hits="0" number="31"/>
-                        <line branch="false" hits="1" number="33"/>
-                        <line branch="false" hits="1" number="36"/>
-                        <line branch="false" hits="1" number="37"/>
-                        <line branch="false" hits="1" number="38"/>
-                        <line branch="false" hits="1" number="41"/>
-                        <line branch="false" hits="1" number="42"/>
-                        <line branch="false" hits="1" number="43"/>
-                        <line branch="false" hits="1" number="47"/>
-                        <line branch="false" hits="1" number="48"/>
-                        <line branch="false" hits="0" number="49"/>
-                        <line branch="false" hits="1" number="50"/>
-                        <line branch="false" hits="1" number="51"/>
-                        <line branch="false" hits="6" number="54"/>
-                        <line branch="false" hits="0" number="55"/>
-                        <line branch="false" hits="6" number="56"/>
-                        <line branch="false" hits="0" number="57"/>
-                        <line branch="false" hits="0" number="58"/>
-                        <line branch="false" hits="0" number="59"/>
-                        <line branch="false" hits="0" number="60"/>
-                        <line branch="false" hits="0" number="61"/>
-                        <line branch="false" hits="0" number="62"/>
-                        <line branch="false" hits="0" number="63"/>
-                        <line branch="false" hits="0" number="64"/>
-                        <line branch="false" hits="6" number="66"/>
-                        <line branch="false" hits="0" number="176"/>
-                        <line branch="false" hits="0" number="177"/>
-                        <line branch="false" hits="0" number="178"/>
-                        <line branch="false" hits="0" number="179"/>
-                        <line branch="false" hits="0" number="180"/>
-                        <line branch="false" hits="0" number="181"/>
-                        <line branch="false" hits="0" number="182"/>
-                        <line branch="false" hits="0" number="184"/>
-                        <line branch="false" hits="1" number="187"/>
-                        <line branch="false" hits="1" number="188"/>
-                        <line branch="false" hits="0" number="189"/>
-                        <line branch="false" hits="1" number="190"/>
-                        <line branch="false" hits="0" number="191"/>
-                        <line branch="false" hits="1" number="192"/>
-                        <line branch="false" hits="1" number="194"/>
-                        <line branch="false" hits="1" number="197"/>
-                        <line branch="false" hits="1" number="198"/>
-                        <line branch="false" hits="0" number="199"/>
-                        <line branch="false" hits="1" number="201"/>
-                        <line branch="false" hits="1" number="202"/>
-                        <line branch="false" hits="1" number="203"/>
-                        <line branch="false" hits="1" number="204"/>
-                        <line branch="false" hits="1" number="206"/>
-                        <line branch="false" hits="0" number="207"/>
-                        <line branch="false" hits="1" number="208"/>
-                        <line branch="false" hits="0" number="210"/>
-                        <line branch="false" hits="0" number="211"/>
-                        <line branch="false" hits="1" number="213"/>
-                        <line branch="false" hits="1" number="217"/>
-                        <line branch="false" hits="1" number="218"/>
-                        <line branch="false" hits="1" number="220"/>
-                        <line branch="false" hits="1" number="221"/>
-                        <line branch="false" hits="1" number="222"/>
-                        <line branch="false" hits="1" number="223"/>
-                        <line branch="false" hits="1" number="224"/>
-                        <line branch="false" hits="1" number="225"/>
-                        <line branch="false" hits="1" number="226"/>
-                        <line branch="false" hits="1" number="228"/>
-                        <line branch="false" hits="1" number="229"/>
-                        <line branch="false" hits="1" number="230"/>
-                        <line branch="false" hits="1" number="231"/>
-                        <line branch="false" hits="1" number="232"/>
-                        <line branch="false" hits="1" number="233"/>
-                        <line branch="false" hits="1" number="234"/>
-                        <line branch="false" hits="1" number="235"/>
-                        <line branch="false" hits="1" number="236"/>
-                        <line branch="false" hits="1" number="237"/>
-                        <line branch="false" hits="1" number="238"/>
-                        <line branch="false" hits="1" number="239"/>
-                        <line branch="false" hits="1" number="242"/>
-                        <line branch="false" hits="1" number="243"/>
-                        <line branch="false" hits="0" number="244"/>
-                        <line branch="false" hits="1" number="245"/>
-                        <line branch="false" hits="0" number="246"/>
-                        <line branch="false" hits="0" number="247"/>
-                        <line branch="false" hits="0" number="249"/>
-                        <line branch="false" hits="1" number="251"/>
-                    </lines>
-                </class>
-            </classes>
-        </package>
         <package line-rate="0.6428571428571429" branch-rate="0" name="apps.cli.src" complexity="0">
             <classes>
-                <class branch-rate="0" complexity="0" filename="apps/cli/src/fs.rs" line-rate="0.7647058823529411" name="apps.cli.src.fs.rs">
-                    <methods>
-                        <method name="duty2cal::fs::candidates::{closure#0}" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="1" number="79" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="duty2cal::fs::publish::{closure#0}" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="1" number="25" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="duty2cal::fs::publish::{closure#1}" signature="" complexity="0" line-rate="0" branch-rate="0">
-                            <lines>
-                                <line hits="0" number="28" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="&lt;duty2cal::fs::Kind&gt;::spelling" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="1" number="68" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="duty2cal::fs::candidates" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="1" number="77" branch="false"/>
-                            </lines>
-                        </method>
-                        <method name="duty2cal::fs::publish" signature="" complexity="0" line-rate="1" branch-rate="1">
-                            <lines>
-                                <line hits="1" number="24" branch="false"/>
-                            </lines>
-                        </method>
-                    </methods>
-                    <lines>
-                        <line branch="false" hits="1" number="24"/>
-                        <line branch="false" hits="1" number="25"/>
-                        <line branch="false" hits="0" number="26"/>
-                        <line branch="false" hits="1" number="28"/>
-                        <line branch="false" hits="1" number="30"/>
-                        <line branch="false" hits="1" number="34"/>
-                        <line branch="false" hits="0" number="35"/>
-                        <line branch="false" hits="1" number="36"/>
-                        <line branch="false" hits="1" number="37"/>
-                        <line branch="false" hits="1" number="38"/>
-                        <line branch="false" hits="1" number="39"/>
-                        <line branch="false" hits="1" number="40"/>
-                        <line branch="false" hits="1" number="42"/>
-                        <line branch="false" hits="0" number="46"/>
-                        <line branch="false" hits="0" number="47"/>
-                        <line branch="false" hits="0" number="49"/>
-                        <line branch="false" hits="1" number="51"/>
-                        <line branch="false" hits="1" number="52"/>
-                        <line branch="false" hits="0" number="54"/>
-                        <line branch="false" hits="1" number="55"/>
-                        <line branch="false" hits="1" number="68"/>
-                        <line branch="false" hits="1" number="69"/>
-                        <line branch="false" hits="1" number="70"/>
-                        <line branch="false" hits="0" number="71"/>
-                        <line branch="false" hits="1" number="73"/>
-                        <line branch="false" hits="1" number="77"/>
-                        <line branch="false" hits="1" number="78"/>
-                        <line branch="false" hits="1" number="79"/>
-                        <line branch="false" hits="1" number="80"/>
-                        <line branch="false" hits="1" number="81"/>
-                        <line branch="false" hits="0" number="83"/>
-                        <line branch="false" hits="1" number="85"/>
-                        <line branch="false" hits="1" number="86"/>
-                        <line branch="false" hits="1" number="87"/>
-                    </lines>
-                </class>
                 <class branch-rate="0" complexity="0" filename="apps/cli/src/main.rs" line-rate="0.56" name="apps.cli.src.main.rs">
                     <methods>
                         <method name="duty2cal::parse_stamp" signature="" complexity="0" line-rate="1" branch-rate="1">
@@ -601,6 +265,76 @@
                         <line branch="false" hits="0" number="95"/>
                         <line branch="false" hits="0" number="96"/>
                         <line branch="false" hits="0" number="98"/>
+                    </lines>
+                </class>
+                <class branch-rate="0" complexity="0" filename="apps/cli/src/fs.rs" line-rate="0.7647058823529411" name="apps.cli.src.fs.rs">
+                    <methods>
+                        <method name="duty2cal::fs::candidates::{closure#0}" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="1" number="79" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="duty2cal::fs::publish::{closure#0}" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="1" number="25" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="duty2cal::fs::publish::{closure#1}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="28" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;duty2cal::fs::Kind&gt;::spelling" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="1" number="68" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="duty2cal::fs::candidates" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="1" number="77" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="duty2cal::fs::publish" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="1" number="24" branch="false"/>
+                            </lines>
+                        </method>
+                    </methods>
+                    <lines>
+                        <line branch="false" hits="1" number="24"/>
+                        <line branch="false" hits="1" number="25"/>
+                        <line branch="false" hits="0" number="26"/>
+                        <line branch="false" hits="1" number="28"/>
+                        <line branch="false" hits="1" number="30"/>
+                        <line branch="false" hits="1" number="34"/>
+                        <line branch="false" hits="0" number="35"/>
+                        <line branch="false" hits="1" number="36"/>
+                        <line branch="false" hits="1" number="37"/>
+                        <line branch="false" hits="1" number="38"/>
+                        <line branch="false" hits="1" number="39"/>
+                        <line branch="false" hits="1" number="40"/>
+                        <line branch="false" hits="1" number="42"/>
+                        <line branch="false" hits="0" number="46"/>
+                        <line branch="false" hits="0" number="47"/>
+                        <line branch="false" hits="0" number="49"/>
+                        <line branch="false" hits="1" number="51"/>
+                        <line branch="false" hits="1" number="52"/>
+                        <line branch="false" hits="0" number="54"/>
+                        <line branch="false" hits="1" number="55"/>
+                        <line branch="false" hits="1" number="68"/>
+                        <line branch="false" hits="1" number="69"/>
+                        <line branch="false" hits="1" number="70"/>
+                        <line branch="false" hits="0" number="71"/>
+                        <line branch="false" hits="1" number="73"/>
+                        <line branch="false" hits="1" number="77"/>
+                        <line branch="false" hits="1" number="78"/>
+                        <line branch="false" hits="1" number="79"/>
+                        <line branch="false" hits="1" number="80"/>
+                        <line branch="false" hits="1" number="81"/>
+                        <line branch="false" hits="0" number="83"/>
+                        <line branch="false" hits="1" number="85"/>
+                        <line branch="false" hits="1" number="86"/>
+                        <line branch="false" hits="1" number="87"/>
                     </lines>
                 </class>
             </classes>
@@ -1080,6 +814,272 @@
                         <line branch="false" hits="1" number="531"/>
                         <line branch="false" hits="1" number="532"/>
                         <line branch="false" hits="1" number="533"/>
+                    </lines>
+                </class>
+            </classes>
+        </package>
+        <package line-rate="0.6" branch-rate="0" name="crates.duty2cal-core.src.domain" complexity="0">
+            <classes>
+                <class branch-rate="0" complexity="0" filename="crates/duty2cal-core/src/domain/mod.rs" line-rate="0.6588235294117647" name="crates.duty2cal-core.src.domain.mod.rs">
+                    <methods>
+                        <method name="&lt;duty2cal_core::domain::UtcInterval&gt;::end" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="1" number="41" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;duty2cal_core::domain::UtcInterval&gt;::new" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="1" number="27" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;duty2cal_core::domain::UtcInterval&gt;::start" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="1" number="36" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;duty2cal_core::domain::DutyEntry&gt;::description_fields" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="1" number="217" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;duty2cal_core::domain::DutyEntry&gt;::date" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="176" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;duty2cal_core::domain::DutyEntry&gt;::summary" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="1" number="197" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;duty2cal_core::domain::DutyEntry&gt;::interval" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="1" number="187" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="&lt;duty2cal_core::domain::DutyEntry&gt;::location" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="1" number="242" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="duty2cal_core::domain::push_field" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="1" number="47" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="duty2cal_core::domain::push_value" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="6" number="54" branch="false"/>
+                            </lines>
+                        </method>
+                    </methods>
+                    <lines>
+                        <line branch="false" hits="1" number="27"/>
+                        <line branch="false" hits="1" number="28"/>
+                        <line branch="false" hits="1" number="29"/>
+                        <line branch="false" hits="0" number="31"/>
+                        <line branch="false" hits="1" number="33"/>
+                        <line branch="false" hits="1" number="36"/>
+                        <line branch="false" hits="1" number="37"/>
+                        <line branch="false" hits="1" number="38"/>
+                        <line branch="false" hits="1" number="41"/>
+                        <line branch="false" hits="1" number="42"/>
+                        <line branch="false" hits="1" number="43"/>
+                        <line branch="false" hits="1" number="47"/>
+                        <line branch="false" hits="1" number="48"/>
+                        <line branch="false" hits="0" number="49"/>
+                        <line branch="false" hits="1" number="50"/>
+                        <line branch="false" hits="1" number="51"/>
+                        <line branch="false" hits="6" number="54"/>
+                        <line branch="false" hits="0" number="55"/>
+                        <line branch="false" hits="6" number="56"/>
+                        <line branch="false" hits="0" number="57"/>
+                        <line branch="false" hits="0" number="58"/>
+                        <line branch="false" hits="0" number="59"/>
+                        <line branch="false" hits="0" number="60"/>
+                        <line branch="false" hits="0" number="61"/>
+                        <line branch="false" hits="0" number="62"/>
+                        <line branch="false" hits="0" number="63"/>
+                        <line branch="false" hits="0" number="64"/>
+                        <line branch="false" hits="6" number="66"/>
+                        <line branch="false" hits="0" number="176"/>
+                        <line branch="false" hits="0" number="177"/>
+                        <line branch="false" hits="0" number="178"/>
+                        <line branch="false" hits="0" number="179"/>
+                        <line branch="false" hits="0" number="180"/>
+                        <line branch="false" hits="0" number="181"/>
+                        <line branch="false" hits="0" number="182"/>
+                        <line branch="false" hits="0" number="184"/>
+                        <line branch="false" hits="1" number="187"/>
+                        <line branch="false" hits="1" number="188"/>
+                        <line branch="false" hits="0" number="189"/>
+                        <line branch="false" hits="1" number="190"/>
+                        <line branch="false" hits="0" number="191"/>
+                        <line branch="false" hits="1" number="192"/>
+                        <line branch="false" hits="1" number="194"/>
+                        <line branch="false" hits="1" number="197"/>
+                        <line branch="false" hits="1" number="198"/>
+                        <line branch="false" hits="0" number="199"/>
+                        <line branch="false" hits="1" number="201"/>
+                        <line branch="false" hits="1" number="202"/>
+                        <line branch="false" hits="1" number="203"/>
+                        <line branch="false" hits="1" number="204"/>
+                        <line branch="false" hits="1" number="206"/>
+                        <line branch="false" hits="0" number="207"/>
+                        <line branch="false" hits="1" number="208"/>
+                        <line branch="false" hits="0" number="210"/>
+                        <line branch="false" hits="0" number="211"/>
+                        <line branch="false" hits="1" number="213"/>
+                        <line branch="false" hits="1" number="217"/>
+                        <line branch="false" hits="1" number="218"/>
+                        <line branch="false" hits="1" number="220"/>
+                        <line branch="false" hits="1" number="221"/>
+                        <line branch="false" hits="1" number="222"/>
+                        <line branch="false" hits="1" number="223"/>
+                        <line branch="false" hits="1" number="224"/>
+                        <line branch="false" hits="1" number="225"/>
+                        <line branch="false" hits="1" number="226"/>
+                        <line branch="false" hits="1" number="228"/>
+                        <line branch="false" hits="1" number="229"/>
+                        <line branch="false" hits="1" number="230"/>
+                        <line branch="false" hits="1" number="231"/>
+                        <line branch="false" hits="1" number="232"/>
+                        <line branch="false" hits="1" number="233"/>
+                        <line branch="false" hits="1" number="234"/>
+                        <line branch="false" hits="1" number="235"/>
+                        <line branch="false" hits="1" number="236"/>
+                        <line branch="false" hits="1" number="237"/>
+                        <line branch="false" hits="1" number="238"/>
+                        <line branch="false" hits="1" number="239"/>
+                        <line branch="false" hits="1" number="242"/>
+                        <line branch="false" hits="1" number="243"/>
+                        <line branch="false" hits="0" number="244"/>
+                        <line branch="false" hits="1" number="245"/>
+                        <line branch="false" hits="0" number="246"/>
+                        <line branch="false" hits="0" number="247"/>
+                        <line branch="false" hits="0" number="249"/>
+                        <line branch="false" hits="1" number="251"/>
+                    </lines>
+                </class>
+                <class branch-rate="0" complexity="0" filename="crates/duty2cal-core/src/domain/timing.rs" line-rate="0.5166666666666667" name="crates.duty2cal-core.src.domain.timing.rs">
+                    <methods>
+                        <method name="duty2cal_core::domain::timing::parse_cell::{closure#0}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="43" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="duty2cal_core::domain::timing::parse_cell::{closure#2}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="54" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="duty2cal_core::domain::timing::parse_cell::{closure#1}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="47" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="duty2cal_core::domain::timing::parse_clock::{closure#0}" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="1" number="65" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="duty2cal_core::domain::timing::adjacent_date::{closure#0}" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="89" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="duty2cal_core::domain::timing::parse_cell" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="2" number="38" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="duty2cal_core::domain::timing::parse_clock" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="3" number="59" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="duty2cal_core::domain::timing::is_qualified" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="23" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="duty2cal_core::domain::timing::adjacent_date" signature="" complexity="0" line-rate="0" branch-rate="0">
+                            <lines>
+                                <line hits="0" number="80" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="duty2cal_core::domain::timing::parse_iso_date" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="2" number="71" branch="false"/>
+                            </lines>
+                        </method>
+                        <method name="duty2cal_core::domain::timing::resolve_endpoint" signature="" complexity="0" line-rate="1" branch-rate="1">
+                            <lines>
+                                <line hits="2" number="28" branch="false"/>
+                            </lines>
+                        </method>
+                    </methods>
+                    <lines>
+                        <line branch="false" hits="0" number="23"/>
+                        <line branch="false" hits="0" number="24"/>
+                        <line branch="false" hits="0" number="25"/>
+                        <line branch="false" hits="2" number="28"/>
+                        <line branch="false" hits="2" number="29"/>
+                        <line branch="false" hits="2" number="30"/>
+                        <line branch="false" hits="2" number="31"/>
+                        <line branch="false" hits="0" number="32"/>
+                        <line branch="false" hits="2" number="34"/>
+                        <line branch="false" hits="2" number="35"/>
+                        <line branch="false" hits="2" number="38"/>
+                        <line branch="false" hits="2" number="39"/>
+                        <line branch="false" hits="2" number="40"/>
+                        <line branch="false" hits="0" number="41"/>
+                        <line branch="false" hits="0" number="42"/>
+                        <line branch="false" hits="0" number="43"/>
+                        <line branch="false" hits="0" number="44"/>
+                        <line branch="false" hits="0" number="45"/>
+                        <line branch="false" hits="0" number="46"/>
+                        <line branch="false" hits="0" number="47"/>
+                        <line branch="false" hits="0" number="48"/>
+                        <line branch="false" hits="2" number="50"/>
+                        <line branch="false" hits="2" number="53"/>
+                        <line branch="false" hits="2" number="54"/>
+                        <line branch="false" hits="2" number="55"/>
+                        <line branch="false" hits="2" number="56"/>
+                        <line branch="false" hits="3" number="59"/>
+                        <line branch="false" hits="3" number="60"/>
+                        <line branch="false" hits="3" number="61"/>
+                        <line branch="false" hits="3" number="62"/>
+                        <line branch="false" hits="3" number="63"/>
+                        <line branch="false" hits="3" number="64"/>
+                        <line branch="false" hits="3" number="65"/>
+                        <line branch="false" hits="3" number="66"/>
+                        <line branch="false" hits="3" number="67"/>
+                        <line branch="false" hits="3" number="68"/>
+                        <line branch="false" hits="2" number="71"/>
+                        <line branch="false" hits="2" number="72"/>
+                        <line branch="false" hits="2" number="73"/>
+                        <line branch="false" hits="2" number="74"/>
+                        <line branch="false" hits="2" number="75"/>
+                        <line branch="false" hits="2" number="76"/>
+                        <line branch="false" hits="2" number="77"/>
+                        <line branch="false" hits="0" number="80"/>
+                        <line branch="false" hits="0" number="81"/>
+                        <line branch="false" hits="0" number="82"/>
+                        <line branch="false" hits="0" number="83"/>
+                        <line branch="false" hits="0" number="84"/>
+                        <line branch="false" hits="0" number="85"/>
+                        <line branch="false" hits="0" number="86"/>
+                        <line branch="false" hits="0" number="87"/>
+                        <line branch="false" hits="0" number="88"/>
+                        <line branch="false" hits="0" number="89"/>
+                        <line branch="false" hits="0" number="90"/>
+                        <line branch="false" hits="0" number="91"/>
+                        <line branch="false" hits="0" number="92"/>
+                        <line branch="false" hits="0" number="93"/>
+                        <line branch="false" hits="0" number="94"/>
+                        <line branch="false" hits="0" number="95"/>
+                        <line branch="false" hits="0" number="97"/>
                     </lines>
                 </class>
             </classes>
