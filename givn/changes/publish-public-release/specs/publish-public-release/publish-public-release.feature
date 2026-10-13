@@ -40,7 +40,7 @@ Feature: Publish a public release
     When anyone verifies the checksum against the archive for "linux-x86_64"
     Then the checksum matches the archive it names
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparing the same release twice produces the same archives
     Given a prepared release for version 0.1.0
     When the maintainer prepares version 0.1.0 again from the same executables

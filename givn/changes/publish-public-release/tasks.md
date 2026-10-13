@@ -231,16 +231,59 @@ Use-case constraint: a downloader verifies what they received before extracting 
 
 Use-case constraint: byte-identical repeat preparation, so a third party can reproduce a release.
 
-- [ ] RED — paste the non-zero output:
+- [x] RED — paste the non-zero output:
   ```
+  Feature: Publish a public release
+    Scenario: Preparing the same release twice produces the same archives
+     ✔  Given a prepared release for version 0.1.0
+     ✘  When the maintainer prepares version 0.1.0 again from the same executables
+        Step panicked. Captured output: not implemented: prepare version 0.1.0 a second time
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  2 steps (1 passed, 1 failed)
+  RED_EXIT=101
   ```
-- [ ] GREEN — fixed tar ownership, ordering and time, and `gzip -n`; paste the output:
+- [x] GREEN — fixed tar ownership, ordering and time, and `gzip -n`; paste the output:
   ```
+  Feature: Publish a public release
+    Scenario: Preparing the same release twice produces the same archives
+     ✔  Given a prepared release for version 0.1.0
+     ✔  When the maintainer prepares version 0.1.0 again from the same executables
+     ✔  Then the archives are identical to the first preparation, byte for byte
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  3 steps (3 passed)
+  GREEN_EXIT=0
   ```
-- [ ] REFACTOR — paste the output:
+  Production code: none new — the script already builds every archive as `tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner -cf - <exe> | gzip -n`, so ownership, ordering, time and the gzip header are fixed. The When prepares the same version a second time from the same executables into a second directory; the Then compares every archive byte for byte.
+  Independent proof of the same property, from the real built executable (`target/debug/duty2cal`) as this machine's platform and stand-ins for the others, with two runs into two directories:
   ```
+  $ ( cd A && sha256sum *.tar.gz ) | sort
+  5ff653f32223b3c844e6c351caccf0b67ced728f0a8629a940149beb2321c859  duty2cal-0.1.0-linux-arm64.tar.gz
+  5ff653f32223b3c844e6c351caccf0b67ced728f0a8629a940149beb2321c859  duty2cal-0.1.0-linux-x86_64.tar.gz
+  5ff653f32223b3c844e6c351caccf0b67ced728f0a8629a940149beb2321c859  duty2cal-0.1.0-macos-arm64.tar.gz
+  5ff653f32223b3c844e6c351caccf0b67ced728f0a8629a940149beb2321c859  duty2cal-0.1.0-macos-x86_64.tar.gz
+  9ade484bb7139806d7f31821929b49b1319b29188927b8fa64ecb795e2e6c0a9  duty2cal-0.1.0-windows-x86_64.tar.gz
+  $ ( cd B && sha256sum *.tar.gz ) | sort
+  5ff653f32223b3c844e6c351caccf0b67ced728f0a8629a940149beb2321c859  duty2cal-0.1.0-linux-arm64.tar.gz
+  5ff653f32223b3c844e6c351caccf0b67ced728f0a8629a940149beb2321c859  duty2cal-0.1.0-linux-x86_64.tar.gz
+  5ff653f32223b3c844e6c351caccf0b67ced728f0a8629a940149beb2321c859  duty2cal-0.1.0-macos-arm64.tar.gz
+  5ff653f32223b3c844e6c351caccf0b67ced728f0a8629a940149beb2321c859  duty2cal-0.1.0-macos-x86_64.tar.gz
+  9ade484bb7139806d7f31821929b49b1319b29188927b8fa64ecb795e2e6c0a9  duty2cal-0.1.0-windows-x86_64.tar.gz
+  TWO RUNS: IDENTICAL DIGESTS
+  BYTE COMPARISON DONE
   ```
+  (The four non-Windows archives share one digest because the proof fed the same executable under each of their names; the Windows archive differs because its member is `duty2cal.exe`.)
+- [x] REFACTOR — paste the output:
+  ```
+  apps/cli/tests/steps/publish_public_release.rs FMT OK
+  1 scenario (1 passed), 3 steps (3 passed)   REFACTOR_EXIT=0
+  ```
+  No behaviour change: the second preparation's read is a `match` rather than a closure around `panic!`, which keeps the file rustfmt-clean under both the older and the current formatter.
 - [ ] COMMIT — `<hash>`:
+  ```
   ```
 
 ### 6. An already prepared version is not replaced

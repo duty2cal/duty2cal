@@ -412,6 +412,37 @@ async fn the_checksum_matches_the_archive_it_names(w: &mut DutyWorld) {
     );
 }
 
+#[when("the maintainer prepares version 0.1.0 again from the same executables")]
+async fn prepares_again_from_the_same_executables(w: &mut DutyWorld) {
+    let again = w.working_dir().join("out-again");
+    w.staged = Some(again);
+    run_prepare(w, "0.1.0");
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the second preparation did not succeed: {}",
+        w.command_transcript
+    );
+}
+
+#[then("the archives are identical to the first preparation, byte for byte")]
+async fn the_archives_are_identical(w: &mut DutyWorld) {
+    let first = staged_dir(w);
+    let again = w.working_dir().join("out-again");
+    for (platform, _) in SUPPORTED {
+        let archive = staged_archive(w, platform);
+        let first_bytes = std::fs::read(first.join(&archive)).expect("read the first archive");
+        let again_bytes = match std::fs::read(again.join(&archive)) {
+            Ok(bytes) => bytes,
+            Err(error) => panic!("the second preparation staged no {archive}: {error}"),
+        };
+        assert_eq!(
+            first_bytes, again_bytes,
+            "the archive {archive} differs between the two preparations"
+        );
+    }
+}
+
 #[given(regex = r#"^an executable presented as the unrecognised platform "([^"]+)"$"#)]
 async fn an_unrecognised_platform(w: &mut DutyWorld, platform: String) {
     assert!(
