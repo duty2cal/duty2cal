@@ -160,7 +160,7 @@ This is a changing use case: it creates a new calendar export, not a read-only o
 
 ## Capabilities
 
-- export-duty-plan-calendar — NEW in export-duty-plan-calendar: the whole-plan conversion of one supported supplied plan.
+- export-duty-plan-calendar — the whole-plan conversion of one supported supplied plan; NEW in export-duty-plan-calendar.
 
 ## Interactions
 
