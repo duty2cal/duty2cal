@@ -166,6 +166,10 @@ be in the change log already, because the drift check compares the committed
 `CHANGELOG.md` against a fresh render of the tagged revision, and the release
 workflow draws the release text from that same section.
 
+The generator is pinned to `git-cliff` 2.14.2 (the version recorded in
+`cliff.toml`); the renderer refuses any other version, so run it through that
+pin:
+
 ```sh
 released=$(git rev-parse HEAD)
 nix-shell -p git-cliff --run \
@@ -174,17 +178,19 @@ git add CHANGELOG.md
 GIT_COMMITTER_DATE="$(git log -1 --date=iso-strict --format=%cd "$released")" \
   git commit -m "docs(changelog): record <version>"
 git tag v<version>
-git push origin <branch> v<version>
+git push --atomic origin <branch> v<version>
 ```
 
 The renderer has no tag to read yet, so the section's date comes from `released`
 — the revision the tag will point at — and the commit that records the section
 must carry that same committer date: the tagged revision has to state the date
-the section states, or the drift check could never agree with the file. Pushing
-the tag starts the release workflow, whose preparation checks the committed
-change log for drift before it stages anything, then stages the section as the
-release text and the change log as an asset of the draft release, which is
-inspected before it becomes public.
+the section states, or the drift check could never agree with the file. The
+branch and the tag are pushed together with `--atomic`, so a rejected branch
+push cannot leave the tag published against a revision that never reached the
+default branch. Pushing the tag starts the release workflow, whose preparation
+checks the committed change log for drift before it stages anything, then stages
+the section as the release text and the change log as an asset of the draft
+release, which is inspected before it becomes public.
 
 
 ## Contributing
