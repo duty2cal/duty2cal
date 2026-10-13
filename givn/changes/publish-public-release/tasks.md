@@ -216,8 +216,15 @@ Use-case constraint: a downloader verifies what they received before extracting 
   1 scenario (1 passed), 3 steps (3 passed)   REFACTOR_EXIT=0
   ```
   No tidy was needed: the steps read as one command per step, `sha256_of` is the only new helper, and the file is rustfmt-clean; the checks above are the whole REFACTOR.
-- [ ] COMMIT — `<hash>`:
+- [x] COMMIT — `84c1648`:
   ```
+  feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
+
+  Scenario: Each archive's checksum covers that archive
+
+  RED: the three steps existed as unimplemented!() stubs; the single-scenario run failed with exit 101.
+  GREEN: the script writes sha256sum's own output beside each archive from inside the staged directory; the When verifies it with sha256sum --check and the Then asserts the checksum file names that archive and that a freshly computed digest equals the recorded one.
+  REFACTOR: no tidy needed; the step file is rustfmt-clean and the single scenario passes 3/3 steps with exit 0.
   ```
 
 ### 5. Preparing the same release twice produces the same archives
