@@ -19,12 +19,21 @@
 # committer date (never the clock), the comparison link is a literal URL built
 # from the two versions, and no host path or user name enters the output.
 #
-# It refuses, leaving its output untouched: a version with a leading `v` or with
-# no `v*` tag; a `git-cliff` whose version differs from the one recorded beside
-# `cliff.toml`; a capability allow-list differing from the use-case ids under
-# `givn/specs/`; a render naming no change a user can see; and, under `--check`,
-# a committed change log with no section for the version being released, or one
-# that differs from a fresh render.
+# The section's date is the released revision's own committer date — the
+# `v<version>` tag when that tag exists, and otherwise `HEAD`, the revision the
+# tag will point at. Never the clock, and never a refusal for an untagged
+# version: a release renders the section, commits the change log and only then
+# creates the tag, so the section has to be renderable before the tag exists,
+# and it has to state the date the tagged revision will carry or the drift check
+# could never agree with the file.
+#
+# It refuses, leaving its output untouched: a version with a leading `v`, or a
+# repository with no `HEAD` to date the section from; a `git-cliff` whose
+# version differs from the one recorded beside `cliff.toml`; a capability
+# allow-list differing from the use-case ids under `givn/specs/`; a render
+# naming no change a user can see; and, under `--check`, a committed change log
+# with no section for the version being released, or one that differs from a
+# fresh render.
 #
 # Linux only, like the rest of the release tooling. The command touches only the
 # filesystem, the pinned generator and the local git history — no network, no
@@ -181,10 +190,20 @@ for term in $machinery; do
   esac
 done
 
-# A version with no `v*` tag has no released revision to take its date from, so
-# it is refused rather than rendered from the clock.
-if ! released=$(git -C "$repo" rev-parse -q --verify "refs/tags/v$version^{commit}"); then
-  refuse "no v$version tag exists in $repo: a version with no tag has no released revision to take its date from"
+# The released revision: the `v<version>` tag when it exists, and otherwise
+# `HEAD`, the revision the tag will point at. The section's date is that
+# revision's own committer date — never the clock — so a version is renderable
+# before its tag exists, which is what the release order needs (render the
+# section, commit the change log, then create the tag), and so the tagged
+# revision will carry exactly the date the section states.
+tag_args=
+if released=$(git -C "$repo" rev-parse -q --verify "refs/tags/v$version^{commit}" 2>/dev/null); then
+  :
+else
+  tag_args="--tag v$version"
+  if ! released=$(git -C "$repo" rev-parse -q --verify "HEAD^{commit}" 2>/dev/null); then
+    refuse "the repository has no HEAD to date version $version from: $repo"
+  fi
 fi
 section_date=$(git -C "$repo" log -1 --format=%cd --date=short "$released")
 
@@ -205,11 +224,13 @@ fi
 # The whole history is rendered and the version's section is taken from it: the
 # range that ends at the released revision is expressed by the extraction, and
 # the release date is stamped from the released revision. `git-cliff` 2.14.2
-# associates a revision with a release tag using the checkout's own tags and a
-# render carried by `--tag` groups a whole history under the newest tag
-# (reproduced on both the fixtures and the real tree), so the renderer never
-# passes `--tag`.
-rendered=$(git-cliff --config "$config" --repository "$repo" --sort oldest 2>/dev/null) || {
+# associates a revision with a release tag using the checkout's own tags, and a
+# render carried by `--tag` groups a whole history under the newest tag when a
+# later tag exists (reproduced on both the fixtures and the real tree), so the
+# renderer never passes `--tag` for a version that is already tagged. It does
+# pass `--tag v<version>` for one that is not, because the tool needs a name for
+# the newest release and that version is the newest by construction: `HEAD`.
+rendered=$(git-cliff --config "$config" --repository "$repo" --sort oldest $tag_args 2>/dev/null) || {
   refuse "the generator could not render version $version from $repo"
 }
 

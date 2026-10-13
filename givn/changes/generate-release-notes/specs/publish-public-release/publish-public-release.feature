@@ -50,6 +50,14 @@ Feature: Publish a public release
     And that section names the new capability
     And that section states no comparison against an earlier version
 
+  @givn.added
+  Scenario: A version's section can be rendered before its tag exists
+    Given a history whose newest revision names a new capability and carries its own date
+    And the version is not tagged yet
+    When the maintainer generates the change log for version 0.1.0
+    Then the change log holds one section, for version 0.1.0
+    And that section states the date of the revision it will be tagged at
+
   @givn.added @e2e
   Scenario: Maintainer generates the change log for a version and reads its newest section
     Given a repository whose history releases version 0.1.0

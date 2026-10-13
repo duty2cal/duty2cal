@@ -1330,6 +1330,70 @@ async fn that_section_states_no_comparison(w: &mut DutyWorld) {
     );
 }
 
+/// The untagged fixture: a history whose newest revision is the one the tag
+/// will point at, and which carries no `v*` tag, so the section has to be
+/// renderable before the tag exists.
+const UNTAGGED_HISTORY: [(&str, &str, &str); 3] = [
+    ("2026-03-01", "chore(ci): bootstrap the release channel", ""),
+    (
+        "2026-03-02",
+        "docs(readme): describe the download route",
+        "",
+    ),
+    (
+        "2026-03-03",
+        "feat(export-duty-plan-calendar): Convert a supported duty plan into a calendar",
+        "",
+    ),
+];
+
+#[given("a history whose newest revision names a new capability and carries its own date")]
+async fn a_history_with_an_untagged_newest_revision(w: &mut DutyWorld) {
+    build_history(w, &UNTAGGED_HISTORY);
+}
+
+#[given("the version is not tagged yet")]
+async fn the_version_is_not_tagged_yet(w: &mut DutyWorld) {
+    let repo = w
+        .fixture_repo
+        .clone()
+        .expect("the scenario built no fixture repository");
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(&repo)
+        .args(["tag", "--list", "v*"])
+        .output()
+        .expect("list the fixture repository's tags");
+    assert!(
+        output.status.success(),
+        "git tag --list failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let listed = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        listed.trim().is_empty(),
+        "the fixture repository already carries a v* tag: {listed}"
+    );
+}
+
+#[then("that section states the date of the revision it will be tagged at")]
+async fn section_states_the_untagged_revision_date(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the generation did not succeed: {}",
+        w.command_transcript
+    );
+    let section = section_of(&change_log(w), "0.1.0");
+    // The newest revision carries the fixture's fixed committer date, and the
+    // tag will point at it, so the heading states that date rather than the
+    // clock.
+    assert!(
+        section.starts_with("## [0.1.0] - 2026-03-03"),
+        "the section does not state the newest revision's own date: {section}"
+    );
+}
+
 /// The release-text scenario's fixture: the delta history with one released
 /// change named by several revisions, which the release text must state once.
 /// The capability scopes are ones the repository holds and the whole history is
