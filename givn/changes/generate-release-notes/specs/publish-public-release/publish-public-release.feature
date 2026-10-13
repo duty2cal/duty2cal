@@ -19,7 +19,7 @@ Feature: Publish a public release
     When the maintainer generates the change log for version 0.2.0
     Then the generation fails and states that the version changes nothing a user can see
 
-  @givn.added @wip
+  @givn.added
   Scenario: The change log keeps the earlier versions beside the new one
     Given a change log whose newest section is version 0.1.0
     When the maintainer generates the change log for version 0.2.0

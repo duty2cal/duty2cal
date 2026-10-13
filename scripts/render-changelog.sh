@@ -176,13 +176,20 @@ previous=$(
   git -C "$repo" describe --tags --abbrev=0 --match 'v*' "$released^" 2>/dev/null || true
 )
 
-if [ -z "$previous" ]; then
-  set -- --tag "v$version"
+if [ -n "$previous" ]; then
+  previous_version=${previous#v}
 else
-  set -- "$previous..v$version"
+  previous_version=
 fi
 
-rendered=$(git-cliff --config "$config" --repository "$repo" --sort oldest "$@" 2>/dev/null) || {
+# The whole history is rendered and the version's section is taken from it: the
+# range that ends at the released revision is expressed by the extraction, and
+# the release date is stamped from the released revision. `git-cliff` 2.14.2
+# associates a revision with a release tag using the checkout's own tags and a
+# render carried by `--tag` groups a whole history under the newest tag
+# (reproduced on both the fixtures and the real tree), so the renderer never
+# passes `--tag`.
+rendered=$(git-cliff --config "$config" --repository "$repo" --sort oldest 2>/dev/null) || {
   refuse "the generator could not render version $version from $repo"
 }
 
@@ -209,7 +216,6 @@ if [ "$visible" -eq 0 ]; then
 fi
 
 if [ -n "$previous" ]; then
-  previous_version=${previous#v}
   comparison="[$previous_version...$version]($remote/compare/$previous...v$version)"
   section=$(printf '%s\n%s\n' "$section" "$comparison" | normalize)
 else

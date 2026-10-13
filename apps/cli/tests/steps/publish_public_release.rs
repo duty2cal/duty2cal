@@ -251,22 +251,29 @@ fn table_rows(step: &Step) -> Vec<Vec<String>> {
 /// new capability, a fix, and work no user can see (housekeeping and an
 /// unrecognised type). The capability scope is one the repository holds, so the
 /// allow-list accepts it.
-const CHANGE_LOG_HISTORY: [(&str, &str); 6] = [
+const CHANGE_LOG_HISTORY: [(&str, &str, &str); 6] = [
     (
         "2026-01-01",
         "feat(export-duty-plan-calendar): Convert a supported duty plan into a calendar",
+        "",
     ),
-    ("2026-01-02", "chore(ci): tune the release pipeline"),
-    ("2026-01-03", "docs(readme): describe the download route"),
+    ("2026-01-02", "chore(ci): tune the release pipeline", ""),
+    (
+        "2026-01-03",
+        "docs(readme): describe the download route",
+        "",
+    ),
     (
         "2026-01-04",
         "fix(publish-public-release): Name the platform in the refusal",
+        "",
     ),
     (
         "2026-01-05",
         "test(publish-public-release): cover the refusal paths",
+        "v0.2.0",
     ),
-    ("2026-01-06", "Publish the notes by hand"),
+    ("2026-01-06", "Publish the notes by hand", ""),
 ];
 
 /// The notes the delta history must not carry: the housekeeping revisions and
@@ -300,7 +307,7 @@ fn git_dated(repo: &Path, date: &str, args: &[&str]) {
 /// first, with fixed committer dates and `v*` tags. The committed
 /// configuration and the capability directories the allow-list check reads are
 /// copied in, so the renderer runs exactly as it does against the real tree.
-fn build_history(w: &mut DutyWorld, revisions: &[(&str, &str)], tags: &[&str]) {
+fn build_history(w: &mut DutyWorld, revisions: &[(&str, &str, &str)]) {
     let repo = scenario_dir(w).join("history");
     let _ = std::fs::remove_dir_all(&repo);
     std::fs::create_dir_all(&repo).expect("create the fixture repository");
@@ -314,7 +321,7 @@ fn build_history(w: &mut DutyWorld, revisions: &[(&str, &str)], tags: &[&str]) {
             .expect("create a capability directory");
     }
     git(&repo, &["init", "--quiet"]);
-    for (index, (date, subject)) in revisions.iter().enumerate() {
+    for (index, (date, subject, tag)) in revisions.iter().enumerate() {
         let file = repo.join(format!("revision-{index}.txt"));
         std::fs::write(&file, format!("{subject}\n")).expect("write the revision's file");
         git(&repo, &["add", "--all"]);
@@ -335,9 +342,9 @@ fn build_history(w: &mut DutyWorld, revisions: &[(&str, &str)], tags: &[&str]) {
                 subject,
             ],
         );
-    }
-    for tag in tags {
-        git(&repo, &["tag", tag]);
+        if !tag.is_empty() {
+            git(&repo, &["tag", tag]);
+        }
     }
     w.fixture_repo = Some(repo);
 }
@@ -827,18 +834,12 @@ fn change_log(w: &DutyWorld) -> String {
     "a history whose released revisions name a new capability, a fix, and work no user can see"
 )]
 async fn a_history_grouping(w: &mut DutyWorld) {
-    build_history(w, &CHANGE_LOG_HISTORY, &["v0.2.0"]);
+    build_history(w, &CHANGE_LOG_HISTORY);
 }
 
-#[when("the maintainer generates the change log for version 0.2.0")]
-async fn generates_the_change_log(w: &mut DutyWorld) {
-    let repo = w
-        .fixture_repo
-        .clone()
-        .expect("the scenario built no fixture repository");
-    let out = change_log_path(w);
-    w.changelog = Some(out.clone());
-    run_render(w, "0.2.0", &repo, &out);
+#[when(regex = r"^the maintainer generates the change log for version (\S+)$")]
+async fn generates_the_change_log(w: &mut DutyWorld, version: String) {
+    render_version(w, &version);
 }
 
 #[then("the notes for version 0.2.0 name the new capability and the fix")]
@@ -890,15 +891,23 @@ async fn notes_omit_invisible_work(w: &mut DutyWorld) {
 }
 
 /// A history whose released revisions name only work no user can see.
-const INVISIBLE_HISTORY: [(&str, &str); 3] = [
-    ("2026-01-01", "chore(ci): tune the release pipeline"),
-    ("2026-01-02", "docs(readme): describe the download route"),
-    ("2026-01-03", "build(packaging): pin the toolchain"),
+const INVISIBLE_HISTORY: [(&str, &str, &str); 3] = [
+    ("2026-01-01", "chore(ci): tune the release pipeline", ""),
+    (
+        "2026-01-02",
+        "docs(readme): describe the download route",
+        "",
+    ),
+    (
+        "2026-01-03",
+        "build(packaging): pin the toolchain",
+        "v0.2.0",
+    ),
 ];
 
 #[given("a history whose released revisions name only work no user can see")]
 async fn a_history_with_invisible_work(w: &mut DutyWorld) {
-    build_history(w, &INVISIBLE_HISTORY, &["v0.2.0"]);
+    build_history(w, &INVISIBLE_HISTORY);
 }
 
 #[then("the generation fails and states that the version changes nothing a user can see")]
@@ -914,6 +923,124 @@ async fn generation_refuses_invisible_version(w: &mut DutyWorld) {
             .contains("version 0.2.0 changes nothing a user can see"),
         "the failure does not state that the version changes nothing a user can see: {}",
         w.command_transcript
+    );
+}
+
+/// The section of a change log that carries a version, from its heading to the
+/// heading of the next version (or the end of the file).
+fn section_of(text: &str, version: &str) -> String {
+    let heading = format!("## [{version}]");
+    let mut section = String::new();
+    let mut inside = false;
+    for line in text.lines() {
+        if line.starts_with(&heading) {
+            inside = true;
+        } else if inside && line.starts_with("## [") {
+            break;
+        }
+        if inside {
+            section.push_str(line);
+            section.push('\n');
+        }
+    }
+    assert!(
+        !section.is_empty(),
+        "the change log holds no section for version {version}: {text}"
+    );
+    section
+}
+
+/// Render a version into the scenario's change log, recording the transcript.
+fn render_version(w: &mut DutyWorld, version: &str) {
+    let repo = w
+        .fixture_repo
+        .clone()
+        .expect("the scenario built no fixture repository");
+    let out = w.changelog.clone().unwrap_or_else(|| change_log_path(w));
+    w.changelog = Some(out.clone());
+
+    run_render(w, version, &repo, &out);
+}
+
+/// The fixture history of two releases: a first version and a second whose
+/// visible changes are a new capability and a fix.
+fn two_release_history(w: &mut DutyWorld) {
+    let longer: Vec<(&str, &str, &str)> = vec![
+        ("2026-01-01", "chore(ci): bootstrap the release channel", ""),
+        (
+            "2026-01-02",
+            "feat(export-duty-plan-calendar): Convert a supported plan into a calendar",
+            "v0.1.0",
+        ),
+        (
+            "2026-02-01",
+            "feat(publish-public-release): Offer an archive per supported platform",
+            "",
+        ),
+        (
+            "2026-02-02",
+            "fix(publish-public-release): Name the platform in the refusal",
+            "v0.2.0",
+        ),
+    ];
+    build_history(w, &longer);
+}
+
+#[given("a change log whose newest section is version 0.1.0")]
+#[allow(dead_code)]
+async fn a_change_log_with_version_0_1_0(w: &mut DutyWorld) {
+    two_release_history(w);
+    render_version(w, "0.1.0");
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "rendering version 0.1.0 did not succeed: {}",
+        w.command_transcript
+    );
+}
+
+#[then("version 0.2.0 is the newest section of the change log")]
+
+async fn version_0_2_0_is_newest(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "rendering version 0.2.0 did not succeed: {}",
+        w.command_transcript
+    );
+    let text = change_log(w);
+    let newest = text
+        .lines()
+        .find(|line| line.starts_with("## ["))
+        .expect("the change log holds no section");
+    assert!(
+        newest.starts_with("## [0.2.0]"),
+        "the newest section is not version 0.2.0: {newest}"
+    );
+}
+
+#[then("the section for version 0.1.0 is unchanged")]
+
+async fn earlier_section_is_unchanged(w: &mut DutyWorld) {
+    let text = change_log(w);
+    let section = section_of(&text, "0.1.0");
+    assert!(
+        section.contains("Convert a supported plan into a calendar"),
+        "the earlier section lost its release note: {section}"
+    );
+    assert!(
+        !section.contains("Offer an archive per supported platform"),
+        "the earlier section absorbed a later version's note: {section}"
+    );
+    assert_eq!(
+        text.matches("## [0.1.0]").count(),
+        1,
+        "version 0.1.0 has more than one section: {text}"
+    );
+    assert_eq!(
+        text.matches("## [0.2.0]").count(),
+        1,
+        "version 0.2.0 has more than one section: {text}"
     );
 }
 
