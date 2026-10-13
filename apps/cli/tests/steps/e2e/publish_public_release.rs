@@ -20,7 +20,7 @@ use crate::DutyWorld;
 /// Where the scenario's terminal transcript is committed as evidence.
 fn transcript_path() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
-        "../../givn/changes/publish-public-release/evidence/visual/\
+        "../../givn/archive/publish-public-release/evidence/visual/\
          maintainer-prepares-a-release-and-runs-the-archived-executable/transcript.txt",
     )
 }
