@@ -200,7 +200,7 @@ This is a changing use case: it creates a new calendar export, not a read-only o
 - Activate standby/reserve crew, calculate call-to-report notice, or perform check-in/reporting.
 - Publish/approve a converter release as a product command.
 
-### Diagram
+The actor-goal summary of the use case:
 
 ```mermaid
 flowchart LR
