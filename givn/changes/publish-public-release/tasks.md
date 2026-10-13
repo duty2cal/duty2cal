@@ -71,8 +71,15 @@ Use-case constraint: one archive per supported platform, named for the platform,
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
   Two format-neutral rewrites in `fresh_dir` and `run_prepare` so the file is stable under rustfmt 1.98 (the toolchain in this environment), and the not-yet-used `machine_executable` helper removed. Honest tooling note: `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` do not run clean here, but every finding is in files this change does not touch (`crates/duty2cal-pdf/src/lib.rs`, `apps/cli/tests/steps/support.rs`, `apps/cli/tests/steps/export_duty_plan_calendar.rs`); rustfmt 1.98 and clippy 1.98 are newer than whatever formatted them, and the repository pins `channel = "stable"`.
-- [ ] COMMIT — `<hash>` — subject is the release note, body names this scenario:
+- [x] COMMIT — `80cefb4` — subject is the release note, body names this scenario:
   ```
+  feat(publish-public-release): Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
+
+  Scenario: A prepared release offers one archive for every supported platform
+
+  RED: the four steps existed as unimplemented!() stubs; the single-scenario run failed with exit 101 under strict mode.
+  GREEN: scripts/prepare-release.sh stages one deterministic archive and one checksum per supported platform plus the release text, refusing an incomplete set, a platform outside the set, an unreadable executable and an occupied output set before any write; the steps assert the exact staged set and each archive's payload.
+  REFACTOR: format-neutral rewrites so the step file is stable under rustfmt 1.98 and the unused helper removed; the single scenario still passes 4/4 steps with exit 0.
   ```
 
 ### 2. A platform whose executable was not built stops the release
