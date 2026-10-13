@@ -106,7 +106,7 @@ flowchart TB
 **Steps:**
 
 1. The tag starts `release.yml`; the build matrix builds and starts each platform's executable where it must run, and the Windows smoke job starts the cross-built executable on `windows-latest`.
-2. The `prepare` job renders the change log and the release text (the newest section of that change log) and runs `scripts/prepare-release.sh` over the five binaries; it refuses and stages nothing when a supported platform is missing or unrecognised, when the render would name no change a user can see, or when the committed change log differs from the released revision.
+2. The `prepare` job installs the pinned generator, renders the change log and the release text (the newest section of that change log) and runs `scripts/prepare-release.sh` over the five binaries; it refuses and stages nothing when a supported platform is missing or unrecognised, when the render would name no change a user can see, or when the committed change log differs from the released revision.
 3. The `publish` job generates the SBOM, attests every archive, creates a draft release with the archives, the release text and the change log, checks the draft's asset set against the staged set, and publishes it.
 4. The `verify` job reads the published release back: it compares every checksum, runs `gh attestation verify` on each archive, and asserts the release reports `immutable: true`.
 
@@ -121,10 +121,13 @@ flowchart TB
   hist["Repository history: conventional-commit subjects, v* tags"] --> render["scripts/render-changelog.sh --version <v> --repo <dir> --out <path>"]
   pin["pinned git-cliff 2.14.2 recorded beside cliff.toml"] --> tool{"the generator is the pinned version?"}
   corpus["use-case ids under givn/specs/"] --> allow{"the cliff.toml allow-list matches the corpus?"}
-  config["cliff.toml: group order, skip rules, templates"] --> cliff
+  config["cliff.toml: group order, skip rules (allow-list and machinery), templates"] --> cliff
+  config --> machinery{"the marked machinery skip list is realized in the configuration?"}
   tool -->|"no"| refuse["refuse, naming the cause; output untouched"]
   allow -->|"no"| refuse
-  render --> cliff["git-cliff renders the released range, ordered by history"]
+  machinery -->|"no"| refuse
+  render --> released["the released revision: the v<version> tag, or HEAD before the tag exists"]
+  released --> cliff["git-cliff renders the history with the committed configuration, ordered by history; the renderer extracts the released version's section"]
   cliff --> sect["Newest section: version, its own date, comparison link, grouped released changes"]
   sect -->|"names no change a user can see"| refuse
   sect --> log["CHANGELOG.md: new section prepended, earlier sections verbatim"]
@@ -136,10 +139,10 @@ flowchart TB
 
 **Steps:**
 
-1. The version names a released revision; the renderer refuses a leading `v` or a version with no `v*` tag, because the section's date must be the released revision's own date and a version with no tag has none to take it from.
-2. The pinned generator and the capability allow-list are checked before anything is rendered: a `git-cliff` whose version differs from the pinned one, or a `cliff.toml` allow-list that differs from the use-case ids under `givn/specs/`, refuses and leaves the output untouched.
-3. The generator renders the released range — from the previous `v*` tag to the released revision, or the whole history for the first version — ordered by history, with each entry stating the release-note words its subject carries.
-4. The section states the released revision's own date and the comparison against the previous version (none for the first), groups the changes a user can see (breaking changes, new capabilities, fixes, performance, reversals) and skips housekeeping, `test`, `build`, `ci` and every scope outside the allow-list. A render that names no change a user can see refuses the version as not releasable.
+1. The version names a released revision: the `v<version>` tag when it exists, and otherwise `HEAD`, the revision the tag will point at. The renderer refuses a leading `v`, and a repository with no `HEAD` to take the section's date from; the date it stamps is that revision's own committer date, never the clock, which is what lets a section be rendered before its tag exists.
+2. The pinned generator, the capability allow-list and the machinery skip list are checked before anything is rendered: a `git-cliff` whose version differs from the pinned one, a `cliff.toml` allow-list that differs from the use-case ids under `givn/specs/`, or a marked machinery skip list whose terms the configuration does not realize refuses and leaves the output untouched.
+3. The generator renders the history — from the previous `v*` tag to the released revision, or the whole history for the first version — ordered by history, and the renderer extracts the released version's section from it, with each entry stating the release-note words its subject carries. A version that is not tagged yet is rendered with `--tag v<version>` for the newest release, which the generator cannot name otherwise.
+4. The section states the released revision's own date and the comparison against the previous version (none for the first), groups the changes a user can see (breaking changes, new capabilities, fixes, performance, reversals) and skips housekeeping, `test`, `build`, `ci`, every scope outside the allow-list and every revision whose words name the project's own tooling. A render that names no change a user can see refuses the version as not releasable.
 5. The change log is written with the new section prepended and every earlier section kept verbatim, and the release text is the newest section alone — one render, so the page and the repository cannot disagree. `--check` renders in memory and, on a committed file that differs, refuses and names the version whose section differs.
 
 **Notes:** The render is deterministic: ordering is history order, the date is the released revision's own, and no working-directory path, user name or runner name enters the text, so the same history renders the same bytes on any machine.
@@ -150,7 +153,7 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-  push["Maintainer pushes a change or opens a pull request"] --> ci["ci.yml: formatting, lint, tests, dependency licences, SPDX headers, third-party notices drift, change-log drift, private-data guard, coverage, Windows cross-build, actionlint; dco on pull requests"]
+  push["Maintainer pushes a change or opens a pull request"] --> ci["ci.yml: formatting, lint, tests, dependency licences, SPDX headers, third-party notices drift, change-log drift, private-data guard, coverage, Windows cross-build, public text, actionlint; dco on pull requests"]
   ci -->|"any check fails"| blocked["the change cannot land"]
   ci -->|"all checks pass"| rules{"required ruleset on main"}
   rules -->|"checks green"| land["the change lands on the default branch"]
