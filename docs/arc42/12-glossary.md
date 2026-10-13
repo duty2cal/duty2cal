@@ -1,7 +1,7 @@
 # 12. Glossary
 
 Confirmed vocabulary promoted by the user's Handoff on **2026-10-12**, plus
-three terms added by the change to export released roster calendars
+five terms added by the change to export released roster calendars
 (export-released-roster-calendar).
 Source: [Duty-plan calendar conversion](../ideation/duty-plan-calendar-conversion.md),
 [introduction/collision records](../../givn/ideation/duty-plan-calendar-conversion/domain-terms.md),
@@ -66,17 +66,18 @@ invariants do not silently choose their retention/merge handling.
 | Calendar export publication failed | Completion did not produce a successful new output; failure is explicit. |
 | Conversion diagnostic written | A new current-run report was actually persisted at an unused numbered path. |
 | Conversion diagnostic unavailable | The current failure could not save a new report; old files prove no new write. |
+| Travel leg | One flight from a departure station to an arrival station, printed either as a whole row or as a departure row and an arrival row that the converter pairs. | One timed travel activity titled by designator and route. | `DutyEntry::Travel` (`crates/duty2cal-core/src/domain/mod.rs`) | Not a printed row, not two activities when a leg is split across rows, not an all-day absence. |
+| Availability duty | Bounded standby or reserve window the crew member must be reachable in (SB, SBX, RE). | One timed availability activity with its own UTC window and station. | `DutyEntry::Availability`, `AVAILABILITY_CODES` (`crates/duty2cal-core/src/application/mod.rs`) | Not an all-day day off, not a flight, not a non-flight duty. |
 
 ## Promotion boundary and unverified terms
 
-Sixteen confirmed introductions are promoted: the thirteen Handoff terms plus
-**EM duty**, **Layover**, and **Released Roster detail-table family**, added by
+Eighteen confirmed introductions are promoted: the thirteen Handoff terms plus
+**EM duty**, **Layover**, **Released Roster detail-table family**, **Travel leg**
+and **Availability duty**, added by
 the change to export released roster calendars (export-released-roster-calendar)
 through its design-review glossary-scope decision. Raw source-column labels
 (A/C, Blocktime, Report (LT), Timezone Difference, Tags) and the FREE/OFF day
 codes are used verbatim in the specification and are not confirmed domain terms.
-| Travel leg | One flight from a departure station to an arrival station, printed either as a whole row or as a departure row and an arrival row that the converter pairs. | One timed travel activity titled by designator and route. | `DutyEntry::Travel` (`crates/duty2cal-core/src/domain/mod.rs`) | Not a printed row, not two activities when a leg is split across rows, not an all-day absence. |
-| Availability duty | Bounded standby or reserve window the crew member must be reachable in (SB, SBX, RE). | One timed availability activity with its own UTC window and station. | `DutyEntry::Availability`, `AVAILABILITY_CODES` (`crates/duty2cal-core/src/application/mod.rs`) | Not an all-day day off, not a flight, not a non-flight duty. |
 
 Candidate **Duty plan** and **Calendar export** remain topic
 candidates, not silently confirmed here. No rejected entry exists to remove.

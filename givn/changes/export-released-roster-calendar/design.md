@@ -76,24 +76,24 @@ Value objects: `IataCode` (3 uppercase letters, validated), `FlightNumber`, `Tri
 
 ```rust
 pub enum DutyEntry {
-    /// Timed travel. `position` carries the DH marker that prefixes the title.
-    FlightLeg { date: LocalDate, trip: Option<TripId>, report_lt: Option<LocalTime>,
-                position: Option<Position>, flight: FlightNumber, from: IataCode,
-                to: IataCode, interval: UtcInterval, aircraft: Option<Aircraft>,
-                tz_diff: Option<TimezoneDiff>, blocktime: Option<Blocktime>,
-                layover: Option<Blocktime>, tags: Option<Tags> },
+    /// Timed travel: one flight leg. `position` carries the DH marker that
+    /// prefixes the title; the optional fields are `FieldValue`s, so a leg whose
+    /// fragments print different values keeps both.
+    Travel { date: Date, designator: String, from: String, to: String,
+             position: Position, interval: UtcInterval, trip: Option<String>,
+             report_lt: Option<FieldValue>, aircraft: Option<FieldValue>,
+             blocktime: Option<FieldValue>, tz_diff: Option<FieldValue>,
+             layover: Option<FieldValue>, tags: Option<FieldValue> },
     /// Code-driven all-day: FREE, OFF, U (vacation), FZ (additional vacation).
-    AllDay { date: LocalDate, kind: AllDayKind /* Free, Off, Vacation, AdditionalVacation */,
-             tags: Option<Tags> },
+    AllDay { date: Date, code: String, tags: Option<String> },
     /// Timed availability windows: SB, RE, SBX.
-    Availability { date: LocalDate, kind: AvailabilityKind /* Standby, Reserve, SingleDayStandby */,
-                   station: Option<IataCode>, interval: UtcInterval, tags: Option<Tags> },
+    Availability { date: Date, code: String, station: Option<String>,
+                   interval: UtcInterval, tags: Option<String> },
     /// Timed non-flight duty: TK, DTUSA, EM.
-    NonFlightDuty { date: LocalDate, kind: NonFlightKind /* OfficeOrSeminar, ConsulateVisa, Extended */,
-                    trip: Option<TripId>, station: Option<IataCode>, interval: UtcInterval,
-                    tags: Option<Tags> },
+    NonFlightDuty { date: Date, code: String, station: Option<String>,
+                    trip: Option<String>, interval: UtcInterval, tags: Option<String> },
     /// Explicit dated station-bearing Layover row; all-day.
-    Layover { date: LocalDate, station: IataCode },
+    Layover { date: Date, station: String },
 }
 ```
 
@@ -108,8 +108,6 @@ pub trait RosterSource { fn read(&self, bytes: &[u8]) -> Result<SourceDocument, 
 pub trait CalendarSink { fn write(&self, roster: &Roster, opts: &WriteOptions) -> Result<String, SinkError>; }
 /// Driven port: time (for the DTSTAMP construction fallback); fixed in tests.
 pub trait Clock { fn now_utc(&self) -> UtcDateTime; }
-/// Driven port: event observer (CLI logger; later progress/JS).
-
 /// Driving port.
 pub struct ConvertRoster<S: RosterSource, K: CalendarSink, C: Clock> { /* … */ }
 impl<S, K, C> ConvertRoster<S, K, C> {
@@ -121,7 +119,7 @@ Input `&[u8]`, output `String` — no path or file handle crosses the boundary, 
 
 `RawRosterTable` is the anti-corruption intermediate format: rows of column cells (`date, trip, report, pos, activity, from, to, start, end, ac, layover, tz, block, tags`). Column assignment (header row → X bands, derived dynamically, never hard-coded; Y clustering into rows) happens in `duty2cal-pdf`; interpretation (classification, fragment pairing, date carry, date resolution) happens in `application`. The PDF adapter is therefore replaceable.
 
-**Domain events** (in-process, synchronous, ordered; no broker, no async channel — conflict 19): `RosterParsed`, `EntryRecognized`, `MidnightLegMerged`, `UnknownActivity` (hard failure), `CalendarWritten`.
+There is no event port: the use case returns its outcome or a typed error, and the CLI turns either into the terminal transcript, the numbered diagnostic, or the exit status (conflict 19).
 
 **Error mapping across crates:** the orphan rule forbids `impl From<pdfplumber::Error> for SourceError` in `duty2cal-pdf`; use explicit `map_err` with a crate-local conversion. Never re-export a third-party error type through a port.
 

@@ -136,3 +136,27 @@ committed fixture and its own local plans.
 All blocking findings are fixed, every branch has been walked, and the operator question is answered.
 
 DESIGN-REVIEW: PASS
+
+
+## Re-run after the producer-layout rework (second pass)
+
+Backed by the review gate's conformance pass: `design.md` changed (the producer-layout reading rules, the
+corrected module and port beats, the `create_new` publication rule), so this re-run covered those changes
+and the re-shaped fixtures. Verdict was **incorrect**; every finding is fixed:
+
+| Finding | Severity | Disposition |
+|---|---|---|
+| `design.md` still declared `DutyEntry::FlightLeg` and a value-object set (`IataCode`, `FlightNumber`, `TripId`, `Aircraft`, `Blocktime`, `TimezoneDiff`, `Tags`, `LocalDate`, `LocalTime`, `RosterId`, `AllDayKind`, `AvailabilityKind`, `NonFlightKind`) that the implementation does not have | blocking | Fixed: the snippet now mirrors `domain/mod.rs` — `Travel`, `AllDay`, `Availability`, `NonFlightDuty`, `Layover` over `String`/`FieldValue`, with the fields each variant really carries |
+| The new glossary terms rendered outside the ubiquitous-language table, and the promotion counts still said three added terms | blocking | Fixed: `Travel leg` and `Availability duty` are table rows, the chapter and `arc42.md` now say five added terms (eighteen confirmed introductions) |
+| The use case and the proposal promised an enumerated retry when a name is claimed before publication, while `fs::publish` failed | blocking | Fixed: a name claimed between the check and the create is enumerated past (retry), while a name that only looked free and cannot be written fails and is reported. Chapter 8 and `design.md` state that rule; the closing publication scenarios keep their behaviour |
+| An orphan doc comment for the removed event port, a "Domain events" paragraph naming five events that do not exist, and an `arc42.md` claim that chapter 04 records in-process domain events | advisory | Fixed: the comment and paragraph are gone, `arc42.md` records the typed-outcome design instead |
+
+Per-branch coverage: no issue found for Scope, Tech choices, Missing scenarios, Testability (the reworked
+reader now carries RED evidence in the committed suite and in `review.md`), Risk, use-case and Persona
+context, the decision ledger (`D1`–`D3` with seed references), the visual design contract, deferrals,
+interface classification, ADR qualification, and the arc42 chapter set (all 12 re-derived, content checked,
+no ASCII art, ADR-0001/0002 with their consequences in chapter 11).
+
+Suite 52 of 52 scenarios, e2e 1 of 1, `givn readme check` OK, `givn lint` clean.
+
+DESIGN-REVIEW: PASS

@@ -4,8 +4,9 @@
 //! bytes.
 //!
 //! The write itself creates the file (`create_new`), so an existing calendar or
-//! report is never replaced, not even by a racing run: a name that turns out to
-//! be taken between the check and the create fails the publication, which is
+//! report is never replaced, not even by a racing run: a name another process
+//! claims between the check and the create is enumerated past, while a name that
+//! only looked free and cannot be written fails the publication, which is
 //! reported rather than hidden behind a later name.
 
 use std::fs::OpenOptions;
@@ -33,10 +34,20 @@ pub fn publish(source: &Path, kind: Kind, body: &str) -> io::Result<Option<PathB
         if candidate.exists() {
             continue;
         }
-        let mut file = OpenOptions::new()
+        let mut file = match OpenOptions::new()
             .write(true)
             .create_new(true)
-            .open(&candidate)?;
+            .open(&candidate)
+        {
+            Ok(file) => file,
+            // Another process claimed the name between the check and the create:
+            // enumerate past it. The entry still not existing means the name only
+            // looked free and cannot be written, which is reported instead.
+            Err(error) if error.kind() == io::ErrorKind::AlreadyExists && candidate.exists() => {
+                continue;
+            }
+            Err(error) => return Err(error),
+        };
         file.write_all(body.as_bytes())?;
         return Ok(Some(candidate));
     }
