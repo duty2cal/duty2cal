@@ -62,7 +62,7 @@ Feature: Publish a public release
 
   @givn.added @wip
   Scenario: The release text states the released revisions' release notes
-    Given a history whose released revisions carry release-note subjects and whose housekeeping revisions do not
+    Given a history whose released revisions carry release-note subjects, including one subject repeated by several revisions, and whose housekeeping revisions do not
     When the maintainer prepares the release for version 0.2.0
     Then the release text names version 0.2.0
     And the release text lists these release notes in release order
