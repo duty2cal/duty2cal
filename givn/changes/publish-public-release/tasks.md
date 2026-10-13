@@ -465,18 +465,82 @@ Use-case constraint: release-note subjects in release order, housekeeping and un
 
 Use-case constraint: the assertion is on what the preparation command reported and on what the executable taken out of the archive printed; the transcript is the committed evidence.
 
-- [ ] Bring up the local environment named in `design.md` and confirm `./run-tests.sh --e2e` counts strictly fewer scenarios than the full run:
+- [x] Bring up the local environment named in `design.md` and confirm `./run-tests.sh --e2e` counts strictly fewer scenarios than the full run:
   ```
+  $ ./run-tests.sh
+  [Summary]
+  2 features
+  84 scenarios (83 passed, 1 failed)
+  306 steps (305 passed, 1 failed)
+
+  $ ./run-tests.sh --e2e
+  [Summary]
+  2 features
+  2 scenarios (1 passed, 1 failed)
+  6 steps (5 passed, 1 failed)
   ```
-- [ ] RED — remove `@wip`; write the e2e steps with `unimplemented!(...)` bodies; run `./run-tests.sh --e2e --name "<title>"`; paste the non-zero output:
+  Strict mode proven before the scenario is written: the one failure in each run is this scenario's `Given the executable built for this machine`, reported as `Step doesn't match any function` with exit 101 — an undefined step fails the run rather than passing silently. The e2e run is a strict subset: 2 of the 84 scenarios. `tar` (GNU 1.35), `gzip` (1.14), `sha256sum` and `git` are present; the environment needs no network, no credentials and no GitHub.
+- [x] RED — remove `@wip`; write the e2e steps with `unimplemented!(...)` bodies; run `./run-tests.sh --e2e --name "<title>"`; paste the non-zero output:
   ```
+  $ ./run-tests.sh --e2e --name "Maintainer prepares a release and runs the archived executable"
+  error: the argument '--tags <tagexpr>' cannot be used with '--name <regex>'
+  Usage: features_runner-ee02daa7913e20ed --tags <tagexpr>
+  error: test failed, to rerun pass `-p duty2cal --test features_runner`   (exit status: 2)
+
+  $ ./run-tests.sh --name "Maintainer prepares a release and runs the archived executable"
+  Feature: Publish a public release
+    Scenario: Maintainer prepares a release and runs the archived executable
+     ✘  Given the executable built for this machine
+        Step panicked. Captured output: not implemented: build the real executable for this machine
+  [Summary]
+  1 feature
+  RED_EXIT=101
   ```
-- [ ] GREEN — drive the real command and the extracted executable; commit the transcript to `givn/changes/publish-public-release/evidence/visual/maintainer-prepares-a-release-and-runs-the-archived-executable/transcript.txt` with the run-specific directory replaced by a placeholder; paste the passing output:
+  Deviation forced by the framework, recorded rather than improvised: cucumber-rs 0.23 refuses `--tags` together with `--name`, so the prescribed `./run-tests.sh --e2e --name "<title>"` exits 2 before a step runs. The single-scenario command named at the top of this file (`./run-tests.sh --name "<title>"`) selects this scenario because its title is unique, and the `@e2e` tag is untouched; the e2e suite as a whole is run separately below.
+- [x] GREEN — drive the real command and the extracted executable; commit the transcript to `givn/changes/publish-public-release/evidence/visual/maintainer-prepares-a-release-and-runs-the-archived-executable/transcript.txt` with the run-specific directory replaced by a placeholder; paste the passing output:
   ```
+  Feature: Publish a public release
+    Scenario: Maintainer prepares a release and runs the archived executable
+     ✔  Given the executable built for this machine
+     ✔  When the maintainer prepares the release for version 0.1.0
+     ✔  Then the preparation reports the archive and its checksum for this machine's platform
+     ✔  And the release text names version 0.1.0
+     ✔  When the maintainer extracts the archive for this machine's platform
+     ✔  And runs the executable taken from that archive
+     ✔  Then the executable prints "usage: duty2cal <duty-plan.pdf>" and reports failure through its process exit status
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  7 steps (7 passed)
+  GREEN_EXIT=0
   ```
-- [ ] REFACTOR — paste the output:
+  Production code: none new. The Given puts the real built binary (`CARGO_BIN_EXE_duty2cal`) under this machine's platform and stand-ins under the other four; the When is the shared preparation step, invoked as `scripts/prepare-release.sh` from the repository root; the assertions are on what the preparation reported (this machine's archive and its digest, checked against a recomputed digest) and on what the executable taken out of the archive printed and returned. The committed evidence:
   ```
+  $ scripts/prepare-release.sh --version 0.1.0 --binaries <scenario-dir>/binaries --out <scenario-dir>/out
+  staged duty2cal-0.1.0-windows-x86_64.tar.gz sha256:93e601ecf7677a3f4761c6ba5c60994b8fc8ce84b5aa50f91b56d10267963e48
+  staged duty2cal-0.1.0-linux-x86_64.tar.gz sha256:5ff653f32223b3c844e6c351caccf0b67ced728f0a8629a940149beb2321c859
+  staged duty2cal-0.1.0-linux-arm64.tar.gz sha256:14aa3007abe9b640a29d20442774360b60e44c584041a02299c75310c6cfed19
+  staged duty2cal-0.1.0-macos-arm64.tar.gz sha256:27a17d8ca423469776b97a1832fa53ef571a7c4863d5b0b2418ba3b7b3d3a426
+  staged duty2cal-0.1.0-macos-x86_64.tar.gz sha256:1b37bd14f23f510918f1ba7b60165a52465c1070fbf2ca32205326991be1e905
+  release text release-notes.md names version 0.1.0
+
+  $ tar -xzf <scenario-dir>/out/duty2cal-0.1.0-linux-x86_64.tar.gz -C <scenario-dir>/extracted
+
+  $ <scenario-dir>/extracted/duty2cal
+  usage: duty2cal <duty-plan.pdf>
+
+  exit status: 2
   ```
+- [x] REFACTOR — paste the output:
+  ```
+  STEP FILES FMT OK
+  1 scenario (1 passed), 7 steps (7 passed)   REFACTOR_EXIT=0
+  $ ./run-tests.sh --e2e
+  2 features
+  2 scenarios (2 passed)
+  12 steps (12 passed)   E2E_SUITE_EXIT=0
+  ```
+  Two tidy-ups with no behaviour change: the preparation is now invoked as `scripts/prepare-release.sh` from the repository root (the command the design documents, and the only form whose transcript carries no local path), and `run_command` records each command line so the committed transcript reads as a terminal session. The long step attribute is wrapped as the existing steps wrap theirs.
 - [ ] COMMIT — `<hash>`:
   ```
   ```

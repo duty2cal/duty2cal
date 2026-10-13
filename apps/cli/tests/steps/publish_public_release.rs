@@ -89,9 +89,15 @@ pub(crate) fn machine_platform() -> &'static str {
     }
 }
 
-/// The repository's preparation command.
-fn prepare_script() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../scripts/prepare-release.sh")
+/// The executable name this machine's platform uses.
+pub(crate) fn machine_executable() -> &'static str {
+    executable_for(machine_platform())
+}
+
+/// The repository root: the working directory the preparation is invoked from,
+/// so a transcript shows `scripts/prepare-release.sh` and not a local path.
+fn repository_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
 /// The scenario's working directory, created on first use.
@@ -148,8 +154,24 @@ pub(crate) fn build_binaries(w: &mut DutyWorld, platforms: &[&str]) {
     w.staged = Some(out);
 }
 
-/// Run a command, recording its transcript and exit status.
+/// A command line, as a terminal would show it.
+fn command_line(command: &Command) -> String {
+    let mut parts = vec![command.get_program().to_string_lossy().into_owned()];
+    parts.extend(
+        command
+            .get_args()
+            .map(|argument| argument.to_string_lossy().into_owned()),
+    );
+    parts.join(" ")
+}
+
+/// Run a command, recording its transcript and exit status. The scenario's own
+/// transcript reads like a terminal session, because an `@e2e` scenario commits
+/// it as evidence.
 pub(crate) fn run_command(w: &mut DutyWorld, command: &mut Command) {
+    w.scenario_transcript.push_str("$ ");
+    w.scenario_transcript.push_str(&command_line(command));
+    w.scenario_transcript.push('\n');
     let output = command.output().expect("run the command");
     w.exit_status = output.status.code();
     let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
@@ -175,8 +197,9 @@ pub(crate) fn run_prepare(w: &mut DutyWorld, version: &str) {
         .binaries
         .clone()
         .expect("the scenario prepared no executables");
-    let mut command = Command::new(prepare_script());
+    let mut command = Command::new("scripts/prepare-release.sh");
     command
+        .current_dir(repository_root())
         .arg("--version")
         .arg(version)
         .arg("--binaries")
@@ -267,7 +290,7 @@ fn archives_with_times(dir: &Path) -> Vec<(String, SystemTime)> {
 }
 
 /// The sha256 digest of a file, as `sha256sum` prints it.
-fn sha256_of(path: &Path) -> String {
+pub(crate) fn sha256_of(path: &Path) -> String {
     let output = Command::new("sha256sum")
         .arg(path)
         .output()

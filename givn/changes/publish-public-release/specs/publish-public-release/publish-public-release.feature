@@ -71,7 +71,7 @@ Feature: Publish a public release
       | Publish only an archive the evidence supports |
     And the release text omits the housekeeping revisions and the subject that carries no release-note type
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Maintainer prepares a release and runs the archived executable
     Given the executable built for this machine
     When the maintainer prepares the release for version 0.1.0

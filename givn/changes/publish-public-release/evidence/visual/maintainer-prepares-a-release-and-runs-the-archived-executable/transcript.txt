@@ -1,0 +1,14 @@
+$ scripts/prepare-release.sh --version 0.1.0 --binaries <scenario-dir>/binaries --out <scenario-dir>/out
+staged duty2cal-0.1.0-windows-x86_64.tar.gz sha256:93e601ecf7677a3f4761c6ba5c60994b8fc8ce84b5aa50f91b56d10267963e48
+staged duty2cal-0.1.0-linux-x86_64.tar.gz sha256:5ff653f32223b3c844e6c351caccf0b67ced728f0a8629a940149beb2321c859
+staged duty2cal-0.1.0-linux-arm64.tar.gz sha256:14aa3007abe9b640a29d20442774360b60e44c584041a02299c75310c6cfed19
+staged duty2cal-0.1.0-macos-arm64.tar.gz sha256:27a17d8ca423469776b97a1832fa53ef571a7c4863d5b0b2418ba3b7b3d3a426
+staged duty2cal-0.1.0-macos-x86_64.tar.gz sha256:1b37bd14f23f510918f1ba7b60165a52465c1070fbf2ca32205326991be1e905
+release text release-notes.md names version 0.1.0
+
+$ tar -xzf <scenario-dir>/out/duty2cal-0.1.0-linux-x86_64.tar.gz -C <scenario-dir>/extracted
+
+$ <scenario-dir>/extracted/duty2cal
+usage: duty2cal <duty-plan.pdf>
+
+exit status: 2
