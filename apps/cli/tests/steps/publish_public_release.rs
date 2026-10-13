@@ -509,6 +509,34 @@ async fn keeps_their_earlier_modification_times(w: &mut DutyWorld) {
     }
 }
 
+#[given(regex = r#"^an executable built for the platform "([^"]+)" that cannot be read$"#)]
+async fn an_unreadable_executable(w: &mut DutyWorld, platform: String) {
+    build_binaries(w, &supported_platforms());
+    let path = w
+        .binaries
+        .clone()
+        .expect("the scenario prepared no executables")
+        .join(&platform)
+        .join(executable_for(&platform));
+    assert!(
+        path.is_file(),
+        "there is no executable to make unreadable: {}",
+        path.display()
+    );
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt as _;
+        let mut permissions = std::fs::metadata(&path)
+            .expect("stat the executable")
+            .permissions();
+        permissions.set_mode(0o000);
+        std::fs::set_permissions(&path, permissions)
+            .expect("remove every permission from the executable");
+    }
+    #[cfg(not(unix))]
+    panic!("the release-preparation scenarios are Linux-only");
+}
+
 #[given(regex = r#"^an executable presented as the unrecognised platform "([^"]+)"$"#)]
 async fn an_unrecognised_platform(w: &mut DutyWorld, platform: String) {
     assert!(

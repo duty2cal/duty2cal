@@ -53,7 +53,7 @@ Feature: Publish a public release
     Then the preparation fails and names version 0.1.0
     And the staged archives keep their earlier modification times
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unreadable executable stops the preparation
     Given an executable built for the platform "linux-x86_64" that cannot be read
     When the maintainer prepares the release for version 0.1.0

@@ -346,15 +346,39 @@ Use-case constraint: a preparation never replaces what exists; the staged archiv
 
 Use-case constraint: an unreadable input stages nothing and names the cause.
 
-- [ ] RED — paste the non-zero output:
+- [x] RED — paste the non-zero output:
   ```
+  Feature: Publish a public release
+    Scenario: An unreadable executable stops the preparation
+     ✘  Given an executable built for the platform "linux-x86_64" that cannot be read
+        Step panicked. Captured output: not implemented: build an unreadable executable for linux-x86_64
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  1 step (1 failed)
+  RED_EXIT=101
   ```
-- [ ] GREEN — the read failure path; paste the output:
+- [x] GREEN — the read failure path; paste the output:
   ```
+  Feature: Publish a public release
+    Scenario: An unreadable executable stops the preparation
+     ✔  Given an executable built for the platform "linux-x86_64" that cannot be read
+     ✔  When the maintainer prepares the release for version 0.1.0
+     ✔  Then the preparation fails and names "linux-x86_64"
+     ✔  And the prepared release holds no archive
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  4 steps (4 passed)
+  GREEN_EXIT=0
   ```
-- [ ] REFACTOR — paste the output:
+  Production code: none new — the script checks each platform's executable for readability after completeness and before any write (`prepare-release: the executable for platform linux-x86_64 cannot be read: <path>`). The Given builds all five platforms and removes every permission bit from the named one, so the readability check — not the completeness check — is the one that must fire.
+- [x] REFACTOR — paste the output:
   ```
+  apps/cli/tests/steps/publish_public_release.rs FMT OK
+  1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
+  No behaviour change: the permission change is one `#[cfg(unix)]` block with an explicit `#[cfg(not(unix))]` refusal, since the preparation itself is Linux-only.
 - [ ] COMMIT — `<hash>`:
   ```
   ```
