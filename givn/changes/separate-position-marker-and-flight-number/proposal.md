@@ -43,7 +43,7 @@ Unchanged by this change: which rows become activities, their classification, th
 
 | Proposed capability | Route's recommendation | Decision | Rationale |
 |---|---|---|---|
-| export-duty-plan-calendar — Export a duty-plan calendar | `EXTEND export-duty-plan-calendar` | `EXTEND export-duty-plan-calendar` | The travel title is one observable detail of the existing whole-plan conversion. No new actor goal, capability, or use case is introduced. |
+| export-duty-plan-calendar | EXTEND export-duty-plan-calendar | `EXTEND export-duty-plan-calendar` | The travel title is one observable detail of the existing whole-plan conversion ("Export a duty-plan calendar"). No new actor goal, capability, or use case is introduced. |
 
 ## Out of Scope
 

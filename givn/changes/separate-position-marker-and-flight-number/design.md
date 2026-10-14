@@ -46,7 +46,7 @@ Changed files:
 | `apps/cli/tests/steps/export_duty_plan_calendar.rs` | changed | Five `Given` steps for the delta's scenarios (`Then` steps are reused). |
 | `apps/cli/tests/fixtures/expected/2098-06.ics` | changed | Regenerated: the reference plan's travel titles read `LU 742 Tychon-Mareum`. |
 | `givn/specs/export-duty-plan-calendar/usecase.md` | changed | The "preserve printed designators" rule names the two printed fields, and the deadhead rule says the title carries the plan's printed position. |
-| `docs/arc42/05-building-block-view.md`, `10-quality-requirements.md`, `11-risks-and-technical-debt.md`, `12-glossary.md` | changed | The row-interpretation responsibility, the new quality scenario, the pairing consequence, and the two printed-field terms with their code symbols. |
+| `docs/arc42/05-building-block-view.md`, `08-crosscutting-concepts.md`, `10-quality-requirements.md`, `11-risks-and-technical-debt.md`, `12-glossary.md` | changed | The row-interpretation responsibility, the printed-identification concept and pairing rule, the new quality scenario, the pairing consequence, and the two printed-field terms with their code symbols. |
 
 ## The two printed fields and the one join rule
 
