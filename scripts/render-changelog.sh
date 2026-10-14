@@ -44,6 +44,7 @@ here=$(cd "$(dirname "$0")/.." && pwd)
 config="$here/cliff.toml"
 marker='<!-- capability-allow-list:'
 machinery_marker='<!-- machinery-skip-list:'
+receiving_marker='<!-- user-receiving-paths:'
 remote='https://github.com/kressnerd/duty2cal'
 
 usage() {
@@ -193,6 +194,24 @@ printf '%s\n' "$machinery" | tr ',' '\n' | while IFS= read -r term; do
   esac
 done
 
+# The paths a user receives decide what a released revision must have changed
+# to be announced. The marked line is read here and every path it names must be
+# in the repository under test: a path that no longer exists would silently
+# narrow what can ever be announced, so it stops the render instead. The
+# comment above the marked line in the configuration states the line between a
+# path a user receives and one that only decides how the project works on what
+# it ships.
+receiving_line=$(grep -F -- "$receiving_marker" "$config" | head -1 || true)
+if [ -z "$receiving_line" ]; then
+  refuse "the user-receiving path list is not recorded in $config"
+fi
+receiving=$(printf '%s\n' "$receiving_line" | sed -e "s|.*$receiving_marker||" -e 's|-->||g')
+for path in $receiving; do
+  if [ ! -e "$repo/$path" ]; then
+    refuse "a configured user-receiving path is not in the repository: $path (in $config)"
+  fi
+done
+
 # The released revision: the `v<version>` tag when it exists, and otherwise
 # `HEAD`, the revision the tag will point at. The section's date is that
 # revision's own committer date — never the clock — so a version is renderable
@@ -239,20 +258,63 @@ rendered=$(git-cliff --config "$config" --repository "$repo" --sort oldest $tag_
 
 # The generator does not collapse identical release-note subjects, and one
 # released change carried by many revisions is one entry. The group markers it
-# uses for ordering are stripped here too.
+# uses for ordering are stripped here too. The version's section is taken
+# without collapsing, because each entry's revision marker must be read before
+# anything keys on the line.
 section=$(
   printf '%s\n' "$rendered" |
     sed -e 's|<!-- [0-9]* -->||g' -e "s|@@DATE@@|$section_date|" |
     awk -v version="$version" '
       $0 == "## [" version "]" || index($0, "## [" version "] ") == 1 { inside = 1 }
       inside && /^## \[/ && index($0, "## [" version "]") != 1 { inside = 0 }
-      inside {
-        if (/^- /) {
-          if (seen[$0]++) next
-        }
-        print
-      }'
+      inside { print }'
 )
+
+# A released revision is announced only when it changed a path a user receives:
+# each entry is resolved to its revision, the marker is stripped, and an entry
+# whose revision changed none of the configured paths is left out. Rename
+# detection is pinned off because it is a checkout configuration — with it on,
+# a file moved out of a listed path is listed only under its new one and the
+# revision would vanish. A revision whose paths cannot be read refuses, rather
+# than being dropped as if it had changed nothing.
+section_file=$(mktemp)
+kept_file=$(mktemp)
+printf '%s\n' "$section" > "$section_file"
+while IFS= read -r line; do
+  case "$line" in
+    '- '*)
+      revision=$(printf '%s' "$line" | sed -n 's|.*<!--rev:\([0-9a-f][0-9a-f]*\)-->.*|\1|p')
+      text=$(printf '%s' "$line" | sed -e 's|<!--rev:[0-9a-f][0-9a-f]*-->||')
+      if [ -z "$revision" ]; then
+        printf '%s\n' "$text" >> "$kept_file"
+        continue
+      fi
+      if ! changed=$(git -c diff.renames=false -C "$repo" show --name-only --format= "$revision" 2>/dev/null); then
+        rm -f "$section_file" "$kept_file"
+        refuse "the changed paths of revision $revision cannot be read: $repo"
+      fi
+      # This repository's paths carry no whitespace, so word splitting is the
+      # list of changed paths. A listed directory names itself and everything
+      # under it; a listed file names only itself.
+      keep=no
+      for path in $changed; do
+        for prefix in $receiving; do
+          case "$path" in
+            "${prefix%/}" | "${prefix%/}"/*) keep=yes ;;
+          esac
+        done
+      done
+      if [ "$keep" = yes ]; then
+        printf '%s\n' "$text" >> "$kept_file"
+      fi
+      ;;
+    *) printf '%s\n' "$line" >> "$kept_file" ;;
+  esac
+done < "$section_file"
+
+# Identical subjects now collapse, as before: one entry per released change.
+section=$(awk '/^- / { if (seen[$0]++) next } { print }' "$kept_file")
+rm -f "$section_file" "$kept_file"
 
 visible=$(printf '%s\n' "$section" | grep -c '^- ' || true)
 if [ "$visible" -eq 0 ]; then

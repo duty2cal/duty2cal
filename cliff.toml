@@ -33,7 +33,7 @@ body = """
 
 {% for entry in commits | commit_groups(groups=commit_parsers_groups) %}### {{ entry.group }}
 {%- for commit in entry.commits %}
-- {{ commit.message | upper_first }}
+- {{ commit.message | upper_first }}<!--rev:{{ commit.id }}-->
 {%- endfor %}
 
 {% endfor -%}
@@ -45,6 +45,18 @@ render_always = true
 # The capability allow-list, read by the renderer and compared against the
 # use-case ids under `givn/specs/`.
 # <!-- capability-allow-list: export-duty-plan-calendar publish-public-release -->
+# The paths a user receives: the converter's crates and command-line
+# application, the build inputs that decide what the executable contains, and
+# the packaging and the release workflow that decide what an archive holds. A
+# released revision is announced only when it changed one of them, whatever its
+# subject says; a path listed here and missing from the tree stops the render.
+# The line between the two kinds of tooling is deliberate: a path whose
+# contents decide what a downloader receives, or what those bytes do, belongs
+# here; `.github/workflows/ci.yml`, `scripts/render-changelog.sh`, `cliff.toml`,
+# `docs/`, `givn/` and test code decide only how the project works on what it
+# ships. `scripts/prepare-release.sh` and the release workflow are listed
+# because they decide what an archive holds and its file mode.
+# <!-- user-receiving-paths: crates/ apps/cli/src/ Cargo.toml Cargo.lock rust-toolchain.toml .cargo/ scripts/prepare-release.sh .github/workflows/release.yml -->
 conventional_commits = true
 filter_unconventional = true
 # Keep a breaking revision even when its type is not listed below: a breaking

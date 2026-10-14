@@ -330,11 +330,56 @@ fn git_dated(repo: &Path, date: &str, args: &[&str]) {
     );
 }
 
+/// A fixture path a user receives, and one that only decides how the project
+/// works on what it ships. A revision's own subject picks one by default, so a
+/// history reads as the changes it is meant to express; a scenario that needs
+/// the opposite says so in `build_history_with`.
+pub(crate) const RECEIVED: &str = "crates/duty2cal-core/src/lib.rs";
+pub(crate) const MACHINERY: &str = "scripts/render-changelog.sh";
+
+/// Every path the committed configuration lists as one a user receives, so the
+/// renderer's list check passes against a fixture repository.
+const RECEIVED_PATHS: [&str; 8] = [
+    "crates/duty2cal-core/src/lib.rs",
+    "apps/cli/src/main.rs",
+    "Cargo.toml",
+    "Cargo.lock",
+    "rust-toolchain.toml",
+    ".cargo/config.toml",
+    "scripts/prepare-release.sh",
+    ".github/workflows/release.yml",
+];
+
+/// The path a revision writes when the scenario does not override it: a
+/// revision the project releases changed something a user receives, and every
+/// other revision changed the machinery.
+fn default_path(subject: &str) -> &'static str {
+    let end = subject.find('(').unwrap_or(subject.len());
+    match &subject[..end] {
+        "feat" | "fix" | "perf" | "refactor" | "revert" => RECEIVED,
+        _ => MACHINERY,
+    }
+}
+
 /// Build a fixture repository whose history is the revisions named, oldest
-/// first, with fixed committer dates and `v*` tags. The committed
-/// configuration and the capability directories the allow-list check reads are
-/// copied in, so the renderer runs exactly as it does against the real tree.
+/// first, with fixed committer dates and `v*` tags.
 pub(crate) fn build_history(w: &mut DutyWorld, revisions: &[(&str, &str, &str)]) {
+    build_history_with(w, revisions, &[]);
+}
+
+/// Build a fixture repository whose history is the revisions named, oldest
+/// first, with fixed committer dates and `v*` tags, and whose revisions write
+/// the paths given here instead of the ones their subjects imply.
+///
+/// The committed configuration and the capability directories the allow-list
+/// check reads are copied in, and every path the configuration lists as one a
+/// user receives is created, so the renderer runs exactly as it does against
+/// the real tree.
+pub(crate) fn build_history_with(
+    w: &mut DutyWorld,
+    revisions: &[(&str, &str, &str)],
+    overrides: &[(usize, &[&str])],
+) {
     let repo = scenario_dir(w).join("history");
     let _ = std::fs::remove_dir_all(&repo);
     std::fs::create_dir_all(&repo).expect("create the fixture repository");
@@ -348,9 +393,45 @@ pub(crate) fn build_history(w: &mut DutyWorld, revisions: &[(&str, &str, &str)])
             .expect("create a capability directory");
     }
     git(&repo, &["init", "--quiet"]);
+    // The user-receiving paths the configuration lists are committed as
+    // plumbing before the history starts, so a revision that changes one of
+    // them is what names it, and this scaffold revision is never released: it
+    // carries no conventional-commit scope at all.
+    for path in RECEIVED_PATHS {
+        let file = repo.join(path);
+        std::fs::create_dir_all(file.parent().expect("a parent directory"))
+            .expect("create a fixture directory");
+        std::fs::write(&file, "fixture\n").expect("write a fixture path");
+    }
+    git(&repo, &["add", "--all"]);
+    git_dated(
+        &repo,
+        "2025-12-31",
+        &[
+            "-c",
+            "user.name=duty2cal tests",
+            "-c",
+            "user.email=tests@example.invalid",
+            "-c",
+            "commit.gpgsign=false",
+            "commit",
+            "--quiet",
+            "--no-verify",
+            "-m",
+            "Scaffold the fixture tree",
+        ],
+    );
     for (index, (date, subject, tag)) in revisions.iter().enumerate() {
-        let file = repo.join(format!("revision-{index}.txt"));
-        std::fs::write(&file, format!("{subject}\n")).expect("write the revision's file");
+        let paths: Vec<&str> = match overrides.iter().find(|(at, _)| *at == index) {
+            Some((_, paths)) => paths.to_vec(),
+            None => vec![default_path(subject)],
+        };
+        for path in paths {
+            let file = repo.join(path);
+            std::fs::create_dir_all(file.parent().expect("a parent directory"))
+                .expect("create a revision directory");
+            std::fs::write(&file, format!("{subject}\n")).expect("write the revision's file");
+        }
         git(&repo, &["add", "--all"]);
         git_dated(
             &repo,
@@ -1633,6 +1714,136 @@ async fn the_check_fails_and_names_version(w: &mut DutyWorld, version: String) {
     assert!(
         w.command_transcript.contains(&format!("version {version}")),
         "the failure does not name version {version}: {}",
+        w.command_transcript
+    );
+}
+
+/// The subjects the history that changes each kind of path carries, so the
+/// Then steps can read them back out of the section.
+const CONVERTER_CHANGE: &str = "Print the route a reader can check";
+const MACHINERY_CHANGE: &str = "Keep the pipeline's own notes out of a release";
+const BOTH_CHANGE: &str = "Name a packaged change beside the pipeline";
+const PACKAGING_CHANGE: &str = "Force the executable mode into the archive";
+
+/// A revision the project releases, writing a path a user receives.
+#[given("a history whose released revisions changed the converter, the release machinery, and both")]
+async fn a_history_changing_each_kind_of_path(w: &mut DutyWorld) {
+    build_history_with(
+        w,
+        &[
+            (
+                "2026-01-01",
+                "fix(export-duty-plan-calendar): Print the route a reader can check",
+                "",
+            ),
+            (
+                "2026-01-02",
+                "fix(publish-public-release): Keep the pipeline's own notes out of a release",
+                "",
+            ),
+            (
+                "2026-01-03",
+                "fix(publish-public-release): Name a packaged change beside the pipeline",
+                "v0.2.0",
+            ),
+        ],
+        &[(1, &[MACHINERY]), (2, &[RECEIVED, MACHINERY])],
+    );
+}
+
+/// A revision that changed only the packaging the configuration lists.
+#[given("a history whose released revisions changed the packaging")]
+async fn a_history_changing_the_packaging(w: &mut DutyWorld) {
+    build_history_with(
+        w,
+        &[(
+            "2026-01-01",
+            "fix(publish-public-release): Force the executable mode into the archive",
+            "v0.2.0",
+        )],
+        &[(0, &["scripts/prepare-release.sh"])],
+    );
+}
+
+/// A fixture repository whose tree is missing a path the configuration lists.
+#[given("a configured user-receiving path the repository does not hold")]
+async fn a_missing_receiving_path(w: &mut DutyWorld) {
+    build_history(
+        w,
+        &[(
+            "2026-01-01",
+            "fix(export-duty-plan-calendar): Print the route a reader can check",
+            "v0.2.0",
+        )],
+    );
+    let repo = w.fixture_repo.clone().expect("a fixture repository");
+    std::fs::remove_file(repo.join("Cargo.lock")).expect("remove a listed path");
+}
+
+/// The section of version 0.2.0, asserting the render succeeded.
+fn section_0_2_0(w: &DutyWorld) -> String {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "rendering version 0.2.0 did not succeed: {}",
+        w.command_transcript
+    );
+    section_of(&change_log(w), "0.2.0")
+}
+
+#[then("the section for version 0.2.0 names the change to the converter")]
+async fn section_names_the_converter_change(w: &mut DutyWorld) {
+    let section = section_0_2_0(w);
+    assert!(
+        section.contains(CONVERTER_CHANGE),
+        "the section does not name the converter change: {section}"
+    );
+}
+
+#[then("the section for version 0.2.0 names the change that touched both")]
+async fn section_names_the_both_paths_change(w: &mut DutyWorld) {
+    let section = section_0_2_0(w);
+    assert!(
+        section.contains(BOTH_CHANGE),
+        "the section does not name the revision that changed both: {section}"
+    );
+}
+
+#[then("the section for version 0.2.0 names no change to the release machinery")]
+async fn section_names_no_machinery_change(w: &mut DutyWorld) {
+    let section = section_0_2_0(w);
+    assert!(
+        !section.contains(MACHINERY_CHANGE),
+        "the section names a revision that changed only the machinery: {section}"
+    );
+}
+
+#[then("the section for version 0.2.0 names the change to the packaging")]
+async fn section_names_the_packaging_change(w: &mut DutyWorld) {
+    let section = section_0_2_0(w);
+    assert!(
+        section.contains(PACKAGING_CHANGE),
+        "the section does not name the packaging change: {section}"
+    );
+}
+
+#[then("the generation fails and names the path missing from the repository")]
+async fn generation_fails_naming_the_missing_path(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the generation did not fail: {}",
+        w.command_transcript
+    );
+    assert!(
+        w.command_transcript
+            .contains("a configured user-receiving path is not in the repository"),
+        "the failure does not state the reason: {}",
+        w.command_transcript
+    );
+    assert!(
+        w.command_transcript.contains("Cargo.lock"),
+        "the failure does not name the missing path: {}",
         w.command_transcript
     );
 }
