@@ -7,7 +7,6 @@ Feature: Export a duty-plan calendar
     When the crew member converts it
     Then that activity's title is "FB 123 ABC-DEF"
 
-  @givn.added @wip
   Scenario: A travel leg that prints no crew position keeps its flight number alone
     Given a supported duty plan whose travel leg prints flight number 123 from ABC to DEF with resolved UTC start 08:00 and end 09:00 and no crew position
     When the crew member converts it

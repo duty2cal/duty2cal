@@ -151,10 +151,31 @@ RED/GREEN evidence is captured per scenario. Scenarios marked *(guard)* assert b
 
 ### 4. A travel leg that prints no crew position keeps its flight number alone *(guard)*
 
-- [ ] RED: remove `@wip` from this scenario only; add its `Given` step (a travel leg printing flight number `123` and no crew position); run `./run-tests.sh --name "A travel leg that prints no crew position keeps its flight number alone"`; paste the output.
-- [ ] GREEN: no production change is required — the join rule leaves an unprinted position out. Record that finding and run the single-scenario command; paste the output.
-- [ ] REFACTOR: none; run the single-scenario command; paste the output.
-- [ ] COMMIT: `test(export-duty-plan-calendar): <release note>` with this scenario's title in the body; record the revision identifier.
+- [x] RED: remove `@wip` from this scenario only; add its `Given` step (a travel leg printing flight number `123` and no crew position); run `./run-tests.sh --name "A travel leg that prints no crew position keeps its flight number alone"`; paste the output.
+
+  ```
+  Step failed:
+  Defined: tmp/tmp.60sGZbhtAx/f0003.feature:11:5
+  Step doesn't match any function
+  1 scenario (1 failed) / 1 step (1 failed)
+  error: test failed
+  ```
+
+  The RED here is the undefined step, not a behavioural failure: this scenario asserts what the code already did, so it exists to keep the join rule from reaching a leg that prints no position. The step registration was stashed for this capture and restored immediately after.
+- [x] GREEN: no production change is required — the join rule leaves an unprinted position out. Record that finding and run the single-scenario command; paste the output.
+
+  ```
+  Scenario: A travel leg that prints no crew position keeps its flight number alone
+  ✔ Then that activity's title is "123 ABC-DEF"           1 scenario (1 passed) / 3 steps (3 passed)
+  ```
+
+  Production files: none. The behaviour was already produced before this change (the join only ever fired with a printed position), and `design.md` records that no digit guard replaces it: a travel title prints whatever the two fields hold.
+- [x] REFACTOR: none; run the single-scenario command; paste the output.
+
+  ```
+  1 scenario (1 passed) / 3 steps (3 passed)
+  ```
+- [x] COMMIT: `test(export-duty-plan-calendar): <release note>` with this scenario's title in the body; record the revision identifier.
 
 ### 5. A crew position printed beside a non-flight activity stays out of its title *(guard)*
 
