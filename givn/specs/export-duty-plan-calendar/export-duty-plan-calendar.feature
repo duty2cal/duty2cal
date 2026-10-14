@@ -393,3 +393,29 @@ Feature: Export a duty-plan calendar
     Given a supported duty plan whose revision footer prints an unusable stamp
     When the crew member converts it
     Then the calendar's revision is the construction clock
+  Scenario: A crew position and its flight number are printed as separate words
+    Given  a supported duty plan whose travel leg prints crew position FB and flight number 123 from ABC to DEF with resolved UTC start 08:00 and end 09:00
+    When  the crew member converts it
+    Then  that activity's title is "FB 123 ABC-DEF"
+
+  Scenario: A travel leg that prints no crew position keeps its flight number alone
+    Given  a supported duty plan whose travel leg prints flight number 123 from ABC to DEF with resolved UTC start 08:00 and end 09:00 and no crew position
+    When  the crew member converts it
+    Then  that activity's title is "123 ABC-DEF"
+
+  Scenario: A crew position printed beside a non-flight activity stays out of its title
+    Given  a supported duty plan whose dated row prints crew position AK beside activity code EM with resolved UTC start 06:00 and end 10:00
+    When  the crew member converts it
+    Then  that activity's title is "EM"
+
+  Scenario: An unmatched travel fragment is named with its position and flight number separate
+    Given  a supported duty plan whose unmatched travel fragment prints crew position FB and flight number 123
+    When  the crew member converts it
+    Then  no calendar is published
+    And  the conversion failure names "FB 123"
+
+  Scenario: A positioning departure fragment has no partner when its arrival fragment prints no crew position
+    Given  a supported duty plan whose departure fragment prints crew position DH and flight number 124 and whose arrival fragment prints flight number 124 without a crew position
+    When  the crew member converts it
+    Then  no calendar is published
+    And  the conversion failure names "no unique compatible partner"
