@@ -84,7 +84,7 @@ RED/GREEN evidence is captured per scenario. Scenarios marked *(guard)* assert b
   370 steps (366 passed, 4 failed)
   failing: the four delta scenarios that are still @wip — no permanent scenario regressed.
   ```
-- [x] COMMIT: `fix(export-duty-plan-calendar): <release note>` with this scenario's title in the body; record the revision identifier.
+- [x] COMMIT: revision `f30e31d` — `fix(export-duty-plan-calendar): A travel activity's calendar title prints the crew position and the flight number as two words separated by a space …`, body naming this scenario.
 
 ### 2. A crew position and its flight number are printed as separate words
 
@@ -119,7 +119,7 @@ RED/GREEN evidence is captured per scenario. Scenarios marked *(guard)* assert b
   372 steps (369 passed, 3 failed)
   failing: the three delta scenarios still @wip — no permanent scenario regressed, including the deadhead scenario and the golden oracle.
   ```
-- [x] COMMIT: `fix(export-duty-plan-calendar): <release note>` with this scenario's title in the body; record the revision identifier.
+- [x] COMMIT: revision `035e944` — same release-note subject, body naming this scenario and the two-field model.
 
 ### 3. An unmatched travel fragment is named with its position and flight number separate
 
@@ -147,7 +147,7 @@ RED/GREEN evidence is captured per scenario. Scenarios marked *(guard)* assert b
   375 steps (373 passed, 2 failed)
   failing: the two guard scenarios still @wip — the permanent "LU900" and compatibility failures, whose rows print no position, still name exactly what they did.
   ```
-- [x] COMMIT: `fix(export-duty-plan-calendar): <release note>` with this scenario's title in the body; record the revision identifier.
+- [x] COMMIT: revision `bd71e36` — same release-note subject, body naming this scenario and the one join rule for the failure message.
 
 ### 4. A travel leg that prints no crew position keeps its flight number alone *(guard)*
 
@@ -175,7 +175,7 @@ RED/GREEN evidence is captured per scenario. Scenarios marked *(guard)* assert b
   ```
   1 scenario (1 passed) / 3 steps (3 passed)
   ```
-- [x] COMMIT: `test(export-duty-plan-calendar): <release note>` with this scenario's title in the body; record the revision identifier.
+- [x] COMMIT: revision `6ae3807` — `test(export-duty-plan-calendar): keep the printed crew position and the flight number apart in a travel title …`, body naming this scenario.
 
 ### 5. A crew position printed beside a non-flight activity stays out of its title *(guard)*
 
@@ -201,16 +201,51 @@ RED/GREEN evidence is captured per scenario. Scenarios marked *(guard)* assert b
   ```
   1 scenario (1 passed) / 3 steps (3 passed)
   ```
-- [x] COMMIT: `test(export-duty-plan-calendar): <release note>` with this scenario's title in the body; record the revision identifier.
+- [x] COMMIT: revision `be3987a` — `test(export-duty-plan-calendar): keep a printed crew position out of a non-flight activity's title.`, body naming this scenario.
 
 ## Documentation task
 
-- [ ] Update the durable architecture documentation for this change and commit it: `docs/arc42/05-building-block-view.md` (the row interpretation's responsibility), `08-crosscutting-concepts.md` (the printed identification of a travel leg and the pairing rule), `10-quality-requirements.md` (QS-013), `11-risks-and-technical-debt.md` (TD-010), `12-glossary.md` (**Crew position**, **Flight number**, **Travel leg**, **Deadhead duty**). Record the revision identifier.
+- [x] Update the durable architecture documentation for this change and commit it: `docs/arc42/05-building-block-view.md` (the row interpretation's responsibility), `08-crosscutting-concepts.md` (the printed identification of a travel leg and the pairing rule), `10-quality-requirements.md` (QS-013), `11-risks-and-technical-debt.md` (TD-010), `12-glossary.md` (**Crew position**, **Flight number**, **Travel leg**, **Deadhead duty**). Record the revision identifier.
+
+  Revision `279e3d4` — `docs(export-duty-plan-calendar): update the architecture documentation for the separated printed fields.` The plan itself landed as revision `62f84da`.
 
 ## Verification task
 
-- [ ] `git-cliff` on `PATH`: `./run-tests.sh` → every scenario passes; paste the summary line.
-- [ ] `./run-tests.sh --e2e` → the `@e2e` scenario passes; paste the summary line.
-- [ ] `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace` → clean; paste.
-- [ ] `scripts/validate-local-corpus.sh` with a release build → the same five plans convert, and a diff of the published titles against the pre-change baseline shows only travel titles gaining one space; paste.
-- [ ] `scripts/pii-guard.sh`, `givn lint --change separate-position-marker-and-flight-number` → clean; paste.
+- [x] `git-cliff` on `PATH`: `./run-tests.sh` → every scenario passes; paste the summary line.
+
+  ```
+  [Summary]
+  3 features
+  100 scenarios (100 passed)
+  379 steps (379 passed)
+  ```
+
+  The e2e filter is a strict subset: `./run-tests.sh --e2e` → `2 features / 3 scenarios (3 passed) / 16 steps (16 passed)`.
+- [x] `./run-tests.sh --e2e` → the `@e2e` scenario passes; paste the summary line. (Above.)
+- [x] `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace` → clean; paste.
+
+  ```
+  cargo fmt --all --check          -> clean (no diff)
+  cargo clippy --workspace --all-targets -- -D warnings
+    Checking duty2cal-core v0.1.0 … duty2cal-pdf v0.1.0 … duty2cal v0.1.0
+    Finished `dev` profile … in 6.94s
+  GIVN_FEATURES="$(scripts/assemble-features.sh)" cargo test --workspace
+    3 features / 100 scenarios (100 passed)
+    running 3 tests / test result: ok. 3 passed (the architecture tests)
+  ```
+
+  Environment note: `cargo clippy` and `cargo test --workspace` are run with the pinned Rust 1.98.1 toolchain and its matching clippy from the nix store, `git-cliff 2.14.2` on `PATH`, and `GIVN_FEATURES` set; `cargo test --workspace` without `GIVN_FEATURES` fails pre-existing because `apps/cli/tests/features_runner.rs` then defaults to a non-existent `tests/features` root, and the change-log scenarios fail without `git-cliff`. Neither is caused by this change.
+- [x] `scripts/validate-local-corpus.sh` with a release build → the same five plans convert, and a diff of the published titles against the pre-change baseline shows only travel titles gaining one space; paste.
+
+  ```
+  PASS  MLP-2026-06.pdf … PASS  MLP-2026-10.pdf
+  local corpus: 5 passed, 0 failed
+  ```
+
+  Title diff against the pre-change baseline, five plans, 127 titles: 50 changed, every changed line matching `SUMMARY:<position> <number> <route>` on both sides (`changed=12/8/8/8/14`, `not-a-position-line=0` in each), and every `FREE`, `OFF`, `U`, `FZ`, `EM`, `TK`, `Layover` and `DH` title byte-identical.
+- [x] `scripts/pii-guard.sh`, `givn lint --change separate-position-marker-and-flight-number` → clean; paste.
+
+  ```
+  pii-guard: clean
+  givn lint: 1 file(s) checked — clean
+  ```
