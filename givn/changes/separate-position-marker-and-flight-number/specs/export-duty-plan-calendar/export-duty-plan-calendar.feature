@@ -19,7 +19,6 @@ Feature: Export a duty-plan calendar
     When the crew member converts it
     Then that activity's title is "EM"
 
-  @givn.added @wip
   Scenario: An unmatched travel fragment is named with its position and flight number separate
     Given a supported duty plan whose unmatched travel fragment prints crew position FB and flight number 123
     When the crew member converts it

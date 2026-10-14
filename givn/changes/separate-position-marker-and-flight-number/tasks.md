@@ -123,10 +123,31 @@ RED/GREEN evidence is captured per scenario. Scenarios marked *(guard)* assert b
 
 ### 3. An unmatched travel fragment is named with its position and flight number separate
 
-- [ ] RED: remove `@wip` from this scenario only; add its `Given` step (an unmatched travel fragment printing crew position `FB` and flight number `123`); run `./run-tests.sh --name "An unmatched travel fragment is named with its position and flight number separate"`; paste the output; the scenario must fail because the failure names `123` rather than the printed pair.
-- [ ] GREEN: the failure message names the fragment through the same `printed_identification()` rule. Production files: `crates/duty2cal-core/src/application/mod.rs`. Run the single-scenario command; paste the output.
-- [ ] REFACTOR: no behaviour change. Run the single-scenario command; paste the output.
-- [ ] COMMIT: `fix(export-duty-plan-calendar): <release note>` with this scenario's title in the body; record the revision identifier.
+- [x] RED: remove `@wip` from this scenario only; add its `Given` step (an unmatched travel fragment printing crew position `FB` and flight number `123`); run `./run-tests.sh --name "An unmatched travel fragment is named with its position and flight number separate"`; paste the output; the scenario must fail because the failure names `123` rather than the printed pair.
+
+  ```
+  Step panicked. Captured output: the failure does not name "FB 123": conversion failed for
+  /tmp/duty2cal-tests-1189205-0/roster.pdf: a required activity could not be resolved:
+  no unique compatible partner for travel fragment "123"
+  1 scenario (1 failed) / 4 steps (3 passed, 1 failed)
+  error: test failed
+  ```
+- [x] GREEN: the failure message names the fragment through the same `printed_identification()` rule. Production files: `crates/duty2cal-core/src/application/mod.rs`. Run the single-scenario command; paste the output.
+
+  ```
+  Scenario: An unmatched travel fragment is named with its position and flight number separate
+  ✔ And the conversion failure names "FB 123"            1 scenario (1 passed) / 4 steps (4 passed)
+  ```
+- [x] REFACTOR: no behaviour change. Run the single-scenario command; paste the output.
+
+  ```
+  ./run-tests.sh (whole suite)
+  3 features
+  100 scenarios (98 passed, 2 failed)
+  375 steps (373 passed, 2 failed)
+  failing: the two guard scenarios still @wip — the permanent "LU900" and compatibility failures, whose rows print no position, still name exactly what they did.
+  ```
+- [x] COMMIT: `fix(export-duty-plan-calendar): <release note>` with this scenario's title in the body; record the revision identifier.
 
 ### 4. A travel leg that prints no crew position keeps its flight number alone *(guard)*
 

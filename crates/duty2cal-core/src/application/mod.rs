@@ -7,7 +7,9 @@
 use time::{Date, Duration, OffsetDateTime};
 
 use crate::domain::timing;
-use crate::domain::{DutyEntry, FieldValue, Roster, SnapshotId, UtcInterval};
+use crate::domain::{
+    printed_identification, DutyEntry, FieldValue, Roster, SnapshotId, UtcInterval,
+};
 
 /// Raw, position-based content of a supplied document — the anti-corruption
 /// intermediate between the PDF adapter and interpretation.
@@ -160,7 +162,10 @@ fn interpret(table: &RawRosterTable, snapshot: SnapshotId) -> Result<Roster, Con
                     departure.activity == arrival.activity && departure.position == arrival.position
                 });
                 let Some(position) = partner else {
-                    return Err(unmatched_fragment(&arrival.activity));
+                    return Err(unmatched_fragment(
+                        arrival.position.clone(),
+                        &arrival.activity,
+                    ));
                 };
                 let departure = pending.remove(position);
                 let trip = rows[departure]
@@ -176,7 +181,8 @@ fn interpret(table: &RawRosterTable, snapshot: SnapshotId) -> Result<Roster, Con
     }
 
     if let Some(unmatched) = pending.first() {
-        return Err(unmatched_fragment(&rows[*unmatched].activity));
+        let row = &rows[*unmatched];
+        return Err(unmatched_fragment(row.position.clone(), &row.activity));
     }
 
     // A split leg belongs where it departs, whatever order the fragments appear.
@@ -187,9 +193,14 @@ fn interpret(table: &RawRosterTable, snapshot: SnapshotId) -> Result<Roster, Con
     })
 }
 
-fn unmatched_fragment(fragment: &str) -> ConvertError {
+/// The failure for a travel fragment whose partner is missing.
+///
+/// The fragment is named through the same rule the title uses, so a crew
+/// member reads the leg the same way in the calendar and in the failure.
+fn unmatched_fragment(position: Option<String>, activity: &str) -> ConvertError {
     ConvertError::UnresolvedRequiredActivity(format!(
-        "no unique compatible partner for travel fragment {fragment:?}"
+        "no unique compatible partner for travel fragment {:?}",
+        printed_identification(position.as_deref(), activity)
     ))
 }
 
