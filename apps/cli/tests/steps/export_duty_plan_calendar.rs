@@ -682,6 +682,28 @@ async fn an_unmatched_travel_fragment(w: &mut DutyWorld) {
 }
 
 #[given(
+    regex = r"^a supported duty plan whose dated row prints crew position (\w+) beside activity code (\w+) with resolved UTC start (\d{2}:\d{2}) and end (\d{2}:\d{2})$"
+)]
+async fn a_non_flight_row_with_a_crew_position(
+    w: &mut DutyWorld,
+    position: String,
+    code: String,
+    start: String,
+    end: String,
+) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (POS_X, &position),
+            (ACTIVITY_X, &code),
+            (START_X, &start),
+            (END_X, &end),
+        ],
+    );
+}
+
+#[given(
     regex = r"^a supported duty plan whose travel leg prints flight number (\w+) from (\w+) to (\w+) with resolved UTC start (\d{2}:\d{2}) and end (\d{2}:\d{2}) and no crew position$"
 )]
 async fn a_travel_leg_without_a_crew_position(

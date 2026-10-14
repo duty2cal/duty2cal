@@ -12,7 +12,6 @@ Feature: Export a duty-plan calendar
     When the crew member converts it
     Then that activity's title is "123 ABC-DEF"
 
-  @givn.added @wip
   Scenario: A crew position printed beside a non-flight activity stays out of its title
     Given a supported duty plan whose dated row prints crew position AK beside activity code EM with resolved UTC start 06:00 and end 10:00
     When the crew member converts it

@@ -179,10 +179,29 @@ RED/GREEN evidence is captured per scenario. Scenarios marked *(guard)* assert b
 
 ### 5. A crew position printed beside a non-flight activity stays out of its title *(guard)*
 
-- [ ] RED: remove `@wip` from this scenario only; add its `Given` step (a dated row printing crew position `AK` beside activity code `EM`); run `./run-tests.sh --name "A crew position printed beside a non-flight activity stays out of its title"`; paste the output.
-- [ ] GREEN: no production change is required — a non-flight activity carries no position into its title. Record that finding and run the single-scenario command; paste the output.
-- [ ] REFACTOR: none; run the single-scenario command; paste the output.
-- [ ] COMMIT: `test(export-duty-plan-calendar): <release note>` with this scenario's title in the body; record the revision identifier.
+- [x] RED: remove `@wip` from this scenario only; add its `Given` step (a dated row printing crew position `AK` beside activity code `EM`); run `./run-tests.sh --name "A crew position printed beside a non-flight activity stays out of its title"`; paste the output.
+
+  ```
+  Step doesn't match any function
+  1 scenario (1 failed) / 1 step (1 failed)
+  error: test failed
+  ```
+
+  Again the RED is the undefined step: the behaviour already held, because the join rule fires for a travel leg's two printed fields and an `EM` row is non-flight duty, so no position reaches its title. The step registration was stashed for this capture and restored immediately after.
+- [x] GREEN: no production change is required — a non-flight activity carries no position into its title. Record that finding and run the single-scenario command; paste the output.
+
+  ```
+  Scenario: A crew position printed beside a non-flight activity stays out of its title
+  ✔ Then that activity's title is "EM"                      1 scenario (1 passed) / 3 steps (3 passed)
+  ```
+
+  Production files: none. This is the operator's real shape — the plans print `Pos=AK` beside `Activity=EM` — so the guard pins that a printed position never turns a ground duty's title into two words.
+- [x] REFACTOR: none; run the single-scenario command; paste the output.
+
+  ```
+  1 scenario (1 passed) / 3 steps (3 passed)
+  ```
+- [x] COMMIT: `test(export-duty-plan-calendar): <release note>` with this scenario's title in the body; record the revision identifier.
 
 ## Documentation task
 
