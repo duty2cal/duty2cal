@@ -1726,7 +1726,9 @@ const BOTH_CHANGE: &str = "Name a packaged change beside the pipeline";
 const PACKAGING_CHANGE: &str = "Force the executable mode into the archive";
 
 /// A revision the project releases, writing a path a user receives.
-#[given("a history whose released revisions changed the converter, the release machinery, and both")]
+#[given(
+    "a history whose released revisions changed the converter, the release machinery, and both"
+)]
 async fn a_history_changing_each_kind_of_path(w: &mut DutyWorld) {
     build_history_with(
         w,

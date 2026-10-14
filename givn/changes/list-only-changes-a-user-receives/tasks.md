@@ -95,14 +95,56 @@ Two scenarios, one pipeline change: the marked list the renderer checks, and the
 
 ## Documentation and release task
 
-- [ ] State the authorship rule in the release runbook (`README.md`, "Releasing a version"): a released subject says what a crew member can act on, and engineering work takes a housekeeping type so it is never released. The use case's rule and example are already edited in the design phase.
-- [ ] Re-render the committed change log for the untagged version: `scripts/render-changelog.sh --version 0.2.0 --repo . --out CHANGELOG.md`, and confirm the `0.2.0` section now holds the travel-title fix and neither engineering entry, that every earlier section is byte-identical, and that `--check` is clean.
-- [ ] Record the revision identifier.
+- [x] State the authorship rule in the release runbook (`README.md`, "Releasing a version"): a released subject says what a crew member can act on, and engineering work takes a housekeeping type so it is never released. The use case's rule and example are already edited in the design phase.
+- [x] Re-render the committed change log for the untagged version: `scripts/render-changelog.sh --version 0.2.0 --repo . --out CHANGELOG.md`, and confirm the `0.2.0` section now holds the travel-title fix and neither engineering entry, that every earlier section is byte-identical, and that `--check` is clean.
+
+  ```
+  rendered version 0.2.0 into CHANGELOG.md
+  ## [0.2.0] - 2026-10-14
+
+  ### Fixes
+  - A travel activity's calendar title prints the crew position and the flight number as two words separated by a space — an operating leg reads `FB 123 ABC-DEF` instead of `FB123 ABC-DEF`, while positioning travel keeps reading `DH 007 ABC-DEF`.
+  [0.1.0...0.2.0](https://github.com/kressnerd/duty2cal/compare/v0.1.0...v0.2.0)
+  change log is current for version 0.2.0
+  ```
+
+  The diff is two deleted lines — the two engineering entries — and nothing else; the commit carries the released revision's own committer date so the tagged revision will state the date the section states.
+- [x] Record the revision identifier: revision `d569697` (`docs(publish-public-release): state the authorship rule in the runbook and re-render the untagged version's section.`).
 
 ## Verification task
 
-- [ ] `./run-tests.sh` → every scenario passes; paste the summary.
-- [ ] `./run-tests.sh --e2e` → every `@e2e` scenario passes; paste the summary.
-- [ ] `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `GIVN_FEATURES=$(scripts/assemble-features.sh) cargo test --workspace` → clean; paste.
-- [ ] `scripts/render-changelog.sh --version 0.2.0 --repo . --out CHANGELOG.md --check` → `change log is current for version 0.2.0`; paste.
-- [ ] `givn lint --change list-only-changes-a-user-receives`, `scripts/pii-guard.sh` → clean; paste.
+- [x] `./run-tests.sh` → every scenario passes; paste the summary.
+
+  ```
+  [Summary]
+  3 features
+  103 scenarios (103 passed)
+  390 steps (390 passed)
+  ```
+- [x] `./run-tests.sh --e2e` → every `@e2e` scenario passes; paste the summary.
+
+  ```
+  [Summary]
+  2 features
+  3 scenarios (3 passed)
+  16 steps (16 passed)
+  ```
+- [x] `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `GIVN_FEATURES=$(scripts/assemble-features.sh) cargo test --workspace` → clean; paste.
+
+  ```
+  cargo fmt --all --check            -> clean
+  cargo clippy --workspace --all-targets -- -D warnings
+    Checking duty2cal v0.1.0 … Finished `dev` profile … in 2.55s
+  GIVN_FEATURES=$(scripts/assemble-features.sh) cargo test --workspace
+    3 features / 103 scenarios (103 passed)
+    running 3 tests / test result: ok. 3 passed
+  ```
+
+  The first `cargo fmt --all --check` failed on the new step's attribute line; `cargo fmt --all` fixed it and the check is clean.
+- [x] `scripts/render-changelog.sh --version 0.2.0 --repo . --out CHANGELOG.md --check` → `change log is current for version 0.2.0`; paste. (Pasted above, re-run after the change-log commit.)
+- [x] `givn lint --change list-only-changes-a-user-receives`, `scripts/pii-guard.sh` → clean; paste.
+
+  ```
+  givn lint: 1 file(s) checked — clean
+  pii-guard: clean
+  ```
