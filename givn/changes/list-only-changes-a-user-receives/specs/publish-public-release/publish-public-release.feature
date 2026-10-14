@@ -9,7 +9,6 @@ Feature: Publish a public release
     And the section for version 0.2.0 names the change that touched both
     And the section for version 0.2.0 names no change to the release machinery
 
-  @givn.added @wip
   Scenario: A version's notes name a change to the packaging a user receives
     Given a history whose released revisions changed the packaging
     When the maintainer generates the change log for version 0.2.0
