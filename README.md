@@ -167,6 +167,14 @@ Add lint, build, and other project commands alongside these scripts.
 
 ### Releasing a version
 
+A version's notes are the release-note words of its released revisions, filtered
+to the changes a user receives: a revision that changed none of the paths listed
+as user-receiving in `cliff.toml` is left out whatever its subject says. Write a
+released subject so a crew member can act on it — what the tool does differently
+for them — and commit engineering work (the pipeline, the checks, the fixtures,
+the documents) with a housekeeping type (`chore`, `docs`, `test`, `build`, `ci`)
+so it is never released at all.
+
 Releasing a version gains one step before the tag. The version's section has to
 be in the change log already, because the drift check compares the committed
 `CHANGELOG.md` against a fresh render of the tagged revision, and the release
