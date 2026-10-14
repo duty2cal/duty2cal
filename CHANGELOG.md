@@ -1,3 +1,10 @@
+## [0.2.0] - 2026-10-14
+
+### Fixes
+- Give the suite job the repository history its preparation check reads.
+- Render an untagged released revision, so a version can be rendered before its tag. The heading template called trim_start_matches on the version, which is null for a release the generator cannot name: the first capability-scoped release-note revision after a tag made every render fail, including the pre-tag render the release procedure uses and the drift check on the newest tag.
+- A travel activity's calendar title prints the crew position and the flight number as two words separated by a space — an operating leg reads `FB 123 ABC-DEF` instead of `FB123 ABC-DEF`, while positioning travel keeps reading `DH 007 ABC-DEF`.
+[0.1.0...0.2.0](https://github.com/kressnerd/duty2cal/compare/v0.1.0...v0.2.0)
 ## [0.1.0] - 2026-10-13
 
 ### New capabilities
