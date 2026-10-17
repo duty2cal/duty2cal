@@ -6,9 +6,7 @@
 
 ## Actors
 
-- Organization owner — primary Actor; holds administration authority, records
-  the declared configuration in the repository, and adopts the objects that
-  already exist.
+- Organization owner — primary Actor; holds administration authority, records the declared configuration in the repository, and adopts the objects that already exist.
 
 ## Goal
 
