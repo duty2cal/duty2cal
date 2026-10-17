@@ -788,6 +788,7 @@ assembled and needs no step; do not add one.
 - [x] GREEN (production script narrowed to one platform)
 - [x] REFACTOR (stale wording removed; targeted run still zero)
 - [x] COMMIT (revision recorded below)
+- [x] COMMIT: 7dac3d1244c752573f49e471a8f1e5a95ae0df86
 - [x] Evidence and revision filled in
 
 ### Design constraints (copied from `design.md`)
@@ -952,6 +953,7 @@ Revision: `7dac3d1244c752573f49e471a8f1e5a95ae0df86`
 - [x] GREEN (dedicated empty-binaries Given added; targeted run zero)
 - [x] REFACTOR (targeted run still zero)
 - [x] COMMIT (revision recorded below)
+- [x] COMMIT: 4f8feeebc935de806392135ac110b296e5cd6567
 - [x] Evidence and revision filled in
 
 ### Design constraints (copied from `design.md`)
@@ -1068,6 +1070,7 @@ Revision: `4f8feeebc935de806392135ac110b296e5cd6567`
 - [x] GREEN (supported-archive assertion; targeted run zero)
 - [x] REFACTOR (targeted run still zero)
 - [x] COMMIT (revision recorded below)
+- [x] COMMIT: 7b86604e9605d2eea514a22f83fc35feecf185dc
 - [x] Evidence and revision filled in
 
 ### Design constraints (copied from `design.md`)
@@ -1180,6 +1183,7 @@ Revision: `7b86604e9605d2eea514a22f83fc35feecf185dc`
 - [x] GREEN (supported-platform assertion; targeted run zero)
 - [x] REFACTOR (targeted run still zero)
 - [x] COMMIT (revision recorded below)
+- [x] COMMIT: ba665cae2de9195a286ef5d76405b9ccc6622c73
 - [x] Evidence and revision filled in
 
 ### Design constraints (copied from `design.md`)
@@ -1286,6 +1290,7 @@ Revision: `ba665cae2de9195a286ef5d76405b9ccc6622c73`
 - [x] GREEN (new step; targeted run zero)
 - [x] REFACTOR (targeted run still zero)
 - [x] COMMIT (revision recorded below)
+- [x] COMMIT: d23747694924d164ce2d0fa28332cfee7162d16b
 - [x] Evidence and revision filled in
 
 ### Design constraints (copied from `design.md`)
@@ -1420,6 +1425,7 @@ Revision: `d23747694924d164ce2d0fa28332cfee7162d16b`
 - [x] GREEN (e2e steps written; targeted run zero; transcript committed)
 - [x] REFACTOR (targeted and full `@e2e` runs zero)
 - [x] COMMIT (revision recorded below)
+- [x] COMMIT: 0e26453528b141561edd8f337e29e75d8a3edbf4
 - [x] Evidence and revision filled in
 
 ### E2E setup (design-specific; no service to start)
