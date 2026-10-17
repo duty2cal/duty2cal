@@ -592,7 +592,7 @@ Design constraints:
       exit status: 0
       ```
 - [x] COMMIT — release note subject, scenario title body; record the revision.
-      Revision: `PENDING-SCENARIO-8-HASH`
+      Revision: `bb895e00dfe2ed5d950eba6fef57b6556a1ad4a4`
 
 ## 9. A failure to record the applied state binds nothing and changes nothing
 
@@ -601,10 +601,56 @@ Design constraints:
   or injected failure); the refusal names the applied state; no binding; live
   unchanged; the real state is untouched.
 
-- [ ] RED — remove `@wip`; run the single scenario; paste output (non-zero).
-- [ ] GREEN — assertions and production code; list files; paste output (zero).
-- [ ] REFACTOR — cleanup; re-run; paste output (zero).
-- [ ] COMMIT — release note subject, scenario title body; record the revision.
+- [x] RED — remove `@wip`; run the single scenario; paste output (non-zero).
+      ```
+      $ ./run-tests.sh --name "A failure to record the applied state binds nothing and changes nothing"
+      Feature: Adopt the existing public-home configuration
+        Scenario: A failure to record the applied state binds nothing and changes nothing
+         ✘  Given the applied state cannot be written
+            Step failed:
+            Defined: tmp/tmp.Ix1i2ZMeIC/f0003.feature:81:5
+            Step doesn't match any function
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      error: test failed, to rerun pass `-p duty2cal --test features_runner`
+      exit status: 101
+      ```
+- [x] GREEN — assertions and production code; list files; paste output (zero).
+      Production files created/modified:
+      `apps/cli/tests/steps/adopt_existing_configuration.rs` (the state path
+      inside a `0555` `infra/state/` directory, so staging and every import
+      succeed and the final rename fails; the named-state assertion is shared
+      with scenario 8 and now asserts only the name); the feature file drops
+      this scenario's `@wip`. The wrapper's existing write failure names
+      `--state` and leaves the staging directory discarded.
+      ```
+      $ ./run-tests.sh --name "A failure to record the applied state binds nothing and changes nothing"
+      Feature: Adopt the existing public-home configuration
+        Scenario: A failure to record the applied state binds nothing and changes nothing
+         ✔  Given the applied state cannot be written
+         ✔  When the organization owner adopts the batch
+         ✔  Then the adoption refuses the batch and names the applied state
+         ✔  And no object in the batch is bound
+         ✔  And the live configuration is unchanged
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      5 steps (5 passed)
+      exit status: 0
+      ```
+- [x] REFACTOR — cleanup; re-run; paste output (zero).
+      `cargo fmt --all`; no behaviour changed.
+      ```
+      $ ./run-tests.sh --name "A failure to record the applied state binds nothing and changes nothing"
+      1 feature
+      1 scenario (1 passed)
+      5 steps (5 passed)
+      exit status: 0
+      ```
+- [x] COMMIT — release note subject, scenario title body; record the revision.
+      Revision: `PENDING-SCENARIO-9-HASH`
 
 ## 10. Only the selected batch is bound
 

@@ -76,7 +76,7 @@ Feature: Adopt the existing public-home configuration
     And no object in the batch is bound
     And the live configuration is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: A failure to record the applied state binds nothing and changes nothing
     Given the applied state cannot be written
     When the organization owner adopts the batch

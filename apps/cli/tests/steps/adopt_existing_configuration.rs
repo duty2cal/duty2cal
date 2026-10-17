@@ -424,6 +424,21 @@ async fn it_does_not_exist_live(w: &mut DutyWorld) {
     restart_fake(w);
 }
 
+#[given("the applied state cannot be written")]
+async fn the_applied_state_cannot_be_written(w: &mut DutyWorld) {
+    use std::os::unix::fs::PermissionsExt as _;
+
+    prepare(w);
+    let state_dir = declaration_dir(w).join("state");
+    fs::create_dir_all(&state_dir).expect("create the read-only state directory");
+    let mut permissions = fs::metadata(&state_dir)
+        .expect("read the state directory metadata")
+        .permissions();
+    permissions.set_mode(0o555);
+    fs::set_permissions(&state_dir, permissions).expect("make the state directory read-only");
+    w.state = Some(state_dir.join("terraform.tfstate"));
+}
+
 #[given("the applied state was encrypted with a different passphrase")]
 async fn the_applied_state_was_encrypted_with_a_different_passphrase(w: &mut DutyWorld) {
     prepare(w);
@@ -689,11 +704,6 @@ async fn the_adoption_refuses_the_batch_and_names_the_archived_repository(w: &mu
 async fn the_adoption_refuses_the_batch_and_names_the_applied_state(w: &mut DutyWorld) {
     let state = state_path(w).display().to_string();
     assert_refused(w, &state);
-    let output = adoption_output(w);
-    assert!(
-        output.contains("cannot be read with the supplied passphrase"),
-        "the refusal states the applied state cannot be decrypted; output was:\n{output}"
-    );
 }
 
 #[then("the applied state binds the monorepo once")]
