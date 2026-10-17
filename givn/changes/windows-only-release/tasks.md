@@ -1056,7 +1056,7 @@ givn commit -m "feat(publish-public-release): Offer one downloadable archive for
 Scenario: A platform whose executable was not built stops the release" givn/changes/windows-only-release/specs/publish-public-release/publish-public-release.feature apps/cli/tests/steps/publish_public_release.rs givn/changes/windows-only-release/tasks.md
 ```
 
-Revision: `<paste revision id>`
+Revision: `4f8feeebc935de806392135ac110b296e5cd6567`
 
 ---
 
@@ -1064,11 +1064,11 @@ Revision: `<paste revision id>`
 
 `@givn.modified` at lines 25–29.
 
-- [ ] RED (re-baselined: pre-GREEN capture, non-zero)
-- [ ] GREEN (supported-archive assertion; targeted run zero)
-- [ ] REFACTOR (targeted run still zero)
-- [ ] COMMIT (revision recorded below)
-- [ ] Evidence and revision filled in
+- [x] RED (re-baselined: pre-GREEN capture, non-zero)
+- [x] GREEN (supported-archive assertion; targeted run zero)
+- [x] REFACTOR (targeted run still zero)
+- [x] COMMIT (revision recorded below)
+- [x] Evidence and revision filled in
 
 ### Design constraints (copied from `design.md`)
 
@@ -1095,7 +1095,12 @@ fixture. If the C1 RED capture was lost, re-derive it is **not** acceptable by
 reverting production; report the gap instead of fabricating output.
 
 ```
-<paste the C3 block captured in C1 RED here>
+Scenario: Each archive's checksum covers that archive
+ ✘  Given  a prepared release for version 0.1.0
+    Step panicked. Captured output: assertion `left == right` failed: the preparation did not succeed:
+    prepare-release: no executable was built for platform linux-x86_64
+1 scenario (1 failed)
+exit=101
 ```
 
 Remove only the `@wip` tag from line 25 now.
@@ -1134,7 +1139,13 @@ nix-shell -p git-cliff --run './run-tests.sh --name "Each archive'"'"'s checksum
 ```
 
 ```
-<paste command and exit-0 output here>
+Feature: Publish a public release
+  Scenario: Each archive's checksum covers that archive
+   ✔  Given a prepared release for version 0.1.0
+   ✔  When anyone verifies the checksum against the archive for "windows-x86_64"
+   ✔  Then the checksum matches the archive it names
+1 scenario (1 passed)
+exit=0
 ```
 
 ### REFACTOR
@@ -1143,7 +1154,10 @@ nix-shell -p git-cliff --run './run-tests.sh --name "Each archive'"'"'s checksum
 - Re-run the targeted command; paste exit-0 output.
 
 ```
-<paste command and exit-0 output here>
+$ nix-shell -p git-cliff --run './run-tests.sh --name "Each archive'"'"'s checksum covers that archive"'
+  Scenario: Each archive's checksum covers that archive
+3 steps (3 passed)
+exit=0
 ```
 
 ### COMMIT

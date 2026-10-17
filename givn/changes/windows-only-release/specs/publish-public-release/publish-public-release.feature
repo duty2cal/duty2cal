@@ -22,13 +22,13 @@ Feature: Publish a public release
     Then  the preparation fails and names "windows-x86_64"
     And  the prepared release holds no archive
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Each archive's checksum covers that archive
     Given  a prepared release for version 0.1.0
     When  anyone verifies the checksum against the archive for "windows-x86_64"
     Then  the checksum matches the archive it names
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: An unreadable executable stops the preparation
     Given  an executable built for the platform "windows-x86_64" that cannot be read
     When  the maintainer prepares the release for version 0.1.0

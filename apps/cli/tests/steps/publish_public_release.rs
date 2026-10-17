@@ -740,6 +740,11 @@ async fn the_checksum_matches_the_archive_it_names(w: &mut DutyWorld) {
         digest,
         "the checksum does not cover the archive: {checksum}"
     );
+    assert_eq!(
+        archive,
+        staged_archive(w, supported_platform()),
+        "the verified archive is not the supported platform's archive"
+    );
 }
 
 #[when("the maintainer prepares version 0.1.0 again from the same executables")]
