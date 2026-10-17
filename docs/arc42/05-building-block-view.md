@@ -60,6 +60,35 @@ flowchart TB
 | Community files (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/ISSUE_TEMPLATE/*`, `.github/pull_request_template.md`) | The contributor routes: contribution and sign-off rules, conduct, the confidential reporting route, and issue and pull-request forms that ask for the export family and a stripped sample, never a real plan. |
 | `apps/cli/tests/steps/publish_public_release.rs` and `apps/cli/tests/steps/e2e/publish_public_release.rs` | The step definitions for this capability; the `@e2e` file drives `scripts/prepare-release.sh` and `scripts/render-changelog.sh` as real subprocesses, asserts the staged Windows archive and checksum, extracts it and inspects its only member and bytes, and reads the newest section out of the written change log. The real Windows executable is started by the `smoke-windows` job, not by the Linux suite. |
 
+## Public-home declaration toolbox (outside the product crates)
+
+The public home's configuration adds blocks beside the workspace. They are
+repository operation and its tests, not product blocks.
+
+```mermaid
+flowchart TB
+  DECL["infra/ — declaration (organization, repositories, rule set, Pages source), adoption batch, encrypted state"]
+  ADOPT["scripts/adopt-public-home.sh — preflight, staged imports, refresh verification, atomic binding"]
+  SETUP["scripts/setup-infra-tests.sh — tool checks, provider mirror, fixture proof"]
+  FAKE["scripts/fake-github/serve.py — fixtures, request journal, fault injection"]
+  STEPS5["apps/cli/tests/steps/adopt_existing_configuration.rs + steps/e2e/adopt_existing_configuration.rs"]
+  TOFU5["tofu + integrations/github provider"]
+  ADOPT --> TOFU5
+  ADOPT --> DECL
+  STEPS5 -->|real subprocess| ADOPT
+  STEPS5 -->|starts| FAKE
+  TOFU5 -->|"GITHUB_BASE_URL"| FAKE
+  SETUP -->|mirrors provider| TOFU5
+```
+
+| Block | Responsibility |
+|---|---|
+| `infra/` | The declared configuration: `github_organization_settings`, both `github_repository` resources, `github_repository_ruleset.main` (the existing `main protection` rule set) and `github_repository_pages.pages`; the adoption batch; the encrypted state and its backup; the provider lock file. |
+| `scripts/adopt-public-home.sh` | The adoption interface: validate the declaration and passphrase, import the selected batch into a staged copy of the state, verify the batch with a refresh-only plan, then bind atomically and report one line per object, or refuse and name the object. |
+| `scripts/setup-infra-tests.sh` | Prepares the offline test environment: `tofu` and `python3` checks, the provider mirror and `terraformrc`, and the one-import proof that the fixture set satisfies the provider. |
+| `scripts/fake-github/serve.py` and its fixtures | The digital twin of GitHub's REST API: deterministic JSON fixtures per scenario, a journal of every request, and fault injection for unreadable, missing and changed objects. |
+| `apps/cli/tests/steps/adopt_existing_configuration.rs`, `apps/cli/tests/steps/e2e/adopt_existing_configuration.rs` | The capability's step definitions; they drive the adoption command as a real subprocess against the fake. |
+
 ## Level 2 — Key building blocks
 
 ### `duty2cal-core` modules

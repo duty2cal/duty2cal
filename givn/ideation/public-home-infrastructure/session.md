@@ -86,6 +86,8 @@ All three Persona files were confirmed by the user on 2026-10-17 (Q7) and are ad
 
 ## Decision history
 
+- Q4, the state-access decision, is closed on 2026-10-17 by the user: local backend, state encrypted with OpenTofu's `encryption` block (PBKDF2 to AES-GCM, `enforced = true` for state and plan) and committed to `infra/`; passphrase local only; no locking under a single-maintainer assumption; the CI configuration drift report is withdrawn, so the drift check stays local. This supersedes the Frame's scheduled/per-push report; the published topic document remains historical.
+
 - Q7, the Persona decision (three review lenses), is closed on 2026-10-17 with the user's answer "confirmed." Its full question and rejected alternative remain in `questions.md`.
 
 - Q1, the Frame decision (problem, vision, scope, stakeholders, and inclusion of the publishing plumbing), is closed on 2026-10-17 with the user's answer "1". Its full question and rejected alternatives remain in `questions.md`.

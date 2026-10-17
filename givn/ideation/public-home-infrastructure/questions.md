@@ -165,7 +165,7 @@ Refinements recorded without reopening the decision:
 
 ## Q4 — Which state access supports both the apply and the configuration drift report?
 
-- Status: open
+- Status: closed 2026-10-17 (user; supersedes the earlier option set)
 - Blocks: the drift report's feasibility and the state-security rule.
 - Context: the draft keeps state locally and out of Git, and adds a read-only
   `tofu plan -detailed-exitcode` job in CI. A plan needs the applied state to
@@ -197,11 +197,11 @@ Refinements recorded without reopening the decision:
      Gain: no extra credential or service.
      Cost: the declared configuration can diverge silently, which is the
      problem this topic exists to solve.
-- Resolution: pending.
+- Resolution: **Local backend with the state encrypted at rest and committed to the repository; the configuration drift check runs locally, not in CI.** The user answered on 2026-10-17 after establishing that GitHub has no managed state service and none of its features provides the GET/POST/LOCK semantics of the `http` backend. Chosen mechanics: OpenTofu's `encryption` block with PBKDF2 deriving an AES-GCM key from a passphrase, `state` and `plan` both `enforced = true`, so plaintext state cannot be written; `infra/terraform.tfstate` and its backup are committed (the earlier `.gitignore` rule is revoked), protected at rest by that encryption. The passphrase (at least 16 characters) lives only in the maintainer's password manager and `TF_VAR_state_passphrase`; never a default and never a GitHub secret. No locking: acceptable under a single-maintainer assumption. A CI drift report is withdrawn because the passphrase in CI would make the deploy private key in the state decryptable; the drift check stays local. `required_version = ">= 1.7"` records the state-encryption floor. Rejected: **encrypted remote backend** because it adds an external account and token for roughly eight resources; **Cloudflare R2** because its S3 compatibility needs an extra worker for locking; **HCP Terraform** because it is a vendor dependency OpenTofu does not guarantee; **self-hosted TACOS** because it is oversized here; and **a CI passphrase secret** because it would decrypt the deploy key. The Frame's scheduled/per-push configuration drift report is withdrawn by this decision; the topic document remains historical.
 
 ## Q5 — Which current repository settings are intended values?
 
-- Status: open
+- Status: closed 2026-10-17 (user)
 - Blocks: the repository declarations and the first plan's expected diff.
 - Context: the draft supplies values (no wiki, no projects, squash-only
   merges, a description and license template) that differ from the live
@@ -232,7 +232,7 @@ Refinements recorded without reopening the decision:
      In practice: projects off, wiki stays off, merges decided explicitly.
      Gain: no setting enters the declaration by inertia.
      Cost: a longer first pass.
-- Resolution: pending.
+- Resolution: **Adopt the draft's values where they still describe today's project** (option 2), because the user wants the declaration as current and early as possible. The declared values: projects off; merge commits and rebase merges off, squash merges only; delete-branch-on-merge on; today's description ("Convert a duty plan to a calendar") and topics kept; wiki off; discussions off; auto-merge off; forking allowed; `license_template` omitted because it has no effect on an imported repository; Dependabot alerts and security updates through their dedicated resources. The first apply will therefore change `has_projects`, `allow_merge_commit`, `allow_rebase_merge` and `delete_branch_on_merge`; the security seed's preview names them, and its guarantee is about the security fields, not about changing nothing else. Rejected: **preserve live values** because it ratifies unused settings; **decide field by field** because the user chose the draft's values as a set.
 
 ## Q6 — Is team access part of this topic?
 
@@ -322,7 +322,7 @@ Refinements recorded without reopening the decision:
 
 ## Q9 — Do the classic protection and the ruleset both become declarations?
 
-- Status: open
+- Status: closed 2026-10-17 (user)
 - Blocks: the monorepo protection declaration and the first plan's expected
   live changes.
 - Context: `main` currently has two overlapping protections: a repository
@@ -359,7 +359,7 @@ Refinements recorded without reopening the decision:
      Gain: smallest declaration.
      Cost: an unmanaged protection path remains, which is the problem this
      topic exists to solve.
-- Resolution: pending.
+- Resolution: **Consolidate into the ruleset and retire the classic protection** (option 2), because the user chose it and explicitly wants linear history retained. The consolidated ruleset carries deletion, non-fast-forward and `required_linear_history`. The live ruleset has no bypass actors, so it already binds the owner, including the linear-history rule; the classic protection's `enforce_admins: false` is the weaker duplicate and is **not** migrated. No bypass actor is added. Removing the classic protection is a live change and therefore cannot happen during adoption: the declaration omits the classic object, adoption binds the ruleset, and the first apply (`enable-repository-security`) removes the classic protection. Q3 (whether to add a pull-request or required-check rule) stays carried to that apply seed and does not change this declaration. Rejected: **adopt both** because the duplication persists; **declare only the ruleset and leave classic unmanaged** because an unmanaged protection path remains. Linear history is possible and already enforced by the ruleset; direct pushes stay possible because the rule forbids merge commits, not pushes.
 
 ## Q10 — Does the reviewer's decision gate the apply?
 

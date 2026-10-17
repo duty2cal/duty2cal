@@ -170,3 +170,31 @@ flowchart TB
 3. The maintainer keeps an explicit bypass route for an urgent correction.
 
 **Notes:** The gate is enforced by the repository, not by habit, and a reader sees the outcome on the revision they are looking at.
+
+## Scenario: The existing public home is adopted into the declared configuration
+
+**Trigger:** The maintainer asks to adopt the selected batch of objects that already exist on GitHub.
+
+```mermaid
+flowchart TB
+  owner["Organization owner"] --> cmd["scripts/adopt-public-home.sh --declaration infra --batch infra/adoption-batch.txt"]
+  cmd --> pre{"passphrase present, batch well formed, declaration valid?"}
+  pre -->|"no"| refuse["refuse; name the cause; nothing touched"]
+  pre -->|"yes"| stage["copy the declaration and the current encrypted state into a staging workspace"]
+  stage --> imp["tofu import each batch address in order (reads only, against GitHub)"]
+  imp -->|"already bound, missing live, undeclared, unreadable or unwritable"| refuseobj["discard the staged state; refuse; name the object; live unchanged"]
+  imp --> verify["tofu plan -refresh-only -detailed-exitcode"]
+  verify -->|"a bound object changed since the import"| refuseobj
+  verify -->|"no change"| bind["move the staged state over infra/terraform.tfstate; keep the backup"]
+  bind --> out["one 'adopted <address> <id>' line per object"]
+```
+
+**Steps:**
+
+1. The command checks the passphrase (absent or shorter than 16 characters refuses), the batch's shape and the declaration itself (`tofu validate`). Nothing is read from GitHub and nothing is written before these pass.
+2. It copies the declaration into a temporary directory and copies the current encrypted state into a staging workspace there, so the repository's `infra/` is untouched while the batch runs.
+3. Each `address<TAB>import-id` line is imported in order. `tofu import` reads the live object; it creates, modifies and deletes nothing. An object already managed by the copied state, an import target the declaration does not name, a live object that does not exist, an object the token cannot read, or a state that cannot be written stops the batch: the staged state is discarded and the command refuses, naming the object.
+4. A refresh-only plan over the staged state compares the imported objects with GitHub again; a non-no-op change means a live object changed after it was read, so the batch is refused and the object named. With no change, the staged state and the live objects agree.
+5. The staged state is moved over `infra/terraform.tfstate`, the previous state is kept as its backup, and the command prints one `adopted` line per object.
+
+**Notes:** Adoption is read-only against GitHub by construction; the suite proves it from the fake API's request journal, where a non-`GET` request would be the evidence of a write. The declaration revision is the repository commit, so the command never edits the declaration.

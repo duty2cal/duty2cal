@@ -26,6 +26,10 @@ flowchart TB
   rel2 --> ri6["Committed change log matches the released revision"]
   rel2 --> ri7["Dependency updates are releasable and announced"]
   rel2 --> ri8["Publication waits for every check to conclude"]
+  root --> repro["Reproducibility of the public home"]
+  repro --> rp1["Reviewable declaration"]
+  repro --> rp2["All-or-none adoption with no live change"]
+  repro --> rp3["Encrypted state at rest"]
 ```
 
 ## Quality scenarios
@@ -47,6 +51,9 @@ flowchart TB
 | QS-013 | Correctness (printed fidelity) | A supported plan prints a crew position beside a flight number on a travel leg. | The published travel title prints the two as separate words (`FB 123 ABC-DEF`); a leg that prints no crew position keeps the flight number alone (`123 ABC-DEF`), and a crew position printed beside a non-flight activity stays out of that activity's title. |
 | QS-014 | Release notes / dependency updates | A history whose released revisions carry only dependency updates, each changing the dependency graph. | The release text lists them under Dependencies after Reversals, in history order; preparation stages the version, so a dependency-only version is releasable; a dependency update that changed only the project's checks is not listed, and a version whose notes would name nothing at all is still refused. |
 | QS-015 | Release gate currency | A check run on the tagged revision is still queued or running when the `publish` job begins. | Publication waits for every check run outside the release-workflow suites; it publishes only after all conclude, at least one succeeds, and skipped/neutral are the only non-successes. A concluded non-success, no successful check, no evidence, an unreadable source, or the 30-minute bound refuses and names the checks; nothing is published. |
+| QS-016 | Configuration reproducibility | The maintainer adopts a batch whose objects all exist live. | Every object in the batch is bound in the applied state, the command prints one `adopted` line per object, and the API journal shows no request other than a read; the live configuration is unchanged. |
+| QS-017 | State secrecy | The applied state is committed to the repository. | The committed file is ciphertext: `state` and `plan` encryption are `enforced`, the passphrase is required and has no default, and no workflow holds it. |
+| QS-018 | Atomicity of a batch | One object of the batch cannot be read, is already bound, does not exist live, is not named by the declaration, changes after it is read, or the state cannot be written. | The command refuses, names the object, and binds nothing: the applied state contains none of the batch's objects and no live object changed. |
 
 **Stimulus / response / metric** for the primary scenario:
 

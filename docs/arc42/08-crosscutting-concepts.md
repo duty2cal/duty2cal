@@ -61,3 +61,45 @@ A public repository adds a credential surface the local private-data guard does 
 ## Version, tag and archive-name consistency
 
 The version is stated once and nowhere disagrees: the archive names, the release text and the version tag all carry the same bare version. The preparation command refuses a version with a leading `v`, so the archive name, the release text and the tag cannot diverge about what was released.
+
+## Declared configuration and the applied state
+
+The public home's intended configuration is the declaration under `infra/`; the
+live configuration is what GitHub holds; the applied state is the record that
+binds each declared object to its live identity. The state is not a copy of the
+intended values and adoption never reconciles the two: a declared value that
+differs from live is left for the first preview, so adoption cannot become an
+unreviewed apply. The declaration is text and is reviewed like code; the state
+is ciphertext and is reviewed for the fact that it is ciphertext, not for its
+contents.
+
+## All-or-none adoption
+
+An adopted batch is bound or none is. The command imports into a staged copy of
+the state and moves it into place only after every import and a refresh-only
+verification succeed; a failure discards the staged state, so a partial batch
+cannot be left behind and a crash cannot bind half a batch. This is structural,
+not a rollback step, and it is why `tofu import` — which is per-object — is not
+exposed directly to the maintainer.
+
+## State encryption at rest
+
+OpenTofu's `encryption` block derives an AES-GCM key from the passphrase
+(PBKDF2) and enforces encryption for both state and plan. The passphrase comes
+from `TF_VAR_state_passphrase`, has no default and is never a repository secret;
+the state file and its backup are committed as ciphertext. Two consequences are
+accepted and recorded: losing the passphrase loses the state (re-adoption
+rebuilds it), and no automated service can read the state — which is exactly
+why the configuration drift check runs locally and the future publishing key is
+not exposed to a workflow.
+
+## Adoption is read-only against the live organization
+
+`tofu import` and `tofu plan -refresh-only` issue reads; the adoption command
+never runs `apply`. The suite asserts this at the HTTP boundary through the fake
+GitHub API's request journal: the fake refuses every write-shaped request and
+every GraphQL mutation, so the assertion is "no refused write and no mutation",
+not "no POST". A
+refusal that would need a write — creating a missing object, changing a value,
+removing a legacy object — is reported as belonging to a configuration change
+instead.

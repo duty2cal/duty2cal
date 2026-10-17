@@ -1,6 +1,6 @@
 # Change seed: declare-public-home
 
-Status: ready
+Status: proposed by declare-public-home
 
 - Use-case IDs: `adopt-existing-configuration`
 - Topic: `public-home-infrastructure`
