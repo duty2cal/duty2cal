@@ -825,6 +825,10 @@ async fn keeps_their_earlier_modification_times(w: &mut DutyWorld) {
 
 #[given(regex = r#"^an executable built for the platform "([^"]+)" that cannot be read$"#)]
 async fn an_unreadable_executable(w: &mut DutyWorld, platform: String) {
+    assert!(
+        supported_platforms().contains(&platform.as_str()),
+        "the scenario names a supported platform: {platform}"
+    );
     build_binaries(w, &supported_platforms());
     let path = w
         .binaries

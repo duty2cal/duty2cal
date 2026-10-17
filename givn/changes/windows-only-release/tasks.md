@@ -1168,7 +1168,7 @@ givn commit -m "feat(publish-public-release): Offer one downloadable archive for
 Scenario: Each archive's checksum covers that archive" givn/changes/windows-only-release/specs/publish-public-release/publish-public-release.feature apps/cli/tests/steps/publish_public_release.rs givn/changes/windows-only-release/tasks.md
 ```
 
-Revision: `<paste revision id>`
+Revision: `7b86604e9605d2eea514a22f83fc35feecf185dc`
 
 ---
 
@@ -1176,11 +1176,11 @@ Revision: `<paste revision id>`
 
 `@givn.modified` at lines 31–36.
 
-- [ ] RED (re-baselined: record the actual pre-GREEN result)
-- [ ] GREEN (supported-platform assertion; targeted run zero)
-- [ ] REFACTOR (targeted run still zero)
-- [ ] COMMIT (revision recorded below)
-- [ ] Evidence and revision filled in
+- [x] RED (re-baselined: record the actual pre-GREEN result)
+- [x] GREEN (supported-platform assertion; targeted run zero)
+- [x] REFACTOR (targeted run still zero)
+- [x] COMMIT (revision recorded below)
+- [x] Evidence and revision filled in
 
 ### Design constraints (copied from `design.md`)
 
@@ -1201,7 +1201,16 @@ first `PLATFORMS` entry, so its unreadable path may already be refused before
 the missing-Linux refusal. Do **not** claim a failure that did not occur.
 
 ```
-<paste the C4 block captured in C1 RED here, with its actual exit status>
+C4 pre-change run (old five-platform script, one-platform fixture):
+Scenario: An unreadable executable stops the preparation
+ ✔  Given  an executable built for the platform "windows-x86_64" that cannot be read
+ ✔  When  the maintainer prepares the release for version 0.1.0
+ ✔  Then  the preparation fails and names "windows-x86_64"
+ ✔  And  the prepared release holds no archive
+1 scenario (1 passed)
+exit=0
+(keep-true: the Windows executable is the first platform checked, so the
+unreadable path was already refused before the missing-Linux refusal.)
 ```
 
 ### GREEN
@@ -1235,7 +1244,14 @@ nix-shell -p git-cliff --run './run-tests.sh --name "An unreadable executable st
 ```
 
 ```
-<paste command and exit-0 output here>
+Feature: Publish a public release
+  Scenario: An unreadable executable stops the preparation
+   ✔  Given an executable built for the platform "windows-x86_64" that cannot be read
+   ✔  When the maintainer prepares the release for version 0.1.0
+   ✔  Then the preparation fails and names "windows-x86_64"
+   ✔  And the prepared release holds no archive
+1 scenario (1 passed)
+exit=0
 ```
 
 ### REFACTOR
@@ -1244,7 +1260,10 @@ nix-shell -p git-cliff --run './run-tests.sh --name "An unreadable executable st
 - Re-run; paste exit-0 output.
 
 ```
-<paste command and exit-0 output here>
+$ nix-shell -p git-cliff --run './run-tests.sh --name "An unreadable executable stops the preparation"'
+  Scenario: An unreadable executable stops the preparation
+4 steps (4 passed)
+exit=0
 ```
 
 ### COMMIT
