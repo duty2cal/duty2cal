@@ -176,7 +176,7 @@ The production change is one atomic slice (parser plus renderer prune), so its s
 
 - [x] Amend the `### Releasing a version` paragraph in `README.md`: the blanket “so it is never released at all” now names the `chore(deps):` exception, the dependency-only releasability, the **Dependencies** group and the checks-only exclusion. Revision `e2a6efd`.
 - [x] Confirm the committed `CHANGELOG.md` is still current for the newest tag: `change log is current for version 0.2.0`. The parser and prune did not change the `0.2.0` section or any earlier section.
-- [ ] Archive-time cleanup: remove the now-unused `INVISIBLE_HISTORY` constant and the old `Given("a history whose released revisions name only work no user can see")` step after the delta merges at archive. Before archive both features run together, so the step is still used; this is recorded here and in `design.md` rather than performed early.
+Archive-time cleanup (not a task, because it cannot be performed before the merge): after the delta replaces the permanent refusal scenario and the archive merges it, remove the now-unused `INVISIBLE_HISTORY` constant and the old `Given("a history whose released revisions name only work no user can see")` step. Before archive both features run together, so the step is still used. Recorded here and in `design.md`.
 
 ## Verification task
 
