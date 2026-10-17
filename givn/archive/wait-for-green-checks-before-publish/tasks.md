@@ -111,7 +111,7 @@ Baseline before implementation:
 
 - [x] Replaced the `publish` job's assertion step in `.github/workflows/release.yml` with the release-suite resolution and the gate invocation; the step stays first after checkout and every later step is unchanged. Revision `5565920`.
 - [x] Recorded the arc42 updates: chapters 2, 5, 6, 7, 8, 10, 11, 12 and `arc42.md`. `README.md` stays unchanged because the atomic push becomes safe. Revision `5565920`.
-- [x] The script carries `SPDX-License-Identifier: MPL-2.0`, mode 0755; `scripts/license-headers.sh` is clean.
+- [x] The script carries the MPL-2.0 SPDX identifier, mode 0755; `scripts/license-headers.sh` is clean.
 
 ## Verification task
 
