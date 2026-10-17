@@ -554,10 +554,12 @@ async fn the_monorepos_live_settings_change_after_the_adoption_reads_them(w: &mu
     let fixtures = fixtures_dir(w);
     let repository = fs::read_to_string(fixtures.join("repos/duty2cal/duty2cal.json"))
         .expect("read the monorepo fixture");
-    let mutated = repository.replace(
-        "\"description\": \"Convert a duty plan to a calendar\"",
-        "\"description\": \"Changed after the adoption read it\"",
-    );
+    let mutated = repository
+        .replace(
+            "\"description\": \"Convert a duty plan to a calendar\"",
+            "\"description\": \"Changed after the adoption read it\"",
+        )
+        .replace("\"has_projects\": true", "\"has_projects\": false");
     assert_ne!(
         mutated, repository,
         "the monorepo fixture carries the description the scenario changes"

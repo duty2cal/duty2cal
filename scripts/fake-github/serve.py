@@ -159,7 +159,7 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(payload)
 
     def journal(self, status: int, *, unknown_path=False, refused_write=False,
-                operation=None) -> None:
+                operation=None, mutated=False) -> None:
         self.state.record(
             {
                 "method": self.command,
@@ -168,6 +168,7 @@ class Handler(BaseHTTPRequestHandler):
                 "unknown_path": unknown_path,
                 "refused_write": refused_write,
                 "graphql_operation": operation,
+                "mutated": mutated,
             }
         )
 
@@ -223,7 +224,7 @@ class Handler(BaseHTTPRequestHandler):
         mutated = self.mutation_for(path)
         if mutated is not None:
             self.respond(200, mutated)
-            self.journal(200)
+            self.journal(200, mutated=True)
             return
 
         body = self.state.fixture(path)
