@@ -37,7 +37,7 @@ resource \"github_repository\" \"invalid\" {
 ";
 
 /// The addresses the applied state binds, read with the real binary.
-fn applied_state_addresses(w: &DutyWorld) -> Vec<String> {
+pub(crate) fn applied_state_addresses(w: &DutyWorld) -> Vec<String> {
     let declaration = declaration_dir(w);
     let rc = terraformrc();
     let passphrase = w
@@ -227,7 +227,7 @@ fn restart_fake(w: &mut DutyWorld) {
 }
 
 /// Prepare the temporary declaration, batch, state path and fake API.
-fn prepare(w: &mut DutyWorld) -> PathBuf {
+pub(crate) fn prepare(w: &mut DutyWorld) -> PathBuf {
     let dir = scenario_dir(w);
     let declaration = dir.join("infra");
     copy_declaration(&repository_root().join("infra"), &declaration);
@@ -337,7 +337,7 @@ pub(crate) fn assert_refused(w: &DutyWorld, object: &str) {
 }
 
 /// The fake's journal as lines, asserting it exists.
-fn journal_lines(w: &DutyWorld) -> Vec<String> {
+pub(crate) fn journal_lines(w: &DutyWorld) -> Vec<String> {
     let journal = w.journal.clone().expect("the scenario kept no journal");
     fs::read_to_string(&journal)
         .unwrap_or_else(|error| panic!("read the journal {}: {error}", journal.display()))
@@ -668,7 +668,7 @@ async fn the_refusal_states_that_the_repository_does_not_exist_live(w: &mut Duty
 
 /// Assert the journal shows no write attempt: no refused method and no GraphQL
 /// mutation. A GraphQL query POST is a read.
-fn assert_no_live_write(w: &DutyWorld) {
+pub(crate) fn assert_no_live_write(w: &DutyWorld) {
     let journal = journal_lines(w);
     assert!(
         journal

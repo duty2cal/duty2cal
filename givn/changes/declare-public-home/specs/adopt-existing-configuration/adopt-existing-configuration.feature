@@ -2,7 +2,7 @@
 
 Feature: Adopt the existing public-home configuration
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Maintainer adopts the existing public home and every object is bound without changing it
     Given the public home already exists with its hand-made configuration
     And the declared configuration names the organization, both repositories, the default-branch rule and the site source
