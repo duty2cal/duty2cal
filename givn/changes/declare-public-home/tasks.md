@@ -360,7 +360,7 @@ Design constraints:
       exit status: 0
       ```
 - [x] COMMIT — release note subject, scenario title body; record the revision.
-      Revision: `PENDING-SCENARIO-4-HASH`
+      Revision: `7519c272529ba9d316cadcd243bfbbc607c0b8f7`
 
 ## 5. An unreadable object refuses the whole batch
 
@@ -368,10 +368,57 @@ Design constraints:
 - The fake returns 401/403 for the organization settings; the refusal names the
   object and states it cannot be read; no binding; the journal has no write.
 
-- [ ] RED — remove `@wip`; run the single scenario; paste output (non-zero).
-- [ ] GREEN — assertions and production code; list files; paste output (zero).
-- [ ] REFACTOR — cleanup; re-run; paste output (zero).
-- [ ] COMMIT — release note subject, scenario title body; record the revision.
+- [x] RED — remove `@wip`; run the single scenario; paste output (non-zero).
+      ```
+      $ ./run-tests.sh --name "An unreadable object refuses the whole batch"
+      Feature: Adopt the existing public-home configuration
+        Scenario: An unreadable object refuses the whole batch
+         ✘  Given the organization settings cannot be read with the owner's authority
+            Step failed:
+            Defined: tmp/tmp.YxI9OAZdh3/f0003.feature:50:5
+            Step doesn't match any function
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      error: test failed, to rerun pass `-p duty2cal --test features_runner`
+      exit status: 101
+      ```
+- [x] GREEN — assertions and production code; list files; paste output (zero).
+      Production files created/modified:
+      `apps/cli/tests/steps/adopt_existing_configuration.rs` (the 401 fault for
+      `GET /orgs/duty2cal`, the fake restart, the refusal assertions and the
+      shared no-write journal check); the feature file drops this scenario's
+      `@wip`. The command already turns a 401 read into `the live object
+      343978778 cannot be read` (scenario 3's refusal mapping).
+      ```
+      $ ./run-tests.sh --name "An unreadable object refuses the whole batch"
+      Feature: Adopt the existing public-home configuration
+        Scenario: An unreadable object refuses the whole batch
+         ✔  Given the organization settings cannot be read with the owner's authority
+         ✔  When the organization owner adopts the batch
+         ✔  Then the adoption refuses the batch and names the organization settings
+         ✔  And the refusal states that the organization settings cannot be read
+         ✔  And no object in the batch is bound
+         ✔  And the live configuration is unchanged
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      6 steps (6 passed)
+      exit status: 0
+      ```
+- [x] REFACTOR — cleanup; re-run; paste output (zero).
+      `cargo fmt --all` and the shared `assert_no_live_write` helper; no
+      behaviour changed.
+      ```
+      $ ./run-tests.sh --name "An unreadable object refuses the whole batch"
+      1 feature
+      1 scenario (1 passed)
+      6 steps (6 passed)
+      exit status: 0
+      ```
+- [x] COMMIT — release note subject, scenario title body; record the revision.
+      Revision: `PENDING-SCENARIO-5-HASH`
 
 ## 6. A batch entry the declaration does not name refuses the whole batch
 

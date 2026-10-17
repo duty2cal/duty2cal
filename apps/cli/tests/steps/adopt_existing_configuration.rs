@@ -421,6 +421,19 @@ async fn it_does_not_exist_live(w: &mut DutyWorld) {
     restart_fake(w);
 }
 
+#[given("the organization settings cannot be read with the owner's authority")]
+async fn the_organization_settings_cannot_be_read_with_the_owners_authority(w: &mut DutyWorld) {
+    prepare(w);
+    let fixtures = fixtures_dir(w);
+    fs::write(
+        fixtures.join("faults.json"),
+        "[{\"path_regex\": \"^/orgs/duty2cal$\", \"status\": 401, \
+         \"body\": {\"message\": \"Bad credentials\"}}]\n",
+    )
+    .expect("write the unreadable-organization fault");
+    restart_fake(w);
+}
+
 #[given("the monorepo is already bound in the applied state")]
 async fn the_monorepo_is_already_bound_in_the_applied_state(w: &mut DutyWorld) {
     prepare(w);
@@ -542,13 +555,10 @@ async fn the_refusal_states_that_the_repository_does_not_exist_live(w: &mut Duty
     );
 }
 
-#[then("nothing is created in the live organization")]
-async fn nothing_is_created_in_the_live_organization(w: &mut DutyWorld) {
+/// Assert the journal shows no write attempt: no refused method and no GraphQL
+/// mutation. A GraphQL query POST is a read.
+fn assert_no_live_write(w: &DutyWorld) {
     let journal = journal_lines(w);
-    assert!(
-        !journal.is_empty(),
-        "the scenario read the live objects; journal was empty"
-    );
     assert!(
         journal
             .iter()
@@ -561,6 +571,36 @@ async fn nothing_is_created_in_the_live_organization(w: &mut DutyWorld) {
             .all(|line| !line.contains("\"graphql_operation\": \"mutation")),
         "the adoption attempted a GraphQL mutation; journal was:\n{journal:#?}"
     );
+}
+
+#[then("the refusal states that the organization settings cannot be read")]
+async fn the_refusal_states_that_the_organization_settings_cannot_be_read(w: &mut DutyWorld) {
+    assert_refused(w, "github_organization_settings.org");
+    let output = adoption_output(w);
+    assert!(
+        output.contains("cannot be read"),
+        "the refusal states the organization settings cannot be read; output was:\n{output}"
+    );
+}
+
+#[then("the adoption refuses the batch and names the organization settings")]
+async fn the_adoption_refuses_the_batch_and_names_the_organization_settings(w: &mut DutyWorld) {
+    assert_refused(w, "github_organization_settings.org");
+}
+
+#[then("the live configuration is unchanged")]
+async fn the_live_configuration_is_unchanged(w: &mut DutyWorld) {
+    assert_no_live_write(w);
+}
+
+#[then("nothing is created in the live organization")]
+async fn nothing_is_created_in_the_live_organization(w: &mut DutyWorld) {
+    let journal = journal_lines(w);
+    assert!(
+        !journal.is_empty(),
+        "the scenario read the live objects; journal was empty"
+    );
+    assert_no_live_write(w);
 }
 
 #[then("the applied state binds the monorepo once")]

@@ -45,7 +45,7 @@ Feature: Adopt the existing public-home configuration
     Then the adoption refuses the batch and names "duty2cal/duty2cal"
     And the applied state binds the monorepo once
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unreadable object refuses the whole batch
     Given the organization settings cannot be read with the owner's authority
     When the organization owner adopts the batch
