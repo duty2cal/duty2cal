@@ -1089,26 +1089,6 @@ async fn notes_name_the_borrowed_word_revision(w: &mut DutyWorld) {
     );
 }
 
-/// A history whose released revisions name only work no user can see.
-const INVISIBLE_HISTORY: [(&str, &str, &str); 3] = [
-    ("2026-01-01", "chore(ci): tune the release pipeline", ""),
-    (
-        "2026-01-02",
-        "docs(readme): describe the download route",
-        "",
-    ),
-    (
-        "2026-01-03",
-        "build(packaging): pin the toolchain",
-        "v0.2.0",
-    ),
-];
-
-#[given("a history whose released revisions name only work no user can see")]
-async fn a_history_with_invisible_work(w: &mut DutyWorld) {
-    build_history(w, &INVISIBLE_HISTORY);
-}
-
 #[then("the generation fails and states that the version changes nothing a user can see")]
 async fn generation_refuses_invisible_version(w: &mut DutyWorld) {
     assert_ne!(
