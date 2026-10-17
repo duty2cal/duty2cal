@@ -424,6 +424,30 @@ async fn it_does_not_exist_live(w: &mut DutyWorld) {
     restart_fake(w);
 }
 
+#[given("the declared configuration names both repositories")]
+async fn the_declared_configuration_names_both_repositories(w: &mut DutyWorld) {
+    prepare(w);
+    let repos = fs::read_to_string(declaration_dir(w).join("repos.tf"))
+        .expect("read the repository declaration");
+    assert!(
+        repos.contains("resource \"github_repository\" \"mono\"")
+            && repos.contains("resource \"github_repository\" \"pages\""),
+        "the declaration names both repositories; it was:\n{repos}"
+    );
+}
+
+#[given("the selected batch names only the organization and the monorepo")]
+async fn the_selected_batch_names_only_the_organization_and_the_monorepo(w: &mut DutyWorld) {
+    let declaration = declaration_dir(w);
+    let batch = declaration.join("scenario-selected-batch.txt");
+    fs::write(
+        &batch,
+        "github_organization_settings.org\t343978778\ngithub_repository.mono\tduty2cal\n",
+    )
+    .expect("write the selected batch");
+    w.batch = Some(batch);
+}
+
 #[given("the applied state cannot be written")]
 async fn the_applied_state_cannot_be_written(w: &mut DutyWorld) {
     use std::os::unix::fs::PermissionsExt as _;
@@ -704,6 +728,65 @@ async fn the_adoption_refuses_the_batch_and_names_the_archived_repository(w: &mu
 async fn the_adoption_refuses_the_batch_and_names_the_applied_state(w: &mut DutyWorld) {
     let state = state_path(w).display().to_string();
     assert_refused(w, &state);
+}
+
+#[then("the adoption reports the organization and the monorepo as bound")]
+async fn the_adoption_reports_the_organization_and_the_monorepo_as_bound(w: &mut DutyWorld) {
+    let output = adoption_output(w);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the selected batch is adopted; output was:\n{output}"
+    );
+    assert!(
+        output.contains("adopted github_organization_settings.org 343978778"),
+        "the adoption reports the organization as bound; output was:\n{output}"
+    );
+    assert!(
+        output.contains("adopted github_repository.mono duty2cal"),
+        "the adoption reports the monorepo as bound; output was:\n{output}"
+    );
+    let adopted: Vec<&str> = output
+        .lines()
+        .filter(|line| line.starts_with("adopted "))
+        .collect();
+    assert_eq!(
+        adopted.len(),
+        2,
+        "only the selected batch is reported; output was:\n{output}"
+    );
+}
+
+#[then("the site repository is not bound")]
+async fn the_site_repository_is_not_bound(w: &mut DutyWorld) {
+    let addresses = applied_state_addresses(w);
+    assert!(
+        addresses
+            .iter()
+            .any(|address| address == "github_organization_settings.org")
+            && addresses
+                .iter()
+                .any(|address| address == "github_repository.mono"),
+        "the applied state binds the selected batch; state was:\n{addresses:#?}"
+    );
+    assert!(
+        !addresses
+            .iter()
+            .any(|address| address == "github_repository.pages"),
+        "the site repository is not bound; state was:\n{addresses:#?}"
+    );
+    assert!(
+        !addresses
+            .iter()
+            .any(|address| address == "github_repository_pages.pages"),
+        "the site source is not bound; state was:\n{addresses:#?}"
+    );
+    assert!(
+        !addresses
+            .iter()
+            .any(|address| address == "github_repository_ruleset.main"),
+        "the default-branch rule is not bound; state was:\n{addresses:#?}"
+    );
 }
 
 #[then("the applied state binds the monorepo once")]

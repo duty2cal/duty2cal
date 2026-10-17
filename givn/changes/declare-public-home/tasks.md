@@ -650,7 +650,7 @@ Design constraints:
       exit status: 0
       ```
 - [x] COMMIT — release note subject, scenario title body; record the revision.
-      Revision: `PENDING-SCENARIO-9-HASH`
+      Revision: `64129e668b42a3cae30002a7ec7e15df6aee9447`
 
 ## 10. Only the selected batch is bound
 
@@ -659,10 +659,55 @@ Design constraints:
   organization and the monorepo; the adoption reports those two bound and does
   not bind the site repository.
 
-- [ ] RED — remove `@wip`; run the single scenario; paste output (non-zero).
-- [ ] GREEN — assertions and production code; list files; paste output (zero).
-- [ ] REFACTOR — cleanup; re-run; paste output (zero).
-- [ ] COMMIT — release note subject, scenario title body; record the revision.
+- [x] RED — remove `@wip`; run the single scenario; paste output (non-zero).
+      ```
+      $ ./run-tests.sh --name "Only the selected batch is bound"
+      Feature: Adopt the existing public-home configuration
+        Scenario: Only the selected batch is bound
+         ✘  Given the declared configuration names both repositories
+            Step failed:
+            Defined: tmp/tmp.8OaIXwXVB9/f0003.feature:89:5
+            Step doesn't match any function
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      error: test failed, to rerun pass `-p duty2cal --test features_runner`
+      exit status: 101
+      ```
+- [x] GREEN — assertions and production code; list files; paste output (zero).
+      Production files created/modified:
+      `apps/cli/tests/steps/adopt_existing_configuration.rs` (the two-repository
+      declaration check, the two-line selected batch, the two `adopted` lines
+      and the `tofu state list` proof that the site repository, its Pages
+      source and the rule set are absent); the feature file drops this
+      scenario's `@wip`. The wrapper already binds only the batch entries.
+      ```
+      $ ./run-tests.sh --name "Only the selected batch is bound"
+      Feature: Adopt the existing public-home configuration
+        Scenario: Only the selected batch is bound
+         ✔  Given the declared configuration names both repositories
+         ✔  And the selected batch names only the organization and the monorepo
+         ✔  When the organization owner adopts the batch
+         ✔  Then the adoption reports the organization and the monorepo as bound
+         ✔  And the site repository is not bound
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      5 steps (5 passed)
+      exit status: 0
+      ```
+- [x] REFACTOR — cleanup; re-run; paste output (zero).
+      `cargo fmt --all`; no behaviour changed.
+      ```
+      $ ./run-tests.sh --name "Only the selected batch is bound"
+      1 feature
+      1 scenario (1 passed)
+      5 steps (5 passed)
+      exit status: 0
+      ```
+- [x] COMMIT — release note subject, scenario title body; record the revision.
+      Revision: `PENDING-SCENARIO-10-HASH`
 
 ## E2E setup task — before the first @e2e scenario
 

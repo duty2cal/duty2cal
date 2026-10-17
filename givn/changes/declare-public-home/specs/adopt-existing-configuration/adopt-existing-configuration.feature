@@ -84,7 +84,7 @@ Feature: Adopt the existing public-home configuration
     And no object in the batch is bound
     And the live configuration is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: Only the selected batch is bound
     Given the declared configuration names both repositories
     And the selected batch names only the organization and the monorepo
