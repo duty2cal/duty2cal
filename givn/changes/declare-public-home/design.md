@@ -90,7 +90,7 @@ New or changed files:
 | `scripts/adopt-public-home.sh` | new | The adoption interface: preflight, staged import, verification, atomic move, one output line per bound object or a refusal naming the object. |
 | `scripts/setup-infra-tests.sh` | new | Checks `tofu` against `infra/.opentofu-version` and `python3`, mirrors the provider, writes the `terraformrc`, and prints what it resolved. |
 | `scripts/fake-github/serve.py` | new | The fake GitHub API: fixture tree, request journal, fault injection, ephemeral port. |
-| `scripts/fake-github/fixtures/<scenario>/…` | new | Per-scenario API responses for the five adopted objects, including `users/<owner>.json` for the provider's configure read. |
+| `scripts/fake-github/fixtures/adopt-all/…` | new | One complete, proven API-response tree for the five adopted objects (organization, both repositories, the rule set, the Pages source); each scenario copies it and adds its faults/mutations. A provider read the fake does not serve is a 599 unknown-path failure and extends the set. |
 | `apps/cli/tests/steps/adopt_existing_configuration.rs` | new | Non-e2e step definitions for this capability. |
 | `apps/cli/tests/steps/e2e/adopt_existing_configuration.rs` | new | E2E step definitions (real subprocess, fake API, transcript evidence). |
 | `apps/cli/tests/steps/mod.rs`, `apps/cli/tests/steps/e2e/mod.rs` | changed | Declare the two new modules; without that they are never compiled. |
@@ -248,7 +248,17 @@ The command performs one adoption of the selected batch:
    bound address, naming each such address: a live object that changed since
    the import does not get bound. With no live change, the imported state and
    the live objects agree, because `-refresh-only` compares state to live, not
-   declaration to live.
+   declaration to live. **The exit status alone is not the verdict**: OpenTofu
+   1.13.1 returns `2` for this invocation even when `add`, `change` and
+   `destroy` are all zero (opentofu/opentofu#3015, observed while implementing
+   this change). The command parses the JSON and refuses only on a reported
+   non-no-op change. **Only a completed report can be a no-op**: the JSON must
+   contain a `change_summary` message; an exit 2 without one, and any exit
+   status other than 0, 1 or 2 (for example a killed process), is a
+   verification failure and refuses the batch. The drift entries appear as
+   `resource_drift` objects whose `change` object carries a string `action`
+   (the parser also accepts an `actions` array), and the parser reads both
+   shapes.
 6. **Bind atomically.** Rename the staged state over `--state`. On the first
    adoption, create `<state>.backup` as a copy of the new state, so both
    committed files exist; on later runs, keep the previous state as
@@ -308,14 +318,21 @@ loopback.
 
 - `scripts/fake-github/serve.py --fixtures <dir> --port 0 --journal <file>`
   binds an ephemeral port on `127.0.0.1`, prints the port on stdout, and serves
-  the fixture tree.
+  the fixture tree. With a configured `base_url`, the provider prefixes its
+  requests with `/api/v3` (its GitHub Enterprise path); the fake strips that
+  prefix before fixture lookup so the same tree serves both forms.
 - Fixtures are JSON responses keyed by request path (for example
-  `repos/duty2cal/duty2cal.json` and `users/duty2cal.json`), one directory per
-  scenario. The endpoint set the provider reads is expected to cover
-  `GET /users/{owner}` (the provider's configure step calls `Users.Get(owner)`),
-  `GET /orgs/{org}`, `GET /repos/{owner}/{repo}`,
-  `GET /repos/{owner}/{repo}/topics`, `GET /repos/{owner}/{repo}/pages`, and
-  `GET /repos/{owner}/{repo}/rulesets[/{id}]`; any path the fake does not know
+  `repos/duty2cal/duty2cal.json` and `users/duty2cal.json`). One base tree
+  (`fixtures/adopt-all/`) holds the complete, proven set; each scenario's step
+  copies it into that scenario's temporary directory and writes its faults and
+  mutations into the copy. The committed tree is deliberately not one directory
+  per scenario: copying one proven base is what keeps the fixture set complete
+  and the per-scenario isolation real. The proven set is
+  `GET /orgs/{org}`, `GET /repos/{owner}/{repo}` (topics arrive in the
+  repository body), `GET /repos/{owner}/{repo}/pages`, and
+  `GET /repos/{owner}/{repo}/rulesets[/{id}]`; provider 6.13.0 with an explicit
+  `owner` did not call `Users.Get`, so no `users/` fixture is required today.
+  Any path the fake does not know
   returns a distinctive **599** marker response with an `X-Fake-Unknown-Path`
   header **and is journaled as an unknown-path entry**, so a missing fixture
   fails loudly instead of being silently defaulted. Every refusal step asserts
@@ -628,6 +645,13 @@ definitions and the `DutyWorld` fields, which the runner instruments.
 - **The committed state is a public ciphertext.** An attacker can read and
   modify it; only the passphrase protects the contents. Mitigation: encryption
   is enforced, and the state is reviewed as part of the declaration revision.
+- **The verification's exit status is unreliable.** OpenTofu 1.13.1 returns
+  exit `2` from `plan -refresh-only -detailed-exitcode` even when nothing
+  changed (opentofu/opentofu#3015, observed while implementing this change).
+  Mitigation: the command parses the JSON and refuses only on a reported
+  non-no-op change; the setup proof pins the no-op case, and a future release
+  that fixes the exit code still behaves correctly because the JSON, not the
+  status, is authoritative.
 - **The fixture set must track the provider's reads.** A provider upgrade can
   request a new endpoint; the setup task's one-import proof and the fake's
   599-plus-journal unknown-path marker turn that into a red run, not a silent

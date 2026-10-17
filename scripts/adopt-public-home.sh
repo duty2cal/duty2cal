@@ -306,17 +306,21 @@ plan_status=0
 (cd "$staging" && tofu plan -refresh-only -detailed-exitcode -json -input=false \
   >"$plan_log" 2>&1) || plan_status=$?
 
-if [ "$plan_status" -eq 1 ]; then
-  reason="$(diagnostic "$plan_log")"
-  refuse plan "the verification plan failed${reason:+: $reason}"
-fi
-
-if [ "$plan_status" -eq 2 ]; then
-  changed="$(python3 - "$plan_log" <<'PY'
+case "$plan_status" in
+  0)
+    : # a clean no-op
+    ;;
+  1)
+    reason="$(diagnostic "$plan_log")"
+    refuse plan "the verification plan failed${reason:+: $reason}"
+    ;;
+  2)
+    changed="$(python3 - "$plan_log" <<'PY'
 import json
 import sys
 
 addresses = []
+completed = False
 with open(sys.argv[1], encoding="utf-8") as handle:
     for line in handle:
         line = line.strip()
@@ -326,6 +330,8 @@ with open(sys.argv[1], encoding="utf-8") as handle:
             message = json.loads(line)
         except json.JSONDecodeError:
             continue
+        if message.get("type") == "change_summary":
+            completed = True
         if message.get("type") not in ("planned_change", "resource_drift"):
             continue
         change = message.get("change") or {}
@@ -339,27 +345,37 @@ with open(sys.argv[1], encoding="utf-8") as handle:
             if address:
                 addresses.append(address)
 
+if not completed:
+    print("__NO_SUMMARY__")
 for address in dict.fromkeys(addresses):
     print(address)
 PY
 )"
-  if [ -n "$changed" ]; then
-    while IFS= read -r address; do
-      [ -n "$address" ] ||
-        continue
-      live="$(live_for_address "$address")"
-      printf 'refused %s: the live object %s changed after it was read\n' \
-        "$address" "$live" >&2
-    done <<EOF
+    if [ "$changed" = "__NO_SUMMARY__" ]; then
+      refuse plan "the verification plan did not complete; the batch is not bound"
+    fi
+    if [ -n "$changed" ]; then
+      while IFS= read -r address; do
+        [ -n "$address" ] ||
+          continue
+        live="$(live_for_address "$address")"
+        printf 'refused %s: the live object %s changed after it was read\n' \
+          "$address" "$live" >&2
+      done <<EOF
 $changed
 EOF
-    exit 2
-  fi
-  # OpenTofu 1.13.1 exits 2 for a `-refresh-only -detailed-exitcode` plan even
-  # when the plan reports no change at all (opentofu/opentofu#3015). The JSON
-  # report is authoritative: with no non-no-op change there is nothing to
-  # refuse, so keep going.
-fi
+      exit 2
+    fi
+    # OpenTofu 1.13.1 exits 2 for a completed `-refresh-only -detailed-exitcode`
+    # plan even when every count is zero (opentofu/opentofu#3015). Only a
+    # completed report with no non-no-op change continues; an incomplete report
+    # is refused above.
+    ;;
+  *)
+    reason="$(diagnostic "$plan_log")"
+    refuse plan "the verification plan exited with status $plan_status${reason:+: $reason}; the batch is not bound"
+    ;;
+esac
 
 # ---------------------------------------------------------------------------
 # 6. Bind atomically. Staging sits beside the state, so the move is a rename;

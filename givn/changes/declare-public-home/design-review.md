@@ -401,3 +401,38 @@ requirement of the use case's guarantee; no operator decision was needed.
   topic document and the topic question log were not edited.
 
 DESIGN-REVIEW: PASS
+
+## Post-implementation re-review — 2026-10-17
+
+Four implementation-discovered corrections changed `design.md`, so the earlier
+sign-off was re-tested by a fresh reviewer.
+
+1. **OpenTofu exit code.** OpenTofu 1.13.1 returns exit `2` from
+   `plan -refresh-only -detailed-exitcode` with zero changes
+   (opentofu/opentofu#3015). The command treats JSON as authoritative.
+2. **Drift shape.** `resource_drift` carries a `change` object whose `action`
+   is a string; the parser also accepts an `actions` array.
+3. **Enterprise prefix.** With `base_url`, the provider prefixes requests with
+   `/api/v3`; the fake strips it before fixture lookup.
+4. **Fixture base.** One proven tree (`fixtures/adopt-all/`) is copied per
+   scenario with faults and mutations; the committed tree is not one directory
+   per scenario.
+
+The reviewer found one blocking defect: "an exit 2 with no change entry is a
+no-op" was too broad. A killed process (for example status 137) or a panicking
+OpenTofu could exit without a completed report, and the batch would have been
+bound with no verification. Hardening applied:
+
+- The script now accepts only statuses 0, 1 and 2; any other status refuses the
+  batch.
+- An exit 2 continues only when the JSON contains a `change_summary`; an
+  incomplete report refuses the batch.
+- `design.md` and the risk entry state the completion condition; the fixture
+  text names the proven endpoint set (provider 6.13.0 with an explicit owner
+  did not call `Users.Get`; topics arrive in the repository body).
+
+Re-run evidence after the fix: scenarios 7, 9 and 10 pass individually (the
+verification paths). Lint reports the single remaining `@wip` scenario (the
+E2E success, implemented next) and two shape advisories, with no errors.
+
+DESIGN-REVIEW: PASS
