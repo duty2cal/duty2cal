@@ -1,3 +1,8 @@
+## [0.3.0] - 2026-10-17
+
+### Dependencies
+- Bump the rust-deps group across 1 directory with 7 updates
+[0.2.0...0.3.0](https://github.com/kressnerd/duty2cal/compare/v0.2.0...v0.3.0)
 ## [0.2.0] - 2026-10-14
 
 ### Fixes
