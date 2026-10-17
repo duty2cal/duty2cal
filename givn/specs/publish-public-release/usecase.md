@@ -1,4 +1,4 @@
-<!-- givn:base-sha256: dc214520a870ece493edb68ff739397d3eb7c730d17dd0af65ca0e7806418e32 -->
+<!-- givn:base-sha256: 712b037fad8af8f303ada756c57dd42962dfba9b63fc37a4147ad2d19707560d -->
 # Use case: publish-public-release
 
 ## Level
@@ -33,7 +33,7 @@ The maintainer decides a version is ready and prepares its release.
 4. Crew member obtains the archive for their machine; System offers each platform's archive at a stable address, each named for the platform it serves.
 5. Crew member extracts and runs the executable; System's published executable runs on that platform with no runtime installation and no companion library beyond the platform's own.
 6. Crew member, or anyone else, checks what they received; System publishes each archive's checksum, its build provenance and the bill of materials for it, so the file in hand can be traced to the revision and automation that produced it.
-7. Maintainer's release states what changed; System's release text is the newest section of the change log — the changes a user can see, grouped by kind — rather than a flat list of revision subjects.
+7. Maintainer's release states what changed; System's release text is the newest section of the change log — the changes a user receives, grouped by kind, with dependency updates named beside them — rather than a flat list of revision subjects.
 
 ## Extensions
 
@@ -44,7 +44,7 @@ The maintainer decides a version is ready and prepares its release.
 - 1–2: the prepared set is incomplete or was not inspected → nothing is published.
 - 3: the version being published was already published → refuse; a published release's tag can never be reused, so a correction is a new version.
 - 5: an executable does not start on a machine of its platform's kind → that platform's archive is not published for that version.
-- 1: a version's notes would name no change a user can see → preparation fails and nothing is published; a version whose notes say nothing a user can see is not releasable.
+- 1: a version's notes would name nothing at all — no change a user receives and no dependency update → preparation fails and nothing is published; a version whose notes name nothing at all is not releasable.
 - 1: the committed change log does not match the revision being released → preparation fails and nothing is published, naming the version whose section differs.
 
 ## Rules
@@ -69,10 +69,14 @@ The maintainer decides a version is ready and prepares its release.
   - A revision whose subject carries neither a release-note type nor a housekeeping type is omitted, and a commit message never makes a preparation fail.
   - Publishing a version states the version once, in the archive names, the release text and the tag, so no two places disagree about what was released.
 - **What a release states**
-  - A version's notes name the changes a user can see, grouped by kind — new capabilities first, then fixes, then performance and reversals — with the group a reader looks for first at the top.
-  - A revision whose subject names a capability is a released change; a revision whose subject names a tool, the project's own automation workflow, a check, a test, a document, or the machinery of building, packaging and publishing is not, and it is never listed — and a subject that merely borrows one of those words for a crew member's own work is still a released change. A released revision must also have changed something a user receives: a revision whose change touched none of the configured user-receiving paths — the converter, its build inputs, and the packaging and the release workflow that decide what an archive holds — is never listed, whatever its subject says.
+  - A version's notes name the changes a user receives, grouped by kind — new capabilities first, then fixes, then performance, then reversals, then dependency updates — with the group a reader looks for first at the top.
+  - A revision whose subject names a capability is a released change; so is a dependency update that changed a path a user receives. A revision whose subject names a tool, the project's own automation workflow, a check, a test, a document, or the machinery of building, packaging and publishing is not, and it is never listed — and a subject that merely borrows one of those words for a crew member's own work is still a released change. A released revision must also have changed something a user receives: a revision whose change touched none of the configured user-receiving paths — the converter, its build inputs, and the packaging and the release workflow that decide what an archive holds — is never listed, whatever its subject says.
+  - A dependency update is a revision whose subject names a dependency bump, such as `chore(deps): …`; it is the one housekeeping-typed revision that can be announced. It is announced only when it changed a path a user receives and its words do not name the project's own tooling, as for every released change: the dependency graph is such a path, so a Cargo dependency bump is announced; a dependency update that changed only the project's own checks or automation is not, while one that changed the release workflow is, because that workflow decides what an archive holds.
+  - Announced dependency updates are grouped as **Dependencies**, after Reversals, in the order their revisions occur in history, each stating the update in the words its revision carries.
+  - A version whose only announced changes are dependency updates is releasable: its notes name those updates and no other change, and preparation stages the version as usual.
+  - A dependency update whose subject also names a capability is announced once, in that capability's group; the **Dependencies** group names only updates that carry no capability scope. Identical update subjects collapse to one entry, as every released change does.
   - Each entry states the change in the release-note words the revision carries, so the notes and the history agree, and the notes never claim work that the released revision does not contain.
-  - A version whose notes would name no change a user can see is refused rather than published.
+  - A version whose notes would name nothing at all — no change a user receives and no dependency update — is refused rather than published.
   - The notes are the newest section of the change log the repository keeps, and every earlier version stays unchanged beside it.
   - Each section states its own date and, where an earlier version exists, the comparison against the immediately preceding version.
   - The section is rendered from the repository's history by the project's own generator, whose version is recorded beside its configuration; a committed change log that differs from a fresh render of the released revision is refused.
@@ -122,6 +126,13 @@ The maintainer decides a version is ready and prepares its release.
 - A second version above the first: a change log whose newest section is version 0.1.0 and a history releasing version 0.2.0 -> version 0.2.0 becomes the newest section, with its own date and its comparison against version 0.1.0, and the section for version 0.1.0 is unchanged.
 - A change log edited by hand: a committed change log whose newest section differs from what the history states -> the check fails and names the version whose section differs.
 - The first version of all: a history releasing version 0.1.0 with no change log yet -> the change log holds one section, for version 0.1.0, naming the released change a user can see and stating no comparison against an earlier version.
+- Dependency-only release: released revisions carrying `chore(deps): bump serde …` and `chore(deps): bump clap …`, both changing the dependency graph -> the notes for version 0.2.0 list both updates under Dependencies, and preparation succeeds.
+- Repeated dependency update: two revisions carrying the same `chore(deps): bump serde …` subject -> the notes name that update once.
+- Checks-only dependency update leaves no group: a `chore(deps): bump actions/checkout …` revision that changed only the project's CI workflow, beside a converter fix -> the notes name the fix and carry no Dependencies heading at all.
+- Check-only dependency update: a `chore(deps): bump actions/checkout …` revision that changed only the project's CI workflow -> the notes name no dependency update, because a user receives nothing from that change.
+- Release-workflow dependency update: a `chore(deps): bump a release action …` revision that changed the release workflow -> the notes name the dependency update, because that workflow decides what an archive holds.
+- Capability-scoped dependency update: a `fix(export-duty-plan-calendar): Upgrade the PDF parser` revision that also changed the dependency graph -> the notes name it once under Fixes, and the Dependencies group does not repeat it.
+- Nothing at all: released revisions that changed only paths no user receives -> the generation fails and states that the version changes nothing a user can see, so nothing is published.
 
 ## Minimal guarantee
 
@@ -129,7 +140,7 @@ Nothing is published that the evidence does not support: an incomplete preparati
 
 ## Success guarantee
 
-A crew member obtains, for their own machine, an archive whose executable runs without installation and whose build can be traced to the released revision; the maintainer can state what the version changed; and nothing published contradicts the evidence recorded for it.
+A crew member obtains, for their own machine, an archive whose executable runs without installation and whose build can be traced to the released revision; the maintainer can state what the version changed, including any dependency update it carries; and nothing published contradicts the evidence recorded for it.
 
 This is a changing use case: it issues a release, rather than observing one.
 
