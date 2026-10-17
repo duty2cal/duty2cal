@@ -24,8 +24,10 @@ project-specific work and intentionally has no product specification.
 ## Execution model
 
 Unlike the 0.7.0-to-0.8.0 bundle, this migration carries its work directly: it
-edits one project-owned configuration file, `givn/config.yaml`. There are no
-corpus repairs.
+records surviving project rules in the project-owned `givn/config.yaml`. The
+inventory below finds no surviving rule, so Phase 2 is a no-op: this change
+edits no project file and only records the evidence and the verification. There
+are no corpus repairs.
 
 - Work the phases in order. Record the inventory as a table in this change's
   `design.md` (append it below this bundle text).
@@ -43,7 +45,7 @@ corpus repairs.
 
 1. Confirm `givn/config.yaml` declares
    `givn_config_version: "0.9.1"` and that this maintenance
-   change exists (its id is `migrate-0.8.4-to-0.9.1`,
+   change exists (its id is `migrate-0-8-4-to-0-9-1`,
    or the aggregate id of the route that produced it).
 2. Confirm the checkout is clean and committed before the first edit.
 3. Read `skills.targets` in `givn/config.yaml` (default `opencode`). The
@@ -157,12 +159,27 @@ corpus repairs.
 
 ## Phase 3 — Verify and complete
 
-1. Spot-check the installed files in every configured target: they carry
-   trigger, direction, and no rule copy; no extension text appears in them.
-2. Confirm the extension lives only in `givn/config.yaml`: it is in no
-   generated file and no managed refresh revision.
-3. Run the project's suite (`verify.command`).
-4. Derive this change's tasks from the inventory rows, run design-review
+Run these exact checks and record their output in `tasks.md`:
+
+1. All 15 installed instruction triggers in each configured target carry only
+   direction. For every target, assert `grep -c '^## Project extension'` is 0
+   and that each `skills/givn-*/SKILL.md` and command file matches the
+   trigger/direction shape:
+   `find <target>/skills -path '*/givn-*/SKILL.md' -o -path '<target>/commands/*.md'`
+   then grep for the direction sentence. The expected result for the four
+   targets is 15 skills and 15 commands for `opencode` and `omp`, 15 skills and
+   0 commands for `agents` and `claude`, all trigger-only.
+2. `givn skills sync` followed by `diff -r` against a checksum manifest taken
+   before the sync: every generated skill, command, plugin, hook,
+   `.claude/settings.local.json`, and `.githooks/commit-msg` is byte-identical.
+   No extension text appears in any generated file.
+3. `givn instructions <id> --change migrate-0-8-4-to-0-9-1` for each instruction
+   id in the Phase 1 mapping returns exit 0 and no `## Project extension`
+   section (`grep -c '^## Project extension'` = 0).
+4. `givn lint --change migrate-0-8-4-to-0-9-1` exits 0 or 2.
+5. `./run-tests.sh` (under `nix-shell -p rustc cargo git-cliff`) passes; the
+   last run recorded 103 scenarios / 390 steps, all passing.
+6. Derive this change's tasks from the inventory rows, run design-review
    before tasks, and complete the normal review and archive gates.
 
 ## Validation and completion
@@ -180,3 +197,36 @@ corpus repairs.
 ## Completion boundary
 
 This generated design does not contain `DESIGN-REVIEW: PASS`, `REVIEW: PASS`, or implementation evidence. The project LLM must derive tasks and complete the normal Givn gates after the ordered bundle phases are understood, including any follow-up changes a bundle names.
+
+## Phase 1 inventory — displaced project rules
+
+### Checked file list
+
+The pre-upgrade revision `76f1602771c6bf7c4430ac691657cff1e0a5b86c^` contains no tracked generated rule files: the project uses the default `rules: local-only` policy, so `git ls-tree` finds no `skills/givn-*/SKILL.md` or `commands/(givn|grill)-*.md`. `git log --all -- .opencode .agents .claude .omp` is empty, confirming no generated rule was ever tracked.
+
+Two evidence classes were used, and they are not equivalent:
+
+**Content recovered and compared.** The full pre-upgrade bodies of `givn-propose`, `givn-spec`, `givn-design`, `givn-design-review`, `givn-tasks`, `givn-review`, `givn-archive`, and `givn-domain-modeling` were recovered from the retained omp session transcripts under `~/.omp/agent/sessions/-dev-PRIVATE-duty2ical/`. They match the generated assets of the baseline version the project synced (givn `v0.8.5`, present at `/home/dan/dev/PRIVATE/givn`, tag `v0.8.5`) byte-for-byte, apart from transcript framing. `givn-implement` was compared through the transcript's grep evidence against the same baseline. `givn-ideation` was compared through the edit event recorded below and the baseline asset.
+
+**Edit events scanned.** For `givn-explore`, `givn-steps`, `givn-reverse-engineer`, `givn-characterize`, and `givn-dev-principles`, and for every command file, the pre-upgrade body was not captured in any retained transcript. Their generated paths were scanned for writes: no `edit`, `write`, or redirecting `bash` tool call under a generated path appears in any omp transcript, and `opencode.db` contains no write/edit/patch/shell write under `.opencode/skills` or `.opencode/commands`. The absence of a write event is the evidence; it is weaker than a recovered body.
+
+Checked generated paths across the four configured targets (`opencode`, `agents`, `claude`, `omp`):
+
+- Skills: the 15 `skills/givn-*/SKILL.md` files in each target.
+- Commands: `.opencode/commands/givn-*.md`, `.opencode/commands/grill-*.md`, `.omp/commands/givn-*.md`, `.omp/commands/grill-*.md`.
+- Attribution plumbing: `.opencode/plugins/givn-attribution.js`, `.omp/hooks/pre/givn-attribution.js`, `.claude/hooks/givn-attribution.sh`, `.claude/settings.local.json`, `.githooks/commit-msg`.
+- Managed `AGENTS.md` block: `git diff 76f1602771c6bf7c4430ac691657cff1e0a5b86c^ -- AGENTS.md` is empty; the `givn-project` block was not hand-edited.
+
+**Evidence boundary.** A manual edit to an untracked generated file that never appeared in a retained agent session leaves no recoverable trace after the managed rewrite. The operator confirmed the ideation workaround is the only change they can identify and could not rule out an unknown manual edit; the migration records that boundary rather than inventing a rule. The ideation workaround itself is the one displacement with direct evidence.
+
+### Displacements
+
+| Old file | Displaced statement | Classification | Target instruction id |
+|---|---|---|---|
+| `.opencode/skills/givn-ideation/SKILL.md`, `.agents/skills/givn-ideation/SKILL.md`, `.claude/skills/givn-ideation/SKILL.md`, `.omp/skills/givn-ideation/SKILL.md` | The template's `## Diagram` heading was replaced with `**The actor-goal diagram.**` to stop the validator treating the template heading as a document-schema section. | Dropped as stale: a temporary workaround for a misdiagnosed schema error. The served 0.9.1 `ideation` instruction carries `## Diagram` in the use-case template, and the project's own permanent use cases (`givn/specs/export-duty-plan-calendar/usecase.md`, `givn/specs/publish-public-release/usecase.md`, the ideation contract, and the archived change) use a `## Diagram` section. The workaround was superseded before the upgrade. | `ideation` (no extension entry) |
+
+The remaining recovered files match the `v0.8.5` baseline; the differences seen against `v0.8.4` (`givn-spec`'s `docs/use-case-model.md` phrase, `givn-domain-modeling`'s naming guidance) are built-in updates that the served 0.9.1 instructions already carry, not project rules.
+
+### Disposition
+
+No project rule survives into `givn/config.yaml` `extensions:`: the single displaced statement is stale and is dropped with the reason above. The next phase therefore verifies the served rules and the installed trigger files, and the migration adds no extension entry.
