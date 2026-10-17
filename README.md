@@ -95,12 +95,15 @@ file verifies itself:
 
 ```sh
 sha256sum --check duty2cal-0.1.0-windows-x86_64.tar.gz.sha256
-gh attestation verify duty2cal-0.1.0-windows-x86_64.tar.gz --repo duty2cal/duty2cal
+gh attestation verify duty2cal-<version>-windows-x86_64.tar.gz --repo duty2cal/duty2cal
 ```
 
 `gh attestation verify` proves that the archive was built by this
 repository's release automation from the tagged revision, and shows the bill
-of materials the build was made from.
+of materials the build was made from. Every release published after the
+repository moved to the `duty2cal` organization carries those attestations;
+the releases published before 2026-10-17 no longer have retrievable
+attestations, so check those against their published `.sha256` only.
 
 Already-published releases keep their original assets and links; only future releases are Windows-only.
 
