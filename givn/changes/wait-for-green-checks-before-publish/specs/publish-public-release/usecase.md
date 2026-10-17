@@ -1,4 +1,4 @@
-<!-- givn:base-sha256: 712b037fad8af8f303ada756c57dd42962dfba9b63fc37a4147ad2d19707560d -->
+<!-- givn:base-sha256: 579cac31535395f6ebfdc5e988eeb3fe4cefc1734e177c4a109f50dfdc63cb2e -->
 # Use case: publish-public-release
 
 ## Level
