@@ -2251,3 +2251,53 @@ async fn release_text_names_the_dependency_updates(w: &mut DutyWorld) {
         "the release text names no clap update: {text}"
     );
 }
+
+/// A capability-scoped revision that changed only a path no user receives,
+/// beside a dependency update. The capability heading must be pruned even
+/// though another group follows it.
+const EMPTY_CAPABILITY_BEFORE_DEPENDENCY_HISTORY: [(&str, &str, &str); 3] = [
+    (
+        "2026-01-01",
+        "feat(publish-public-release): Offer a dependency-only release",
+        "",
+    ),
+    (
+        "2026-01-02",
+        "chore(deps): bump serde from 1.0.0 to 1.0.1",
+        "",
+    ),
+    (
+        "2026-01-03",
+        "chore(ci): tune the release pipeline",
+        "v0.2.0",
+    ),
+];
+
+#[given("a history whose capability revision changed only a path no user receives, beside a dependency update that changed the dependency graph")]
+async fn a_history_with_an_emptied_capability_group(w: &mut DutyWorld) {
+    build_history_with(
+        w,
+        &EMPTY_CAPABILITY_BEFORE_DEPENDENCY_HISTORY,
+        &[(0, &["docs/readme.md"]), (1, &["Cargo.lock"])],
+    );
+}
+
+#[then("the notes name the dependency update in Dependencies")]
+async fn notes_name_the_dependency_update_in_dependencies(w: &mut DutyWorld) {
+    let group = group_of(&change_log(w), "Dependencies")
+        .join("\n")
+        .to_lowercase();
+    assert!(
+        group.contains("bump serde"),
+        "the Dependencies group names no serde update: {group}"
+    );
+}
+
+#[then("the notes name no New capabilities group")]
+async fn notes_name_no_new_capabilities_group(w: &mut DutyWorld) {
+    let rendered = change_log(w);
+    assert!(
+        !rendered.contains("### New capabilities"),
+        "the notes carry an empty New capabilities heading: {rendered}"
+    );
+}

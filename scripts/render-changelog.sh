@@ -328,7 +328,7 @@ section=$(printf '%s\n' "$section" | awk '
       if (line[i] ~ /^### /) {
         j = i + 1
         while (j <= NR && line[j] ~ /^[[:space:]]*$/) j++
-        if (j > NR || line[j] ~ /^## /) { i = j - 1; continue }
+        if (j > NR || line[j] ~ /^##/) { i = j - 1; continue }
       }
       print line[i]
     }

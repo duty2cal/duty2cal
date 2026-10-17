@@ -194,6 +194,12 @@ Feature: Publish a public release
     Then  the notes name the capability-scoped update once
     And  the Dependencies group names only the update that carries no capability scope
 
+  Scenario: An emptied group before Dependencies is not listed
+    Given  a history whose capability revision changed only a path no user receives, beside a dependency update that changed the dependency graph
+    When  the maintainer generates the change log for version 0.2.0
+    Then  the notes name the dependency update in Dependencies
+    And  the notes name no New capabilities group
+
   Scenario: The release text and the change log state the same dependency updates
     Given  a history whose released revisions carry only dependency updates
     And  an executable built for every supported platform
