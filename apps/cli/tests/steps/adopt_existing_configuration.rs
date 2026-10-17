@@ -33,7 +33,49 @@ resource \"github_repository\" \"invalid\" {
 }
 ";
 
-/// Scenario sequence, so concurrently executed scenarios never share a
+/// The addresses the applied state binds, read with the real binary.
+fn applied_state_addresses(w: &DutyWorld) -> Vec<String> {
+    let declaration = declaration_dir(w);
+    let rc = terraformrc();
+    let passphrase = w
+        .passphrase
+        .clone()
+        .unwrap_or_else(|| PASSPHRASE.to_string());
+    let init = Command::new("tofu")
+        .args(["init", "-backend=false", "-input=false", "-no-color"])
+        .current_dir(&declaration)
+        .env("TF_CLI_CONFIG_FILE", &rc)
+        .env("TF_VAR_state_passphrase", &passphrase)
+        .env("TF_VAR_billing_email", BILLING_EMAIL)
+        .output()
+        .expect("run tofu init against the declaration");
+    assert!(
+        init.status.success(),
+        "tofu init failed: {}{}",
+        String::from_utf8_lossy(&init.stdout),
+        String::from_utf8_lossy(&init.stderr)
+    );
+    let list = Command::new("tofu")
+        .args(["state", "list"])
+        .current_dir(&declaration)
+        .env("TF_CLI_CONFIG_FILE", &rc)
+        .env("TF_VAR_state_passphrase", &passphrase)
+        .env("TF_VAR_billing_email", BILLING_EMAIL)
+        .output()
+        .expect("run tofu state list against the applied state");
+    assert!(
+        list.status.success(),
+        "tofu state list failed: {}{}",
+        String::from_utf8_lossy(&list.stdout),
+        String::from_utf8_lossy(&list.stderr)
+    );
+    String::from_utf8_lossy(&list.stdout)
+        .lines()
+        .map(str::to_owned)
+        .collect()
+}
+
+/// The scenario sequence, so concurrently executed scenarios never share a
 /// directory, a fake or a state.
 static SCENARIO_SEQUENCE: AtomicUsize = AtomicUsize::new(0);
 
@@ -224,6 +266,10 @@ pub(crate) fn adopt(w: &mut DutyWorld) {
     );
 
     let script = repository_root().join("scripts/adopt-public-home.sh");
+    let passphrase = w
+        .passphrase
+        .clone()
+        .unwrap_or_else(|| PASSPHRASE.to_string());
     let output = Command::new(&script)
         .arg("--declaration")
         .arg(&declaration)
@@ -236,7 +282,7 @@ pub(crate) fn adopt(w: &mut DutyWorld) {
         .arg("--token")
         .arg(TOKEN)
         .current_dir(repository_root())
-        .env("TF_VAR_state_passphrase", PASSPHRASE)
+        .env("TF_VAR_state_passphrase", passphrase)
         .env("TF_VAR_billing_email", BILLING_EMAIL)
         .env("TF_CLI_CONFIG_FILE", &rc)
         .output()
@@ -375,8 +421,42 @@ async fn it_does_not_exist_live(w: &mut DutyWorld) {
     restart_fake(w);
 }
 
+#[given("the monorepo is already bound in the applied state")]
+async fn the_monorepo_is_already_bound_in_the_applied_state(w: &mut DutyWorld) {
+    prepare(w);
+    let declaration = declaration_dir(w);
+    let priming = declaration.join("scenario-monorepo-batch.txt");
+    fs::write(&priming, "github_repository.mono\tduty2cal\n").expect("write the priming batch");
+    w.batch = Some(priming);
+    adopt(w);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the priming adoption binds the monorepo; output was:\n{}",
+        adoption_output(w)
+    );
+    assert!(
+        adoption_output(w).contains("adopted github_repository.mono duty2cal"),
+        "the priming adoption reports the monorepo; output was:\n{}",
+        adoption_output(w)
+    );
+    assert!(
+        state_path(w).exists(),
+        "the priming adoption records the applied state"
+    );
+    w.batch = Some(declaration.join("adoption-batch.txt"));
+    w.exit_status = None;
+    w.stdout.clear();
+    w.stderr.clear();
+}
+
 #[when("the organization owner adopts the batch")]
 async fn the_organization_owner_adopts_the_batch(w: &mut DutyWorld) {
+    adopt(w);
+}
+
+#[when("the organization owner adopts the batch again")]
+async fn the_organization_owner_adopts_the_batch_again(w: &mut DutyWorld) {
     adopt(w);
 }
 
@@ -480,5 +560,18 @@ async fn nothing_is_created_in_the_live_organization(w: &mut DutyWorld) {
             .iter()
             .all(|line| !line.contains("\"graphql_operation\": \"mutation")),
         "the adoption attempted a GraphQL mutation; journal was:\n{journal:#?}"
+    );
+}
+
+#[then("the applied state binds the monorepo once")]
+async fn the_applied_state_binds_the_monorepo_once(w: &mut DutyWorld) {
+    let addresses = applied_state_addresses(w);
+    assert_eq!(
+        addresses
+            .iter()
+            .filter(|address| address.as_str() == "github_repository.mono")
+            .count(),
+        1,
+        "the applied state binds the monorepo exactly once; state was:\n{addresses:#?}"
     );
 }

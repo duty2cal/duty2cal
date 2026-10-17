@@ -63,6 +63,9 @@ pub struct DutyWorld {
     /// The live slug a declared object scenario names but the fake does not
     /// serve (`owner/repository`), captured across the Given steps.
     pub missing_repository: Option<String>,
+    /// The passphrase the adoption should present, when a scenario primes the
+    /// applied state with a different one.
+    pub passphrase: Option<String>,
 }
 
 impl Drop for DutyWorld {

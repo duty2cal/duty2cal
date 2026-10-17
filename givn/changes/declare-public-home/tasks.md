@@ -300,7 +300,7 @@ Design constraints:
       exit status: 0
       ```
 - [x] COMMIT — release note subject, scenario title body; record the revision.
-      Revision: `PENDING-SCENARIO-3-HASH`
+      Revision: `cd89ada1de3ff5bb03fc866b8886b92bb04abcd6`
 
 ## 4. An object already bound is not bound again
 
@@ -310,10 +310,57 @@ Design constraints:
   monorepo; the refusal names `duty2cal/duty2cal`.
 - The applied state still binds the monorepo once.
 
-- [ ] RED — remove `@wip`; run the single scenario; paste output (non-zero).
-- [ ] GREEN — assertions and production code; list files; paste output (zero).
-- [ ] REFACTOR — cleanup; re-run; paste output (zero).
-- [ ] COMMIT — release note subject, scenario title body; record the revision.
+- [x] RED — remove `@wip`; run the single scenario; paste output (non-zero).
+      ```
+      $ ./run-tests.sh --name "An object already bound is not bound again"
+      Feature: Adopt the existing public-home configuration
+        Scenario: An object already bound is not bound again
+         ✘  Given the monorepo is already bound in the applied state
+            Step failed:
+            Defined: tmp/tmp.11VkaX6Iom/f0003.feature:43:5
+            Step doesn't match any function
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      error: test failed, to rerun pass `-p duty2cal --test features_runner`
+      exit status: 101
+      ```
+- [x] GREEN — assertions and production code; list files; paste output (zero).
+      Production files created/modified:
+      `apps/cli/tests/steps/adopt_existing_configuration.rs` (the priming
+      monorepo-only adoption, the "adopts again" When, the `tofu state list`
+      assertion against the applied state); `apps/cli/tests/features_runner.rs`
+      (the passphrase override, needed by scenario 8 and used by the state
+      reader); the feature file drops this scenario's `@wip`. The refusal
+      itself needed no new command code: `tofu import` already names the
+      already-managed address, and the live-name mapping from scenario 3 makes
+      it print `duty2cal/duty2cal`.
+      ```
+      $ ./run-tests.sh --name "An object already bound is not bound again"
+      Feature: Adopt the existing public-home configuration
+        Scenario: An object already bound is not bound again
+         ✔  Given the monorepo is already bound in the applied state
+         ✔  When the organization owner adopts the batch again
+         ✔  Then the adoption refuses the batch and names "duty2cal/duty2cal"
+         ✔  And the applied state binds the monorepo once
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      4 steps (4 passed)
+      exit status: 0
+      ```
+- [x] REFACTOR — cleanup; re-run; paste output (zero).
+      `cargo fmt --all` only reflowed the new step code; no behaviour changed.
+      ```
+      $ ./run-tests.sh --name "An object already bound is not bound again"
+      1 feature
+      1 scenario (1 passed)
+      4 steps (4 passed)
+      exit status: 0
+      ```
+- [x] COMMIT — release note subject, scenario title body; record the revision.
+      Revision: `PENDING-SCENARIO-4-HASH`
 
 ## 5. An unreadable object refuses the whole batch
 

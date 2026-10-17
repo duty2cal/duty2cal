@@ -38,7 +38,7 @@ Feature: Adopt the existing public-home configuration
     And no object in the batch is bound
     And nothing is created in the live organization
 
-  @givn.added @wip
+  @givn.added
   Scenario: An object already bound is not bound again
     Given the monorepo is already bound in the applied state
     When the organization owner adopts the batch again
