@@ -358,11 +358,25 @@ pub(crate) fn adopt(w: &mut DutyWorld) {
 /// Assert the command refused with exit status 2 and a `refused` line.
 pub(crate) fn assert_refused(w: &DutyWorld, object: &str) {
     let output = adoption_output(w);
-    assert_eq!(
-        w.exit_status,
-        Some(2),
-        "a refusal exits 2; output was:\n{output}"
-    );
+    if w.exit_status != Some(2) {
+        let trigger = w
+            .env
+            .iter()
+            .find(|(key, _)| key == "ADOPT_TEST_TRIGGER")
+            .map(|(_, value)| value.clone());
+        let trigger_state = trigger
+            .as_ref()
+            .map(|path| (path.clone(), Path::new(path).is_file()));
+        let mutation = w
+            .dir
+            .as_ref()
+            .map(|dir| dir.join("fixtures/mutate.json"))
+            .and_then(|path| fs::read_to_string(path).ok());
+        let journal = journal_lines(w);
+        panic!(
+            "a refusal exits 2; output was:\n{output}\ntrigger: {trigger_state:?}\nmutation: {mutation:?}\njournal: {journal:#?}"
+        );
+    }
     assert!(
         output.contains("refused "),
         "a refusal prints `refused <object>: <reason>`; output was:\n{output}"
