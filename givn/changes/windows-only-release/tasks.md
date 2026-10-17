@@ -1274,7 +1274,7 @@ givn commit -m "feat(publish-public-release): Offer one downloadable archive for
 Scenario: An unreadable executable stops the preparation" givn/changes/windows-only-release/specs/publish-public-release/publish-public-release.feature apps/cli/tests/steps/publish_public_release.rs givn/changes/windows-only-release/tasks.md
 ```
 
-Revision: `<paste revision id>`
+Revision: `ba665cae2de9195a286ef5d76405b9ccc6622c73`
 
 ---
 
@@ -1282,11 +1282,11 @@ Revision: `<paste revision id>`
 
 `@givn.added` at lines 52–58.
 
-- [ ] RED (new Given undefined, non-zero)
-- [ ] GREEN (new step; targeted run zero)
-- [ ] REFACTOR (targeted run still zero)
-- [ ] COMMIT (revision recorded below)
-- [ ] Evidence and revision filled in
+- [x] RED (new Given undefined, non-zero)
+- [x] GREEN (new step; targeted run zero)
+- [x] REFACTOR (targeted run still zero)
+- [x] COMMIT (revision recorded below)
+- [x] Evidence and revision filled in
 
 ### Design constraints (copied from `design.md`)
 
@@ -1320,7 +1320,12 @@ Expected: non-zero because
 has no step definition. Paste the output.
 
 ```
-<paste command and non-zero output here>
+Scenario: An executable for the previously offered Linux platform is refused
+ ✔  Given an executable built for every supported platform
+ ✘  And an executable presented as the previously offered platform "linux-x86_64"
+    Step doesn't match any function
+1 scenario (1 failed)
+exit=101
 ```
 
 ### GREEN
@@ -1368,7 +1373,15 @@ nix-shell -p git-cliff --run './run-tests.sh --name "An executable for the previ
 ```
 
 ```
-<paste command and exit-0 output here>
+Feature: Publish a public release
+  Scenario: An executable for the previously offered Linux platform is refused
+   ✔  Given an executable built for every supported platform
+   ✔  And an executable presented as the previously offered platform "linux-x86_64"
+   ✔  When the maintainer prepares the release for version 0.1.0
+   ✔  Then the preparation fails and names "linux-x86_64"
+   ✔  And the prepared release holds no archive
+1 scenario (1 passed)
+exit=0
 ```
 
 ### REFACTOR
@@ -1378,7 +1391,11 @@ nix-shell -p git-cliff --run './run-tests.sh --name "An executable for the previ
 - Re-run; paste exit-0 output.
 
 ```
-<paste command and exit-0 output here>
+Extracted `write_unsupported_executable()` and used it from both steps.
+$ nix-shell -p git-cliff --run './run-tests.sh --name "An executable for the previously offered Linux platform is refused"'
+  Scenario: An executable for the previously offered Linux platform is refused
+5 steps (5 passed)
+exit=0
 ```
 
 ### COMMIT

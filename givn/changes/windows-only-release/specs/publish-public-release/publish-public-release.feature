@@ -49,7 +49,7 @@ Feature: Publish a public release
     Then  the extracted archive holds exactly the executable "duty2cal.exe"
     And  the extracted executable is the executable the preparation staged
 
-  @givn.added @wip
+  @givn.added
   Scenario: An executable for the previously offered Linux platform is refused
     Given  an executable built for every supported platform
     And  an executable presented as the previously offered platform "linux-x86_64"

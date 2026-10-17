@@ -1289,23 +1289,41 @@ async fn the_check_fails_and_names_the_version(w: &mut DutyWorld) {
     );
 }
 
+/// Write an executable directory for a platform outside the supported set.
+fn write_unsupported_executable(w: &DutyWorld, platform: &str, bytes: &[u8]) {
+    let binaries = w
+        .binaries
+        .clone()
+        .expect("the scenario prepared no executables");
+    let dir = binaries.join(platform);
+    std::fs::create_dir_all(&dir).expect("create the unsupported platform directory");
+    std::fs::write(dir.join("duty2cal"), bytes).expect("write the unsupported executable");
+}
+
+#[given(regex = r#"^an executable presented as the previously offered platform "([^"]+)"$"#)]
+async fn a_previously_offered_platform(w: &mut DutyWorld, platform: String) {
+    assert!(
+        !supported_platforms().contains(&platform.as_str()),
+        "the scenario names a platform outside the supported set: {platform}"
+    );
+    write_unsupported_executable(
+        w,
+        &platform,
+        b"stand-in executable for a previously offered platform\n",
+    );
+}
+
 #[given(regex = r#"^an executable presented as the unrecognised platform "([^"]+)"$"#)]
 async fn an_unrecognised_platform(w: &mut DutyWorld, platform: String) {
     assert!(
         !supported_platforms().contains(&platform.as_str()),
         "the step names a platform inside the supported set: {platform}"
     );
-    let binaries = w
-        .binaries
-        .clone()
-        .expect("the scenario prepared no executables");
-    let dir = binaries.join(&platform);
-    std::fs::create_dir_all(&dir).expect("create the unrecognised platform directory");
-    std::fs::write(
-        dir.join("duty2cal"),
+    write_unsupported_executable(
+        w,
+        &platform,
         b"stand-in executable for an unrecognised platform\n",
-    )
-    .expect("write the unrecognised executable");
+    );
 }
 
 #[given("a change log holding version 0.1.0 and a history releasing version 0.2.0")]
