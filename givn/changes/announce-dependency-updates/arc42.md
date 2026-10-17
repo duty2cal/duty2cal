@@ -17,7 +17,7 @@ refusal, and the dependency-only release scenarios).
 | 8 | Cross-cutting concepts (error handling, security, config) | Yes | `08-crosscutting-concepts.md`: "What a reader sees" now defines a released change as either a capability-scoped revision or a dependency update (`chore(deps): …`) that changed a user-receiving path, names Dependencies in the group order, and states that an emptied group does not appear. |
 | 9 | Architecture decisions (tradeoffs, ADRs) | No | `09-architecture-decisions.md` unchanged: the admitting rule fails the qualification gate and is routed to `design.md` (verdict below). No ADR is minted. |
 | 10 | New quality scenarios | Yes | `10-quality-requirements.md`: the quality tree gains "Dependency updates are releasable and announced", and QS-014 states the dependency-only release criterion, the checks-only exclusion and the unchanged empty-version refusal. |
-| 11 | New risks or technical debt | Yes | `11-risks-and-technical-debt.md`: R-018 records that every Cargo dependency update is announced, including build- and test-only crates; TD-011 records the coupling to Dependabot's `chore(deps):` prefix. |
+| 11 | New risks or technical debt | Yes | `11-risks-and-technical-debt.md`: R-018 records that every Cargo dependency update is announced, including build- and test-only crates; TD-011 records the coupling to Dependabot's `chore(deps):` prefix; TD-012 records the prune's non-final empty-group limitation before any group is added below Dependencies. |
 | 12 | New domain terms | Yes | `12-glossary.md`: added **Dependency update**; refined **Housekeeping revision**, **Released change**, **Release preparation** and **Release text** for the dependency case. |
 
 ## ADR qualification

@@ -184,8 +184,9 @@ the documents) with a housekeeping type (`chore`, `docs`, `test`, `build`, `ci`)
 so it is never released at all.
 
 A dependency update is the one housekeeping-type exception: a `chore(deps): …`
-revision is released when it changed a user-receiving path, and a version whose
-only announced changes are such updates is releasable. Its updates appear under
+revision is released when it changed a user-receiving path and its words do not
+name the project's own tooling, and a version whose only announced changes are
+such updates is releasable. Its updates appear under
 **Dependencies**, after Reversals. A dependency bump that changed only the
 project's own checks stays unannounced.
 
