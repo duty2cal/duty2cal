@@ -1,0 +1,5 @@
+adopted github_organization_settings.org 343978778
+adopted github_repository.mono duty2cal
+adopted github_repository.pages duty2cal.github.io
+adopted github_repository_ruleset.main duty2cal:24981082
+adopted github_repository_pages.pages duty2cal.github.io

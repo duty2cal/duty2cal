@@ -884,10 +884,18 @@ Design constraints:
       givn lint: 1 file(s) checked — clean
       exit status: 0
       ```
-- [ ] Post-GREEN operator step recorded: the maintainer runs the real adoption
-  once against the organization with the real passphrase, commits the encrypted
-  state and backup, and `tofu state list` shows the five addresses. (This step
-  awaits the operator and does not block the suite.)
+- [x] Post-GREEN operator step recorded: the maintainer ran the real adoption
+  once against the organization with the real passphrase on 2026-10-17; the
+  transcript (`evidence/real-adoption/transcript.txt`) shows five `adopted`
+  lines, and `infra/terraform.tfstate` and `.backup` are committed ciphertext
+  with no plaintext value present. The passphrase is held only by the operator.
+  ```
+  adopted github_organization_settings.org 343978778
+  adopted github_repository.mono duty2cal
+  adopted github_repository.pages duty2cal.github.io
+  adopted github_repository_ruleset.main duty2cal:24981082
+  adopted github_repository_pages.pages duty2cal.github.io
+  ```
 - **Archive-time obligation (not a task box):** when the archive creates
   `givn/specs/adopt-existing-configuration/`, add the capability to `cliff.toml`
   and its parser rows in the same revision. It cannot be performed before the
