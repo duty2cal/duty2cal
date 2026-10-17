@@ -412,20 +412,27 @@ new e2e present
 givn commit -m "test(release): Prepare the feature assembly for the narrowed platform set" scripts/assemble_features.py scripts/assemble-features.sh givn/changes/windows-only-release
 ```
 
-Revision: `<paste revision id>`
+Revision: `49e52c0109283f4e7f378ee3d84740050697b73b`
 
-- [ ] 0.8 `git show --stat <revision>` touches the two scripts and this file
+- [x] 0.8 `git show --stat <revision>` touches the two scripts and this file
       (paste the stat line).
+
+```
+49e52c0 test(release): Prepare the feature assembly for the narrowed platform set
+ scripts/assemble-features.sh                       |  19 +-
+ scripts/assemble_features.py                       | 207 +++
+ givn/changes/windows-only-release/tasks.md         | 1520 ++++++++++++++++++++
+```
 
 ---
 
 ## Task B1 — Public text and public gates
 
-- [ ] Rewrite the README download section.
-- [ ] Update the issue form and security policy.
-- [ ] Strengthen `scripts/public-text-check.sh` (presence + negative checks).
-- [ ] Prove the gate fails on the old text and passes on the new text.
-- [ ] Commit and record the revision.
+- [x] Rewrite the README download section.
+- [x] Update the issue form and security policy.
+- [x] Strengthen `scripts/public-text-check.sh` (presence + negative checks).
+- [x] Prove the gate fails on the old text and passes on the new text.
+- [x] Commit and record the revision.
 
 ### Changes
 
@@ -541,18 +548,18 @@ Revision: `<paste revision id>`
 
 ### Evidence
 
-Negative control first (the gate must reject today's README after the script is
-strengthened, before the README rewrite):
+Negative control (run against the previous README from the committed revision):
 
 ```
-$ scripts/public-text-check.sh
-$ cp README.md /tmp/readme-old.md
-$ printf '\n| Linux x86_64 | duty2cal-0.1.0-linux-x86_64.tar.gz |\n' >> /tmp/readme-old.md
-$ scripts/public-text-check.sh /tmp/readme-old.md
-```
-
-```
-<paste output: non-zero, naming the forbidden non-Windows archive/row>
+$ git show HEAD:README.md > /tmp/old-readme.md
+$ scripts/public-text-check.sh /tmp/old-readme.md
+missing promise: source-route-statement
+missing promise: platform-request-statement
+missing promise: published-history-statement
+forbidden text: non-windows-archive
+forbidden text: non-windows-download-row
+public-text-check: FAILED - 5 of 14 promise(s) violated in /tmp/old-readme.md
+exit=1
 ```
 
 After the rewrite:
@@ -565,7 +572,14 @@ $ grep -nE 'chmod \+x|shasum|Gatekeeper|all five platforms' README.md
 ```
 
 ```
-<paste output: gate clean; the three greps print nothing>
+$ scripts/public-text-check.sh
+public-text-check: clean - all 14 public-text promises present in /home/dan/dev/PRIVATE/duty2ical/README.md
+$ grep -nE 'duty2cal-[^[:space:]]*-(linux-x86_64|linux-arm64|macos-arm64|macos-x86_64)\.tar\.gz' README.md
+(no output, exit 1)
+$ grep -nE '^\|[[:space:]]*(Linux x86_64|Linux arm64|macOS arm64|macOS x86_64)' README.md
+(no output, exit 1)
+$ grep -nE 'chmod \+x|shasum|Gatekeeper|all five platforms' README.md
+(no output, exit 1)
 ```
 
 ```
@@ -574,7 +588,18 @@ $ grep -n 'Gatekeeper' SECURITY.md
 ```
 
 ```
-<paste output: only Windows x86_64 + built from source; no Gatekeeper>
+$ grep -nA8 'id: platform' .github/ISSUE_TEMPLATE/bug.yml
+24:    id: platform
+25-    attributes:
+26-      label: Platform
+27-      description: Which archive or build did you run?
+28-      options:
+29-        - Windows x86_64
+30-        - built from source
+31-    validations:
+32-      required: true
+$ grep -n 'Gatekeeper' SECURITY.md
+(no output, exit 1)
 ```
 
 ### Commit

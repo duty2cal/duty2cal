@@ -27,10 +27,6 @@ body:
       description: Which archive or build did you run?
       options:
         - Windows x86_64
-        - Linux x86_64
-        - Linux arm64
-        - macOS arm64 (Apple Silicon)
-        - macOS x86_64 (Intel)
         - built from source
     validations:
       required: true

@@ -26,8 +26,6 @@ it. The material that must never leak is the plan itself and the people in it.
 - A plan the converter does not support: it exits non-zero and writes a numbered
   diagnostic, which is the documented behaviour. Report a missing or wrong
   mapping as an ordinary issue, with a stripped sample.
-- The Gatekeeper approval the unsigned macOS archives need; the
-  [README](README.md) documents it.
 - Vulnerabilities in third-party crates: report those to the crate's authors.
   This repository enables Dependabot alerts and code scanning, so findings
   appear as reviewable alerts here as well.
