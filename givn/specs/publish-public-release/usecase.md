@@ -1,4 +1,4 @@
-<!-- givn:base-sha256: 712b037fad8af8f303ada756c57dd42962dfba9b63fc37a4147ad2d19707560d -->
+<!-- givn:base-sha256: 579cac31535395f6ebfdc5e988eeb3fe4cefc1734e177c4a109f50dfdc63cb2e -->
 # Use case: publish-public-release
 
 ## Level
@@ -29,7 +29,7 @@ The maintainer decides a version is ready and prepares its release.
 
 1. Maintainer decides the version; System prepares, for every supported platform, one archive holding that platform's executable together with a checksum covering that archive, and renders the release text for the version as the newest section of the change log the repository keeps.
 2. Maintainer inspects what was prepared before anything is public; System stages the complete set and publishes nothing from an incomplete preparation.
-3. Maintainer publishes the version; System makes the release public with every archive of the version attached at once, and the release cannot change from that moment.
+3. Maintainer publishes the version; System waits for every check on the tagged revision to conclude, refuses when the concluded set is not green, and otherwise makes the release public with every archive of the version attached at once, and the release cannot change from that moment.
 4. Crew member obtains the archive for their machine; System offers each platform's archive at a stable address, each named for the platform it serves.
 5. Crew member extracts and runs the executable; System's published executable runs on that platform with no runtime installation and no companion library beyond the platform's own.
 6. Crew member, or anyone else, checks what they received; System publishes each archive's checksum, its build provenance and the bill of materials for it, so the file in hand can be traced to the revision and automation that produced it.
@@ -46,6 +46,11 @@ The maintainer decides a version is ready and prepares its release.
 - 5: an executable does not start on a machine of its platform's kind → that platform's archive is not published for that version.
 - 1: a version's notes would name nothing at all — no change a user receives and no dependency update → preparation fails and nothing is published; a version whose notes name nothing at all is not releasable.
 - 1: the committed change log does not match the revision being released → preparation fails and nothing is published, naming the version whose section differs.
+- 3: a check on the tagged revision concludes without success → publication refuses and names the check; nothing becomes public.
+- 3: the tagged revision reports no check outside the release workflow's own suite → publication refuses; a revision without check evidence is not published.
+- 3: a check on the tagged revision is still queued or running when the bounded wait ends → publication refuses and names every check still running; nothing becomes public.
+- 3: the check runs on the tagged revision cannot be read → publication refuses and states that the check runs could not be read; nothing becomes public.
+- 3: every check outside the release workflow's own suites concluded skipped or neutral → publication refuses because no check concluded successfully; nothing becomes public.
 
 ## Rules
 
@@ -68,6 +73,10 @@ The maintainer decides a version is ready and prepares its release.
   - For a version that is the first one published, the revisions being released are all those reachable from the tagged revision, so a first release announces everything it contains.
   - A revision whose subject carries neither a release-note type nor a housekeeping type is omitted, and a commit message never makes a preparation fail.
   - Publishing a version states the version once, in the archive names, the release text and the tag, so no two places disagree about what was released.
+  - A version is published only after every check run on the tagged revision — other than the check runs of the release workflow's own check suites, including an earlier release run's suite on the same revision — has concluded. The wait is bounded, and a check still queued or running at the bound refuses publication, naming it.
+  - A concluded check that is not a success refuses publication, except a skipped or neutral check, which is allowed; at least one concluded success is required, and a revision whose only check runs belong to the release workflow's own suites is refused as carrying no check evidence.
+  - When the check runs on the tagged revision cannot be read, publication refuses rather than treating the failure as an absence of checks or as a green set.
+  - The default branch and the version tag may be pushed together: publication waits for the checks the branch push starts, instead of refusing them as not yet concluded.
 - **What a release states**
   - A version's notes name the changes a user receives, grouped by kind — new capabilities first, then fixes, then performance, then reversals, then dependency updates — with the group a reader looks for first at the top.
   - A revision whose subject names a capability is a released change; so is a dependency update that changed a path a user receives. A revision whose subject names a tool, the project's own automation workflow, a check, a test, a document, or the machinery of building, packaging and publishing is not, and it is never listed — and a subject that merely borrows one of those words for a crew member's own work is still a released change. A released revision must also have changed something a user receives: a revision whose change touched none of the configured user-receiving paths — the converter, its build inputs, and the packaging and the release workflow that decide what an archive holds — is never listed, whatever its subject says.
@@ -118,6 +127,15 @@ The maintainer decides a version is ready and prepares its release.
 - First release: a tagged revision with no earlier release tag produces a text that lists the release notes of every revision it contains, housekeeping revisions omitted.
 - Subject carrying no release-note type: a revision whose subject carries neither a release-note type nor a housekeeping type is omitted from the text, and the preparation still succeeds.
 - Published release: a version published from an inspected set cannot have its archives or tag changed, so a correction appears as the next version.
+- Checks still running: a tagged revision whose checks are queued or running -> publication waits, then publishes only once every check has concluded and the concluded set is green.
+- A failed check: a tagged revision with one concluded failure and one check still running -> publication refuses naming the failure and does not wait for the other check; nothing is published.
+- Checks that never conclude: a tagged revision whose checks stay queued past the bound -> publication refuses naming every check still running, and nothing is published.
+- Skipped and neutral checks: a tagged revision whose concluded checks are one success, one skipped and one neutral -> publication proceeds; neither skipped nor neutral is a refusal.
+- No successful check: a tagged revision whose completed checks are one skipped and one neutral -> publication refuses because no check concluded successfully.
+- Unreadable check runs: the check-run query fails -> publication refuses, stating that the check runs could not be read, and nothing becomes public.
+- Retagged unpublished version: a tag re-pushed to the same revision after an earlier release run failed -> the earlier release run's check suite is excluded along with the current one, so its failed publish check cannot block the new publication.
+- No check evidence: a tagged revision whose only check runs belong to the release workflow -> publication refuses, because the revision carries no check evidence outside that workflow.
+- Branch and tag pushed together: the default branch and the version tag pushed together while the checks are running -> publication waits for those checks and publishes only after they conclude green, so the atomic push no longer races the gate.
 - Downloading for a machine: a Mac on Apple Silicon selects the macOS arm64 archive, the one whose name matches that machine.
 - Missing platform archive on the page: a Windows executable that failed to build stops the version from being published at all, rather than publishing it without Windows.
 - Notes grouped by kind: a history whose released revisions name a new capability, a fix, and work no user can see -> the notes for the version name the new capability before the fix, name no revision whose work no user can see, and form the newest section of the change log.
@@ -136,7 +154,7 @@ The maintainer decides a version is ready and prepares its release.
 
 ## Minimal guarantee
 
-Nothing is published that the evidence does not support: an incomplete preparation publishes nothing and never replaces an existing prepared set, and a credential or private value is blocked before it can enter the public history. A published release cannot be altered afterwards.
+Nothing is published that the evidence does not support: an incomplete preparation publishes nothing and never replaces an existing prepared set, and a credential or private value is blocked before it can enter the public history. A version is never published while a check on its tagged revision is still outstanding, and a concluded check that is not successful refuses it. A published release cannot be altered afterwards.
 
 ## Success guarantee
 
