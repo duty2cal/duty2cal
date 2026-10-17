@@ -60,6 +60,9 @@ pub struct DutyWorld {
     /// What the adoption command printed, for the refusal assertions and the
     /// committed transcript.
     pub adoption_transcript: String,
+    /// The live slug a declared object scenario names but the fake does not
+    /// serve (`owner/repository`), captured across the Given steps.
+    pub missing_repository: Option<String>,
 }
 
 impl Drop for DutyWorld {

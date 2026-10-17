@@ -225,6 +225,43 @@ if ! (cd "$staging" && tofu validate -no-color >"$log" 2>&1); then
   refuse declaration "${reason:-tofu validate failed}"
 fi
 
+# The provider takes the repository owner from its configuration, so a
+# repository refusal names the live object as `<owner>/<import-id>`.
+owner="$(
+  sed -n 's/^[[:space:]]*owner[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' \
+    "$staging"/*.tf 2>/dev/null | head -1
+)"
+
+live_object() {
+  address="$1"
+  import_id="$2"
+  if [ -n "$owner" ]; then
+    case "$address" in
+      github_repository.*)
+        case "$import_id" in
+          */*) printf '%s' "$import_id" ;;
+          *) printf '%s/%s' "$owner" "$import_id" ;;
+        esac
+        return
+        ;;
+    esac
+  fi
+  printf '%s' "$import_id"
+}
+
+# The live identity of an address from the batch, for a refusal that names the
+# object the way the scenario and the operator see it.
+live_for_address() {
+  wanted="$1"
+  while IFS=$'\t' read -r address import_id; do
+    if [ "$address" = "$wanted" ]; then
+      live_object "$address" "$import_id"
+      return
+    fi
+  done < "$entries"
+  printf '%s' "$wanted"
+}
+
 # ---------------------------------------------------------------------------
 # 3. Decrypt the applied state before any import. A state encrypted with a
 #    different passphrase refuses here, naming the applied state.
@@ -245,7 +282,16 @@ fi
 while IFS=$'\t' read -r address import_id; do
   if ! (cd "$staging" && tofu import -input=false -no-color "$address" "$import_id" >"$log" 2>&1); then
     reason="$(diagnostic "$log")"
-    refuse "$address" "import $import_id failed${reason:+: $reason}"
+    live="$(live_object "$address" "$import_id")"
+    detail=""
+    if grep -Eq 'already managed' "$log" 2>/dev/null; then
+      detail="the live object $live is already bound"
+    elif grep -Eq 'Cannot import non-existent remote object|(^|[^0-9])404([^0-9]|$)' "$log" 2>/dev/null; then
+      detail="the live object $live does not exist live"
+    elif grep -Eq '(^|[^0-9])(401|403)([^0-9]|$)' "$log" 2>/dev/null; then
+      detail="the live object $live cannot be read"
+    fi
+    refuse "$address" "${detail:+$detail: }import $import_id failed${reason:+: $reason}"
   fi
 done < "$entries"
 
@@ -297,13 +343,18 @@ PY
     while IFS= read -r address; do
       [ -n "$address" ] ||
         continue
-      printf 'refused %s: the live object changed after it was read\n' "$address" >&2
+      live="$(live_for_address "$address")"
+      printf 'refused %s: the live object %s changed after it was read\n' \
+        "$address" "$live" >&2
     done <<EOF
 $changed
 EOF
     exit 2
   fi
-  refuse plan "the verification plan reported an unclassified change"
+  # OpenTofu 1.13.1 exits 2 for a `-refresh-only -detailed-exitcode` plan even
+  # when the plan reports no change at all (opentofu/opentofu#3015). The JSON
+  # report is authoritative: with no non-no-op change there is nothing to
+  # refuse, so keep going.
 fi
 
 # ---------------------------------------------------------------------------

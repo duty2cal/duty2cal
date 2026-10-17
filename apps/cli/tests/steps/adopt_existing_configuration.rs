@@ -64,6 +64,21 @@ fn scenario_dir(w: &mut DutyWorld) -> PathBuf {
     dir
 }
 
+/// Copy a directory tree (the declaration or the fake's fixtures).
+fn copy_tree(source: &Path, target: &Path) {
+    fs::create_dir_all(target).expect("create a copied directory");
+    for entry in fs::read_dir(source).expect("read a source directory") {
+        let entry = entry.expect("read a source entry");
+        let from = entry.path();
+        let to = target.join(entry.file_name());
+        if from.is_dir() {
+            copy_tree(&from, &to);
+        } else {
+            fs::copy(&from, &to).expect("copy a source file");
+        }
+    }
+}
+
 /// Copy the declaration into the scenario, excluding the machine-local cache,
 /// the staging workspace and the applied state (the wrapper copies the state
 /// itself, and a scenario owns the state it starts from).
@@ -141,6 +156,31 @@ pub(crate) fn state_path(w: &DutyWorld) -> PathBuf {
         .expect("the scenario prepared no state path")
 }
 
+/// The scenario's fixture directory: the base fixture set with any scenario
+/// overrides (a fault, a mutation, a removed object).
+fn fixtures_dir(w: &DutyWorld) -> PathBuf {
+    w.dir
+        .clone()
+        .expect("scenario prepared no directory")
+        .join("fixtures")
+}
+
+/// Stop the running fake and start a fresh one over the same fixture tree and
+/// a fresh journal. Scenario Givens that write `faults.json` or `mutate.json`
+/// call this before the adoption, because the fake loads them at startup.
+fn restart_fake(w: &mut DutyWorld) {
+    if let Some(mut child) = w.fake.take() {
+        let _ = child.kill();
+        let _ = child.wait();
+    }
+    let fixtures = fixtures_dir(w);
+    let journal = w.journal.clone().expect("the scenario kept no journal");
+    let _ = fs::remove_file(&journal);
+    let (child, port) = start_fake(&fixtures, &journal);
+    w.fake = Some(child);
+    w.fake_port = Some(port);
+}
+
 /// Prepare the temporary declaration, batch, state path and fake API.
 fn prepare(w: &mut DutyWorld) -> PathBuf {
     let dir = scenario_dir(w);
@@ -148,7 +188,10 @@ fn prepare(w: &mut DutyWorld) -> PathBuf {
     copy_declaration(&repository_root().join("infra"), &declaration);
 
     let fixtures = dir.join("fixtures");
-    fs::create_dir_all(&fixtures).expect("create the fixture directory");
+    copy_tree(
+        &repository_root().join("scripts/fake-github/fixtures/adopt-all"),
+        &fixtures,
+    );
     let journal = dir.join("journal.jsonl");
     let (child, port) = start_fake(&fixtures, &journal);
 
@@ -233,6 +276,15 @@ pub(crate) fn assert_refused(w: &DutyWorld, object: &str) {
         output.contains(object),
         "the refusal names {object}; output was:\n{output}"
     );
+    // The fake's 599 marker is the second strictness net: a refusal must never
+    // be the fake's own missing fixture leaking through as a provider error.
+    let journal = journal_lines(w);
+    assert!(
+        journal
+            .iter()
+            .all(|line| !line.contains("\"unknown_path\": true")),
+        "the refusal read a path the fake does not know; journal was:\n{journal:#?}"
+    );
 }
 
 /// The fake's journal as lines, asserting it exists.
@@ -266,6 +318,61 @@ async fn the_selected_batch_has_a_line_without_an_import_identifier(w: &mut Duty
     )
     .expect("write the malformed batch");
     w.batch = Some(batch);
+}
+
+#[given(regex = r#"^the declared configuration names an additional repository "([^"]+)"$"#)]
+async fn the_declared_configuration_names_an_additional_repository(
+    w: &mut DutyWorld,
+    slug: String,
+) {
+    prepare(w);
+    let (_, repository) = slug
+        .split_once('/')
+        .unwrap_or_else(|| panic!("the scenario names owner/repository, got {slug}"));
+    let declaration = declaration_dir(w);
+    fs::write(
+        declaration.join("example.tf"),
+        format!("resource \"github_repository\" \"example\" {{\n  name = \"{repository}\"\n}}\n"),
+    )
+    .expect("write the additional repository declaration");
+    w.missing_repository = Some(slug);
+}
+
+#[given("the selected batch names that repository")]
+async fn the_selected_batch_names_that_repository(w: &mut DutyWorld) {
+    let slug = w
+        .missing_repository
+        .clone()
+        .expect("the scenario named no additional repository");
+    let repository = slug
+        .split_once('/')
+        .expect("the scenario names owner/repository")
+        .1;
+    let batch = w.batch.clone().expect("the scenario prepared no batch");
+    let mut entries = fs::read_to_string(&batch).expect("read the batch");
+    if !entries.ends_with('\n') {
+        entries.push('\n');
+    }
+    entries.push_str(&format!("github_repository.example\t{repository}\n"));
+    fs::write(&batch, entries).expect("append the additional repository to the batch");
+}
+
+#[given("it does not exist live")]
+async fn it_does_not_exist_live(w: &mut DutyWorld) {
+    let slug = w
+        .missing_repository
+        .clone()
+        .expect("the scenario named no additional repository");
+    let fixtures = fixtures_dir(w);
+    fs::write(
+        fixtures.join("faults.json"),
+        format!(
+            "[{{\"path_regex\": \"^/repos/{slug}$\", \"status\": 404, \
+             \"body\": {{\"message\": \"Not Found\"}}}}]\n"
+        ),
+    )
+    .expect("write the missing-object fault");
+    restart_fake(w);
 }
 
 #[when("the organization owner adopts the batch")]
@@ -338,5 +445,40 @@ async fn no_object_in_the_batch_is_bound(w: &mut DutyWorld) {
         !staging.exists(),
         "the staging workspace is removed on refusal: {}",
         staging.display()
+    );
+}
+
+#[then(regex = r#"^the adoption refuses the batch and names "([^"]+)"$"#)]
+async fn the_adoption_refuses_the_batch_and_names(w: &mut DutyWorld, object: String) {
+    assert_refused(w, &object);
+}
+
+#[then("the refusal states that the repository does not exist live")]
+async fn the_refusal_states_that_the_repository_does_not_exist_live(w: &mut DutyWorld) {
+    let output = adoption_output(w);
+    assert!(
+        output.contains("does not exist live"),
+        "the refusal states the repository does not exist live; output was:\n{output}"
+    );
+}
+
+#[then("nothing is created in the live organization")]
+async fn nothing_is_created_in_the_live_organization(w: &mut DutyWorld) {
+    let journal = journal_lines(w);
+    assert!(
+        !journal.is_empty(),
+        "the scenario read the live objects; journal was empty"
+    );
+    assert!(
+        journal
+            .iter()
+            .all(|line| !line.contains("\"refused_write\": true")),
+        "the adoption attempted a write; journal was:\n{journal:#?}"
+    );
+    assert!(
+        journal
+            .iter()
+            .all(|line| !line.contains("\"graphql_operation\": \"mutation")),
+        "the adoption attempted a GraphQL mutation; journal was:\n{journal:#?}"
     );
 }

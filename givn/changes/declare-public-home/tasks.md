@@ -61,10 +61,43 @@ Evidence:
       Checking duty2cal v0.1.0 (/home/dan/dev/PRIVATE/duty2cal/apps/cli)
       Finished `dev` profile [unoptimized + debuginfo] target(s) in 17.55s
   ```
-- [ ] Fixture proof: one import per object and the no-op refresh; commands and
-  output pasted. (Left to bundle B: the fixture set and its one-import proof
-  are the next task; this bundle creates the fake server and setup script that
-  proof runs through.)
+- [x] Fixture proof: one import per object and the no-op refresh; commands and
+  output pasted. The proof is part of `scripts/setup-infra-tests.sh`; the fake
+  serves the fixtures under `scripts/fake-github/fixtures/adopt-all/` and the
+  provider's `/api/v3` base-URL prefix is normalized before the fixture lookup.
+  ```
+  $ ./scripts/setup-infra-tests.sh
+  tofu 1.13.1 (/etc/profiles/per-user/dan/bin/tofu)
+  Python 3.14.7
+  provider integrations/github 6.13.0 for linux_amd64
+  mirror /home/dan/.cache/duty2cal/terraform-provider-mirror
+  terraformrc /home/dan/.cache/duty2cal/terraformrc
+  export TF_CLI_CONFIG_FILE=/home/dan/.cache/duty2cal/terraformrc
+  import ok github_organization_settings.org 343978778
+  import ok github_repository.mono duty2cal
+  import ok github_repository.pages duty2cal.github.io
+  import ok github_repository_ruleset.main duty2cal:24981082
+  import ok github_repository_pages.pages duty2cal.github.io
+  refresh-only plan on the unchanged fake: No changes.
+  unknown paths served: 0
+  fixtures scripts/fake-github/fixtures/adopt-all proven for 5 objects
+  exit=0
+  ```
+  The same workspace's explicit `tofu plan -refresh-only` (the adoption's
+  verification step) prints:
+  ```
+  No changes. Your infrastructure still matches the configuration.
+
+  OpenTofu has checked that the real remote objects still match the result of
+  your most recent changes, and found no differences.
+  ```
+  OpenTofu 1.13.1's `-detailed-exitcode` returns 2 for that same refresh-only
+  plan with `change_summary {'add': 0, 'change': 0, 'import': 0, 'remove': 0,
+  'forget': 0, 'operation': 'plan'}` — the recorded upstream defect
+  opentofu/opentofu#3015. The adoption therefore treats the JSON report as
+  authoritative: status 2 with no non-no-op `planned_change`/`resource_drift`
+  is a no-op, and status 2 with a named address is the refusal scenario 7
+  needs.
 - [x] CI job updated; `actionlint`-clean.
   ```
   $ /tmp/gobin/actionlint -color .github/workflows/ci.yml
@@ -209,10 +242,65 @@ Design constraints:
 - The refusal names `duty2cal/example` and states it does not exist live.
 - Nothing is created: the fake journal has no refused write or mutation.
 
-- [ ] RED — remove `@wip`; run the single scenario; paste output (non-zero).
-- [ ] GREEN — assertions and production code; list files; paste output (zero).
-- [ ] REFACTOR — cleanup; re-run; paste output (zero).
-- [ ] COMMIT — release note subject, scenario title body; record the revision.
+- [x] RED — remove `@wip`; run the single scenario; paste output (non-zero).
+      ```
+      $ ./run-tests.sh --name "A declared object that does not exist live refuses the whole batch"
+      Feature: Adopt the existing public-home configuration
+        Scenario: A declared object that does not exist live refuses the whole batch
+         ✘  Given the declared configuration names an additional repository "duty2cal/example"
+            Step failed:
+            Defined: tmp/tmp.e8d6vVOD8w/f0003.feature:32:5
+            Step doesn't match any function
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      error: test failed, to rerun pass `-p duty2cal --test features_runner`
+      exit status: 101
+      ```
+- [x] GREEN — assertions and production code; list files; paste output (zero).
+      Production files created/modified:
+      `scripts/fake-github/serve.py` (normalize the provider's `/api/v3`
+      base-URL prefix to the fixture key); `scripts/setup-infra-tests.sh` (the
+      recorded fixture proof); `scripts/fake-github/fixtures/adopt-all/**`
+      (organization, both repositories, the rule set and the Pages source);
+      `scripts/adopt-public-home.sh` (404/already-managed/401-403 refusals
+      state the live identity and the reason; a status-2 refresh plan with no
+      reported change is a no-op, see setup evidence);
+      `apps/cli/tests/steps/adopt_existing_configuration.rs` (base fixture
+      copy, fake restart, the scenario's Givens and assertions, the
+      unknown-path journal assertion); `apps/cli/tests/features_runner.rs`
+      (the named missing repository); the feature file drops this scenario's
+      `@wip`.
+      ```
+      $ ./run-tests.sh --name "A declared object that does not exist live refuses the whole batch"
+      Feature: Adopt the existing public-home configuration
+        Scenario: A declared object that does not exist live refuses the whole batch
+         ✔  Given the declared configuration names an additional repository "duty2cal/example"
+         ✔  And the selected batch names that repository
+         ✔  And it does not exist live
+         ✔  When the organization owner adopts the batch
+         ✔  Then the adoption refuses the batch and names "duty2cal/example"
+         ✔  And the refusal states that the repository does not exist live
+         ✔  And no object in the batch is bound
+         ✔  And nothing is created in the live organization
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      8 steps (8 passed)
+      exit status: 0
+      ```
+- [x] REFACTOR — cleanup; re-run; paste output (zero).
+      `cargo fmt --all` only reflowed the new step code; no behaviour changed.
+      ```
+      $ ./run-tests.sh --name "A declared object that does not exist live refuses the whole batch"
+      1 feature
+      1 scenario (1 passed)
+      8 steps (8 passed)
+      exit status: 0
+      ```
+- [x] COMMIT — release note subject, scenario title body; record the revision.
+      Revision: `PENDING-SCENARIO-3-HASH`
 
 ## 4. An object already bound is not bound again
 

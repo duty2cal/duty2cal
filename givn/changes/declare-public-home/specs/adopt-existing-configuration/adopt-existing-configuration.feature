@@ -27,7 +27,7 @@ Feature: Adopt the existing public-home configuration
     And no object is imported
     And no object in the batch is bound
 
-  @givn.added @wip
+  @givn.added
   Scenario: A declared object that does not exist live refuses the whole batch
     Given the declared configuration names an additional repository "duty2cal/example"
     And the selected batch names that repository

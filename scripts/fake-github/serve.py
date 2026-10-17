@@ -113,6 +113,22 @@ def graphql_is_mutation(payload: dict) -> bool:
     return re.match(r"\s*mutation\b", query) is not None
 
 
+def request_path(raw_path: str) -> str:
+    """The fixture key for a request path.
+
+    The provider treats a configured ``base_url`` as a GitHub Enterprise
+    endpoint and prefixes every request with ``/api/v3``. The fixture tree is
+    keyed by the API path the design names (``repos/o/r``), so that prefix is
+    removed here; the journal records the same normalized key.
+    """
+    path = unquote(urlsplit(raw_path).path)
+    if path == "/api/v3":
+        return "/"
+    if path.startswith("/api/v3/"):
+        return path[len("/api/v3") :]
+    return path
+
+
 class Handler(BaseHTTPRequestHandler):
     """Serve one fixture tree; the state arrives through the server object."""
 
@@ -147,7 +163,7 @@ class Handler(BaseHTTPRequestHandler):
         self.state.record(
             {
                 "method": self.command,
-                "path": urlsplit(self.path).path,
+                "path": request_path(self.path),
                 "status": status,
                 "unknown_path": unknown_path,
                 "refused_write": refused_write,
@@ -158,7 +174,7 @@ class Handler(BaseHTTPRequestHandler):
     def unknown(self) -> None:
         self.respond(
             599,
-            {"message": f"no fixture for {self.command} {urlsplit(self.path).path}"},
+            {"message": f"no fixture for {self.command} {request_path(self.path)}"},
             unknown_path=True,
         )
         self.journal(599, unknown_path=True)
@@ -196,7 +212,7 @@ class Handler(BaseHTTPRequestHandler):
     # -- request handling -------------------------------------------------
 
     def do_GET(self) -> None:  # noqa: N802
-        path = unquote(urlsplit(self.path).path)
+        path = unquote(request_path(self.path))
         fault = self.fault_for(path)
         if fault is not None:
             status = int(fault.get("status", 500))
@@ -218,7 +234,7 @@ class Handler(BaseHTTPRequestHandler):
         self.journal(200)
 
     def do_POST(self) -> None:  # noqa: N802
-        path = unquote(urlsplit(self.path).path)
+        path = unquote(request_path(self.path))
         length = int(self.headers.get("Content-Length", "0") or "0")
         raw = self.rfile.read(length) if length else b""
         try:
@@ -268,7 +284,7 @@ class Handler(BaseHTTPRequestHandler):
         self.refused_method()
 
     def refused_method(self) -> None:
-        path = urlsplit(self.path).path
+        path = request_path(self.path)
         self.respond(405, {"message": f"refused write: {self.command} {path}"})
         self.journal(405, refused_write=True)
 
