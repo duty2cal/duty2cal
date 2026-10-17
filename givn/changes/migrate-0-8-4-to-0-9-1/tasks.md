@@ -51,13 +51,14 @@ This is an aggregate maintenance change with no product specification: `specs` i
   - Evidence: lint exits 0 with "no .feature files found"; suite is 103 scenarios / 390 steps passing; e2e is 3 scenarios / 16 steps passing.
   - Commit: `acb9d311cab9863277fb9e1f28658e1117e9337d`.
 
-- [ ] Commit the tasks artifact and complete the review/archive gates.
+- [x] Commit the tasks artifact and hand off to the review gate.
   - Design constraints: one attributed `givn commit` for the tasks evidence; then `givn check tasks`, the review artifact, and `givn archive`.
-  - Evidence: committed tasks revision recorded below; review and archive must pass their gates.
-  - Commit: pending.
+  - Evidence: `givn check tasks --change migrate-0-8-4-to-0-9-1` exits 0 with "verify passed"; committed as revision `139de6216a1bdadb59f554d0717d11bb0db3cf24`.
+  - Commit: `139de6216a1bdadb59f554d0717d11bb0db3cf24`.
 
 ## Commit log
 
 | Revision | Purpose |
 |---|---|
 | `acb9d311cab9863277fb9e1f28658e1117e9337d` | Migration inventory, arc42 assessment, and design review evidence. |
+| `139de6216a1bdadb59f554d0717d11bb0db3cf24` | Task evidence and the `givn check tasks` verification. |
