@@ -707,7 +707,7 @@ Design constraints:
       exit status: 0
       ```
 - [x] COMMIT — release note subject, scenario title body; record the revision.
-      Revision: `PENDING-SCENARIO-10-HASH`
+      Revision: `9964f2403e222ad8ad033f264b4117d4f52511f5`
 
 ## E2E setup task — before the first @e2e scenario
 
