@@ -66,6 +66,9 @@ pub struct DutyWorld {
     /// The passphrase the adoption should present, when a scenario primes the
     /// applied state with a different one.
     pub passphrase: Option<String>,
+    /// The applied state's bytes before a scenario attempts a refused
+    /// adoption, so "nothing was bound" is observable without decrypting.
+    pub applied_state_snapshot: Option<Vec<u8>>,
 }
 
 impl Drop for DutyWorld {

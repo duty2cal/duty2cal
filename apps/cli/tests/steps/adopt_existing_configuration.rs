@@ -20,6 +20,9 @@ use crate::DutyWorld;
 /// The test-only passphrase: 16-plus characters, supplied through the
 /// environment and never committed as a value the command can default to.
 pub(crate) const PASSPHRASE: &str = "test-passphrase-0123456789";
+/// The other passphrase a scenario uses to prime an applied state it cannot
+/// adopt against.
+pub(crate) const OTHER_PASSPHRASE: &str = "another-passphrase-9876543210";
 /// The declaration's required billing email, satisfied only for the suite.
 pub(crate) const BILLING_EMAIL: &str = "billing@example.test";
 /// The token the provider sees; the fake never validates it.
@@ -421,6 +424,31 @@ async fn it_does_not_exist_live(w: &mut DutyWorld) {
     restart_fake(w);
 }
 
+#[given("the applied state was encrypted with a different passphrase")]
+async fn the_applied_state_was_encrypted_with_a_different_passphrase(w: &mut DutyWorld) {
+    prepare(w);
+    let declaration = declaration_dir(w);
+    let priming = declaration.join("scenario-monorepo-batch.txt");
+    fs::write(&priming, "github_repository.mono\tduty2cal\n").expect("write the priming batch");
+    let full_batch = w.batch.clone().expect("the scenario prepared no batch");
+    w.batch = Some(priming);
+    w.passphrase = Some(OTHER_PASSPHRASE.to_string());
+    adopt(w);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the priming adoption records a state under the other passphrase; output was:\n{}",
+        adoption_output(w)
+    );
+    w.applied_state_snapshot =
+        Some(fs::read(state_path(w)).expect("read the primed applied state"));
+    w.batch = Some(full_batch);
+    w.passphrase = Some(PASSPHRASE.to_string());
+    w.exit_status = None;
+    w.stdout.clear();
+    w.stderr.clear();
+}
+
 #[given("the monorepo's live settings change after the adoption reads them")]
 async fn the_monorepos_live_settings_change_after_the_adoption_reads_them(w: &mut DutyWorld) {
     prepare(w);
@@ -556,17 +584,27 @@ async fn no_object_is_imported(w: &mut DutyWorld) {
 #[then("no object in the batch is bound")]
 async fn no_object_in_the_batch_is_bound(w: &mut DutyWorld) {
     let state = state_path(w);
-    assert!(
-        !state.exists(),
-        "no applied state may be recorded at {}",
-        state.display()
-    );
-    let backup = PathBuf::from(format!("{}.backup", state.display()));
-    assert!(
-        !backup.exists(),
-        "no applied state backup may be recorded at {}",
-        backup.display()
-    );
+    if let Some(before) = &w.applied_state_snapshot {
+        let after = fs::read(&state)
+            .unwrap_or_else(|error| panic!("read the applied state {}: {error}", state.display()));
+        assert!(
+            &after == before,
+            "the refused adoption changed the applied state at {}",
+            state.display()
+        );
+    } else {
+        assert!(
+            !state.exists(),
+            "no applied state may be recorded at {}",
+            state.display()
+        );
+        let backup = PathBuf::from(format!("{}.backup", state.display()));
+        assert!(
+            !backup.exists(),
+            "no applied state backup may be recorded at {}",
+            backup.display()
+        );
+    }
     let staging = declaration_dir(w).join(".adoption-staging");
     assert!(
         !staging.exists(),
@@ -644,6 +682,17 @@ async fn the_adoption_refuses_the_batch_and_names_the_archived_repository(w: &mu
     assert!(
         output.contains("archived"),
         "the refusal names the archived repository; output was:\n{output}"
+    );
+}
+
+#[then("the adoption refuses the batch and names the applied state")]
+async fn the_adoption_refuses_the_batch_and_names_the_applied_state(w: &mut DutyWorld) {
+    let state = state_path(w).display().to_string();
+    assert_refused(w, &state);
+    let output = adoption_output(w);
+    assert!(
+        output.contains("cannot be read with the supplied passphrase"),
+        "the refusal states the applied state cannot be decrypted; output was:\n{output}"
     );
 }
 

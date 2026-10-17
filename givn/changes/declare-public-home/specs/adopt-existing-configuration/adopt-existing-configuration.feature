@@ -68,7 +68,7 @@ Feature: Adopt the existing public-home configuration
     Then the adoption refuses the batch and names "duty2cal/duty2cal"
     And no object in the batch is bound
 
-  @givn.added @wip
+  @givn.added
   Scenario: An applied state encrypted with another passphrase refuses before any binding
     Given the applied state was encrypted with a different passphrase
     When the organization owner adopts the batch

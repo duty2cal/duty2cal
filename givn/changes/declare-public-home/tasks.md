@@ -533,7 +533,7 @@ Design constraints:
       exit status: 0
       ```
 - [x] COMMIT — release note subject, scenario title body; record the revision.
-      Revision: `PENDING-SCENARIO-7-HASH`
+      Revision: `bc134b051bfa0df55e55d827c4f92e607cddae84`
 
 ## 8. An applied state encrypted with another passphrase refuses before any binding
 
@@ -542,10 +542,57 @@ Design constraints:
   staged workspace fails before any import; the refusal names the applied state;
   no object is bound; live unchanged.
 
-- [ ] RED — remove `@wip`; run the single scenario; paste output (non-zero).
-- [ ] GREEN — assertions and production code; list files; paste output (zero).
-- [ ] REFACTOR — cleanup; re-run; paste output (zero).
-- [ ] COMMIT — release note subject, scenario title body; record the revision.
+- [x] RED — remove `@wip`; run the single scenario; paste output (non-zero).
+      ```
+      $ ./run-tests.sh --name "An applied state encrypted with another passphrase refuses before any binding"
+      Feature: Adopt the existing public-home configuration
+        Scenario: An applied state encrypted with another passphrase refuses before any binding
+         ✘  Given the applied state was encrypted with a different passphrase
+            Step failed:
+            Defined: tmp/tmp.QIHitFKWjF/f0003.feature:73:5
+            Step doesn't match any function
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      error: test failed, to rerun pass `-p duty2cal --test features_runner`
+      exit status: 101
+      ```
+- [x] GREEN — assertions and production code; list files; paste output (zero).
+      Production files created/modified:
+      `apps/cli/tests/steps/adopt_existing_configuration.rs` (prime a
+      monorepo-only state under `another-passphrase-9876543210`, adopt the full
+      batch under the test passphrase, snapshot the applied state bytes and
+      assert they are unchanged; the "no object bound" step now compares the
+      snapshot when a state exists); `apps/cli/tests/features_runner.rs` (the
+      state snapshot); the feature file drops this scenario's `@wip`. The
+      wrapper already refuses at `tofu state list` before any import.
+      ```
+      $ ./run-tests.sh --name "An applied state encrypted with another passphrase refuses before any binding"
+      Feature: Adopt the existing public-home configuration
+        Scenario: An applied state encrypted with another passphrase refuses before any binding
+         ✔  Given the applied state was encrypted with a different passphrase
+         ✔  When the organization owner adopts the batch
+         ✔  Then the adoption refuses the batch and names the applied state
+         ✔  And no object in the batch is bound
+         ✔  And the live configuration is unchanged
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      5 steps (5 passed)
+      exit status: 0
+      ```
+- [x] REFACTOR — cleanup; re-run; paste output (zero).
+      `cargo fmt --all`; no behaviour changed.
+      ```
+      $ ./run-tests.sh --name "An applied state encrypted with another passphrase refuses before any binding"
+      1 feature
+      1 scenario (1 passed)
+      5 steps (5 passed)
+      exit status: 0
+      ```
+- [x] COMMIT — release note subject, scenario title body; record the revision.
+      Revision: `PENDING-SCENARIO-8-HASH`
 
 ## 9. A failure to record the applied state binds nothing and changes nothing
 
