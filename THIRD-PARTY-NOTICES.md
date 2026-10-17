@@ -727,7 +727,7 @@ Used by:
 - heck 0.5.0 — https://github.com/withoutboats/heck
 - linked-hash-map 0.5.6 — https://github.com/contain-rs/linked-hash-map
 - unicode-bidi 0.3.18 — https://github.com/servo/unicode-bidi
-- unicode-normalization 0.1.25 — https://github.com/unicode-rs/unicode-normalization
+- unicode-normalization 0.1.26 — https://github.com/unicode-rs/unicode-normalization
 - unicode-properties 0.1.4 — https://github.com/unicode-rs/unicode-properties
 - unicode-segmentation 1.13.3 — https://github.com/unicode-rs/unicode-segmentation
 - unicode-width 0.2.2 — https://github.com/unicode-rs/unicode-width
@@ -1064,7 +1064,7 @@ DEALINGS IN THE SOFTWARE.
 ## MIT License
 
 Used by:
-- equivalent 1.0.2 — https://github.com/indexmap-rs/equivalent
+- equivalent 1.0.3 — https://github.com/indexmap-rs/equivalent
 
 ```
 Copyright (c) 2016--2023
@@ -1167,7 +1167,7 @@ DEALINGS IN THE SOFTWARE.
 
 Used by:
 - md-5 0.11.0 — https://github.com/RustCrypto/hashes
-- sha2 0.11.0 — https://github.com/RustCrypto/hashes
+- sha2 0.11.1 — https://github.com/RustCrypto/hashes
 
 ```
 Copyright (c) 2016-2026 The RustCrypto Project Developers
@@ -1874,7 +1874,7 @@ DEALINGS IN THE SOFTWARE.
 ## MIT License
 
 Used by:
-- inout 0.2.2 — https://github.com/RustCrypto/utils
+- inout 0.2.4 — https://github.com/RustCrypto/utils
 
 ```
 Copyright (c) 2022-2025 The RustCrypto Project Developers
@@ -2005,7 +2005,7 @@ DEALINGS IN THE SOFTWARE.
 ## MIT License
 
 Used by:
-- deranged 0.5.8 — https://github.com/jhpratt/deranged
+- deranged 0.5.9 — https://github.com/jhpratt/deranged
 
 ```
 Copyright (c) 2024 Jacob Pratt et al.
@@ -2168,7 +2168,7 @@ SOFTWARE.
 ## MIT License
 
 Used by:
-- libc 0.2.190 — https://github.com/rust-lang/libc
+- libc 0.2.191 — https://github.com/rust-lang/libc
 
 ```
 Copyright (c) The Rust Project Developers
@@ -2634,7 +2634,7 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 ## MIT License
 
 Used by:
-- tokio 1.53.2 — https://github.com/tokio-rs/tokio
+- tokio 1.53.3 — https://github.com/tokio-rs/tokio
 
 ```
 MIT License
@@ -3594,6 +3594,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 
 Used by:
 - unicode-ident 1.0.27 — https://github.com/dtolnay/unicode-ident
+- unicode-normalization 0.1.26 — https://github.com/unicode-rs/unicode-normalization
 
 ```
 UNICODE LICENSE V3
