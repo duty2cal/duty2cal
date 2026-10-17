@@ -9,9 +9,6 @@
 - Organization owner — primary Actor; holds administration authority, records
   the declared configuration in the repository, and adopts the objects that
   already exist.
-- Supporting: none in this flow. The contributor reviewer reviews the adopted
-  declaration as a Persona lens; adoption has no review step whose outcome
-  changes its guarantee.
 
 ## Goal
 
