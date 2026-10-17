@@ -25,6 +25,7 @@ flowchart TB
   rel2 --> ri5["Notes group the changes a reader can see"]
   rel2 --> ri6["Committed change log matches the released revision"]
   rel2 --> ri7["Dependency updates are releasable and announced"]
+  rel2 --> ri8["Publication waits for every check to conclude"]
 ```
 
 ## Quality scenarios
@@ -45,6 +46,7 @@ flowchart TB
 | QS-012 | Release integrity (repository-history currency) | A committed `CHANGELOG.md` whose newest section differs from what the released revision's history states. | The check refuses and names the version whose section differs, so a release is not published from a stale change log. |
 | QS-013 | Correctness (printed fidelity) | A supported plan prints a crew position beside a flight number on a travel leg. | The published travel title prints the two as separate words (`FB 123 ABC-DEF`); a leg that prints no crew position keeps the flight number alone (`123 ABC-DEF`), and a crew position printed beside a non-flight activity stays out of that activity's title. |
 | QS-014 | Release notes / dependency updates | A history whose released revisions carry only dependency updates, each changing the dependency graph. | The release text lists them under Dependencies after Reversals, in history order; preparation stages the version, so a dependency-only version is releasable; a dependency update that changed only the project's checks is not listed, and a version whose notes would name nothing at all is still refused. |
+| QS-015 | Release gate currency | A check run on the tagged revision is still queued or running when the `publish` job begins. | Publication waits for every check run outside the release-workflow suites; it publishes only after all conclude, at least one succeeds, and skipped/neutral are the only non-successes. A concluded non-success, no successful check, no evidence, an unreadable source, or the 30-minute bound refuses and names the checks; nothing is published. |
 
 **Stimulus / response / metric** for the primary scenario:
 

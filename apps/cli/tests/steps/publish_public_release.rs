@@ -2301,3 +2301,375 @@ async fn notes_name_no_new_capabilities_group(w: &mut DutyWorld) {
         "the notes carry an empty New capabilities heading: {rendered}"
     );
 }
+
+/// The scenario's gate fixture root: `gate/bin` holds the stub `gh`,
+/// `gate/polls` holds the recorded pages and the call log.
+fn gate_root(w: &mut DutyWorld) -> PathBuf {
+    scenario_dir(w).join("gate")
+}
+
+/// One check-run fixture row.
+fn check_run(suite: u64, name: &str, status: &str, conclusion: Option<&str>) -> String {
+    let conclusion = conclusion
+        .map(|value| format!(r#","conclusion":"{value}""#))
+        .unwrap_or_default();
+    format!(r#"{{"name":"{name}","status":"{status}"{conclusion},"check_suite":{{"id":{suite}}}}}"#)
+}
+
+/// One page object with its check runs.
+fn check_page(checks: &[String]) -> String {
+    format!(
+        r#"{{"total_count":{},"check_runs":[{}]}}"#,
+        checks.len(),
+        checks.join(",")
+    )
+}
+
+/// One slurped poll response, one or more pages.
+fn check_poll(pages: &[String]) -> String {
+    format!("[{}]", pages.join(","))
+}
+
+/// Write the stub `gh`, its poll files, the timeout and the optional failure
+/// marker into the scenario's gate directory.
+fn stub_check_runs(w: &mut DutyWorld, polls: &[String], timeout: u64, fail: bool) {
+    let root = gate_root(w);
+    let bin = root.join("bin");
+    let poll_dir = root.join("polls");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&bin).expect("create the stub directory");
+    std::fs::create_dir_all(&poll_dir).expect("create the poll directory");
+
+    let stub = bin.join("gh");
+    std::fs::write(
+        &stub,
+        r#"#!/usr/bin/env bash
+set -euo pipefail
+polls="$STUB_POLLS"
+n=$(cat "$polls/calls" 2>/dev/null || echo 0)
+n=$((n + 1))
+printf '%s\n' "$n" > "$polls/calls"
+printf '%s\n' "$*" >> "$polls/args.log"
+if [ -e "$polls/fail" ]; then
+  exit 1
+fi
+file="$polls/poll-$n.json"
+[ -f "$file" ] || file="$polls/poll-last.json"
+cat "$file"
+"#,
+    )
+    .expect("write the stub gh");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt as _;
+        let mut permissions = std::fs::metadata(&stub)
+            .expect("stat the stub")
+            .permissions();
+        permissions.set_mode(0o755);
+        std::fs::set_permissions(&stub, permissions).expect("mark the stub executable");
+    }
+
+    for (index, poll) in polls.iter().enumerate() {
+        std::fs::write(poll_dir.join(format!("poll-{}.json", index + 1)), poll)
+            .expect("write a poll file");
+    }
+    if let Some(last) = polls.last() {
+        std::fs::write(poll_dir.join("poll-last.json"), last).expect("write the repeating poll");
+    }
+    if fail {
+        std::fs::write(poll_dir.join("fail"), "").expect("write the failure marker");
+    }
+    std::fs::write(root.join("timeout"), timeout.to_string()).expect("write the timeout");
+}
+
+/// Run the gate against the scenario's stub, recording stdout, stderr and the
+/// exit status on the world.
+fn run_gate(w: &mut DutyWorld) {
+    let root = gate_root(w);
+    let bin = root.join("bin");
+    let poll_dir = root.join("polls");
+    let timeout = std::fs::read_to_string(root.join("timeout"))
+        .expect("read the gate timeout")
+        .trim()
+        .to_string();
+    let mut command = Command::new("scripts/await-green-checks.sh");
+    command
+        .current_dir(repository_root())
+        .env(
+            "PATH",
+            format!(
+                "{}:{}",
+                bin.display(),
+                std::env::var("PATH").unwrap_or_default()
+            ),
+        )
+        .env("GH_TOKEN", "test")
+        .env("STUB_POLLS", &poll_dir)
+        .arg("--repo")
+        .arg("kressnerd/duty2cal")
+        .arg("--sha")
+        .arg("0123456789abcdef0123456789abcdef01234567")
+        .arg("--exclude-suite")
+        .arg("99")
+        .arg("--interval")
+        .arg("0")
+        .arg("--timeout")
+        .arg(timeout);
+    run_command(w, &mut command);
+}
+
+/// The stub's recorded call count.
+fn gate_calls(w: &mut DutyWorld) -> usize {
+    std::fs::read_to_string(gate_root(w).join("polls/calls"))
+        .ok()
+        .and_then(|text| text.trim().parse().ok())
+        .unwrap_or(0)
+}
+
+/// The stub's recorded arguments, one invocation per line.
+fn gate_args(w: &mut DutyWorld) -> String {
+    std::fs::read_to_string(gate_root(w).join("polls/args.log")).unwrap_or_default()
+}
+
+#[given("a tagged revision whose checks are still running")]
+async fn a_revision_with_running_checks(w: &mut DutyWorld) {
+    let first = check_poll(&[
+        check_page(&[
+            check_run(7, "test", "completed", Some("success")),
+            check_run(7, "coverage", "queued", None),
+        ]),
+        check_page(&[check_run(99, "publish", "in_progress", None)]),
+    ]);
+    let second = check_poll(&[check_page(&[
+        check_run(7, "test", "completed", Some("success")),
+        check_run(7, "coverage", "completed", Some("success")),
+    ])]);
+    stub_check_runs(w, &[first, second], 5, false);
+}
+
+#[when("the publication gate examines the tagged revision")]
+async fn the_gate_examines_the_revision(w: &mut DutyWorld) {
+    run_gate(w);
+}
+
+#[then("the gate reports the still-running checks")]
+async fn gate_reports_the_running_checks(w: &mut DutyWorld) {
+    assert!(
+        w.command_transcript.contains("still running"),
+        "the gate reported no running checks: {}",
+        w.command_transcript
+    );
+    assert!(
+        w.command_transcript.contains("coverage (queued)"),
+        "the gate did not name the queued check: {}",
+        w.command_transcript
+    );
+    assert!(
+        !w.command_transcript.contains("publish (in_progress)"),
+        "the gate treated its own suite's check as external: {}",
+        w.command_transcript
+    );
+    assert!(gate_args(w).contains("filter=latest"));
+}
+
+#[then(
+    "the gate reports the tagged revision ready only after every check has concluded successfully"
+)]
+async fn gate_reports_ready_after_conclusion(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the gate did not report the revision ready: {}",
+        w.command_transcript
+    );
+    assert_eq!(gate_calls(w), 2, "the gate did not poll twice");
+    assert!(
+        w.command_transcript.contains("concluded"),
+        "the gate did not report the concluded set: {}",
+        w.command_transcript
+    );
+}
+
+#[given("a tagged revision whose checks include a completed failure and a check still running")]
+async fn a_revision_with_a_failure_and_a_running_check(w: &mut DutyWorld) {
+    let poll = check_poll(&[check_page(&[
+        check_run(7, "test", "completed", Some("failure")),
+        check_run(7, "lint", "completed", Some("timed_out")),
+        check_run(7, "coverage", "in_progress", None),
+    ])]);
+    stub_check_runs(w, &[poll], 5, false);
+}
+
+#[then("the gate refuses publication, naming the failed check")]
+async fn gate_refuses_naming_the_failed_check(w: &mut DutyWorld) {
+    assert_ne!(w.exit_status, Some(0), "the gate did not refuse");
+    assert!(
+        w.command_transcript.contains("test (failure)"),
+        "the gate did not name the failed check: {}",
+        w.command_transcript
+    );
+    assert!(
+        w.command_transcript.contains("lint (timed_out)"),
+        "the gate did not name the timed-out check: {}",
+        w.command_transcript
+    );
+}
+
+#[then("the gate does not wait for the check still running")]
+async fn gate_does_not_wait_for_the_running_check(w: &mut DutyWorld) {
+    assert_eq!(
+        gate_calls(w),
+        1,
+        "the gate polled again after a completed failure"
+    );
+}
+
+#[given("a tagged revision whose checks never conclude")]
+async fn a_revision_whose_checks_never_conclude(w: &mut DutyWorld) {
+    let poll = check_poll(&[check_page(&[check_run(7, "coverage", "queued", None)])]);
+    stub_check_runs(w, &[poll], 1, false);
+}
+
+#[when("the publication gate examines the tagged revision until the elapsed limit")]
+async fn the_gate_examines_until_the_limit(w: &mut DutyWorld) {
+    run_gate(w);
+}
+
+#[then("the gate refuses publication, naming the still-running checks")]
+async fn gate_refuses_naming_the_still_running_checks(w: &mut DutyWorld) {
+    assert_ne!(w.exit_status, Some(0), "the gate did not refuse");
+    assert!(
+        w.command_transcript
+            .contains("did not conclude within 1 second"),
+        "the gate did not state the bound: {}",
+        w.command_transcript
+    );
+    assert!(
+        w.command_transcript.contains("coverage (queued)"),
+        "the gate did not name the queued check: {}",
+        w.command_transcript
+    );
+}
+
+#[given("a tagged revision whose completed checks are one success, one skipped, and one neutral")]
+async fn a_revision_with_success_skipped_and_neutral(w: &mut DutyWorld) {
+    let poll = check_poll(&[check_page(&[
+        check_run(7, "test", "completed", Some("success")),
+        check_run(7, "dco", "completed", Some("skipped")),
+        check_run(7, "actionlint", "completed", Some("neutral")),
+    ])]);
+    stub_check_runs(w, &[poll], 5, false);
+}
+
+#[then("the gate reports the tagged revision ready to publish")]
+async fn gate_reports_the_revision_ready(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the gate refused an allowed conclusion set: {}",
+        w.command_transcript
+    );
+    assert_eq!(gate_calls(w), 1, "the gate polled more than once");
+}
+
+#[given("a tagged revision whose completed checks are one skipped and one neutral")]
+async fn a_revision_with_only_allowed_non_successes(w: &mut DutyWorld) {
+    let poll = check_poll(&[check_page(&[
+        check_run(7, "dco", "completed", Some("skipped")),
+        check_run(7, "actionlint", "completed", Some("neutral")),
+        check_run(99, "publish", "completed", Some("success")),
+    ])]);
+    stub_check_runs(w, &[poll], 5, false);
+}
+
+#[then("the gate refuses publication, stating that no check concluded successfully")]
+async fn gate_refuses_for_no_success(w: &mut DutyWorld) {
+    assert_ne!(w.exit_status, Some(0), "the gate did not refuse");
+    assert!(
+        w.command_transcript
+            .contains("no check on the tagged revision concluded successfully"),
+        "the gate did not state the missing success: {}",
+        w.command_transcript
+    );
+}
+
+#[given("a tagged revision whose check runs cannot be read")]
+async fn a_revision_whose_checks_cannot_be_read(w: &mut DutyWorld) {
+    stub_check_runs(w, &[], 5, true);
+}
+
+#[then("the gate refuses publication, stating that the check runs could not be read")]
+async fn gate_refuses_for_unreadable_checks(w: &mut DutyWorld) {
+    assert_ne!(w.exit_status, Some(0), "the gate did not refuse");
+    assert!(
+        w.command_transcript
+            .contains("could not read the check runs"),
+        "the gate did not state the read failure: {}",
+        w.command_transcript
+    );
+}
+
+#[given("a tagged revision whose only check runs belong to the release workflow")]
+async fn a_revision_with_only_the_release_workflow(w: &mut DutyWorld) {
+    let poll = check_poll(&[check_page(&[check_run(
+        99,
+        "publish",
+        "completed",
+        Some("success"),
+    )])]);
+    stub_check_runs(w, &[poll], 5, false);
+}
+
+#[then("the gate refuses publication, stating that the revision carries no check evidence")]
+async fn gate_refuses_for_no_check_evidence(w: &mut DutyWorld) {
+    assert_ne!(w.exit_status, Some(0), "the gate did not refuse");
+    assert!(
+        w.command_transcript.contains("no check evidence"),
+        "the gate did not state the missing evidence: {}",
+        w.command_transcript
+    );
+}
+
+#[given("the default branch and a version tag pushed together, each starting a check suite on the same revision")]
+async fn branch_and_tag_pushed_together_with_two_suites(w: &mut DutyWorld) {
+    let first = check_poll(&[check_page(&[
+        check_run(7, "test", "completed", Some("success")),
+        check_run(8, "test", "in_progress", None),
+        check_run(99, "publish", "in_progress", None),
+    ])]);
+    let second = check_poll(&[check_page(&[
+        check_run(7, "test", "completed", Some("success")),
+        check_run(8, "test", "completed", Some("success")),
+    ])]);
+    stub_check_runs(w, &[first, second], 5, false);
+}
+
+#[then("the gate waits for both suites' checks instead of refusing them as not yet concluded")]
+async fn gate_waits_for_both_suites(w: &mut DutyWorld) {
+    assert!(
+        w.command_transcript.contains("test (in_progress)"),
+        "the gate did not wait for the tag suite's check: {}",
+        w.command_transcript
+    );
+    assert!(
+        !w.command_transcript.contains("publish (in_progress)"),
+        "the gate listed its own suite's check: {}",
+        w.command_transcript
+    );
+    assert_eq!(gate_calls(w), 2, "the gate did not poll both suites");
+}
+
+#[then("the gate reports the revision ready to publish only once every check in both suites has concluded successfully")]
+async fn gate_ready_only_once_both_suites_concluded(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the gate refused the two-suite revision: {}",
+        w.command_transcript
+    );
+    assert!(
+        !w.command_transcript.contains("failure"),
+        "the gate reported a failure after both suites concluded: {}",
+        w.command_transcript
+    );
+}

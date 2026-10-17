@@ -13,7 +13,7 @@ flowchart TB
     b4["macos-15-intel — macOS x86_64 build"]
     sm["windows-latest — Windows smoke"]
     prep["ubuntu-latest — prepare-release.sh"]
-    pub["ubuntu-latest — publish (SBOM, attestations, draft release)"]
+    pub["ubuntu-latest — publish (wait for the tagged revision's checks, SBOM, attestations, draft release)"]
     ver["ubuntu-latest — verify the published release"]
   end
   b1 --> prep
@@ -29,7 +29,7 @@ flowchart TB
 
 | Node / Environment | Description |
 |---|---|
-| `ubuntu-latest` | Builds the linux x86_64 (`x86_64-unknown-linux-musl`) executable and cross-builds the Windows (`x86_64-pc-windows-gnu`) executable; also runs the single packaging, publish and verify jobs. |
+| `ubuntu-latest` | Builds the linux x86_64 (`x86_64-unknown-linux-musl`) executable and cross-builds the Windows (`x86_64-pc-windows-gnu`) executable; also runs the single packaging, publish and verify jobs; the publish job waits for the tagged revision's checks before anything becomes public. |
 | `ubuntu-24.04-arm` | Builds the linux arm64 (`aarch64-unknown-linux-musl`) executable. |
 | `macos-latest` | Builds the macOS arm64 (`aarch64-apple-darwin`) executable natively. |
 | `macos-15-intel` | Builds the macOS x86_64 (`x86_64-apple-darwin`) executable natively. |

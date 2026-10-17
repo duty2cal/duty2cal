@@ -194,41 +194,28 @@ jobs:
       attestations: write
     steps:
       - uses: actions/checkout@v7
-      - name: Assert every check on the tagged revision concluded successfully
+      - name: Wait for every check on the tagged revision to conclude green
+        timeout-minutes: 40
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          # This workflow's own check runs are excluded: they are the release
-          # path itself, still running while this job asserts the gate.
-          suite="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" --jq .check_suite_id)"
-          gh api --paginate --slurp \
-            "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/check-runs?per_page=100" > check-runs.json
-          jq --argjson suite "$suite" -r '
-            [.[].check_runs[] | select(.check_suite.id != $suite)]
-            | .[]
-            | "\(.name)\t\(.status)\t\(.conclusion // "pending")"
-          ' check-runs.json > checks.tsv
-
-          echo "check runs on ${GITHUB_SHA} outside this workflow's own suite:"
-          cat checks.tsv
-
-          if ! grep -q . checks.tsv; then
-            echo "the tagged revision carries no check evidence outside this workflow"
-            exit 1
-          fi
-          green="$(awk -F'\t' '$2 == "completed" && $3 == "success"' checks.tsv | wc -l)"
-          if [ "$green" -eq 0 ]; then
-            echo "no check on the tagged revision has concluded successfully"
-            exit 1
-          fi
-          not_green="$(awk -F'\t' '$2 == "completed" && $3 != "success" && $3 != "skipped" && $3 != "neutral"' checks.tsv)"
-          if [ -n "$not_green" ]; then
-            printf 'not green:\n%s\n' "$not_green"
-            echo "the tagged revision does not carry a green check set"
-            exit 1
-          fi
-          echo "every completed check on the tagged revision concluded successfully"
+          # Every release-workflow suite on this revision is excluded, not only
+          # this run's suite: a retagged unpublished version can still carry an
+          # earlier release run's failed publish check.
+          releases="$(gh api --paginate --slurp \
+            "repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=${GITHUB_SHA}&per_page=100" \
+            --jq '[.[].workflow_runs[] | select(.path == ".github/workflows/release.yml") | .check_suite_id] | unique | .[]')"
+          exclude=()
+          while IFS= read -r id; do
+            [ -n "$id" ] && exclude+=(--exclude-suite "$id")
+          done <<< "$releases"
+          scripts/await-green-checks.sh \
+            --repo "$GITHUB_REPOSITORY" \
+            --sha "$GITHUB_SHA" \
+            "${exclude[@]}" \
+            --interval 15 \
+            --timeout 1800
       - name: Remember the tag's version
         run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
       - uses: actions/download-artifact@v8

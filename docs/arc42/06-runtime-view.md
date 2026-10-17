@@ -98,8 +98,10 @@ flowchart TB
   build --> prep["prepare on ubuntu-latest: render and stage the change log and the release text, then run scripts/prepare-release.sh over the five binaries"]
   smoke --> prep
   prep -->|"incomplete set, no visible change, or change-log drift"| nostage["nothing staged, no release"]
-  prep --> pub["publish on ubuntu-latest: generate the SBOM, attest every archive, create the draft release with the archives, their checksums and the change log, check its asset set, then publish"]
-  pub --> ver["verify: download the assets back, compare checksums, run gh attestation verify, assert immutable"]
+  prep --> pub["publish on ubuntu-latest: resolve the release-workflow check suites, then wait for the tagged revision's checks"]
+  pub -->|"non-success, no success, no evidence, unreadable source, or the bound"| nopub["nothing public"]
+  pub -->|"every check concluded, at least one success"| stage["generate the SBOM, attest every archive, create and inspect the draft, then publish"]
+  stage --> ver["verify: download the assets back, compare checksums, run gh attestation verify, assert immutable"]
   ver --> done["verified immutable release, reachable at the stable latest address"]
 ```
 
@@ -107,8 +109,9 @@ flowchart TB
 
 1. The tag starts `release.yml`; the build matrix builds and starts each platform's executable where it must run, and the Windows smoke job starts the cross-built executable on `windows-latest`.
 2. The `prepare` job installs the pinned generator, renders the change log and the release text (the newest section of that change log) and runs `scripts/prepare-release.sh` over the five binaries; it refuses and stages nothing when a supported platform is missing or unrecognised, when the render would name no change a user receives, or when the committed change log differs from the released revision.
-3. The `publish` job generates the SBOM, attests every archive, creates a draft release with the archives, the release text and the change log, checks the draft's asset set against the staged set, and publishes it.
-4. The `verify` job reads the published release back: it compares every checksum, runs `gh attestation verify` on each archive, and asserts the release reports `immutable: true`.
+3. The `publish` job resolves every check suite the release workflow created for the tagged revision and invokes `scripts/await-green-checks.sh`; the gate waits, bounded, for the remaining check runs to conclude. It refuses a concluded non-success, a set with no successful check, no check outside the release-workflow suites, an unreadable check-run source, or a check still running at the bound, naming the checks. Nothing later in the job runs on a refusal.
+4. After the gate passes, the `publish` job generates the SBOM, attests every archive, creates a draft release with the archives, the release text and the change log, checks the draft's asset set against the staged set, and publishes it.
+5. The `verify` job reads the published release back: it compares every checksum, runs `gh attestation verify` on each archive, and asserts the release reports `immutable: true`.
 
 **Notes:** Publication cannot be undone, so every check that can precede publication does, and the one that cannot — reading the public record — fails the run loudly.
 

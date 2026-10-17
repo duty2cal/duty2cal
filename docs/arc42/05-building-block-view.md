@@ -29,12 +29,14 @@ flowchart TB
   CONFIG["cliff.toml — capability allow-list, machinery phrases, user-receiving paths, group order, section templates"]
   LOG["CHANGELOG.md — generated change log; its newest section is the release text"]
   DCO["scripts/dco-check.sh — sign-off over a pull request's commit range"]
+  GATE["scripts/await-green-checks.sh — bounded wait for the tagged revision's checks"]
   CI[".github/workflows/ci.yml — the gate; actionlint, dco, public-text and changelog jobs"]
   REL[".github/workflows/release.yml — build matrix, Windows smoke, prepare, publish, verify"]
   COMM["community files — CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, issue and PR templates"]
   STEPS["apps/cli/tests/steps/publish_public_release.rs + steps/e2e/publish_public_release.rs"]
   REL -->|invokes| PREP
   PREP -->|invokes| RENDER
+  REL -->|publish job invokes| GATE
   CONFIG -->|configures| RENDER
   RENDER -->|writes| LOG
   CI -->|invokes| DCO
@@ -42,6 +44,7 @@ flowchart TB
   CI -->|actionlint validates| REL
   STEPS -->|real subprocess| PREP
   STEPS -->|real subprocess| RENDER
+  STEPS -->|real subprocess| GATE
 ```
 
 | Release block | Responsibility |
@@ -51,7 +54,8 @@ flowchart TB
 | `cliff.toml` | The one configuration the project owns: the capability allow-list (the released capability scopes), the dependency-update parser for `chore(deps):` revisions, the marked machinery skip list (the project's own tooling words the allow-list cannot see), the marked list of the paths a user receives (which decides what a released revision must have changed to be announced), the group order (including the Dependencies group for `chore(deps):` updates), the skip rules and the templates that render a section, including the per-entry revision marker the renderer resolves and strips. Passed to the generator explicitly so a developer's global configuration cannot change a render. |
 | `CHANGELOG.md` | The generated change log: the newest section is the version being released, every earlier section stays verbatim, and the first section back-fills `0.1.0`; published among a release's assets. |
 | `scripts/dco-check.sh` | Check DCO sign-off over a pull request's commit range; run by the `dco` CI job on pull requests only. |
-| `.github/workflows/release.yml` | On a `v*` tag: build the five platforms, smoke the Windows executable on Windows, prepare the staged set, publish the immutable release with provenance and a bill of materials, then verify the published release by reading it back. |
+| `scripts/await-green-checks.sh` | The publication gate: resolve every release-workflow check suite on the tagged revision, wait (bounded) for the remaining check runs to conclude, and refuse a concluded non-success, no success, no check evidence, an unreadable source, or the bound, naming the checks. |
+| `.github/workflows/release.yml` | On a `v*` tag: build the five platforms, smoke the Windows executable on Windows, prepare the staged set, wait for the tagged revision's checks to conclude green, publish the immutable release with provenance and a bill of materials, then verify the published release by reading it back. |
 | `.github/workflows/ci.yml` | The gate on landing; the publishing change added the `actionlint` and `dco` jobs, and this change adds the `changelog` job (the pinned generator plus the drift check) and puts the pinned generator on the `test` job's `PATH`, because the suite's change-log scenarios drive the renderer as a real subprocess. No existing job changes otherwise. |
 | Community files (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/ISSUE_TEMPLATE/*`, `.github/pull_request_template.md`) | The contributor routes: contribution and sign-off rules, conduct, the confidential reporting route, and issue and pull-request forms that ask for the export family and a stripped sample, never a real plan. |
 | `apps/cli/tests/steps/publish_public_release.rs` and `apps/cli/tests/steps/e2e/publish_public_release.rs` | The step definitions for this capability; the `@e2e` file drives `scripts/prepare-release.sh` and `scripts/render-changelog.sh` as real subprocesses, runs the executable taken out of the produced archive, and reads the newest section out of the written change log. |
