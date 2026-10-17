@@ -295,6 +295,14 @@ while IFS=$'\t' read -r address import_id; do
   fi
 done < "$entries"
 
+# Test-only seam: the live-change scenario needs the mutation to take effect
+# after every import read and before the verification plan. Production runs
+# never set this variable.
+if [ -n "${ADOPT_TEST_TRIGGER:-}" ]; then
+  : >"$ADOPT_TEST_TRIGGER" ||
+    refuse plan "cannot write the test trigger at $ADOPT_TEST_TRIGGER"
+fi
+
 # ---------------------------------------------------------------------------
 # 5. Verify the batch. `-refresh-only` compares state to live, so an unchanged
 #    live object is a no-op; a live object that changed after it was read is a

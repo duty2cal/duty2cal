@@ -329,6 +329,11 @@ pub(crate) fn adopt(w: &mut DutyWorld) {
         .env("TF_VAR_state_passphrase", passphrase)
         .env("TF_VAR_billing_email", BILLING_EMAIL)
         .env("TF_CLI_CONFIG_FILE", &rc)
+        .envs(
+            w.env
+                .iter()
+                .map(|(key, value)| (key.as_str(), value.as_str())),
+        )
         .output()
         .expect("run the adoption command");
 
@@ -550,6 +555,10 @@ async fn the_monorepos_live_settings_change_after_the_adoption_reads_them(w: &mu
         ),
     )
     .expect("write the deterministic monorepo mutation");
+    w.env.push((
+        "ADOPT_TEST_TRIGGER".to_owned(),
+        fixtures.join("mutate.trigger").display().to_string(),
+    ));
     restart_fake(w);
 }
 
