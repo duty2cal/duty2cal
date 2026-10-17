@@ -5,14 +5,15 @@
 # command imports exactly these lines, in order, and binds the whole batch or
 # none of it (design.md "The adoption batch").
 #
-# Two identifiers are live data captured from the authenticated read before
-# the real adoption: the organization's numeric id
-# (GET /orgs/duty2cal) and the rule set's numeric id
-# (GET /repos/duty2cal/duty2cal/rulesets). The committed `0` values are the
-# placeholders the post-GREEN operator replaces from that read; the suite's
-# scenarios supply their own batches against the fake.
-github_organization_settings.org	0
+# The organization's numeric id and the rule set's numeric id come from the
+# authenticated read captured under
+# givn/changes/declare-public-home/evidence/live-read/ on 2026-10-17
+# (`GET /orgs/duty2cal`, `GET /repos/duty2cal/duty2cal/rulesets`). The
+# repository imports use the repository name; the rule set uses
+# `<repository>:<ruleset-id>`; the Pages source uses the repository slug. The
+# suite's scenarios supply their own batches against the fake.
+github_organization_settings.org	343978778
 github_repository.mono	duty2cal
 github_repository.pages	duty2cal.github.io
-github_repository_ruleset.main	duty2cal:0
+github_repository_ruleset.main	duty2cal:24981082
 github_repository_pages.pages	duty2cal.github.io

@@ -11,7 +11,7 @@
 resource "github_repository" "mono" {
   name        = "duty2cal"
   description = "Convert a duty plan to a calendar"
-  topics      = ["rust", "icalendar", "roster", "duty-plan", "pdf", "cli"]
+  topics      = ["cli", "duty", "duty-planner", "icalendar", "pdf", "rust", "roste"]
 
   has_issues      = true
   has_projects    = false
@@ -32,7 +32,7 @@ resource "github_repository" "mono" {
 
 resource "github_repository" "pages" {
   name        = "duty2cal.github.io"
-  description = ""
+  description = "duty2cal GitHub Page"
   visibility  = "public"
 
   has_issues   = false

@@ -199,7 +199,7 @@ Design constraints:
       exit status: 0
       ```
 - [x] COMMIT — release note subject, scenario title body; record the revision.
-      Revision: `PENDING-SCENARIO-2-HASH`
+      Revision: `4a654b3f144b29c374390128b891508ceb26ce22`
 
 ## 3. A declared object that does not exist live refuses the whole batch
 
