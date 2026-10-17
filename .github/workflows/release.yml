@@ -24,37 +24,13 @@ jobs:
       matrix:
         include:
           # The Windows executable is cross-built on Linux (the confirmed
-          # distribution constraint) and started by the smoke-windows job.
+          # distribution constraint) and started by the smoke-windows job. It
+          # is the only platform the project distributes.
           - platform: windows-x86_64
             runner: ubuntu-latest
             target: x86_64-pc-windows-gnu
             binary: duty2cal.exe
             apt: mingw-w64
-            linker: ""
-          - platform: linux-x86_64
-            runner: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            binary: duty2cal
-            apt: musl-tools
-            linker: musl-gcc
-          - platform: linux-arm64
-            runner: ubuntu-24.04-arm
-            target: aarch64-unknown-linux-musl
-            binary: duty2cal
-            apt: musl-tools
-            linker: musl-gcc
-          - platform: macos-arm64
-            runner: macos-latest
-            target: aarch64-apple-darwin
-            binary: duty2cal
-            apt: ""
-            linker: ""
-          - platform: macos-x86_64
-            runner: macos-15-intel
-            target: x86_64-apple-darwin
-            binary: duty2cal
-            apt: ""
-            linker: ""
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -64,31 +40,7 @@ jobs:
         if: matrix.apt != ''
         run: sudo apt-get update && sudo apt-get install -y ${{ matrix.apt }}
       - name: Build the release executable
-        env:
-          # Only the target being built reads its own linker variable.
-          CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER: ${{ matrix.linker }}
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: ${{ matrix.linker }}
         run: cargo build --release --target ${{ matrix.target }}
-      - name: Start the built executable
-        if: matrix.platform != 'windows-x86_64'
-        run: |
-          set -euo pipefail
-          set +e
-          output="$("target/${{ matrix.target }}/release/${{ matrix.binary }}" 2>&1)"
-          status=$?
-          set -e
-          printf '%s\n' "$output"
-          if [ "$status" -eq 0 ]; then
-            echo "expected a non-zero exit status for a missing argument"
-            exit 1
-          fi
-          case "$output" in
-            *"usage: duty2cal <duty-plan.pdf>"*) ;;
-            *)
-              echo "the executable did not print its usage line"
-              exit 1
-              ;;
-          esac
       - uses: actions/upload-artifact@v7
         with:
           name: binary-${{ matrix.platform }}

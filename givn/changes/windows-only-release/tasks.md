@@ -610,16 +610,16 @@ givn commit -m "feat(publish-public-release): Offer one downloadable archive for
 Update the public text and its gate." README.md .github/ISSUE_TEMPLATE/bug.yml SECURITY.md scripts/public-text-check.sh givn/changes/windows-only-release/tasks.md
 ```
 
-Revision: `<paste revision id>`
+Revision: `880eed0b0cd870dcb6281b9b5c76278788805dc2`
 
 ---
 
 ## Task B2 — Release workflow narrowing
 
-- [ ] Narrow the `build` matrix to one Windows entry.
-- [ ] Delete the non-Windows start step and the musl linker configuration.
-- [ ] Validate the YAML and the structural assertions.
-- [ ] Commit and record the revision.
+- [x] Narrow the `build` matrix to one Windows entry.
+- [x] Delete the non-Windows start step and the musl linker configuration.
+- [x] Validate the YAML and the structural assertions.
+- [x] Commit and record the revision.
 
 ### Changes
 
@@ -659,14 +659,21 @@ $ grep -n 'smoke-windows' .github/workflows/release.yml
 ```
 
 ```
-<paste command and output here>
+$ nix-shell -p actionlint --run 'actionlint -color .github/workflows/release.yml'
+(no output, exit 0)
+$ docker --version
+error: command not found: docker
+$ python3 -c 'import yaml; yaml.safe_load(open(".github/workflows/release.yml")); print("yaml ok")'
+ModuleNotFoundError: No module named 'yaml'
+$ grep -c 'platform: windows-x86_64' .github/workflows/release.yml
+1
+$ grep -nE 'linux-x86_64|linux-arm64|macos-arm64|macos-x86_64|^[[:space:]]*linker:|CARGO_TARGET_|Start the built executable' .github/workflows/release.yml
+(no output, exit 1)
+$ grep -n 'smoke-windows' .github/workflows/release.yml
+27:          # distribution constraint) and started by the smoke-windows job. It
+50:  smoke-windows:
+88:    needs: [build, smoke-windows]
 ```
-
-Required: actionlint runs (or the output records that docker was unavailable and
-the fallback YAML parse + structural greps were used); one
-`platform: windows-x86_64`; the forbidden grep prints nothing; `smoke-windows`
-remains. Record exactly which validation was possible; do not claim actionlint
-ran if it did not.
 
 ### Commit
 
