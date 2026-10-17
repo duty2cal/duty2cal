@@ -15,7 +15,7 @@ Feature: Publish a public release
       | duty2cal-0.1.0-windows-x86_64.tar.gz | duty2cal.exe |
     And  every archive holds only its own executable
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A platform whose executable was not built stops the release
     Given  no executable was built for the supported platform
     When  the maintainer prepares the release for version 0.1.0

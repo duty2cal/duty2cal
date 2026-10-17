@@ -940,7 +940,7 @@ givn commit -m "feat(publish-public-release): Offer one downloadable archive for
 Scenario: A prepared release offers one archive for every supported platform" givn/changes/windows-only-release/specs/publish-public-release/publish-public-release.feature scripts/prepare-release.sh apps/cli/tests/steps/publish_public_release.rs apps/cli/tests/steps/e2e/publish_public_release.rs givn/changes/windows-only-release/tasks.md
 ```
 
-Revision: `<paste revision id>`
+Revision: `7dac3d1244c752573f49e471a8f1e5a95ae0df86`
 
 ---
 
@@ -948,11 +948,11 @@ Revision: `<paste revision id>`
 
 `@givn.modified` at lines 18–23.
 
-- [ ] RED (new Given step undefined, non-zero)
-- [ ] GREEN (dedicated empty-binaries Given added; targeted run zero)
-- [ ] REFACTOR (targeted run still zero)
-- [ ] COMMIT (revision recorded below)
-- [ ] Evidence and revision filled in
+- [x] RED (new Given step undefined, non-zero)
+- [x] GREEN (dedicated empty-binaries Given added; targeted run zero)
+- [x] REFACTOR (targeted run still zero)
+- [x] COMMIT (revision recorded below)
+- [x] Evidence and revision filled in
 
 ### Design constraints (copied from `design.md`)
 
@@ -981,7 +981,11 @@ platform` has no step definition. Paste the output (including the undefined
 step text).
 
 ```
-<paste command and non-zero output here>
+Scenario: A platform whose executable was not built stops the release
+ ✘  Given no executable was built for the supported platform
+    Step doesn't match any function
+1 scenario (1 failed)
+exit=101
 ```
 
 ### GREEN
@@ -1021,7 +1025,14 @@ nix-shell -p git-cliff --run './run-tests.sh --name "A platform whose executable
 ```
 
 ```
-<paste command and exit-0 output here>
+Feature: Publish a public release
+  Scenario: A platform whose executable was not built stops the release
+   ✔  Given no executable was built for the supported platform
+   ✔  When the maintainer prepares the release for version 0.1.0
+   ✔  Then the preparation fails and names "windows-x86_64"
+   ✔  And the prepared release holds no archive
+1 scenario (1 passed)
+exit=0
 ```
 
 ### REFACTOR
@@ -1031,7 +1042,10 @@ nix-shell -p git-cliff --run './run-tests.sh --name "A platform whose executable
 - Re-run the targeted command; paste exit-0 output.
 
 ```
-<paste command and exit-0 output here>
+$ nix-shell -p git-cliff --run './run-tests.sh --name "A platform whose executable was not built stops the release"'
+  Scenario: A platform whose executable was not built stops the release
+4 steps (4 passed)
+exit=0
 ```
 
 ### COMMIT

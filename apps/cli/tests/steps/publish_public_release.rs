@@ -631,6 +631,17 @@ async fn every_archive_holds_only_its_executable(w: &mut DutyWorld) {
     }
 }
 
+#[given("no executable was built for the supported platform")]
+async fn no_executable_built_for_the_supported_platform(w: &mut DutyWorld) {
+    let dir = scenario_dir(w);
+    let binaries = dir.join("binaries");
+    let _ = std::fs::remove_dir_all(&binaries);
+    std::fs::create_dir_all(&binaries).expect("create the empty binaries directory");
+    let out = dir.join("out");
+    w.binaries = Some(binaries);
+    w.staged = Some(out);
+}
+
 #[given(regex = r#"^an executable built for every supported platform except "([^"]+)"$"#)]
 async fn every_supported_platform_except(w: &mut DutyWorld, missing: String) {
     let platforms: Vec<&str> = supported_platforms()
