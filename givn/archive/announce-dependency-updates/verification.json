@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "announce-dependency-updates",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "0b229a0b6e2556f0f35a822b2df1db788550bd86",
+  "tested_revision": "0b229a0b6e2556f0f35a822b2df1db788550bd86",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 4.170907723
+    },
+    "regular": {
+      "status": "passed",
+      "total": 111,
+      "passed": 111,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 34.269556827
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 871,
+    "line_valid": 886,
+    "line_percent": 98
+  },
   "started_at_unix": 1792245484,
-  "finished_at_unix": null
+  "finished_at_unix": 1792245596
 }
