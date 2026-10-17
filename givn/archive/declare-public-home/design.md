@@ -720,3 +720,13 @@ the request journal and the bound state. No internal test is retained
 alongside: the only Rust added is step definitions. The GitHub API is never
 mocked inside the command — it is replaced at the HTTP boundary by a local
 server, which is exactly the boundary the production code talks to.
+
+## Post-archive fix — 2026-10-17
+
+The live-change scenario was made deterministic after the archive. The fake
+mutates its monorepo response on a trigger file that the adoption command
+writes after the import loop and before the verification plan, only when the
+test-only `ADOPT_TEST_TRIGGER` is set; production runs never set it. This
+preserves the design's rule that the mutation never follows an implicit first
+read and removes the provider-read-count race that let the scenario pass
+locally and fail on the host.

@@ -551,7 +551,7 @@ async fn the_monorepos_live_settings_change_after_the_adoption_reads_them(w: &mu
     fs::write(
         fixtures.join("mutate.json"),
         format!(
-            "{{\"/repos/duty2cal/duty2cal\": {{\"after_requests\": 1, \"body\": {mutated}}}}}\n"
+            "{{\"/repos/duty2cal/duty2cal\": {{\"trigger_file\": \"mutate.trigger\", \"body\": {mutated}}}}}\n"
         ),
     )
     .expect("write the deterministic monorepo mutation");
