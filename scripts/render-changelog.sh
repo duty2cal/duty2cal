@@ -316,6 +316,24 @@ done < "$section_file"
 section=$(awk '/^- / { if (seen[$0]++) next } { print }' "$kept_file")
 rm -f "$section_file" "$kept_file"
 
+# A group whose only entries the path filter removed leaves a heading with no
+# bullets. Drop a `### ` heading whose next non-blank line is another heading or
+# the section end, so the change log and the release text never carry an empty
+# group. This runs before the visible-count refusal: a section with no bullet
+# left still refuses as before.
+section=$(printf '%s\n' "$section" | awk '
+  { line[NR] = $0 }
+  END {
+    for (i = 1; i <= NR; i++) {
+      if (line[i] ~ /^### /) {
+        j = i + 1
+        while (j <= NR && line[j] ~ /^[[:space:]]*$/) j++
+        if (j > NR || line[j] ~ /^## /) { i = j - 1; continue }
+      }
+      print line[i]
+    }
+  }')
+
 visible=$(printf '%s\n' "$section" | grep -c '^- ' || true)
 if [ "$visible" -eq 0 ]; then
   refuse "version $version changes nothing a user can see: nothing was written"

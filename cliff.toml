@@ -14,8 +14,9 @@
 #
 # The capability allow-list is the use-case ids present as directories under
 # `givn/specs/`. A revision whose conventional-commit type carries one of those
-# scopes is a released change; every other revision — housekeeping, tests,
-# documentation, CI, tooling and the machinery of building, packaging and
+# scopes is a released change; so is a dependency update (`chore(deps): …`)
+# that changed a path a user receives. Every other revision — housekeeping,
+# tests, documentation, CI, tooling and the machinery of building, packaging and
 # publishing — is not, and is skipped. The renderer compares this list against
 # the corpus and refuses a difference, so a new capability cannot be left out of
 # every release quietly. The allow-list is repeated inside each type's parser
@@ -121,8 +122,15 @@ commit_parsers = [
   { message = "^xrevert\\(export-duty-plan-calendar\\):", group = "<!-- 4 -->Reversals" },
   { message = "^xrevert\\(publish-public-release\\):", group = "<!-- 4 -->Reversals" },
 
-  # Everything else is not a change a user can see: housekeeping, tests,
-  # documentation, CI, tooling, and any scope outside the allow-list — the
-  # machinery of building, packaging and publishing among them.
+  # Dependency updates a user receives: Dependabot's `chore(deps):` bump
+  # changes the dependency graph, which is a user-receiving path, so the entry
+  # survives the renderer's path filter. A bump that changed only the project's
+  # checks does not survive it; a bump to the release workflow does.
+  { message = "^chore\\(deps\\):", group = "<!-- 5 -->Dependencies" },
+
+  # Everything else is not a change a user can see: housekeeping other than a
+  # dependency update, tests, documentation, CI, tooling, and any scope outside
+  # the allow-list — the machinery of building, packaging and publishing among
+  # them.
   { message = ".*", skip = true },
 ]

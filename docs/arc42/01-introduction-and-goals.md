@@ -10,7 +10,7 @@ Top requirements, from the stakeholder perspective:
 2. **Complete-or-explicit-failure** — a plan that cannot be represented completely is rejected with a visible failure and a diagnostic, never a partial calendar.
 3. **No destruction** — an existing calendar or report is never replaced; new outputs use an unused enumerated name.
 4. **Privacy** — private duty plans and identifying values never reach the public repository; fixtures and golden calendars are generated or anonymized.
-5. **Distributable release** — one self-contained executable per supported platform (Windows x86_64, Linux x86_64 and arm64, macOS arm64 and x86_64), published from one public repository as a verifiable, immutable release whose notes state the changes a user can see, drawn from the change log the repository keeps, licensed MPL-2.0 project-wide (weak file-level copyleft; App-Store distributable), with claims backed by evidence.
+5. **Distributable release** — one self-contained executable per supported platform (Windows x86_64, Linux x86_64 and arm64, macOS arm64 and x86_64), published from one public repository as a verifiable, immutable release whose notes state the changes a user receives, including dependency updates, drawn from the change log the repository keeps, licensed MPL-2.0 project-wide (weak file-level copyleft; App-Store distributable), with claims backed by evidence.
 
 The authoritative behaviour specification lives in the merged corpus `givn/specs/export-duty-plan-calendar/`; the change to export released roster calendars holds the historical home of that delta at `givn/archive/export-released-roster-calendar/specs/`.
 
@@ -23,7 +23,7 @@ The authoritative behaviour specification lives in the merged corpus `givn/specs
 | 3 | Interoperability | The output must be a valid RFC 5545 file (CRLF, escaping, octet-aware folding) usable by real calendar clients. |
 | 4 | Privacy | Duty plans carry identifying data; public artifacts must contain only generated or anonymized material. |
 | 5 | Maintainability / portability | Clean Architecture layering plus a self-contained executable per supported platform keep the converter verifiable and distributable. |
-| 6 | Release integrity / verifiability | A released version offers one archive for every supported platform, byte-reproducible, checksummed, carrying build provenance and a bill of materials, and published immutably, so a downloader can trace the file in hand to the released revision and no published promise outruns its evidence. The release also states what changed: its notes are the newest section of the repository's change log, grouping the changes a user can see and refusing a version that would name none. |
+| 6 | Release integrity / verifiability | A released version offers one archive for every supported platform, byte-reproducible, checksummed, carrying build provenance and a bill of materials, and published immutably, so a downloader can trace the file in hand to the released revision and no published promise outruns its evidence. The release also states what changed: its notes are the newest section of the repository's change log, grouping the changes a user receives — capability changes and dependency updates — and refusing a version that would name none. |
 
 ## Stakeholders
 

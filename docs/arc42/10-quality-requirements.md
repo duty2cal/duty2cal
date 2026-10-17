@@ -24,6 +24,7 @@ flowchart TB
   rel2 --> ri4["Immutable publication"]
   rel2 --> ri5["Notes group the changes a reader can see"]
   rel2 --> ri6["Committed change log matches the released revision"]
+  rel2 --> ri7["Dependency updates are releasable and announced"]
 ```
 
 ## Quality scenarios
@@ -43,6 +44,7 @@ flowchart TB
 | QS-011 | Release notes / releasability | A history whose released revisions name a new capability, a fix, and work no user can see — including a revision that changed only the release machinery — is released as version 0.2.0. | The release text is version 0.2.0's newest section of the change log, names the new capability before the fix, names no revision whose work no user can see and no revision that changed none of the paths a user receives, and states the comparison against version 0.1.0; a version whose notes would name no visible change is refused before publication. |
 | QS-012 | Release integrity (repository-history currency) | A committed `CHANGELOG.md` whose newest section differs from what the released revision's history states. | The check refuses and names the version whose section differs, so a release is not published from a stale change log. |
 | QS-013 | Correctness (printed fidelity) | A supported plan prints a crew position beside a flight number on a travel leg. | The published travel title prints the two as separate words (`FB 123 ABC-DEF`); a leg that prints no crew position keeps the flight number alone (`123 ABC-DEF`), and a crew position printed beside a non-flight activity stays out of that activity's title. |
+| QS-014 | Release notes / dependency updates | A history whose released revisions carry only dependency updates, each changing the dependency graph. | The release text lists them under Dependencies after Reversals, in history order; preparation stages the version, so a dependency-only version is releasable; a dependency update that changed only the project's checks is not listed, and a version whose notes would name nothing at all is still refused. |
 
 **Stimulus / response / metric** for the primary scenario:
 

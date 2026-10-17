@@ -30,7 +30,7 @@ flowchart LR
 
 The product itself is unchanged: the converter has no network I/O and no runtime dependency, and it never contacts GitHub. Only the project's build-and-release automation runs on the host.
 
-The release page's text is the newest section of the repository's change log — the changes a user can see, grouped by kind — and the change log itself is one of the files a release publishes, so a reader of the source and a reader of the release page see the same history.
+The release page's text is the newest section of the repository's change log — the changes a user receives (capability changes and dependency updates), grouped by kind — and the change log itself is one of the files a release publishes, so a reader of the source and a reader of the release page see the same history.
 
 ## Technical context
 

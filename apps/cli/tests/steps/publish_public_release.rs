@@ -1849,3 +1849,425 @@ async fn generation_fails_naming_the_missing_path(w: &mut DutyWorld) {
         w.command_transcript
     );
 }
+
+/// A history whose only announced changes are two dependency updates. The
+/// housekeeping revisions prove the group names no other change; the explicit
+/// `Cargo.lock` override is what makes each dependency revision announceable.
+const DEPENDENCY_ONLY_HISTORY: [(&str, &str, &str); 4] = [
+    (
+        "2026-01-01",
+        "chore(deps): bump serde from 1.0.0 to 1.0.1",
+        "",
+    ),
+    (
+        "2026-01-02",
+        "chore(deps): bump clap from 4.0.0 to 4.0.1",
+        "",
+    ),
+    ("2026-01-03", "chore(ci): tune the release pipeline", ""),
+    (
+        "2026-01-04",
+        "docs(readme): describe the download route",
+        "v0.2.0",
+    ),
+];
+
+/// Two revisions carrying the same dependency subject, beside a housekeeping
+/// revision. The renderer's collapse must leave one entry.
+const DEPENDENCY_COLLAPSE_HISTORY: [(&str, &str, &str); 3] = [
+    (
+        "2026-01-01",
+        "chore(deps): bump serde from 1.0.0 to 1.0.1",
+        "",
+    ),
+    (
+        "2026-01-02",
+        "chore(deps): bump serde from 1.0.0 to 1.0.1",
+        "",
+    ),
+    (
+        "2026-01-03",
+        "chore(ci): tune the release pipeline",
+        "v0.2.0",
+    ),
+];
+
+/// A fix, a reversal, and two dependency updates, so the group order can be
+/// read from the notes.
+const DEPENDENCY_ORDER_HISTORY: [(&str, &str, &str); 4] = [
+    (
+        "2026-01-01",
+        "fix(export-duty-plan-calendar): Name the platform in the refusal",
+        "",
+    ),
+    (
+        "2026-01-02",
+        "revert(publish-public-release): Restore the previous download notice",
+        "",
+    ),
+    (
+        "2026-01-03",
+        "chore(deps): bump serde from 1.0.0 to 1.0.1",
+        "",
+    ),
+    (
+        "2026-01-04",
+        "chore(deps): bump clap from 4.0.0 to 4.0.1",
+        "v0.2.0",
+    ),
+];
+
+/// A converter fix beside a dependency update that changed only the CI
+/// workflow. The update must be dropped, and its empty heading pruned.
+const DEPENDENCY_CI_HISTORY: [(&str, &str, &str); 3] = [
+    (
+        "2026-01-01",
+        "fix(export-duty-plan-calendar): Name the platform in the refusal",
+        "",
+    ),
+    (
+        "2026-01-02",
+        "chore(deps): bump actions/checkout from 6 to 7",
+        "",
+    ),
+    (
+        "2026-01-03",
+        "chore(ci): tune the release pipeline",
+        "v0.2.0",
+    ),
+];
+
+/// A dependency update that changed the release workflow, which decides what
+/// an archive holds and is therefore announced.
+const DEPENDENCY_RELEASE_WORKFLOW_HISTORY: [(&str, &str, &str); 2] = [
+    (
+        "2026-01-01",
+        "chore(deps): bump actions/upload-artifact from 6 to 7",
+        "",
+    ),
+    (
+        "2026-01-02",
+        "chore(ci): tune the release pipeline",
+        "v0.2.0",
+    ),
+];
+
+/// A capability-scoped revision that also changed the dependency graph, beside
+/// an unscoped dependency update. The first stays in Fixes; the second is the
+/// only member of Dependencies.
+const DEPENDENCY_CAPABILITY_HISTORY: [(&str, &str, &str); 3] = [
+    (
+        "2026-01-01",
+        "fix(export-duty-plan-calendar): Upgrade the PDF parser",
+        "",
+    ),
+    (
+        "2026-01-02",
+        "chore(deps): bump serde from 1.0.0 to 1.0.1",
+        "",
+    ),
+    (
+        "2026-01-03",
+        "chore(ci): tune the release pipeline",
+        "v0.2.0",
+    ),
+];
+
+/// A CI-only dependency update, a housekeeping revision and a document: no
+/// entry survives the path filter, so the version is still refused.
+const INVISIBLE_WITH_CI_DEPENDENCY_HISTORY: [(&str, &str, &str); 3] = [
+    (
+        "2026-01-01",
+        "chore(deps): bump actions/checkout from 6 to 7",
+        "",
+    ),
+    ("2026-01-02", "chore(ci): tune the release pipeline", ""),
+    (
+        "2026-01-03",
+        "docs(readme): describe the download route",
+        "v0.2.0",
+    ),
+];
+
+/// The bullets under a `### <heading>` group, in order. A missing group has no
+/// bullets.
+fn group_of(text: &str, heading: &str) -> Vec<String> {
+    let marker = format!("### {heading}");
+    let mut inside = false;
+    let mut entries = Vec::new();
+    for line in text.lines() {
+        if line == marker {
+            inside = true;
+            continue;
+        }
+        if inside && line.starts_with("### ") {
+            break;
+        }
+        if inside && line.starts_with("## [") {
+            break;
+        }
+        if inside {
+            if let Some(entry) = line.strip_prefix("- ") {
+                entries.push(entry.to_string());
+            }
+        }
+    }
+    entries
+}
+
+/// The index of the first note containing `needle`, case-insensitively.
+fn position_of(notes: &[String], needle: &str) -> usize {
+    let needle = needle.to_lowercase();
+    notes
+        .iter()
+        .position(|note| note.to_lowercase().contains(&needle))
+        .unwrap_or_else(|| panic!("the notes name no {needle:?}: {notes:?}"))
+}
+
+#[given("a history whose released revisions carry only dependency updates")]
+async fn a_history_of_dependency_updates(w: &mut DutyWorld) {
+    build_history_with(
+        w,
+        &DEPENDENCY_ONLY_HISTORY,
+        &[(0, &["Cargo.lock"]), (1, &["Cargo.lock"])],
+    );
+}
+
+#[then("the notes for version 0.2.0 name the dependency updates")]
+async fn notes_name_the_dependency_updates(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the generation did not succeed: {}",
+        w.command_transcript
+    );
+    let notes = change_log_notes(w).join("\n").to_lowercase();
+    assert!(
+        notes.contains("bump serde from 1.0.0 to 1.0.1"),
+        "the notes name no serde update: {notes}"
+    );
+    assert!(
+        notes.contains("bump clap from 4.0.0 to 4.0.1"),
+        "the notes name no clap update: {notes}"
+    );
+}
+
+#[then("the notes name no housekeeping revision")]
+async fn notes_name_no_housekeeping_revision(w: &mut DutyWorld) {
+    let notes = change_log_notes(w).join("\n");
+    for omitted in ["tune the release pipeline", "describe the download route"] {
+        assert!(
+            !notes.contains(omitted),
+            "the notes carry the housekeeping subject {omitted:?}: {notes}"
+        );
+    }
+}
+
+#[given("a history whose dependency updates repeat one subject")]
+async fn a_history_with_repeated_dependency_subjects(w: &mut DutyWorld) {
+    build_history_with(
+        w,
+        &DEPENDENCY_COLLAPSE_HISTORY,
+        &[(0, &["Cargo.lock"]), (1, &["Cargo.toml"])],
+    );
+}
+
+#[then("the notes name that dependency update once")]
+async fn dependency_update_named_once(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the generation did not succeed: {}",
+        w.command_transcript
+    );
+    let count = change_log_notes(w)
+        .iter()
+        .filter(|note| note.to_lowercase().contains("bump serde"))
+        .count();
+    assert_eq!(
+        count, 1,
+        "the notes name the repeated dependency update {count} times"
+    );
+}
+
+#[then("the prepared release holds an archive for every supported platform")]
+async fn prepared_release_holds_every_platform(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the preparation did not succeed: {}",
+        w.command_transcript
+    );
+    for (platform, _) in SUPPORTED {
+        let archive = staged_archive(w, platform);
+        assert!(
+            staged_dir(w).join(&archive).is_file(),
+            "the prepared release holds no archive named {archive}"
+        );
+    }
+}
+
+#[given("a history whose released revisions include a fix, a reversal, and dependency updates")]
+async fn a_history_with_a_reversal_and_dependency_updates(w: &mut DutyWorld) {
+    build_history_with(
+        w,
+        &DEPENDENCY_ORDER_HISTORY,
+        &[(2, &["Cargo.lock"]), (3, &["Cargo.lock"])],
+    );
+}
+
+#[then("the notes name the fix before the dependency update")]
+async fn fix_precedes_dependency_update(w: &mut DutyWorld) {
+    let notes = change_log_notes(w);
+    assert!(
+        position_of(&notes, "Name the platform in the refusal") < position_of(&notes, "bump serde"),
+        "the dependency update precedes the fix: {notes:?}"
+    );
+}
+
+#[then("the notes name the reversal before the dependency update")]
+async fn reversal_precedes_dependency_update(w: &mut DutyWorld) {
+    let notes = change_log_notes(w);
+    assert!(
+        position_of(&notes, "Restore the previous download notice")
+            < position_of(&notes, "bump serde"),
+        "the dependency update precedes the reversal: {notes:?}"
+    );
+}
+
+#[then("the notes name the dependency updates in history order")]
+async fn dependency_updates_in_history_order(w: &mut DutyWorld) {
+    let notes = change_log_notes(w);
+    assert!(
+        position_of(&notes, "bump serde") < position_of(&notes, "bump clap"),
+        "the dependency updates are not in history order: {notes:?}"
+    );
+}
+
+#[given("a history whose dependency updates changed only the project's own checks")]
+async fn a_history_with_check_only_dependency_updates(w: &mut DutyWorld) {
+    build_history_with(
+        w,
+        &DEPENDENCY_CI_HISTORY,
+        &[(1, &[".github/workflows/ci.yml"])],
+    );
+}
+
+#[then("the notes name the converter fix")]
+async fn notes_name_the_converter_fix(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the generation did not succeed: {}",
+        w.command_transcript
+    );
+    let notes = change_log_notes(w).join("\n");
+    assert!(
+        notes.contains("Name the platform in the refusal"),
+        "the notes name no converter fix: {notes}"
+    );
+}
+
+#[then("the notes name no dependency update")]
+async fn notes_name_no_dependency_update(w: &mut DutyWorld) {
+    let notes = change_log_notes(w).join("\n").to_lowercase();
+    assert!(
+        !notes.contains("bump actions/checkout"),
+        "the notes carry a CI-only dependency update: {notes}"
+    );
+}
+
+#[then("the notes name no Dependencies group")]
+async fn notes_name_no_dependencies_group(w: &mut DutyWorld) {
+    let rendered = change_log(w);
+    assert!(
+        !rendered.contains("### Dependencies"),
+        "the notes carry an empty Dependencies heading: {rendered}"
+    );
+}
+
+#[given("a history whose dependency update changed the release workflow")]
+async fn a_history_with_a_release_workflow_dependency_update(w: &mut DutyWorld) {
+    build_history_with(
+        w,
+        &DEPENDENCY_RELEASE_WORKFLOW_HISTORY,
+        &[(0, &[".github/workflows/release.yml"])],
+    );
+}
+
+#[then("the notes name the dependency update")]
+async fn notes_name_the_dependency_update(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the generation did not succeed: {}",
+        w.command_transcript
+    );
+    let notes = change_log_notes(w).join("\n").to_lowercase();
+    assert!(
+        notes.contains("bump actions/upload-artifact"),
+        "the notes name no release-workflow dependency update: {notes}"
+    );
+}
+
+#[given("a history whose released revisions name only work no user can see, including dependency updates that changed no path a user receives")]
+async fn a_history_with_no_announceable_entries(w: &mut DutyWorld) {
+    build_history_with(
+        w,
+        &INVISIBLE_WITH_CI_DEPENDENCY_HISTORY,
+        &[(0, &[".github/workflows/ci.yml"])],
+    );
+}
+
+#[given("a history whose dependency update carries a capability scope")]
+async fn a_history_with_a_capability_scoped_dependency_update(w: &mut DutyWorld) {
+    build_history_with(
+        w,
+        &DEPENDENCY_CAPABILITY_HISTORY,
+        &[
+            (0, &["crates/duty2cal-core/src/lib.rs", "Cargo.lock"]),
+            (1, &["Cargo.lock"]),
+        ],
+    );
+}
+
+#[then("the notes name the capability-scoped update once")]
+async fn capability_scoped_update_once(w: &mut DutyWorld) {
+    let count = change_log_notes(w)
+        .iter()
+        .filter(|note| note.contains("Upgrade the PDF parser"))
+        .count();
+    assert_eq!(
+        count, 1,
+        "the capability-scoped update appears {count} times"
+    );
+}
+
+#[then("the Dependencies group names only the update that carries no capability scope")]
+async fn dependencies_group_holds_only_unscoped_updates(w: &mut DutyWorld) {
+    let group = group_of(&change_log(w), "Dependencies").join("\n");
+    assert!(
+        group.to_lowercase().contains("bump serde"),
+        "the Dependencies group names no unscoped update: {group}"
+    );
+    assert!(
+        !group.contains("Upgrade the PDF parser"),
+        "the Dependencies group repeats the capability-scoped update: {group}"
+    );
+}
+
+#[then("the release text names the dependency updates")]
+async fn release_text_names_the_dependency_updates(w: &mut DutyWorld) {
+    let path = staged_dir(w).join("release-notes.md");
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no release text at {}: {error}", path.display()));
+    let text = text.to_lowercase();
+    assert!(
+        text.contains("bump serde"),
+        "the release text names no serde update: {text}"
+    );
+    assert!(
+        text.contains("bump clap"),
+        "the release text names no clap update: {text}"
+    );
+}
