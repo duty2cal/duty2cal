@@ -888,6 +888,8 @@ Design constraints:
   once against the organization with the real passphrase, commits the encrypted
   state and backup, and `tofu state list` shows the five addresses. (This step
   awaits the operator and does not block the suite.)
-- [ ] Archive-time allow-list obligation: when the archive creates
-  `givn/specs/adopt-existing-configuration/`, add the capability to
-  `cliff.toml` and its parser rows in the same revision.
+- **Archive-time obligation (not a task box):** when the archive creates
+  `givn/specs/adopt-existing-configuration/`, add the capability to `cliff.toml`
+  and its parser rows in the same revision. It cannot be performed before the
+  archive, so it is recorded here and in `design.md` rather than as a task that
+  would gate the review.
