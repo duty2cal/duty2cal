@@ -166,9 +166,7 @@ async fn extracts_the_archive(w: &mut DutyWorld, platform: String) {
 async fn the_archive_holds_exactly(w: &mut DutyWorld, executable: String) {
     let archive = staged_archive(w, supported_platform());
     let mut command = Command::new("tar");
-    command
-        .arg("-tzf")
-        .arg(staged_dir(w).join(&archive));
+    command.arg("-tzf").arg(staged_dir(w).join(&archive));
     run_command(w, &mut command);
     assert_eq!(
         w.exit_status,
@@ -200,8 +198,8 @@ async fn the_extracted_executable_is_the_staged_one(w: &mut DutyWorld) {
         .join(executable);
     let extracted_bytes = std::fs::read(&extracted)
         .unwrap_or_else(|error| panic!("read {}: {error}", extracted.display()));
-    let staged_bytes = std::fs::read(&staged)
-        .unwrap_or_else(|error| panic!("read {}: {error}", staged.display()));
+    let staged_bytes =
+        std::fs::read(&staged).unwrap_or_else(|error| panic!("read {}: {error}", staged.display()));
     assert_eq!(
         extracted_bytes, staged_bytes,
         "the extracted executable is not the executable the preparation staged"

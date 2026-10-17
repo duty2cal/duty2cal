@@ -683,7 +683,7 @@ givn commit -m "feat(publish-public-release): Offer one downloadable archive for
 Narrow the release workflow to the one Windows build." .github/workflows/release.yml givn/changes/windows-only-release/tasks.md
 ```
 
-Revision: `<paste revision id>`
+Revision: `614ec8ef55342d86863e2454ec0ae1a5098f1ed2`
 
 ---
 
@@ -1662,7 +1662,7 @@ givn commit -m "test(e2e): Offer one downloadable archive for Windows, the only 
 Scenario: Maintainer prepares a Windows release and inspects the archived executable" givn/changes/windows-only-release/specs/publish-public-release/publish-public-release.feature apps/cli/tests/steps/publish_public_release.rs apps/cli/tests/steps/e2e/publish_public_release.rs givn/changes/windows-only-release/evidence/visual/maintainer-prepares-a-windows-release-and-inspects-the-archived-executable/transcript.txt givn/changes/windows-only-release/tasks.md
 ```
 
-Revision: `<paste revision id>`
+Revision: `0e26453528b141561edd8f337e29e75d8a3edbf4`
 
 ---
 
