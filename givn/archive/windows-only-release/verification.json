@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "windows-only-release",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
-  "started_at_unix": 1792253657,
-  "finished_at_unix": null
+  "status": "proven",
+  "candidate_revision": "dd0c9aea5fc6f2abce52d993646cae71fd45f456",
+  "tested_revision": "dd0c9aea5fc6f2abce52d993646cae71fd45f456",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 2.38434596
+    },
+    "regular": {
+      "status": "passed",
+      "total": 121,
+      "passed": 121,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 16.406098277
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 871,
+    "line_valid": 886,
+    "line_percent": 98
+  },
+  "started_at_unix": 1792253668,
+  "finished_at_unix": 1792253739
 }
