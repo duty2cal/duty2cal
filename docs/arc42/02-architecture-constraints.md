@@ -14,8 +14,8 @@
 | `archunit = "=0.0.2"` architecture tests for the intra-crate layer direction | ADR-0002, level 3. |
 | Typed errors (`thiserror`); no `unwrap()`/`expect()` outside test code | Operator brief conventions. |
 | No network I/O at runtime | The converter is local and offline. |
-| Five supported platform targets: `x86_64-pc-windows-gnu`, `x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl`, `aarch64-apple-darwin`, `x86_64-apple-darwin` | One executable per supported platform; nothing outside this set is offered for download. |
-| Linux archives are musl-static; macOS archives are built natively on macOS runners | "No runtime installation" must not depend on a glibc version or a distribution; the only way to build and start a macOS binary is a macOS machine. |
+| Windows x86_64 is the only supported platform and the only target offered for download: `x86_64-pc-windows-gnu` | One executable for the one supported platform; nothing outside this set is supported, tested or distributed. Other platforms may build the source with a Rust toolchain. |
+| Linux (`ubuntu-latest`) remains the CI, coverage and local test host and the host that cross-builds the Windows executable; it is not a published platform | The suite runs on Linux and the Windows executable is cross-built there. This is engineering context for the project's own build and evidence path, not a platform promise. |
 | Release packaging is a Linux-only POSIX-shell script (`scripts/prepare-release.sh`) outside the workspace | Packaging is build tooling, not product behaviour; it adds no workspace member and stays off the coverage denominator. |
 | CI validates the workflows with `rhysd/actionlint:1.7.12` and enforces DCO sign-off on pull requests (`scripts/dco-check.sh`) | The release path only fails on the host, so a schema/expression check precedes the push; sign-off is required without granting a third-party app repository access. |
 | Every release archive carries a build provenance attestation and a bill of materials (`actions/attest@v4`, `anchore/sbom-action@v0`) | A downloader can trace the file in hand to the tagged revision and this project's automation. |

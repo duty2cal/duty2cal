@@ -693,9 +693,9 @@ The fourteen arc42 files are already modified in the working tree by the
 arc42-docs artifact. This task verifies them, applies one authorized one-line
 correction (below), and commits them. Do not rewrite the chapters otherwise.
 
-- [ ] Run the stale-promise greps and record the survivors.
-- [ ] Apply the authorized R-012 correction; re-run the greps.
-- [ ] Commit the docs tree and record the revision.
+- [x] Run the stale-promise greps and record the survivors.
+- [x] Apply the authorized R-012 correction; re-run the greps.
+- [x] Commit the docs tree and record the revision.
 
 ### Authorized correction (explicitly approved by the main agent)
 
@@ -726,10 +726,19 @@ $ git diff --stat -- docs/arc42
 ```
 
 ```
-<paste output here>
+--- five/gatekeeper ---
+docs/arc42/adr/ADR-0003-release-channel-and-platforms.md:13:> platform set is narrowed from five platforms to Windows x86_64. The release
+--- platform names ---
+docs/arc42/adr/ADR-0003-release-channel-and-platforms.md:142:`linux-x86_64` — are covered by the `publish-public-release` scenarios.
+--- README claims ---
+(no output, exit 1)
+--- glossary ---
+12-glossary.md:47 Release archive: one per version, the Windows x86_64 archive
+12-glossary.md:62 Supported platform: Windows x86_64 only; Linux is CI/test host
+12-glossary.md:115/118 register of the promoted terms
+--- diffstat ---
+14 files changed, 207 insertions(+), 113 deletions(-)
 ```
-
-Intentional survivors to record (not defects):
 
 - `docs/arc42/12-glossary.md` "five terms added by the change to export
   released roster calendars" — unrelated historical promotion note.

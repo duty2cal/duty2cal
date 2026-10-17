@@ -30,7 +30,7 @@ A plan prints a travel row's crew position (`Pos`) and the flight's activity (`A
 
 ## Release determinism
 
-Preparing the same five executables and version twice produces byte-identical archives, so a third party can reproduce a release and its checksum is meaningful. The three nondeterministic inputs of `tar` are fixed — ordering (`--sort=name`), time (`--mtime=@0`) and ownership (`--owner=0 --group=0 --numeric-owner`) — and `gzip` is invoked with `-n`, so no name or timestamp is embedded.
+Preparing the same Windows executable and version twice produces a byte-identical archive, so a third party can reproduce a release and its checksum is meaningful. The three nondeterministic inputs of `tar` are fixed — ordering (`--sort=name`), time (`--mtime=@0`) and ownership (`--owner=0 --group=0 --numeric-owner`) — and `gzip` is invoked with `-n`, so no name or timestamp is embedded.
 
 ## Change-log generation determinism
 
@@ -48,7 +48,7 @@ A released change is either a revision whose conventional-commit scope names a c
 
 ## Completeness refusal in the preparation command
 
-The preparation command is all-or-nothing. It refuses, leaving its output untouched, when a supported platform's executable is missing, when an executable is presented for a platform outside the supported set, when an executable cannot be read, when that version's set is already staged, or when the committed change log is not current for the version being released. It writes nothing until the whole set is valid, so an incomplete preparation publishes nothing and never replaces an existing prepared set.
+The preparation command is all-or-nothing. It refuses, leaving its output untouched, when the Windows x86_64 executable is missing, when an executable is presented for a platform outside the supported set (including the previously offered Linux and macOS targets), when an executable cannot be read, when that version's set is already staged, or when the committed change log is not current for the version being released. It writes nothing until the whole set is valid, so an incomplete preparation publishes nothing and never replaces an existing prepared set.
 
 ## Supply-chain provenance and immutability
 

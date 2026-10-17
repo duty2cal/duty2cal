@@ -17,20 +17,20 @@ flowchart LR
 
 ### The public home and release channel
 
-GitHub is the project's public home and release channel: the repository holds the history and the gate every change passes before it lands; GitHub Actions runners build, package, attest and publish each version; GitHub Releases serves the archives at a stable latest-release address; Dependabot proposes dependency updates; and code scanning reviews the code and the project's own automation.
+GitHub is the project's public home and release channel: the repository holds the history and the gate every change passes before it lands; GitHub Actions runners build, package, attest and publish each version; GitHub Releases serves the one Windows x86_64 archive at a stable latest-release address; Dependabot proposes dependency updates; and code scanning reviews the code and the project's own automation.
 
-The relationship runs one way, outward: the project pushes commits and version tags to GitHub, and GitHub serves the published archives to a downloader. Nothing flows back into the product.
+The relationship runs one way, outward: the project pushes commits and version tags to GitHub, and GitHub serves the published archive to a downloader. Nothing flows back into the product.
 
 ```mermaid
 flowchart LR
   maint["Maintainer"] -->|"commits, pull requests, version tags"| gh["GitHub (public repository, Actions runners, Releases, Dependabot, code scanning)"]
   gh -->|"check results on the revision"| maint
-  gh -->|"per-platform archive, checksum, provenance, bill of materials"| dl["Crew member"]
+  gh -->|"Windows x86_64 archive, checksum, provenance, bill of materials"| dl["Crew member"]
 ```
 
 The product itself is unchanged: the converter has no network I/O and no runtime dependency, and it never contacts GitHub. Only the project's build-and-release automation runs on the host.
 
-The release page's text is the newest section of the repository's change log — the changes a user receives (capability changes and dependency updates), grouped by kind — and the change log itself is one of the files a release publishes, so a reader of the source and a reader of the release page see the same history.
+The release page's text is the newest section of the repository's change log — the changes a user receives (capability changes and dependency updates), grouped by kind — and the change log itself is one of the files a release publishes, so a reader of the source and a reader of the release page see the same history. Each version carries exactly one archive, for Windows x86_64; there is no per-platform asset set, and nothing is offered for a platform the release does not support. A crew member on any other platform obtains the tool by building the source with a Rust toolchain.
 
 ## Technical context
 
