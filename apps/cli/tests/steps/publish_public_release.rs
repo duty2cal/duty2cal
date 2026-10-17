@@ -2569,6 +2569,12 @@ async fn gate_reports_the_revision_ready(w: &mut DutyWorld) {
         "the gate refused an allowed conclusion set: {}",
         w.command_transcript
     );
+    assert!(
+        w.command_transcript
+            .contains("1 successful, 2 skipped or neutral"),
+        "the gate did not report the green set's composition: {}",
+        w.command_transcript
+    );
     assert_eq!(gate_calls(w), 1, "the gate polled more than once");
 }
 

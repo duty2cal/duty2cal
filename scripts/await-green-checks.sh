@@ -115,21 +115,21 @@ while :; do
   fi
 
   running=$(awk -F'\t' '$2 != "completed" { printf "%s (%s)\n", $1, $2 }' "$work/checks.tsv")
+  successful=$(awk -F'\t' '$2 == "completed" && $3 == "success"' "$work/checks.tsv" | wc -l)
+  allowed=$(awk -F'\t' '$2 == "completed" && ($3 == "skipped" || $3 == "neutral")' "$work/checks.tsv" | wc -l)
   if [ -z "$running" ]; then
-    green=$(awk -F'\t' '$2 == "completed" && $3 == "success"' "$work/checks.tsv" | wc -l)
-    if [ "$green" -eq 0 ]; then
+    if [ "$successful" -eq 0 ]; then
       refuse "no check on the tagged revision concluded successfully"
     fi
-    printf 'every check run on %s outside this workflow'"'"'s own suites concluded: %s successful\n' \
-      "$sha" "$green"
+    printf 'every check run on %s outside this workflow'"'"'s own suites concluded: %s successful, %s skipped or neutral\n' \
+      "$sha" "$successful" "$allowed"
     exit 0
   fi
 
   running_names=$(awk -F'\t' '$2 != "completed" { printf "%s (%s), ", $1, $2 }' "$work/checks.tsv")
-  printf 'poll %s: %s check run(s) outside this workflow'"'"'s own suites; %s still running; %s successful\n' \
+  printf 'poll %s: %s check run(s) outside this workflow'"'"'s own suites; %s still running; %s successful; %s skipped or neutral\n' \
     "$poll" "$(wc -l < "$work/checks.tsv")" \
-    "$(printf '%s\n' "$running" | wc -l)" \
-    "$(awk -F'\t' '$2 == "completed" && $3 == "success"' "$work/checks.tsv" | wc -l)"
+    "$(printf '%s\n' "$running" | wc -l)" "$successful" "$allowed"
   printf 'still running:\n%s\n' "$running"
 
   if [ "$SECONDS" -ge "$deadline" ]; then
