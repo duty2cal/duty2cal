@@ -720,10 +720,57 @@ Design constraints:
   the journal's no-write condition; transcript evidence is recorded.
 
 Evidence:
-- [ ] Full-suite scenario count and e2e scenario count pasted; e2e count is
-  strictly less.
-- [ ] `./run-tests.sh --e2e` reaches the fake on loopback (smoke) before the
-  scenario steps are written.
+- [x] Strict-mode proof for the `@e2e` runner: the scenario still carried
+  `@wip`; the single-scenario command failed on the undefined first step with a
+  non-zero exit.
+  ```
+  $ ./run-tests.sh --name "Maintainer adopts the existing public home and every object is bound without changing it"
+  ...
+    Scenario: Maintainer adopts the existing public home and every object is bound without changing it
+     ✘  Given the public home already exists with its hand-made configuration
+        Step failed:
+        Defined: tmp/tmp.byOK6ovVq6/f0003.feature:7:5
+        Step doesn't match any function
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  1 step (1 failed)
+  error: test failed, to rerun pass `-p duty2cal --test features_runner`
+  exit status: 101
+  ```
+- [x] Full-suite scenario count and e2e scenario count pasted; e2e count is
+  strictly less. The `--e2e` filter selects every capability's tagged scenario,
+  including this change's, so `./run-tests.sh --e2e` remains a strict subset of
+  `./run-tests.sh`.
+  ```
+  $ ./run-tests.sh
+  ...
+  132 scenarios (132 passed)
+  517 steps (517 passed)
+  exit status: 0
+
+  $ ./run-tests.sh --e2e
+  ...
+  4 scenarios (4 passed)
+  22 steps (22 passed)
+  exit status: 0
+  ```
+- [x] `./run-tests.sh --e2e` reaches the fake on loopback (smoke) before the
+  scenario steps are written: with the steps still absent, the e2e run reported
+  this scenario's first step as the undefined step (`Step doesn't match any
+  function`), so the filter reached it; after the steps were written the same
+  command drives the real adoption subprocess against the fake (scenario 11).
+  ```
+  $ ./run-tests.sh --e2e
+  ...
+  Feature: Adopt the existing public-home configuration
+    Scenario: Maintainer adopts the existing public home and every object is bound without changing it
+     ✘  Given the public home already exists with its hand-made configuration
+        Step failed:
+        Step doesn't match any function
+  4 scenarios (1 passed, 3 failed)
+  12 steps (9 passed, 3 failed)
+  ```
 
 ## 11. Maintainer adopts the existing public home and every object is bound without changing it (@e2e)
 
@@ -734,22 +781,109 @@ Design constraints:
 - The journal has no refused write and no mutation; a GraphQL query POST is a
   read.
 - Transcript committed under
-  `givn/changes/declare-public-home/evidence/real-adoption/` for the later real
-  run; the scenario itself uses the fake.
+  `givn/changes/declare-public-home/evidence/visual/<scenario-slug>/transcript.txt`
+  as the Visual Design Contract requires; the transcript of the later real run
+  stays under `evidence/real-adoption/` and is the operator's final-verification
+  step. The scenario itself uses the fake.
 
-- [ ] RED — remove `@wip` from this scenario only; run the single scenario;
+- [x] RED — remove `@wip` from this scenario only; run the single scenario;
       paste output (non-zero).
-- [ ] GREEN — assertions and production code; list files; paste output (zero).
-- [ ] REFACTOR — cleanup; re-run; paste output (zero).
-- [ ] COMMIT — `test(e2e): <release note>` with the scenario title in the body;
+      ```
+      $ ./run-tests.sh --name "Maintainer adopts the existing public home and every object is bound without changing it"
+      ...
+      Feature: Adopt the existing public-home configuration
+        Scenario: Maintainer adopts the existing public home and every object is bound without changing it
+         ✘  Given the public home already exists with its hand-made configuration
+            Step failed:
+            Defined: tmp/tmp.HbrbCcUrKP/f0003.feature:7:5
+            Step doesn't match any function
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      error: test failed, to rerun pass `-p duty2cal --test features_runner`
+      exit status: 101
+      ```
+- [x] GREEN — assertions and production code; list files; paste output (zero).
+      Files: `apps/cli/tests/steps/e2e/adopt_existing_configuration.rs` (the six
+      steps: start the fake through the shared `prepare`, assert the declaration
+      names all five resources, assert the selected batch carries the five
+      identifiers, assert the real command's exactly five
+      `adopted <address> <import-id>` lines, assert every journal entry was
+      served, assert the five addresses with `tofu state list`, and commit the
+      scrubbed transcript); `apps/cli/tests/steps/adopt_existing_configuration.rs`
+      (the shared fake-server lifecycle, adoption, journal, no-write and
+      state-list helpers become `pub(crate)`); the feature file drops `@wip`; the
+      transcript under `evidence/visual/maintainer-adopts-the-existing-public-home-and-every-object-is-bound-without-changing-it/transcript.txt`.
+      ```
+      $ ./run-tests.sh --name "Maintainer adopts the existing public home and every object is bound without changing it"
+      ...
+      Feature: Adopt the existing public-home configuration
+        Scenario: Maintainer adopts the existing public home and every object is bound without changing it
+         ✔  Given the public home already exists with its hand-made configuration
+         ✔  And the declared configuration names the organization, both repositories, the default-branch rule and the site source
+         ✔  And the selected batch names those objects
+         ✔  When the organization owner adopts the batch
+         ✔  Then the adoption reports the organization, both repositories, the default-branch rule and the site source as bound
+         ✔  And the live configuration is unchanged
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      6 steps (6 passed)
+      exit status: 0
+      ```
+      The committed transcript holds only the command and its five bound lines:
+      ```
+      $ scripts/adopt-public-home.sh
+      adopted github_organization_settings.org 343978778
+      adopted github_repository.mono duty2cal
+      adopted github_repository.pages duty2cal.github.io
+      adopted github_repository_ruleset.main duty2cal:24981082
+      adopted github_repository_pages.pages duty2cal.github.io
+      exit status: 0
+      ```
+- [x] REFACTOR — cleanup; re-run; paste output (zero).
+      `cargo fmt --all`; the transcript step no longer repeats the adoption
+      helper's exit-status line; no behaviour changed.
+      ```
+      $ ./run-tests.sh --name "Maintainer adopts the existing public home and every object is bound without changing it"
+      ...
+      1 feature
+      1 scenario (1 passed)
+      6 steps (6 passed)
+      exit status: 0
+      ```
+- [x] COMMIT — `test(e2e): <release note>` with the scenario title in the body;
       record the revision.
+      Revision: `a81fa709716024cafcf4f10102e96d423bcb3cbe`
 
 ## Final verification
 
-- [ ] Every scenario box checked with pasted output and a revision.
-- [ ] `./run-tests.sh` exits 0 over the full suite.
-- [ ] `./run-tests.sh --e2e` exits 0 with a strictly smaller scenario count.
-- [ ] `givn lint --change declare-public-home` has no errors.
+- [x] Every scenario box checked with pasted output and a revision.
+- [x] `./run-tests.sh` exits 0 over the full suite.
+      ```
+      $ ./run-tests.sh
+      ...
+      132 scenarios (132 passed)
+      517 steps (517 passed)
+      exit status: 0
+      ```
+- [x] `./run-tests.sh --e2e` exits 0 with a strictly smaller scenario count.
+      ```
+      $ ./run-tests.sh --e2e
+      ...
+      4 scenarios (4 passed)
+      22 steps (22 passed)
+      exit status: 0
+      ```
+- [x] `givn lint --change declare-public-home` has no errors.
+      ```
+      $ givn lint --change declare-public-home
+      [SHAPE] advisory  ... /adopt-existing-configuration.feature  scenarios 'An applied state encrypted with another passphrase refuses before any binding' and 'A failure to record the applied state binds nothing and changes nothing' share a shape — consider merging
+      [SUBST] advisory  ... /adopt-existing-configuration.feature  subset: scenario 'A live object that changes after it was read refuses the batch' is a subset of 'A declared object that does not exist live refuses the whole batch'
+      givn lint: 1 file(s) checked — clean
+      exit status: 0
+      ```
 - [ ] Post-GREEN operator step recorded: the maintainer runs the real adoption
   once against the organization with the real passphrase, commits the encrypted
   state and backup, and `tofu state list` shows the five addresses. (This step
