@@ -78,6 +78,47 @@ pub(crate) fn applied_state_addresses(w: &DutyWorld) -> Vec<String> {
         .collect()
 }
 
+/// The applied state's rendered object, so a scenario can assert that the
+/// binding records the live values rather than the declared ones. The state is
+/// encrypted; the test passphrase decrypts it in the temporary declaration.
+pub(crate) fn applied_state_show(w: &DutyWorld, address: &str) -> String {
+    let declaration = declaration_dir(w);
+    let rc = terraformrc();
+    let passphrase = w
+        .passphrase
+        .clone()
+        .unwrap_or_else(|| PASSPHRASE.to_string());
+    let init = Command::new("tofu")
+        .args(["init", "-backend=false", "-input=false", "-no-color"])
+        .current_dir(&declaration)
+        .env("TF_CLI_CONFIG_FILE", &rc)
+        .env("TF_VAR_state_passphrase", &passphrase)
+        .env("TF_VAR_billing_email", BILLING_EMAIL)
+        .output()
+        .expect("run tofu init against the declaration");
+    assert!(
+        init.status.success(),
+        "tofu init failed: {}{}",
+        String::from_utf8_lossy(&init.stdout),
+        String::from_utf8_lossy(&init.stderr)
+    );
+    let show = Command::new("tofu")
+        .args(["state", "show", address])
+        .current_dir(&declaration)
+        .env("TF_CLI_CONFIG_FILE", &rc)
+        .env("TF_VAR_state_passphrase", &passphrase)
+        .env("TF_VAR_billing_email", BILLING_EMAIL)
+        .output()
+        .expect("run tofu state show against the applied state");
+    assert!(
+        show.status.success(),
+        "tofu state show {address} failed: {}{}",
+        String::from_utf8_lossy(&show.stdout),
+        String::from_utf8_lossy(&show.stderr)
+    );
+    String::from_utf8_lossy(&show.stdout).to_string()
+}
+
 /// The scenario sequence, so concurrently executed scenarios never share a
 /// directory, a fake or a state.
 static SCENARIO_SEQUENCE: AtomicUsize = AtomicUsize::new(0);

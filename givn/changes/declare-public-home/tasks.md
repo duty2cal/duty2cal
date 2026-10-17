@@ -746,7 +746,7 @@ Evidence:
   $ ./run-tests.sh
   ...
   132 scenarios (132 passed)
-  517 steps (517 passed)
+  518 steps (518 passed)
   exit status: 0
 
   $ ./run-tests.sh --e2e
@@ -785,6 +785,9 @@ Design constraints:
   as the Visual Design Contract requires; the transcript of the later real run
   stays under `evidence/real-adoption/` and is the operator's final-verification
   step. The scenario itself uses the fake.
+- The applied state records the live project and issue settings rather than the
+  declared values; the scenario drives the real `tofu state show` path (the
+  change-review F1 strengthening).
 
 - [x] RED — remove `@wip` from this scenario only; run the single scenario;
       paste output (non-zero).
@@ -857,15 +860,20 @@ Design constraints:
       record the revision.
       Revision: `a81fa709716024cafcf4f10102e96d423bcb3cbe`
 
+Post-review strengthening (F1, 2026-10-17): the scenario gained the Then
+`the applied state records the live values rather than the declared ones`; the
+single-scenario re-run passes 7/7 steps, the full suite passes 132 scenarios /
+518 steps, and the e2e suite passes 4 scenarios / 23 steps.
+
 ## Final verification
 
 - [x] Every scenario box checked with pasted output and a revision.
-- [x] `./run-tests.sh` exits 0 over the full suite.
+- [x] `./run-tests.sh` exits 0 over the full suite (132 scenarios / 518 steps).
       ```
       $ ./run-tests.sh
       ...
       132 scenarios (132 passed)
-      517 steps (517 passed)
+      518 steps (518 passed)
       exit status: 0
       ```
 - [x] `./run-tests.sh --e2e` exits 0 with a strictly smaller scenario count.

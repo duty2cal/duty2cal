@@ -99,7 +99,7 @@ New or changed files:
 | `givn/changes/declare-public-home/evidence/live-read/` | new | The one-time authenticated read of today's live values (monorepo topics, pages-repository features and description, organization profile and member defaults), committed beside the declaration. |
 | `givn/changes/declare-public-home/evidence/real-adoption/transcript.txt` | new | The transcript of the required post-GREEN real adoption against the real organization, with the five bound addresses. |
 | `cliff.toml` | changed at archive only | Not edited by this change now: the archive adds `adopt-existing-configuration` to the marked capability allow-list and its per-type parser rows in the same revision that creates `givn/specs/adopt-existing-configuration/` (see "Archive-time obligation" below). |
-| `REUSE.toml` | changed | SPDX attribution for the fake's JSON fixtures; the scripts and HCL carry headers. |
+| `REUSE.toml` | unchanged | The existing aggregate annotation covers the fake's JSON fixtures; the scripts and HCL carry headers. |
 | `docs/arc42/*`, `docs/arc42/adr/*` | changed | The 12-chapter impact assessment, the affected chapters and two ADRs. |
 
 ## The declaration
@@ -337,7 +337,11 @@ loopback.
   header **and is journaled as an unknown-path entry**, so a missing fixture
   fails loudly instead of being silently defaulted. Every refusal step asserts
   that the journal contains no unknown-path entry, so a refusal is never the
-  fake's own gap leaking through as a provider error. The setup task extends
+  fake's own gap leaking through as a provider error. The fixture values mirror the live read under
+  `givn/changes/declare-public-home/evidence/live-read/`, not the declared
+  values: adoption binds identity, so the `@e2e` scenario asserts that the
+  applied state carries the live project and issue settings while the
+  declaration states the decided ones. The setup task extends
   the fixture set until one real `tofu import` per object succeeds — that is
   the proof the fixture set is complete, and it is run before the scenarios
   rely on it. The same proof asserts that a `-refresh-only` plan against an

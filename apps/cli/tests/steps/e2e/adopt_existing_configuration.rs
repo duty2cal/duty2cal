@@ -14,7 +14,8 @@ use std::path::PathBuf;
 use cucumber::{given, then};
 
 use crate::steps::adopt_existing_configuration::{
-    applied_state_addresses, declaration_dir, journal_lines, prepare, repository_root,
+    applied_state_addresses, applied_state_show, declaration_dir, journal_lines, prepare,
+    repository_root,
 };
 use crate::DutyWorld;
 
@@ -204,4 +205,35 @@ async fn the_adoption_reports_every_object_as_bound(w: &mut DutyWorld) {
     }
 
     commit_transcript(w);
+}
+
+#[then("the applied state records the live values rather than the declared ones")]
+async fn the_applied_state_records_the_live_values(w: &mut DutyWorld) {
+    // The declaration states the decided values (projects off, pages issues
+    // off); the live fixtures hold today's values (projects on, pages issues
+    // on). Adoption binds identity, so the state must carry the live values.
+    let declaration = declaration_text(w);
+    assert!(
+        declaration.contains("has_projects    = false")
+            || declaration.contains("has_projects = false"),
+        "the declaration states projects off; it was:\n{declaration}"
+    );
+    let mono = applied_state_show(w, "github_repository.mono");
+    assert!(
+        mono.lines()
+            .any(|line| line.trim().replace(' ', "") == "has_projects=true"),
+        "the applied state records the monorepo's live project setting; state was:\n{mono}"
+    );
+
+    assert!(
+        declaration.contains("has_issues   = false") || declaration.contains("has_issues = false"),
+        "the declaration states pages issues off; it was:\n{declaration}"
+    );
+    let pages = applied_state_show(w, "github_repository.pages");
+    assert!(
+        pages
+            .lines()
+            .any(|line| line.trim().replace(' ', "") == "has_issues=true"),
+        "the applied state records the pages repository's live issue setting; state was:\n{pages}"
+    );
 }

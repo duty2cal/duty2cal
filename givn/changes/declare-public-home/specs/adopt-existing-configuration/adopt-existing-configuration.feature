@@ -9,6 +9,7 @@ Feature: Adopt the existing public-home configuration
     And the selected batch names those objects
     When the organization owner adopts the batch
     Then the adoption reports the organization, both repositories, the default-branch rule and the site source as bound
+    And the applied state records the live values rather than the declared ones
     And the live configuration is unchanged
 
   @givn.added
