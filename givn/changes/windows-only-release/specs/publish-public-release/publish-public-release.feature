@@ -6,7 +6,7 @@ Feature: Publish a public release
   platform. Other platforms are not supported or distributed; the source can be
   built with a Rust toolchain.
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A prepared release offers one archive for every supported platform
     Given  an executable built for every supported platform
     When  the maintainer prepares the release for version 0.1.0

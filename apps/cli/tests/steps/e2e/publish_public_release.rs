@@ -12,7 +12,7 @@ use std::process::Command;
 use cucumber::{given, then, when};
 
 use crate::steps::publish_public_release::{
-    build_binaries, build_history, change_log_path, machine_executable, machine_platform,
+    build_binaries, build_history, change_log_path, supported_executable, supported_platform,
     run_command, sha256_of, staged_archive, staged_dir, supported_platforms, FIRST_RELEASE_HISTORY,
 };
 use crate::DutyWorld;
@@ -64,7 +64,7 @@ fn commit_transcript(w: &DutyWorld) {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).expect("create the evidence directory");
     }
-    let archive = staged_archive(w, machine_platform());
+    let archive = staged_archive(w, supported_platform());
     let built_digest = sha256_of(&staged_dir(w).join(&archive));
     let mut evidence = w
         .scenario_transcript
@@ -104,7 +104,7 @@ async fn the_executable_built_for_this_machine(w: &mut DutyWorld) {
 #[then("the preparation reports the archive and its checksum for this machine's platform")]
 async fn the_preparation_reports_archive_and_checksum(w: &mut DutyWorld) {
     let out = staged_dir(w);
-    let archive = staged_archive(w, machine_platform());
+    let archive = staged_archive(w, supported_platform());
     let checksum = std::fs::read_to_string(out.join(format!("{archive}.sha256")))
         .expect("read the checksum file beside this machine's archive");
     let digest = checksum
@@ -130,7 +130,7 @@ async fn the_preparation_reports_archive_and_checksum(w: &mut DutyWorld) {
 
 #[when("the maintainer extracts the archive for this machine's platform")]
 async fn extracts_the_archive(w: &mut DutyWorld) {
-    let archive = staged_archive(w, machine_platform());
+    let archive = staged_archive(w, supported_platform());
     let extracted = extracted_dir(w);
     std::fs::create_dir_all(&extracted).expect("create the extraction directory");
     let mut command = Command::new("tar");
@@ -150,7 +150,7 @@ async fn extracts_the_archive(w: &mut DutyWorld) {
 
 #[when("runs the executable taken from that archive")]
 async fn runs_the_extracted_executable(w: &mut DutyWorld) {
-    let executable = extracted_dir(w).join(machine_executable());
+    let executable = extracted_dir(w).join(supported_executable());
     assert!(
         executable.is_file(),
         "the archive held no executable at {}",

@@ -31,11 +31,12 @@ set -euo pipefail
 # the change-log configuration, whatever checkout `--repo` names.
 renderer="$(cd "$(dirname "$0")" && pwd)/render-changelog.sh"
 
-# The canonical supported platform set, in release order. The release workflow's
-# matrix is written by hand; a disagreement fails loudly — a platform missing
+# The canonical supported platform set, in release order. Windows x86_64 is the
+# only platform the project distributes. The release workflow's matrix is
+# written by hand; a disagreement fails loudly — the supported platform missing
 # from the matrix trips the completeness refusal, one outside the set trips the
 # whitelist refusal.
-PLATFORMS='windows-x86_64 linux-x86_64 linux-arm64 macos-arm64 macos-x86_64'
+PLATFORMS='windows-x86_64'
 
 usage() {
   cat >&2 <<'EOF'

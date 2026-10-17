@@ -21,13 +21,7 @@ use crate::DutyWorld;
 
 /// The supported platforms and the executable name each one uses, in release
 /// order. The script owns the canonical set; the steps speak it.
-pub(crate) const SUPPORTED: [(&str, &str); 5] = [
-    ("windows-x86_64", "duty2cal.exe"),
-    ("linux-x86_64", "duty2cal"),
-    ("linux-arm64", "duty2cal"),
-    ("macos-arm64", "duty2cal"),
-    ("macos-x86_64", "duty2cal"),
-];
+pub(crate) const SUPPORTED: [(&str, &str); 1] = [("windows-x86_64", "duty2cal.exe")];
 
 /// The release-text scenario's fixture history, oldest revision first: two
 /// release-note subjects (one of them repeated by three revisions), three
@@ -106,21 +100,14 @@ pub(crate) fn executable_for(platform: &str) -> &'static str {
         .unwrap_or_else(|| panic!("unrecognised platform: {platform}"))
 }
 
-/// The platform this machine is: the one whose real executable the steps use.
-pub(crate) fn machine_platform() -> &'static str {
-    match (std::env::consts::OS, std::env::consts::ARCH) {
-        ("linux", "x86_64") => "linux-x86_64",
-        ("linux", "aarch64") => "linux-arm64",
-        ("macos", "aarch64") => "macos-arm64",
-        ("macos", "x86_64") => "macos-x86_64",
-        ("windows", "x86_64") => "windows-x86_64",
-        (os, arch) => panic!("this machine has no supported platform: {os}/{arch}"),
-    }
+/// The one supported platform: the archive the release offers.
+pub(crate) fn supported_platform() -> &'static str {
+    SUPPORTED[0].0
 }
 
-/// The executable name this machine's platform uses.
-pub(crate) fn machine_executable() -> &'static str {
-    executable_for(machine_platform())
+/// The executable name the supported platform uses.
+pub(crate) fn supported_executable() -> &'static str {
+    SUPPORTED[0].1
 }
 
 /// The repository root: the working directory the preparation is invoked from,
@@ -142,14 +129,11 @@ pub(crate) fn staged_dir(w: &DutyWorld) -> PathBuf {
     w.working_dir().join("out")
 }
 
-/// The bytes of the executable built for a platform: the real built binary for
-/// this machine's platform, a stand-in for the others.
+/// The bytes of the executable built for a platform: a fixed stand-in. The
+/// local suite never runs the Windows binary, so it must not depend on the
+/// host's build; the Windows smoke job is the execution evidence.
 fn executable_bytes(platform: &str) -> Vec<u8> {
-    if platform == machine_platform() {
-        std::fs::read(env!("CARGO_BIN_EXE_duty2cal")).expect("read the built executable")
-    } else {
-        format!("stand-in executable for {platform}\n").into_bytes()
-    }
+    format!("stand-in executable for {platform}\n").into_bytes()
 }
 
 /// Write one executable for a platform.
@@ -630,7 +614,7 @@ async fn holds_exactly_these_archives(w: &mut DutyWorld, step: &Step) {
     assert_eq!(
         entries(&out),
         expected,
-        "the staged set is not the five archives, their checksums, the release text and the change log"
+        "the staged set is not the one Windows archive, its checksum, the release text and the change log"
     );
 }
 

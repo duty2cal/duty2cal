@@ -767,7 +767,7 @@ givn commit -m "feat(publish-public-release): Offer one downloadable archive for
 Record the narrowed platform set in the durable documentation." docs/arc42 givn/changes/windows-only-release/tasks.md
 ```
 
-Revision: `<paste revision id>`
+Revision: `1fa18f5b6926aaa459564c529d5a10c7eed67637`
 
 ---
 
@@ -784,11 +784,11 @@ assembled and needs no step; do not add one.
 
 `@givn.modified` at lines 9–16.
 
-- [ ] RED (remove `@wip`; fixture narrowed; production still five platforms)
-- [ ] GREEN (production script narrowed to one platform)
-- [ ] REFACTOR (stale wording removed; targeted run still zero)
-- [ ] COMMIT (revision recorded below)
-- [ ] Evidence and revision filled in
+- [x] RED (remove `@wip`; fixture narrowed; production still five platforms)
+- [x] GREEN (production script narrowed to one platform)
+- [x] REFACTOR (stale wording removed; targeted run still zero)
+- [x] COMMIT (revision recorded below)
+- [x] Evidence and revision filled in
 
 ### Design constraints (copied from `design.md`)
 
@@ -861,7 +861,27 @@ nix-shell -p git-cliff --run './run-tests.sh --name "An unreadable executable st
 ```
 
 ```
-<paste the three command outputs here, labelled C1/C3/C4>
+C1: exit=101
+Feature: Publish a public release
+  Scenario: A prepared release offers one archive for every supported platform
+   ✔  Given  an executable built for every supported platform
+   ✔  When  the maintainer prepares the release for version 0.1.0
+   ✘  Then  the prepared release holds exactly these archives, each with its checksum file
+      Step panicked. Captured output: assertion `left == right` failed: the preparation did not succeed:
+      prepare-release: no executable was built for platform linux-x86_64:
+      .../binaries/linux-x86_64/duty2cal
+1 scenario (1 failed)
+
+C3: exit=101
+Scenario: Each archive's checksum covers that archive
+   ✘  Given  a prepared release for version 0.1.0
+      Step panicked. Captured output: assertion `left == right` failed: the preparation did not succeed:
+      prepare-release: no executable was built for platform linux-x86_64
+1 scenario (1 failed)
+
+C4: exit=0 (re-baselined keep-true evidence; the old script already refuses the unreadable Windows executable)
+Scenario: An unreadable executable stops the preparation
+1 scenario (1 passed)
 ```
 
 ### GREEN
@@ -884,7 +904,15 @@ nix-shell -p git-cliff --run './run-tests.sh --name "A prepared release offers o
 ```
 
 ```
-<paste command and exit-0 output here>
+Feature: Publish a public release
+  Scenario: A prepared release offers one archive for every supported platform
+   ✔  Given  an executable built for every supported platform
+   ✔  When  the maintainer prepares the release for version 0.1.0
+   ✔  Then  the prepared release holds exactly these archives, each with its checksum file
+       | duty2cal-0.1.0-windows-x86_64.tar.gz | duty2cal.exe |
+   ✔  And  every archive holds only its own executable
+1 scenario (1 passed)
+exit=0
 ```
 
 ### REFACTOR
@@ -896,7 +924,12 @@ nix-shell -p git-cliff --run './run-tests.sh --name "A prepared release offers o
 - Re-run the targeted command; paste exit-0 output.
 
 ```
-<paste command and exit-0 output here>
+$ grep -nE 'five|all five' scripts/prepare-release.sh apps/cli/tests/steps/publish_public_release.rs apps/cli/tests/steps/e2e/publish_public_release.rs
+(no output, exit 1)
+$ nix-shell -p git-cliff --run './run-tests.sh --name "A prepared release offers one archive for every supported platform"'
+  Scenario: A prepared release offers one archive for every supported platform
+4 steps (4 passed)
+exit=0
 ```
 
 ### COMMIT
