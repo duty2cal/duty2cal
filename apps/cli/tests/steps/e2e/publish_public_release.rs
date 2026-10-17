@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MPL-2.0
 //! End-to-end steps for the capability `publish-public-release`.
 //!
-//! One file per capability. The scenario's `Given`/`When`/`Then` that the
-//! in-process steps already define stay there; these steps add what only the
-//! real interface needs: the executable built for this machine, the archive
-//! extracted with `tar`, and the executable taken out of it.
+//! One file per capability. These steps drive the real preparation command and
+//! inspect the Windows archive it stages. The Linux test host cannot execute a
+//! Windows binary, so execution evidence stays with the `windows-latest` smoke
+//! job; the local scenario proves the archive, its checksum and its member.
 
 use std::path::PathBuf;
 use std::process::Command;
@@ -12,16 +12,24 @@ use std::process::Command;
 use cucumber::{given, then, when};
 
 use crate::steps::publish_public_release::{
-    build_binaries, build_history, change_log_path, supported_executable, supported_platform,
-    run_command, sha256_of, staged_archive, staged_dir, supported_platforms, FIRST_RELEASE_HISTORY,
+    build_history, change_log_path, run_command, sha256_of, stage_stand_in_executable,
+    staged_archive, staged_dir, supported_executable, supported_platform, FIRST_RELEASE_HISTORY,
 };
 use crate::DutyWorld;
 
-/// Where the scenario's terminal transcript is committed as evidence.
+/// Where the scenario's terminal transcript is committed as evidence. The
+/// change owns it while it is active; the archive owns it afterwards.
 fn transcript_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
-        "../../givn/archive/publish-public-release/evidence/visual/\
-         maintainer-prepares-a-release-and-runs-the-archived-executable/transcript.txt",
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let active = root.join("givn/changes/windows-only-release");
+    let home = if active.is_dir() {
+        active
+    } else {
+        root.join("givn/archive/windows-only-release")
+    };
+    home.join(
+        "evidence/visual/\
+         maintainer-prepares-a-windows-release-and-inspects-the-archived-executable/transcript.txt",
     )
 }
 
@@ -53,23 +61,16 @@ fn extracted_dir(w: &DutyWorld) -> PathBuf {
 }
 
 /// Commit the scenario's terminal transcript as evidence, with the run-specific
-/// directory replaced by a placeholder and the digest of the archive holding
-/// the executable this machine really built replaced by a stable one. That
-/// digest carries the compiler's fingerprint, so committing it would make the
-/// record drift with the toolchain on every run; the step asserts the checksum
-/// against the file separately, so the value is not the evidence. The four
-/// stand-in archives' digests are reproducible and stay.
+/// directory replaced by a placeholder. The staged executable is the fixed
+/// stand-in, so its digest is stable and needs no scrub.
 fn commit_transcript(w: &DutyWorld) {
     let path = transcript_path();
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).expect("create the evidence directory");
     }
-    let archive = staged_archive(w, supported_platform());
-    let built_digest = sha256_of(&staged_dir(w).join(&archive));
     let mut evidence = w
         .scenario_transcript
-        .replace(&w.working_dir().display().to_string(), "<scenario-dir>")
-        .replace(&built_digest, "<built-executable-digest>");
+        .replace(&w.working_dir().display().to_string(), "<scenario-dir>");
     evidence.push_str(&format!("exit status: {}\n", w.exit_status.unwrap_or(-1)));
     std::fs::write(&path, evidence).expect("write the transcript");
 }
@@ -94,19 +95,27 @@ fn rendered_change_log(w: &DutyWorld) -> PathBuf {
     w.changelog.clone().unwrap_or_else(|| change_log_path(w))
 }
 
-#[given("the executable built for this machine")]
-async fn the_executable_built_for_this_machine(w: &mut DutyWorld) {
-    // The real built binary for this machine's platform, stand-ins for the four
-    // the preparation requires and this machine cannot run.
-    build_binaries(w, &supported_platforms());
+#[given(regex = r#"^a stand-in executable built for "([^"]+)"$"#)]
+async fn a_stand_in_executable(w: &mut DutyWorld, platform: String) {
+    assert_eq!(
+        platform,
+        supported_platform(),
+        "the scenario names the supported platform"
+    );
+    stage_stand_in_executable(w, &platform);
 }
 
-#[then("the preparation reports the archive and its checksum for this machine's platform")]
-async fn the_preparation_reports_archive_and_checksum(w: &mut DutyWorld) {
+#[then(regex = r#"^the preparation reports the archive and its checksum for "([^"]+)"$"#)]
+async fn the_preparation_reports_archive_and_checksum(w: &mut DutyWorld, platform: String) {
+    assert_eq!(
+        platform,
+        supported_platform(),
+        "the scenario names the supported platform"
+    );
     let out = staged_dir(w);
-    let archive = staged_archive(w, supported_platform());
+    let archive = staged_archive(w, &platform);
     let checksum = std::fs::read_to_string(out.join(format!("{archive}.sha256")))
-        .expect("read the checksum file beside this machine's archive");
+        .expect("read the checksum file beside the archive");
     let digest = checksum
         .split_whitespace()
         .next()
@@ -128,9 +137,14 @@ async fn the_preparation_reports_archive_and_checksum(w: &mut DutyWorld) {
     );
 }
 
-#[when("the maintainer extracts the archive for this machine's platform")]
-async fn extracts_the_archive(w: &mut DutyWorld) {
-    let archive = staged_archive(w, supported_platform());
+#[when(regex = r#"^the maintainer extracts the archive for "([^"]+)"$"#)]
+async fn extracts_the_archive(w: &mut DutyWorld, platform: String) {
+    assert_eq!(
+        platform,
+        supported_platform(),
+        "the scenario names the supported platform"
+    );
+    let archive = staged_archive(w, &platform);
     let extracted = extracted_dir(w);
     std::fs::create_dir_all(&extracted).expect("create the extraction directory");
     let mut command = Command::new("tar");
@@ -148,32 +162,49 @@ async fn extracts_the_archive(w: &mut DutyWorld) {
     );
 }
 
-#[when("runs the executable taken from that archive")]
-async fn runs_the_extracted_executable(w: &mut DutyWorld) {
-    let executable = extracted_dir(w).join(supported_executable());
-    assert!(
-        executable.is_file(),
-        "the archive held no executable at {}",
-        executable.display()
-    );
-    let mut command = Command::new(&executable);
+#[then(regex = r#"^the extracted archive holds exactly the executable "([^"]+)"$"#)]
+async fn the_archive_holds_exactly(w: &mut DutyWorld, executable: String) {
+    let archive = staged_archive(w, supported_platform());
+    let mut command = Command::new("tar");
+    command
+        .arg("-tzf")
+        .arg(staged_dir(w).join(&archive));
     run_command(w, &mut command);
-}
-
-#[then(
-    regex = r#"^the executable prints "([^"]+)" and reports failure through its process exit status$"#
-)]
-async fn prints_usage_and_reports_failure(w: &mut DutyWorld, printed: String) {
-    assert!(
-        w.command_transcript.contains(&printed),
-        "the extracted executable did not print {printed:?}: {}",
-        w.command_transcript
-    );
-    assert_ne!(
+    assert_eq!(
         w.exit_status,
         Some(0),
-        "the extracted executable reported success: {}",
+        "tar could not list {archive}: {}",
         w.command_transcript
+    );
+    let members: Vec<&str> = w
+        .command_transcript
+        .lines()
+        .filter(|line| !line.is_empty())
+        .collect();
+    assert_eq!(
+        members,
+        vec![executable.as_str()],
+        "the archive {archive} holds {members:?}"
+    );
+}
+
+#[then("the extracted executable is the executable the preparation staged")]
+async fn the_extracted_executable_is_the_staged_one(w: &mut DutyWorld) {
+    let executable = supported_executable();
+    let extracted = extracted_dir(w).join(executable);
+    let staged = w
+        .binaries
+        .as_ref()
+        .expect("the scenario prepared no executables")
+        .join(supported_platform())
+        .join(executable);
+    let extracted_bytes = std::fs::read(&extracted)
+        .unwrap_or_else(|error| panic!("read {}: {error}", extracted.display()));
+    let staged_bytes = std::fs::read(&staged)
+        .unwrap_or_else(|error| panic!("read {}: {error}", staged.display()));
+    assert_eq!(
+        extracted_bytes, staged_bytes,
+        "the extracted executable is not the executable the preparation staged"
     );
     commit_transcript(w);
 }

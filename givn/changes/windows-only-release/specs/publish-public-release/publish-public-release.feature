@@ -39,7 +39,7 @@ Feature: Publish a public release
   Scenario: Maintainer prepares a release and runs the archived executable
     Given this scenario is retired
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Maintainer prepares a Windows release and inspects the archived executable
     Given  a stand-in executable built for "windows-x86_64"
     When  the maintainer prepares the release for version 0.1.0

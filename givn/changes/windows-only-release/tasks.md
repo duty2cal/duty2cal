@@ -1406,7 +1406,7 @@ givn commit -m "feat(publish-public-release): Offer one downloadable archive for
 Scenario: An executable for the previously offered Linux platform is refused" givn/changes/windows-only-release/specs/publish-public-release/publish-public-release.feature apps/cli/tests/steps/publish_public_release.rs givn/changes/windows-only-release/tasks.md
 ```
 
-Revision: `<paste revision id>`
+Revision: `d23747694924d164ce2d0fa28332cfee7162d16b`
 
 ---
 
@@ -1416,11 +1416,11 @@ Revision: `<paste revision id>`
 
 `@givn.added @e2e` at lines 42–50. Do not remove `@e2e`.
 
-- [ ] RED (new e2e steps undefined; `--e2e` targeted run non-zero)
-- [ ] GREEN (e2e steps written; targeted run zero; transcript committed)
-- [ ] REFACTOR (targeted and full `@e2e` runs zero)
-- [ ] COMMIT (revision recorded below)
-- [ ] Evidence and revision filled in
+- [x] RED (new e2e steps undefined; `--e2e` targeted run non-zero)
+- [x] GREEN (e2e steps written; targeted run zero; transcript committed)
+- [x] REFACTOR (targeted and full `@e2e` runs zero)
+- [x] COMMIT (revision recorded below)
+- [x] Evidence and revision filled in
 
 ### E2E setup (design-specific; no service to start)
 
@@ -1499,7 +1499,18 @@ Expected: non-zero because the new Given/Then steps are undefined. Paste the
 output.
 
 ```
-<paste command and non-zero output here>
+$ nix-shell -p git-cliff --run './run-tests.sh --e2e --name "Maintainer prepares a Windows release and inspects the archived executable"'
+error: the argument '--tags <tagexpr>' cannot be used with '--name <regex>'
+exit=2
+
+The runner rejects combining the tag filter with a title filter. Used the
+design's single-scenario command instead:
+$ nix-shell -p git-cliff --run './run-tests.sh --name "Maintainer prepares a Windows release and inspects the archived executable"'
+Scenario: Maintainer prepares a Windows release and inspects the archived executable
+ ✘  Given a stand-in executable built for "windows-x86_64"
+    Step doesn't match any function
+1 scenario (1 failed)
+exit=101
 ```
 
 ### GREEN
@@ -1571,7 +1582,18 @@ nix-shell -p git-cliff --run './run-tests.sh --e2e --name "Maintainer prepares a
 ```
 
 ```
-<paste command and exit-0 output here>
+$ nix-shell -p git-cliff --run './run-tests.sh --name "Maintainer prepares a Windows release and inspects the archived executable"'
+Feature: Publish a public release
+  Scenario: Maintainer prepares a Windows release and inspects the archived executable
+   ✔  Given a stand-in executable built for "windows-x86_64"
+   ✔  When the maintainer prepares the release for version 0.1.0
+   ✔  Then the preparation reports the archive and its checksum for "windows-x86_64"
+   ✔  And the release text names version 0.1.0
+   ✔  When the maintainer extracts the archive for "windows-x86_64"
+   ✔  Then the extracted archive holds exactly the executable "duty2cal.exe"
+   ✔  And the extracted executable is the executable the preparation staged
+1 scenario (1 passed)
+exit=0
 ```
 
 Then confirm the committed evidence exists and contains the required lines:
@@ -1582,7 +1604,24 @@ $ cat givn/changes/windows-only-release/evidence/visual/maintainer-prepares-a-wi
 ```
 
 ```
-<paste path existence and transcript here>
+$ test -f givn/changes/windows-only-release/evidence/visual/maintainer-prepares-a-windows-release-and-inspects-the-archived-executable/transcript.txt
+exists
+$ scripts/prepare-release.sh --version 0.1.0 --binaries <scenario-dir>/binaries --out <scenario-dir>/out
+change log is current for version 0.1.0
+staged duty2cal-0.1.0-windows-x86_64.tar.gz sha256:93e601ecf7677a3f4761c6ba5c60994b8fc8ce84b5aa50f91b56d10267963e48
+change log CHANGELOG.md carries the section for version 0.1.0
+release text release-notes.md names version 0.1.0
+
+$ cat <scenario-dir>/out/release-notes.md
+## [0.1.0] - 2026-10-13
+... (release text names version 0.1.0)
+
+$ tar -xzf <scenario-dir>/out/duty2cal-0.1.0-windows-x86_64.tar.gz -C <scenario-dir>/extracted
+
+$ tar -tzf <scenario-dir>/out/duty2cal-0.1.0-windows-x86_64.tar.gz
+duty2cal.exe
+
+exit status: 0
 ```
 
 Required transcript contents: the preparation command and arguments, the
@@ -1603,7 +1642,16 @@ nix-shell -p git-cliff --run './run-tests.sh --e2e'
 ```
 
 ```
-<paste both exit-0 outputs here>
+$ nix-shell -p git-cliff --run './run-tests.sh --name "Maintainer prepares a Windows release and inspects the archived executable"'
+  Scenario: Maintainer prepares a Windows release and inspects the archived executable
+7 steps (7 passed)
+exit=0
+$ nix-shell -p git-cliff --run './run-tests.sh --e2e'
+  Scenario: Crew member converts a supported duty plan and receives a calendar file
+  Scenario: Maintainer generates the change log for a version and reads its newest section
+  Scenario: Maintainer prepares a Windows release and inspects the archived executable
+3 scenarios (3 passed)
+exit=0
 ```
 
 ### COMMIT

@@ -153,6 +153,23 @@ fn write_executable(binaries: &Path, platform: &str, bytes: &[u8]) {
     }
 }
 
+/// Stage one deterministic stand-in executable for a platform, the way the
+/// release fixture would receive it.
+pub(crate) fn stage_stand_in_executable(w: &mut DutyWorld, platform: &str) {
+    let dir = scenario_dir(w);
+    let binaries = dir.join("binaries");
+    let _ = std::fs::remove_dir_all(&binaries);
+    std::fs::create_dir_all(&binaries).expect("create the binaries directory");
+    write_executable(
+        &binaries,
+        platform,
+        format!("stand-in executable for {platform}\n").as_bytes(),
+    );
+    let out = dir.join("out");
+    w.binaries = Some(binaries);
+    w.staged = Some(out);
+}
+
 /// Build the scenario's executables directory from the platforms named.
 pub(crate) fn build_binaries(w: &mut DutyWorld, platforms: &[&str]) {
     let dir = scenario_dir(w);
@@ -865,10 +882,20 @@ async fn a_history_with_release_note_subjects(w: &mut DutyWorld) {
 
 #[then(regex = r"^the release text names version (\S+)$")]
 async fn the_release_text_names_version(w: &mut DutyWorld, version: String) {
-    let text = release_text(w);
+    let path = staged_dir(w).join("release-notes.md");
+    let mut command = Command::new("cat");
+    command.arg(&path);
+    run_command(w, &mut command);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "reading the release text failed: {}",
+        w.command_transcript
+    );
     assert!(
-        text.contains(&version),
-        "the release text does not name version {version}: {text}"
+        w.command_transcript.contains(&version),
+        "the release text does not name version {version}: {}",
+        w.command_transcript
     );
 }
 

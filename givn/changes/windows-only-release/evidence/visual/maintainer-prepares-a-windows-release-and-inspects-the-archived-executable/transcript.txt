@@ -1,0 +1,22 @@
+$ scripts/prepare-release.sh --version 0.1.0 --binaries <scenario-dir>/binaries --out <scenario-dir>/out
+change log is current for version 0.1.0
+staged duty2cal-0.1.0-windows-x86_64.tar.gz sha256:93e601ecf7677a3f4761c6ba5c60994b8fc8ce84b5aa50f91b56d10267963e48
+change log CHANGELOG.md carries the section for version 0.1.0
+release text release-notes.md names version 0.1.0
+
+$ cat <scenario-dir>/out/release-notes.md
+## [0.1.0] - 2026-10-13
+
+### New capabilities
+- Convert a supported Released Roster duty-plan PDF into one complete RFC 5545 calendar file saved beside the source under an unused name, or fail explicitly with a numbered diagnostic, never overwriting an existing calendar or report.
+- Publish duty2cal from one public repository where every change passes the project's checks before it lands there and every version tag offers a downloadable, provenance-verifiable executable for Windows, Linux and macOS.
+
+### Fixes
+- Read the producer's own export layout
+
+$ tar -xzf <scenario-dir>/out/duty2cal-0.1.0-windows-x86_64.tar.gz -C <scenario-dir>/extracted
+
+$ tar -tzf <scenario-dir>/out/duty2cal-0.1.0-windows-x86_64.tar.gz
+duty2cal.exe
+
+exit status: 0
