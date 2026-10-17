@@ -3,5 +3,6 @@
 //! so they live apart from the in-process steps (design.md "Step definition
 //! locations").
 
+pub mod adopt_existing_configuration;
 pub mod export_duty_plan_calendar;
 pub mod publish_public_release;

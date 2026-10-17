@@ -10,6 +10,12 @@ private
 __pycache__/
 *.pyc
 
+# OpenTofu: the declaration's machine-local cache and the adoption's staging
+# workspace. The applied state files under infra/ are intentionally tracked:
+# they are encrypted at rest (ADR-0006), so no *.tfstate rule exists here.
+infra/.terraform/
+infra/.adoption-staging/
+
 # givn:begin:rules
 .opencode/skills/givn-*/
 .agents/skills/givn-*/

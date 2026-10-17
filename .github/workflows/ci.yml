@@ -55,6 +55,19 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: git-cliff@2.14.2
+      # The infrastructure scenarios drive the real `tofu` binary, so the
+      # pinned version is part of the test contract, not whatever the runner
+      # resolves (design.md "Technology decisions").
+      - name: Read the pinned OpenTofu version
+        id: tofu_version
+        run: echo "version=$(cat infra/.opentofu-version)" >> "$GITHUB_OUTPUT"
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: ${{ steps.tofu_version.outputs.version }}
+      # Mirror the locked provider and write the terraformrc, so `tofu init`
+      # inside the adoption command resolves offline (design.md "Provider
+      # installation for tests").
+      - run: ./scripts/setup-infra-tests.sh
       # The Gherkin runner takes exactly one feature root, which
       # ./run-tests.sh assembles from the permanent corpus and the archived
       # change specs; a bare `cargo test` leaves it looking for

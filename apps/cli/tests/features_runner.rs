@@ -45,6 +45,30 @@ pub struct DutyWorld {
     pub staged_snapshot: Vec<(String, SystemTime)>,
     /// The change log a change-log scenario rendered.
     pub changelog: Option<PathBuf>,
+    /// The temporary declaration directory an adoption scenario prepared.
+    pub declaration: Option<PathBuf>,
+    /// The selected batch file the adoption command imports.
+    pub batch: Option<PathBuf>,
+    /// The applied state path the adoption command records.
+    pub state: Option<PathBuf>,
+    /// The local fake GitHub API child; killed when the scenario ends.
+    pub fake: Option<std::process::Child>,
+    /// The port the fake GitHub API bound on loopback.
+    pub fake_port: Option<u16>,
+    /// The fake's request journal, one JSON object per request.
+    pub journal: Option<PathBuf>,
+    /// What the adoption command printed, for the refusal assertions and the
+    /// committed transcript.
+    pub adoption_transcript: String,
+}
+
+impl Drop for DutyWorld {
+    fn drop(&mut self) {
+        if let Some(mut child) = self.fake.take() {
+            let _ = child.kill();
+            let _ = child.wait();
+        }
+    }
 }
 
 impl DutyWorld {

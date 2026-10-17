@@ -11,7 +11,7 @@ Feature: Adopt the existing public-home configuration
     Then the adoption reports the organization, both repositories, the default-branch rule and the site source as bound
     And the live configuration is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: An invalid declaration refuses before any object is read
     Given the declared configuration fails validation
     When the organization owner adopts the batch

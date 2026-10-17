@@ -36,16 +36,40 @@ Design constraints:
   script before `./run-tests.sh`.
 
 Evidence:
-- [ ] Strict-mode proof: run one `@wip` scenario; paste the non-zero output
+- [x] Strict-mode proof: run one `@wip` scenario; paste the non-zero output
   showing the undefined/skipped step fails. Command and output:
   ```
-  ./run-tests.sh --name "An invalid declaration refuses before any object is read"
+  $ ./run-tests.sh --name "An invalid declaration refuses before any object is read"
+  ...
+    Scenario: An invalid declaration refuses before any object is read
+     ✘  Given the declared configuration fails validation
+        Step failed:
+        Defined: tmp/tmp.FGwT1lBuk1/f0003.feature:16:5
+        Step doesn't match any function
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  1 step (1 failed)
+  error: test failed, to rerun pass `-p duty2cal --test features_runner`
+  exit status: 101
   ```
-- [ ] Step files, modules and world fields created; the crate compiles
+- [x] Step files, modules and world fields created; the crate compiles
   (`cargo check -p duty2cal --tests`); output pasted.
+  ```
+  $ cargo check -p duty2cal --tests
+      Checking cucumber v0.23.0
+      Checking duty2cal v0.1.0 (/home/dan/dev/PRIVATE/duty2cal/apps/cli)
+      Finished `dev` profile [unoptimized + debuginfo] target(s) in 17.55s
+  ```
 - [ ] Fixture proof: one import per object and the no-op refresh; commands and
-  output pasted.
-- [ ] CI job updated; `actionlint`-clean.
+  output pasted. (Left to bundle B: the fixture set and its one-import proof
+  are the next task; this bundle creates the fake server and setup script that
+  proof runs through.)
+- [x] CI job updated; `actionlint`-clean.
+  ```
+  $ /tmp/gobin/actionlint -color .github/workflows/ci.yml
+  exit=0
+  ```
 
 ## 1. An invalid declaration refuses before any object is read
 
@@ -56,13 +80,65 @@ Design constraints:
 - No live object is read: the fake's journal stays empty; no object is bound.
 - Refusal format `refused <object>: <reason>`.
 
-- [ ] RED — remove `@wip` from this scenario only; steps stubbed/undefined;
+- [x] RED — remove `@wip` from this scenario only; steps stubbed/undefined;
       run the single-scenario command; paste output (must be non-zero).
-- [ ] GREEN — real assertions and the minimum production code; list production
+      ```
+      $ ./run-tests.sh --name "An invalid declaration refuses before any object is read"
+      ...
+        Scenario: An invalid declaration refuses before any object is read
+         ✘  Given the declared configuration fails validation
+            Step failed:
+            Defined: tmp/tmp.hNsARf15M2/f0003.feature:16:5
+            Step doesn't match any function
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      error: test failed, to rerun pass `-p duty2cal --test features_runner`
+      exit status: 101
+      ```
+- [x] GREEN — real assertions and the minimum production code; list production
       files created/modified; run the single scenario; paste output (zero).
-- [ ] REFACTOR — clean up without behaviour change; re-run; paste output (zero).
-- [ ] COMMIT — `feat(adopt-existing-configuration): <release note>` with the
+      Production files created/modified:
+      `scripts/adopt-public-home.sh` (preflight, staging, `tofu init
+      -backend=false`, `tofu validate`, the `refused declaration:` refusal);
+      `infra/versions.tf`, `infra/main.tf`, `infra/repos.tf`,
+      `infra/rulesets.tf`, `infra/pages.tf`, `infra/adoption-batch.txt`,
+      `infra/.opentofu-version`, `infra/.terraform.lock.hcl` (the declaration
+      the command validates); `apps/cli/tests/steps/adopt_existing_configuration.rs`,
+      `apps/cli/tests/steps/e2e/adopt_existing_configuration.rs` and the two
+      `mod.rs` files (steps); `apps/cli/tests/features_runner.rs` (world fields,
+      fake child cleanup); `scripts/setup-infra-tests.sh`,
+      `scripts/fake-github/serve.py`, `.gitignore`, `.github/workflows/ci.yml`
+      (setup infrastructure).
+      ```
+      $ ./run-tests.sh --name "An invalid declaration refuses before any object is read"
+      ...
+      Feature: Adopt the existing public-home configuration
+        Scenario: An invalid declaration refuses before any object is read
+         ✔  Given the declared configuration fails validation
+         ✔  When the organization owner adopts the batch
+         ✔  Then the adoption refuses the batch and names the declaration error
+         ✔  And no object is read from the live organization
+         ✔  And no object in the batch is bound
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      5 steps (5 passed)
+      exit status: 0
+      ```
+- [x] REFACTOR — clean up without behaviour change; re-run; paste output (zero).
+      ```
+      $ ./run-tests.sh --name "An invalid declaration refuses before any object is read"
+      ...
+      1 feature
+      1 scenario (1 passed)
+      5 steps (5 passed)
+      exit status: 0
+      ```
+- [x] COMMIT — `feat(adopt-existing-configuration): <release note>` with the
       scenario title in the body; record the revision.
+      Revision: `PENDING-SCENARIO-1-HASH`
 
 ## 2. A malformed batch entry refuses before any import
 

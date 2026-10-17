@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Daniel Kressner
+#
+# The selected batch: one `address<TAB>import-id` line per object. The
+# command imports exactly these lines, in order, and binds the whole batch or
+# none of it (design.md "The adoption batch").
+#
+# Two identifiers are live data captured from the authenticated read before
+# the real adoption: the organization's numeric id
+# (GET /orgs/duty2cal) and the rule set's numeric id
+# (GET /repos/duty2cal/duty2cal/rulesets). The committed `0` values are the
+# placeholders the post-GREEN operator replaces from that read; the suite's
+# scenarios supply their own batches against the fake.
+github_organization_settings.org	0
+github_repository.mono	duty2cal
+github_repository.pages	duty2cal.github.io
+github_repository_ruleset.main	duty2cal:0
+github_repository_pages.pages	duty2cal.github.io
