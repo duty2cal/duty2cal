@@ -1286,7 +1286,7 @@ async fn a_committed_change_log_that_differs(w: &mut DutyWorld) {
 ### New capabilities\n\
 - Offer an archive for every supported platform\n\
 \n\
-[0.1.0...0.2.0](https://github.com/kressnerd/duty2cal/compare/v0.1.0...v0.2.0)\n\
+[0.1.0...0.2.0](https://github.com/duty2cal/duty2cal/compare/v0.1.0...v0.2.0)\n\
 \n\
 ## [0.1.0] - 2026-01-02\n\
 \n\
@@ -1387,7 +1387,7 @@ async fn section_states_its_own_date(w: &mut DutyWorld) {
 async fn section_states_the_comparison(w: &mut DutyWorld) {
     let section = section_of(&change_log(w), "0.2.0");
     assert!(
-        section.contains("https://github.com/kressnerd/duty2cal/compare/v0.1.0...v0.2.0"),
+        section.contains("https://github.com/duty2cal/duty2cal/compare/v0.1.0...v0.2.0"),
         "the section does not state the comparison against version 0.1.0: {section}"
     );
 }
@@ -2455,7 +2455,7 @@ fn run_gate(w: &mut DutyWorld) {
         .env("GH_TOKEN", "test")
         .env("STUB_POLLS", &poll_dir)
         .arg("--repo")
-        .arg("kressnerd/duty2cal")
+        .arg("duty2cal/duty2cal")
         .arg("--sha")
         .arg("0123456789abcdef0123456789abcdef01234567")
         .arg("--exclude-suite")

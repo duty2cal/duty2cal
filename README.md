@@ -9,8 +9,8 @@
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
 
-[![CI](https://github.com/kressnerd/duty2cal/actions/workflows/ci.yml/badge.svg)](https://github.com/kressnerd/duty2cal/actions/workflows/ci.yml)
-[![Release](https://github.com/kressnerd/duty2cal/actions/workflows/release.yml/badge.svg)](https://github.com/kressnerd/duty2cal/releases/latest)
+[![CI](https://github.com/duty2cal/duty2cal/actions/workflows/ci.yml/badge.svg)](https://github.com/duty2cal/duty2cal/actions/workflows/ci.yml)
+[![Release](https://github.com/duty2cal/duty2cal/actions/workflows/release.yml/badge.svg)](https://github.com/duty2cal/duty2cal/releases/latest)
 [![License: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-blue)](LICENSES/MPL-2.0.txt)
 
 `duty2cal` turns a released duty plan into a calendar. It reads the PDF a crew
@@ -28,7 +28,7 @@ conversion from a converted month.
 ## Quick start
 
 ```sh
-git clone https://github.com/kressnerd/duty2cal.git duty2cal
+git clone https://github.com/duty2cal/duty2cal.git duty2cal
 cd duty2cal
 cargo build --release -p duty2cal
 target/release/duty2cal ./2026-06.pdf
@@ -60,7 +60,7 @@ cargo run --release -p duty2cal -- <duty-plan.pdf>
 ## Download a release
 
 Every version tag publishes one release at the stable address
-<https://github.com/kressnerd/duty2cal/releases/latest>, and every release
+<https://github.com/duty2cal/duty2cal/releases/latest>, and every release
 holds exactly one archive with its checksum file beside it. The only
 supported platform is Windows x86_64:
 
@@ -95,7 +95,7 @@ file verifies itself:
 
 ```sh
 sha256sum --check duty2cal-0.1.0-windows-x86_64.tar.gz.sha256
-gh attestation verify duty2cal-0.1.0-windows-x86_64.tar.gz --repo kressnerd/duty2cal
+gh attestation verify duty2cal-0.1.0-windows-x86_64.tar.gz --repo duty2cal/duty2cal
 ```
 
 `gh attestation verify` proves that the archive was built by this

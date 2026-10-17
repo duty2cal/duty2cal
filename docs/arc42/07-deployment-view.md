@@ -54,7 +54,7 @@ Beside the one Windows archive and its checksum (and the archive's provenance an
 
 ### Downloading and verifying
 
-- A downloader on Windows x86_64 takes `duty2cal-<version>-windows-x86_64.tar.gz` from the stable latest-release address `https://github.com/kressnerd/duty2cal/releases/latest`, which stays reachable as later versions are published. No archive is offered for any other platform.
+- A downloader on Windows x86_64 takes `duty2cal-<version>-windows-x86_64.tar.gz` from the stable latest-release address `https://github.com/duty2cal/duty2cal/releases/latest`, which stays reachable as later versions are published. No archive is offered for any other platform.
 - They recompute the archive's digest and compare it with the published `.sha256` (`sha256sum --check` or `Get-FileHash`), so they verify what they received before extracting it.
 - They then confirm the file's build provenance and bill of materials with `gh attestation verify`, run against the archive, which ties the file in hand to the tagged revision and this project's automation.
 - Already-published releases keep their original assets and links; only future releases are Windows-only.

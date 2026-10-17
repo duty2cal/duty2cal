@@ -34,7 +34,7 @@ it. The material that must never leak is the plan itself and the people in it.
 
 Use the repository's private vulnerability reporting:
 
-<https://github.com/kressnerd/duty2cal/security/advisories/new>
+<https://github.com/duty2cal/duty2cal/security/advisories/new>
 
 (Security tab → **Report a vulnerability**.) That is the only confidential route
 this project names, and it keeps the report private between you and the
@@ -46,7 +46,7 @@ the page structure with every real name, employee number, date, station and
 route removed — is enough to reproduce most defects.
 
 For a defect that cannot expose private data, a normal
-[issue](https://github.com/kressnerd/duty2cal/issues) is fine and reaches the
+[issue](https://github.com/duty2cal/duty2cal/issues) is fine and reaches the
 maintainer faster.
 
 ## How a report is handled

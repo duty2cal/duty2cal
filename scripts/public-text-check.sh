@@ -59,7 +59,7 @@ forbid() { # $1 = the forbidden text's name, $2 = extended regular expression
   fi
 }
 
-require 'clone-address' 'git clone https://github\.com/kressnerd/duty2cal\.git'
+require 'clone-address' 'git clone https://github\.com/duty2cal/duty2cal\.git'
 require 'windows-archive' 'duty2cal-[^[:space:]]*-windows-x86_64\.tar\.gz'
 require 'checksum-command' 'sha256sum --check'
 require 'checksum-command-powershell' 'Get-FileHash'

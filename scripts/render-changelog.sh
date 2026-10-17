@@ -45,7 +45,7 @@ config="$here/cliff.toml"
 marker='<!-- capability-allow-list:'
 machinery_marker='<!-- machinery-skip-list:'
 receiving_marker='<!-- user-receiving-paths:'
-remote='https://github.com/kressnerd/duty2cal'
+remote='https://github.com/duty2cal/duty2cal'
 
 usage() {
   cat >&2 <<'EOF'

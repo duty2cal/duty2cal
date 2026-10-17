@@ -35,7 +35,7 @@
 | Per-file SPDX header; `REUSE.toml` for binary/data files; `cargo-about` notices; DCO sign-off, no CLA | ADR-0001 obligations. |
 | Private duty-plan PDFs are read for analysis but never committed; fixtures and golden calendars are generated/anonymised | Privacy. |
 | Changes follow the givn workflow; `.feature` files are the executable specification | Specification and tests are one artifact. |
-| Public repository at `kressnerd/duty2cal` | The project's public home and release channel; standard GitHub-hosted runners, attestations and secret scanning are free there. |
+| Public repository at `duty2cal/duty2cal` | The project's public home and release channel; standard GitHub-hosted runners, attestations and secret scanning are free there. |
 | Published releases are immutable; a version tag is never reused | A downloader's file and the provenance covering it must not be replaceable after publication. |
 | DCO sign-off enforced on pull requests (`scripts/dco-check.sh`), no CLA | The project's contribution terms; a change without sign-off does not land. |
 | Contributor routes published: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, and the issue and pull-request templates | A contributor finds the contribution route, the sign-off, the conduct policy and the confidential reporting route without asking. |

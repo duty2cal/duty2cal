@@ -2,12 +2,12 @@
 
 ### Dependencies
 - Bump the rust-deps group across 1 directory with 7 updates
-[0.2.0...0.3.0](https://github.com/kressnerd/duty2cal/compare/v0.2.0...v0.3.0)
+[0.2.0...0.3.0](https://github.com/duty2cal/duty2cal/compare/v0.2.0...v0.3.0)
 ## [0.2.0] - 2026-10-14
 
 ### Fixes
 - A travel activity's calendar title prints the crew position and the flight number as two words separated by a space — an operating leg reads `FB 123 ABC-DEF` instead of `FB123 ABC-DEF`, while positioning travel keeps reading `DH 007 ABC-DEF`.
-[0.1.0...0.2.0](https://github.com/kressnerd/duty2cal/compare/v0.1.0...v0.2.0)
+[0.1.0...0.2.0](https://github.com/duty2cal/duty2cal/compare/v0.1.0...v0.2.0)
 ## [0.1.0] - 2026-10-13
 
 ### New capabilities
