@@ -26,6 +26,7 @@ and its repositories.
 ## Preconditions
 
 - The organization and both repositories exist.
+- The Pages site exists on the pages repository.
 - The owner can request the adoption.
 - The declared configuration may not exist yet; recording its first revision is
   part of the flow.

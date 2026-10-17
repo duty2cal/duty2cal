@@ -22,7 +22,7 @@
 | Executable specification | Gherkin `.feature` files run by cucumber-rs (strict) | Chapter 2. |
 | Distribution | One self-contained Windows x86_64 executable (cross-built on Linux, started on Windows), published as an immutable release from the public repository; other platforms are unsupported and build from source | ADR-0003, ADR-0004; chapters 2 and 7. |
 | Change-log generation | `git-cliff` 2.14.2, pinned beside `cliff.toml` and rendered by `scripts/render-changelog.sh` | Chapter 2; `design.md`. |
-| Infrastructure declaration | OpenTofu `>= 1.7` with `integrations/github` `~> 6.0`; HCL under `infra/` | ADR-0005; chapter 2. |
+| Infrastructure declaration | OpenTofu `>= 1.7` (the project pins `1.13.1` in `infra/.opentofu-version`) with `integrations/github` `~> 6.0`; HCL under `infra/` | ADR-0005; chapter 2. |
 | Applied state and drift | Local, passphrase-encrypted state committed under `infra/`; the drift check runs on the maintainer's machine | ADR-0006; chapter 2. |
 
 ADR-0001, ADR-0002, ADR-0003, ADR-0004, ADR-0005 and ADR-0006 are the project's ADRs; the remaining choices are supplied constraints (chapter 2), a local mechanism owned by `design.md`, or product behaviour owned by the capability specification and the glossary.

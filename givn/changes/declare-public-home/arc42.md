@@ -97,6 +97,7 @@ Assessed against the change's `proposal.md`, `specs/` and `design.md` on
       "the passphrase boundary and the withdrawn CI capability are cross-change constraints, not local mechanism"
     ],
     "existing_adr_check": [
+      "named ADR-0005, which records the declaration mechanism: this record owns a distinct boundary — state storage, secrecy and where drift runs — and does not duplicate it",
       "searched ADR-0001 to ADR-0004 and the ADR archive: none covers state storage, secrecy or drift execution",
       "result: NEW_ADR"
     ]

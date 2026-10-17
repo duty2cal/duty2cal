@@ -39,7 +39,10 @@ home under the declared configuration without changing them.
 per-push configuration drift report" from CI. The state decision (D1) and the
 requirement that the administer token never live in the repository it
 administers withdraw that promise: the configuration drift check stays local
-and is run by the maintainer. The Frame's vision otherwise stands.
+and is run by the maintainer. The same decision supersedes the supplied
+direction's "local state, kept out of Git": the applied state is encrypted at
+rest and committed, not kept out of Git. The Frame's vision otherwise stands,
+and the confirmed Frame itself is not rewritten.
 
 ## Problem / Opportunity
 
@@ -226,15 +229,21 @@ specification by inheritance.
   to adopt the draft's values where they still describe today's project:
   `has_projects = false`; merge commits and rebase merges off, squash merges
   on; `delete_branch_on_merge = true`; today's description ("Convert a duty
-  plan to a calendar") and today's topics kept; `has_wiki = false`,
-  `has_discussions = false`, `allow_auto_merge = false`, `allow_forking = true`;
-  no licence template on the imported repository; Dependabot alerts and
-  security updates through their dedicated resources. The first configuration
-  change therefore changes `has_projects`, `allow_merge_commit`,
-  `allow_rebase_merge` and `delete_branch_on_merge`, and its preview names them.
-  The organization's profile and member-default fields keep today's values,
-  because the draft's profile wording describes a browser interface the project
-  does not have yet; no draft profile text is adopted. Rejected:
+  plan to a calendar") and today's topics kept; `has_issues = true` (today's
+  live value, kept), `has_wiki = false`, `has_discussions = false`,
+  `allow_auto_merge = false`, `allow_forking = true`; no licence template on
+  the imported repository; Dependabot alerts and security updates through their
+  dedicated resources. Every repository feature boolean is stated explicitly,
+  because the provider sends `false` for an omitted Optional-only boolean, so
+  omission is not neutral. The pages repository states `has_issues = false`
+  and `has_wiki = false` (the draft's values) and `has_projects = true`
+  (today's live value; the draft does not specify it). The first configuration
+  change therefore changes the monorepo's `has_projects`,
+  `allow_merge_commit`, `allow_rebase_merge` and `delete_branch_on_merge`, and
+  the pages repository's `has_issues` and `has_wiki`, and its preview names
+  them. The organization's profile and member-default fields keep today's
+  values, because the draft's profile wording describes a browser interface the
+  project does not have yet; no draft profile text is adopted. Rejected:
   options 1 and 2 as whole policies — ratifying today's hand-made values and
   changing everything the draft proposed are both unrecorded choices.
 

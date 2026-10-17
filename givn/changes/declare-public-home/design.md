@@ -32,7 +32,7 @@ registry-verified value with its lookup noted; nothing is written from memory.
 | Area | Decision | Rationale / source |
 |---|---|---|
 | Declaration mechanism | OpenTofu with the `integrations/github` provider; HCL under `infra/`, MPL-2.0 per file. | Supplied direction, researched in the topic's Frame against `safe-settings` (a GitHub App with no Pages management) and raw API scripts (no preview, no drift detection). Recorded as ADR-0005. |
-| OpenTofu version | `required_version = ">= 1.7"` in the declaration; the setup installs the **latest stable** release (the official install script or the distribution package), not a remembered number. The workstation used for this design runs 1.13.1 (observed 2026-10-17). | 1.7 is the floor the user's state-encryption decision requires; the exact version is resolved at setup and recorded in `infra/.terraform.lock.hcl` and the CI image/step. |
+| OpenTofu version | `required_version = ">= 1.7"` in the declaration for users; the project pins **1.13.1** in `infra/.opentofu-version` — the version installed on the maintainer's workstation (observed 2026-10-17) — and `scripts/setup-infra-tests.sh` and CI install exactly that version, refusing a different one. | 1.7 is the floor the user's state-encryption decision requires; the pin makes the tool version part of the reviewed contract instead of whatever a runner resolves, while a user's newer OpenTofu still satisfies the declaration's floor. |
 | GitHub provider version | Constraint `~> 6.0`; the **latest 6.x resolved at setup** and pinned in `infra/.terraform.lock.hcl`. The topic's research verified 6.13.0 against the Terraform and OpenTofu registries on 2026-10-17. | The draft already constrains to 6.x; the concrete patch is whatever the lock file resolves. |
 | Provider authentication | `github` provider with the maintainer's owner token in `GITHUB_TOKEN`, owner `duty2cal`; the provider's `base_url` is overridable so tests can point it at a fake. In production the base URL is the default. | One credential, held only on the maintainer's machine; no token in the repository and no apply in Actions (chapter 2). |
 | Applied state | Local backend: `infra/terraform.tfstate` and `infra/terraform.tfstate.backup` are committed and encrypted at rest by OpenTofu's `encryption` block (PBKDF2-derived key over AES-GCM; both `state` and `plan` `enforced = true`). | The user's decision of 2026-10-17 (proposal D1). Recorded as ADR-0006. |
@@ -85,16 +85,20 @@ New or changed files:
 | `infra/adoption-batch.txt` | new | The selected batch: five `address<TAB>import-id` lines. |
 | `infra/terraform.tfstate`, `infra/terraform.tfstate.backup` | new (committed) | The encrypted applied state and its backup, written by the adoption. |
 | `infra/.terraform.lock.hcl` | new | Provider checksums; the concrete version resolved at setup. |
+| `infra/.opentofu-version` | new | The pinned OpenTofu version `1.13.1`; read by `scripts/setup-infra-tests.sh` and CI, which refuse a different tool version. The declaration keeps the user-facing floor `required_version = ">= 1.7"`. |
 | `.gitignore` | changed | Ignore `infra/.terraform/` and the adoption's staging directory `infra/.adoption-staging/`; the state files stay tracked. The repository has no `*.tfstate` ignore rule, so nothing is revoked — the change states the rule positively (ADR-0006). |
 | `scripts/adopt-public-home.sh` | new | The adoption interface: preflight, staged import, verification, atomic move, one output line per bound object or a refusal naming the object. |
-| `scripts/setup-infra-tests.sh` | new | Checks `tofu`/`python3`, mirrors the provider, writes the `terraformrc`, and prints what it resolved. |
+| `scripts/setup-infra-tests.sh` | new | Checks `tofu` against `infra/.opentofu-version` and `python3`, mirrors the provider, writes the `terraformrc`, and prints what it resolved. |
 | `scripts/fake-github/serve.py` | new | The fake GitHub API: fixture tree, request journal, fault injection, ephemeral port. |
-| `scripts/fake-github/fixtures/<scenario>/…` | new | Per-scenario API responses for the five adopted objects. |
+| `scripts/fake-github/fixtures/<scenario>/…` | new | Per-scenario API responses for the five adopted objects, including `users/<owner>.json` for the provider's configure read. |
 | `apps/cli/tests/steps/adopt_existing_configuration.rs` | new | Non-e2e step definitions for this capability. |
 | `apps/cli/tests/steps/e2e/adopt_existing_configuration.rs` | new | E2E step definitions (real subprocess, fake API, transcript evidence). |
 | `apps/cli/tests/steps/mod.rs`, `apps/cli/tests/steps/e2e/mod.rs` | changed | Declare the two new modules; without that they are never compiled. |
 | `apps/cli/tests/features_runner.rs` | changed | World fields for the declaration directory, the fake API child, the adoption transcript and the batch. |
-| `.github/workflows/ci.yml` | changed | The `test` job installs OpenTofu (latest stable) and runs `scripts/setup-infra-tests.sh` before `./run-tests.sh`. |
+| `.github/workflows/ci.yml` | changed | The `test` job installs the pinned OpenTofu `1.13.1` (read from `infra/.opentofu-version`) and runs `scripts/setup-infra-tests.sh` before `./run-tests.sh`. |
+| `givn/changes/declare-public-home/evidence/live-read/` | new | The one-time authenticated read of today's live values (monorepo topics, pages-repository features and description, organization profile and member defaults), committed beside the declaration. |
+| `givn/changes/declare-public-home/evidence/real-adoption/transcript.txt` | new | The transcript of the required post-GREEN real adoption against the real organization, with the five bound addresses. |
+| `cliff.toml` | changed at archive only | Not edited by this change now: the archive adds `adopt-existing-configuration` to the marked capability allow-list and its per-type parser rows in the same revision that creates `givn/specs/adopt-existing-configuration/` (see "Archive-time obligation" below). |
 | `REUSE.toml` | changed | SPDX attribution for the fake's JSON fixtures; the scripts and HCL carry headers. |
 | `docs/arc42/*`, `docs/arc42/adr/*` | changed | The 12-chapter impact assessment, the affected chapters and two ADRs. |
 
@@ -105,8 +109,8 @@ New or changed files:
 | Resource address | Live counterpart | Declared values |
 |---|---|---|
 | `github_organization_settings.org` | organization `duty2cal` | Name `duty2cal`; profile fields and member defaults at today's values (profile fields empty, default repository permission `read`, members may create public and private repositories); `billing_email = var.billing_email` (`sensitive`, no default). |
-| `github_repository.mono` | `duty2cal/duty2cal` | `description = "Convert a duty plan to a calendar"`; today's topics verbatim; `has_projects = false`, `has_wiki = false`, `has_discussions = false`, `allow_auto_merge = false`, `allow_forking = true`, `allow_merge_commit = false`, `allow_rebase_merge = false`, `allow_squash_merge = true`, `delete_branch_on_merge = true`; no `license_template`; `lifecycle { ignore_changes = [pages] }`. |
-| `github_repository.pages` | `duty2cal/duty2cal.github.io` | Public; its feature settings at today's live values; description at today's live value; `lifecycle { ignore_changes = [pages] }`. |
+| `github_repository.mono` | `duty2cal/duty2cal` | `description = "Convert a duty plan to a calendar"`; today's topics verbatim; `has_issues = true` (today's live value, kept), `has_projects = false`, `has_wiki = false`, `has_discussions = false`, `allow_auto_merge = false`, `allow_forking = true`, `allow_merge_commit = false`, `allow_rebase_merge = false`, `allow_squash_merge = true`, `delete_branch_on_merge = true`; no `license_template`; `lifecycle { ignore_changes = [pages] }`. |
+| `github_repository.pages` | `duty2cal/duty2cal.github.io` | Public; `has_issues = false`, `has_wiki = false` (the draft's values), `has_projects = true` (today's live value; the draft does not specify it); description at today's live value; `lifecycle { ignore_changes = [pages] }`. |
 | `github_repository_ruleset.main` | rule set `main protection` | `name = "main protection"` (the live name, so the binding is the same object); target branch, `enforcement = "active"`; deletion, non-fast-forward and `required_linear_history`; no bypass actors; condition `~DEFAULT_BRANCH`. |
 | `github_repository_pages.pages` | Pages on the pages repository | `build_type = "legacy"`; `source { branch = "main", path = "/" }` — the existing form, imported rather than enabled anew. |
 
@@ -121,13 +125,23 @@ Two kinds of value appear above and are treated differently:
   from the GitHub API (`gh api repos/duty2cal/duty2cal`,
   `gh api repos/duty2cal/duty2cal.github.io`, `gh api orgs/duty2cal`) and
   recorded in `infra/` verbatim; the captured read is committed as the
-  declaration's evidence in `results/`. No value in the declaration is a guess.
+  declaration's evidence under
+  `givn/changes/declare-public-home/evidence/live-read/`. No value in the
+  declaration is a guess.
 
-Fields the provider exposes but no decision covers (for example a feature
-toggle nobody discussed) are omitted from the declaration rather than set to a
-provider default, so nothing enters by inertia; the first preview names every
-such difference for a later decision. `license_template` is omitted because it
-only acts at creation.
+The provider sends `false` for an omitted Optional-only boolean, so omission is
+not neutral for those fields. Every repository feature boolean is therefore
+stated explicitly: the monorepo keeps issues on and turns projects, wiki and
+discussions off; the pages repository turns issues and wiki off and keeps
+projects on. Non-boolean fields the provider exposes but no decision covers are
+still omitted rather than set to a provider default, and the first preview
+names every such difference for a later decision. `license_template` is omitted
+because it only acts at creation.
+
+The first configuration change therefore changes the monorepo's `has_projects`,
+`allow_merge_commit`, `allow_rebase_merge` and `delete_branch_on_merge`, and
+the pages repository's `has_issues` and `has_wiki`; every other declared value
+matches live.
 
 ### The adoption batch
 
@@ -199,35 +213,47 @@ scripts/adopt-public-home.sh [--declaration DIR] [--batch FILE] [--state FILE] [
 
 Defaults: `--declaration infra`, `--batch infra/adoption-batch.txt`,
 `--state infra/terraform.tfstate`, `--api-url https://api.github.com`,
-`--token $GITHUB_TOKEN`. Required environment: `TF_VAR_state_passphrase`
-(at least 16 characters) and whatever the declaration's variables require
-(`TF_VAR_billing_email`).
+`--token $GITHUB_TOKEN`. `--state` must lie inside `--declaration`; preflight
+refuses a state path outside it, because the staged workspace uses the local
+backend's default state path and the command never passes `-state`. Required
+environment: `TF_VAR_state_passphrase` (at least 16 characters) and whatever
+the declaration's variables require (`TF_VAR_billing_email`).
 
 The command performs one adoption of the selected batch:
 
-1. **Preflight.** Refuse before touching anything when `tofu` or `python3` is
-   missing, when the passphrase is absent or shorter than 16 characters, when
-   the batch is empty or malformed, or when `tofu validate` refuses the
-   declaration. Print `refused <object>: <reason>` naming the object, or the
-   declaration when the batch itself is malformed, and exit 2.
-2. **Stage.** Create `infra/.adoption-staging/` beside the declaration (a
-   git-ignored directory, removed on exit), copy the declaration into it, copy
-   the current encrypted state into the staging workspace's state path, and
-   select that workspace. No declared file is touched until the final move,
-   and the staging directory sits on the same filesystem as the state, so the
-   move in step 5 is a rename rather than a copy.
-3. **Import in batch order.** For each `address<TAB>import-id` line run
+1. **Preflight the inputs.** Refuse when `tofu` or `python3` is missing, when
+   the passphrase is absent or shorter than 16 characters, when the batch is
+   empty or malformed, or when `--state` is not inside `--declaration`. Print
+   `refused <object>: <reason>` naming the object — the declaration error, the
+   malformed batch line, or the state path outside the declaration — and exit
+   2.
+2. **Stage and validate.** Create `infra/.adoption-staging/` beside the
+   declaration (a git-ignored directory, removed on exit), copy the declaration
+   into it, copy the current encrypted state to the staged workspace's root
+   `terraform.tfstate` (the local backend's state path), and select that
+   workspace. Then run `tofu init -backend=false` and `tofu validate` inside
+   the staged copy: a fresh checkout has no `infra/.terraform/`, so init comes
+   first and validate never depends on a machine-local cache. A refusal
+   discards the staging directory and names the declaration error; no declared
+   file is touched, and the staging directory sits on the same filesystem as
+   the state, so the move in step 6 is a rename rather than a copy.
+3. **Decrypt the state.** Run `tofu state list` in the staged workspace before
+   any import. A state encrypted with a different passphrase refuses here,
+   naming the applied state, before any object is bound.
+4. **Import in batch order.** For each `address<TAB>import-id` line run
    `tofu import -input=false <address> <import-id>`. A failure stops the batch;
    the staged state is discarded and the real state is untouched.
-4. **Verify the batch.** Run `tofu plan -refresh-only -detailed-exitcode -json`
+5. **Verify the batch.** Run `tofu plan -refresh-only -detailed-exitcode -json`
    in the staging workspace and refuse when it reports a non-no-op change for a
    bound address, naming each such address: a live object that changed since
    the import does not get bound. With no live change, the imported state and
    the live objects agree, because `-refresh-only` compares state to live, not
    declaration to live.
-5. **Bind atomically.** Rename the staged state over `--state`, keep the
-   previous state as `<state>.backup`, and remove the staging directory. Print one
-   `adopted <address> <import-id>` line per batch entry and exit 0.
+6. **Bind atomically.** Rename the staged state over `--state`. On the first
+   adoption, create `<state>.backup` as a copy of the new state, so both
+   committed files exist; on later runs, keep the previous state as
+   `<state>.backup`. Remove the staging directory, print one
+   `adopted <address> <import-id>` line per batch entry, and exit 0.
 
 Failure modes and where they are detected:
 
@@ -236,10 +262,13 @@ Failure modes and where they are detected:
 | a selected object is already bound | the staged state is a copy of the applied state; `tofu import` refuses with "already managed", naming the address |
 | a declared object does not exist live | the provider's read returns 404 for the import id |
 | the declaration does not name the selected address | `tofu import` refuses an import target that is not in the configuration |
-| a selected object cannot be read | the provider's read returns 401/403/5xx; the error names the object |
+| a selected object cannot be read | the provider's read returns 401/403/5xx; the refusal names the object and the reason |
 | the applied state cannot be written | the staged import or the final move fails; nothing is bound and nothing live changes |
 | a live object changed after it was read | the post-import `-refresh-only` plan reports a non-no-op change, named by address |
-| the declaration cannot be read or validated | `tofu validate` (and a malformed batch) fail during preflight |
+| the applied state cannot be decrypted with the supplied passphrase | `tofu state list` in the staged workspace before any import refuses; the applied state is named |
+| the state path is outside the declaration | input preflight refuses before staging, naming the path |
+| a batch line is malformed | preflight parses every line before staging; the refusal names the batch line |
+| the declaration cannot be read or validated | `tofu init -backend=false` / `tofu validate` inside the staged copy before any import; the declaration error is named |
 
 The command never runs `tofu apply`, never issues a write request to GitHub,
 and never edits the declaration. The declaration revision is a repository
@@ -251,8 +280,14 @@ main flow, which is why the command only reads it.
 - `infra/terraform.tfstate` and `infra/terraform.tfstate.backup` are tracked.
   The repository holds no `*.tfstate` ignore rule today, so the change states
   the intended rule positively in `.gitignore`: ignore `infra/.terraform/` and
-  `infra/.adoption-staging/`, track the state files. The earlier intent to keep
-  the state out of Git is revoked by D1; there was no committed rule to delete.
+  `infra/.adoption-staging/`, track the state files. The topic Frame's supplied
+  direction "local state, kept out of Git" is superseded by D1: the state is
+  encrypted and committed; the confirmed Frame itself is not rewritten, and
+  there was no committed ignore rule to delete.
+- The first adoption creates `<state>.backup` as a copy of the new state, so
+  both tracked files exist in the binding revision; later runs preserve the
+  previous state as the backup. No run leaves the backup absent or holding a
+  plaintext copy.
 - The state binds identities. It is not a copy of the project's intended
   values, and adoption never flags a declared-vs-live difference; the first
   preview does that.
@@ -275,28 +310,37 @@ loopback.
   binds an ephemeral port on `127.0.0.1`, prints the port on stdout, and serves
   the fixture tree.
 - Fixtures are JSON responses keyed by request path (for example
-  `repos/duty2cal/duty2cal.json`), one directory per scenario. The endpoint
-  set the provider reads for the five objects is expected to cover
+  `repos/duty2cal/duty2cal.json` and `users/duty2cal.json`), one directory per
+  scenario. The endpoint set the provider reads is expected to cover
+  `GET /users/{owner}` (the provider's configure step calls `Users.Get(owner)`),
   `GET /orgs/{org}`, `GET /repos/{owner}/{repo}`,
   `GET /repos/{owner}/{repo}/topics`, `GET /repos/{owner}/{repo}/pages`, and
   `GET /repos/{owner}/{repo}/rulesets[/{id}]`; any path the fake does not know
-  returns 404 **and is journaled**, so a missing fixture fails loudly instead of
-  being silently defaulted. The setup task extends the fixture set until one
-  real `tofu import` per object succeeds — that is the proof the fixture set is
-  complete, and it is run before the scenarios rely on it. The same proof
-  asserts that a `-refresh-only` plan against an unchanged fake is a no-op, so
-  the provider's own normalization can never masquerade as a live change in the
-  change-detection step.
+  returns a distinctive **599** marker response with an `X-Fake-Unknown-Path`
+  header **and is journaled as an unknown-path entry**, so a missing fixture
+  fails loudly instead of being silently defaulted. Every refusal step asserts
+  that the journal contains no unknown-path entry, so a refusal is never the
+  fake's own gap leaking through as a provider error. The setup task extends
+  the fixture set until one real `tofu import` per object succeeds — that is
+  the proof the fixture set is complete, and it is run before the scenarios
+  rely on it. The same proof asserts that a `-refresh-only` plan against an
+  unchanged fake is a no-op, so the provider's own normalization can never
+  masquerade as a live change in the change-detection step.
 - A `faults.json` per scenario injects a status (401/403/404/500) for a path
-  pattern; a `mutate.json` replaces a response body after its first read, which
-  is how "a live object changed after it was read" is driven.
-- The journal records method, path, status and, for a GraphQL request, the
-  operation name. The fake serves `GET` reads and plain GraphQL query POSTs
-  (the provider's current client implementation uses `POST /graphql` for some
-  reads); every other method, and every GraphQL mutation, is refused with 405
-  and journaled as a refused write. "The live configuration is unchanged" is
-  asserted from the journal: no refused write and no mutation operation. This
-  is a secondary assertion; the primary one is the command's own output.
+  pattern; a `mutate.json` replaces a response body deterministically after an
+  explicit request count for that path (`after_requests: N`) or on a
+  step-controlled trigger file, never after an implicit "first read". That is
+  how "a live object changed after it was read" is driven without racing the
+  provider's read order.
+- The journal records method, path, status, an unknown-path flag and, for a
+  GraphQL request, the operation name. The fake serves `GET` reads and plain
+  GraphQL query POSTs (the provider's current client implementation uses
+  `POST /graphql` for some reads); every other method, and every GraphQL
+  mutation, is refused with 405 and journaled as a refused write. "The live
+  configuration is unchanged" is asserted from the journal: no refused write
+  and no mutation; a GraphQL query POST is a read, so the assertion is not
+  "no non-GET request". This is a secondary assertion; the primary one is the
+  command's own output.
 - The fake is started per scenario by the step definitions and killed at
   scenario end; no container, no network, no shared port.
 
@@ -310,11 +354,13 @@ loopback.
 - **Strict mode:** `Cucumber::fail_on_skipped()` in
   `apps/cli/tests/features_runner.rs`. An undefined, pending or skipped step
   fails the run, so a `@wip` scenario with unimplemented definitions is red.
-  Proof, run by the setup task and recorded: temporarily rename one step in a
+  The proof is an implementation task recorded for `tasks.md`, not a mutation
+  performed by `scripts/setup-infra-tests.sh`: temporarily rename one step in a
   throwaway scenario and observe a non-zero exit and an "undefined step"
   report, then restore. A green run with an unimplemented step is impossible.
-  The fake's unknown-path 404 plus journal is the second strictness net: a
-  missing fixture cannot pass as an empty response.
+  The fake's unknown-path 599 marker plus journal is the second strictness net:
+  a missing fixture cannot pass as an empty response, and a refusal scenario
+  cannot be satisfied by an unserved path.
 - **Single-scenario command:**
   `./run-tests.sh --name "Maintainer adopts the existing public home and every object is bound without changing it"`.
   `run-tests.sh` forwards `--name` to cucumber-rs unchanged.
@@ -334,9 +380,10 @@ port, the journal path and the batch file; both new modules are declared in
 `apps/cli/tests/steps/mod.rs` and `apps/cli/tests/steps/e2e/mod.rs`.
 
 A scenario that needs a pre-existing applied state (the already-bound
-scenario) runs one successful adoption against the same fake first, then runs
-the scenario's batch. No state is fabricated: every binding in a test was
-written by the real command.
+scenario) primes it with a successful **monorepo-only** batch against the same
+fake, then adopts the full batch; `tofu import` refuses the monorepo and the
+refusal names `duty2cal/duty2cal`. No state is fabricated: every binding in a
+test was written by the real command.
 
 ## Decisions
 
@@ -352,11 +399,16 @@ IDs so the link is readable here and in the proposal.
   `infra/versions.tf` (the `encryption` block), `scripts/adopt-public-home.sh`,
   the committed `infra/terraform.tfstate` and the explicit `.gitignore` rule.
 - **Decides D2 (seed Q5):** the monorepo carries the decided values
-  (`has_projects = false`; squash merges only; delete-branch-on-merge on; the
-  current description and topics; wiki and discussions off; auto-merge off;
-  forking allowed; no licence template), and the organization's profile and
-  member defaults keep today's values because no draft profile text describes
-  today's project. Realized in `infra/repos.tf` and `infra/main.tf`.
+  (`has_issues = true` kept; `has_projects = false`, `has_wiki = false`,
+  `has_discussions = false` stated explicitly because the provider sends
+  `false` for an omitted Optional-only boolean; squash merges only;
+  delete-branch-on-merge on; the current description and topics; auto-merge
+  off; forking allowed; no licence template). The pages repository states
+  `has_issues = false`, `has_wiki = false` (the draft's values) and
+  `has_projects = true` (today's live value; the draft is silent). The
+  organization's profile and member defaults keep today's values because no
+  draft profile text describes today's project. Realized in `infra/repos.tf`
+  and `infra/main.tf`.
 - **Decides D3 (seed Q9):** the declaration carries the existing rule set
   `main protection` with deletion, non-fast-forward and linear history, no
   bypass actor, and no `github_branch_protection` resource; retiring the legacy
@@ -412,7 +464,7 @@ rejected:
 | Use-case element | Technical decision | Evidence |
 |---|---|---|
 | Success guarantee: every already-existing object in the selected batch is bound in the applied state, live unchanged | Declaration plus batch; staged imports; atomic move | `@e2e` "Maintainer adopts the existing public home and every object is bound without changing it" |
-| Rule: the whole batch is adopted or none is | Staged state under a temporary declaration copy; discard on any failure | The refusal scenarios (missing object, unreadable object, already bound, undeclared entry, changed object, state write) |
+| Rule: the whole batch is adopted or none is | Staged state under a temporary declaration copy; discard on any failure | The refusal scenarios (invalid declaration, malformed batch, missing object, unreadable object, already bound, undeclared entry, changed object, wrong-passphrase state, state write) |
 | Rule: adoption changes no live object | `tofu import` and `-refresh-only` issue reads only; the fake's journal proves no refused write and no mutation operation | `@e2e` journal assertion; every refusal scenario's unchanged-live assertion |
 | Rule: the state binds an identity, not a copy of the values | Imported identities; no reconciliation step; declared-vs-live differences are not applied | `@e2e` (declared projects-off vs live projects-on stays live), and the design's "no apply" boundary |
 | Rule: the batch is the selected set | `infra/adoption-batch.txt`; only its lines are imported | "Only the selected batch is bound" |
@@ -476,19 +528,20 @@ the repository's files (the declaration, the batch and the encrypted state).
 - **Framework:** cucumber-rs with `std::process::Command` and `std::net` to
   discover the fake's port, as the existing E2E steps use subprocesses.
 - **E2E strict-mode proof:** the same `fail_on_skipped()`, plus the fake's
-  unknown-path 404-and-journal rule. The setup task's rename-a-step check is
-  the proof recorded for this capability.
+  unknown-path 599 marker and journal. The rename-a-step check is an
+  implementation task recorded for `tasks.md`, not a setup-script mutation.
 
 ## Interaction Coverage Matrix
 
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
-| adopt the selected batch of existing objects | Maintainer adopts the existing public home and every object is bound without changing it | CLI (terminal) | `std::process::Command` runs `scripts/adopt-public-home.sh --declaration <tmp>/infra --batch <tmp>/infra/adoption-batch.txt --state <tmp>/infra/terraform.tfstate --api-url http://127.0.0.1:<port> --token test-token`, with `TF_VAR_state_passphrase` set; asserts the five `adopted` lines, then reads the request journal (no refused write and no mutation operation) and runs `tofu state list` against the copied state (five addresses) |
+| adopt the selected batch of existing objects | Maintainer adopts the existing public home and every object is bound without changing it | CLI (terminal) | `std::process::Command` runs `scripts/adopt-public-home.sh --declaration <tmp>/infra --batch <tmp>/infra/adoption-batch.txt --state <tmp>/infra/terraform.tfstate --api-url http://127.0.0.1:<port> --token test-token`, with `TF_VAR_state_passphrase` set; asserts the five `adopted` lines, then reads the request journal (no refused write, no mutation, no unknown-path entry) and runs `tofu state list` against the copied state (five addresses) |
 
 ## Local runnability & digital twins
 
-- **Setup, once:** `./scripts/setup-infra-tests.sh` — checks `tofu` and
-  `python3`, installs nothing silently, mirrors the pinned provider into
+- **Setup, once:** `./scripts/setup-infra-tests.sh` — checks `tofu` (exactly
+  the version in `infra/.opentofu-version`) and `python3`, installs nothing
+  silently, mirrors the pinned provider into
   `~/.cache/duty2cal/terraform-provider-mirror`, writes the `terraformrc`, and
   performs the one-import fixture proof.
 - **Run the suite:** `./run-tests.sh` (or
@@ -511,16 +564,26 @@ the repository's files (the declaration, the batch and the encrypted state).
   - *The provider may read through GraphQL, where a read is a POST.* Fix: the
     fake answers a GraphQL query POST by operation name and refuses a mutation;
     the "unchanged live" assertion is "no refused write and no mutation", not
-    "no POST". The setup proof records which reads use GraphQL for the pinned
-    version.
+    "no non-GET request" (a GraphQL query POST is a read). The setup proof
+    records which reads use GraphQL for the pinned version.
   - *The provider's reads depend on its version.* Fix: the mirror is resolved
     from `infra/.terraform.lock.hcl`, and the setup task's one-import proof
     fixes the fixture set before scenarios run; the fake journals an unserved
     path instead of inventing a response.
+  - *The declaration must validate on a fresh checkout that has no
+    `infra/.terraform/`.* Fix: the command stages the declaration first, then
+    runs `tofu init -backend=false` and `tofu validate` **inside the staged
+    copy**, so validation never depends on a machine-local cache and no
+    untracked directory appears in `infra/`.
   - *`tofu init` writes `.terraform/` into the declaration directory.* Fix: the
     command copies the declaration into `infra/.adoption-staging/` (git-ignored,
     removed on exit) and the steps invoke the command, so the repository's
     tracked files stay clean.
+  - *The state path must be the local backend's state file inside the staged
+    workspace.* Fix: preflight refuses `--state` outside `--declaration`, and
+    staging copies the current state to the staged workspace's root
+    `terraform.tfstate`, which is the path `tofu` reads without a `-state`
+    argument.
   - *The final binding must not be a half-written copy.* Fix: the staging
     directory is created beside the state file, so the binding is a
     same-filesystem rename; a reader never sees a partially written state.
@@ -545,8 +608,8 @@ the repository's files (the declaration, the batch and the encrypted state).
 
 | Process | Started by | Instrumented artifact | Profile output | Merge step | Non-zero production probe |
 |---|---|---|---|---|---|
-| features_runner (non-e2e) | `./measure-coverage.sh` (`--tags "not @e2e"`) | `cargo llvm-cov --workspace --test features_runner` | `coverage/non-e2e-cobertura.xml` | `./merge-coverages.sh` | `crates/duty2cal-core/src/domain/timing.rs` |
-| features_runner (`@e2e`) + spawned adoption + fake | `./measure-coverage.sh` (`--tags "@e2e"`) | `cargo llvm-cov --workspace --test features_runner` | `coverage/e2e-cobertura.xml` | `./merge-coverages.sh` | `apps/cli/src/fs.rs` |
+| features_runner (non-e2e) | `./measure-coverage.sh` (no `--tags`; it produces both reports) | `cargo llvm-cov --workspace --test features_runner` | `coverage/non-e2e-cobertura.xml` | `./merge-coverages.sh` | `crates/duty2cal-core/src/domain/timing.rs` |
+| features_runner (`@e2e`) + spawned adoption + fake | `./measure-coverage.sh` (no `--tags`; it produces both reports) | `cargo llvm-cov --workspace --test features_runner` | `coverage/e2e-cobertura.xml` | `./merge-coverages.sh` | `apps/cli/src/fs.rs` |
 
 The adoption wrapper, the fake and the HCL are not Rust and stay outside the
 coverage denominator, like `scripts/prepare-release.sh`; their observable
@@ -567,22 +630,63 @@ definitions and the `DutyWorld` fields, which the runner instruments.
   is enforced, and the state is reviewed as part of the declaration revision.
 - **The fixture set must track the provider's reads.** A provider upgrade can
   request a new endpoint; the setup task's one-import proof and the fake's
-  404-plus-journal turn that into a red run, not a silent pass.
+  599-plus-journal unknown-path marker turn that into a red run, not a silent
+  pass.
 - **The local drift check is only as current as the last run.** Withdrawn CI
   reporting means divergence is found when the maintainer looks; recorded as
-  the accepted cost of keeping the passphrase off automation.
+  the accepted cost of keeping the passphrase off automation. Reporting drift
+  is out of this change's scope (`report-configuration-drift`).
 - **Two import identifiers are live data.** The organization's numeric id and
   the rule set's numeric id are read once at setup and recorded in the batch;
   a re-created organization or rule set would need the batch updated, which the
   setup read and the adoption's own refusal make visible rather than silent.
 - **The first live preview has not been run by this change.** Adoption is
-  read-only, so the declared-vs-live differences (projects, merge strategies,
-  delete-branch-on-merge) are named by the first configuration change's
-  preview; this change claims no preview result.
+  read-only, so the declared-vs-live differences (the monorepo's projects,
+  merge strategies and delete-branch-on-merge; the pages repository's issues
+  and wiki) are named by the first configuration change's preview; this change
+  claims no preview result.
+
+## Post-GREEN real adoption (required)
+
+The suite proves the adoption against a fake API; it cannot prove that the
+provider's live reads and the real import identifiers agree with the
+organization. The change is therefore not done when the suite is GREEN: the
+maintainer runs `scripts/adopt-public-home.sh` **once against the real
+organization**, with the real `GITHUB_TOKEN`, passphrase and billing email, and:
+
+- records the transcript (the five `adopted` lines, scrubbed of the token,
+  passphrase and any temporary path) under
+  `givn/changes/declare-public-home/evidence/real-adoption/transcript.txt`;
+- commits the resulting encrypted `infra/terraform.tfstate` and
+  `infra/terraform.tfstate.backup` together with the declaration;
+- review verifies the five bound addresses with `tofu state list` against the
+  committed state and confirms the transcript names the same five addresses.
+
+This is a required step in the change's task list, not an optional follow-up.
+No live object is created or changed by it; a refusal is the expected safe
+outcome and must be reported before anything is called done.
+
+## Archive-time obligation: the capability allow-list
+
+`scripts/render-changelog.sh` compares the marked capability allow-list in
+`cliff.toml` with the directories under `givn/specs/` only. The capability
+directory `givn/specs/adopt-existing-configuration/` is created by this
+change's **archive**, not by its implementation, so the allow-list must not be
+edited now: adding `adopt-existing-configuration` before the directory exists
+would make the `changelog` gate refuse on every push between now and the
+archive.
+
+The archive therefore owes a single-revision edit: when it creates
+`givn/specs/adopt-existing-configuration/`, it adds
+`adopt-existing-configuration` to the marked `capability-allow-list` line in
+`cliff.toml` **and** to the per-type parser rows that repeat the list (the
+allow-list is duplicated inside each type's parser because `git-cliff` groups
+by the parser a revision matches). Until then the gate stays green. This is a
+tasks-facing note: `tasks.md` must carry it as the archive step's obligation.
 
 ## Black-Box-First policy
 
-All eight scenarios drive `scripts/adopt-public-home.sh` as a real subprocess;
+All eleven scenarios drive `scripts/adopt-public-home.sh` as a real subprocess;
 the `@e2e` scenario drives the same command end to end and asserts its output,
 the request journal and the bound state. No internal test is retained
 alongside: the only Rust added is step definitions. The GitHub API is never

@@ -37,8 +37,10 @@ the publishing plumbing whose key will live in this state, and the drift report
 that can no longer run in CI. Reversal needs a state migration and a new
 credential or service. `design.md` owns the mechanics (the `encryption` block,
 the passphrase variable, the staging workspace); the boundary and its
-alternatives are not owned there. The register holds no record about state
-storage, so the route is a new record.
+alternatives are not owned there. ADR-0005 records the declaration mechanism;
+this record fixes a distinct boundary — where the applied state lives, how it is
+protected and where drift is checked — and does not duplicate it. The register
+holds no other record about state storage, so the route is a new record.
 
 ### MADR checklist evidence
 
@@ -92,9 +94,14 @@ The adoption command refuses to run without a passphrase of at least 16
 characters, and the declaration sets `enforced = true` for both state and plan,
 so OpenTofu refuses to write plaintext. The delta's `@e2e` scenario reads the
 state it produced through `tofu state list` and asserts the five bound
-addresses; the committed file is ciphertext in the repository. The local drift
-check is run once against the real organization by the maintainer, and its
-output is recorded as the change's evidence.
+addresses; the committed file is ciphertext in the repository. Configuration
+drift reporting is out of this change's scope (`report-configuration-drift`).
+This change is confirmed instead by one operator-run real adoption after the
+suite is GREEN: the maintainer runs `scripts/adopt-public-home.sh` against the
+real organization, records the transcript under
+`givn/changes/declare-public-home/evidence/real-adoption/`, commits the
+resulting encrypted `infra/terraform.tfstate` and its backup, and review
+verifies the five bound addresses with `tofu state list`.
 
 ## Pros and Cons of the Options
 

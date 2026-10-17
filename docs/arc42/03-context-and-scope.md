@@ -59,7 +59,7 @@ The release page's text is the newest section of the repository's change log —
 
 ## Technical context
 
-All interfaces are the local filesystem. There is no network interface, no database, and no external service.
+For the converter, all interfaces are the local filesystem. There is no network interface, no database, and no external service in the product. The public-home adoption tooling adds one separate, read-only interface to the project's side: it reads GitHub's REST API during adoption and verification and never writes.
 
 ```mermaid
 flowchart LR
@@ -75,6 +75,7 @@ flowchart LR
 | Published calendar | Local file write (RFC 5545 text, CRLF, UTF-8) | Out |
 | Diagnostic report | Local file write (plain text, numbered) | Out |
 | Construction clock | Operating-system clock (UTC) | In |
+| Public-home adoption | GitHub REST API over HTTPS (read-only: object reads and a refresh comparison; no write request) | In (adoption tooling only, never the converter) |
 
 ## Scope boundary
 

@@ -80,7 +80,11 @@ the state and moves it into place only after every import and a refresh-only
 verification succeed; a failure discards the staged state, so a partial batch
 cannot be left behind and a crash cannot bind half a batch. This is structural,
 not a rollback step, and it is why `tofu import` — which is per-object — is not
-exposed directly to the maintainer.
+exposed directly to the maintainer. Every refusal names the object and the
+reason — an unreadable object, one that does not exist live, an already-bound
+address, an undeclared batch entry, a live object that changed, a state that
+cannot be decrypted or written, a malformed batch line, or an invalid
+declaration — and states that nothing was bound.
 
 ## State encryption at rest
 

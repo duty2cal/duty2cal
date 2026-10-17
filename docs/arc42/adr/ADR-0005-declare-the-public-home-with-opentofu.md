@@ -89,12 +89,16 @@ repository.
 
 ### Confirmation
 
-`tofu validate` runs in the adoption command's preflight and in the setup task;
-the delta's `@e2e` scenario drives a real `tofu import` of every adopted object
-against the local fake API and asserts the resulting state. A hand-made change
-to a declared setting is not prevented by the mechanism — it is surfaced by the
-local drift check, which is confirmed by running it against the real
-organization and recording the result as the change's evidence.
+`tofu validate` runs inside the adoption command's staged copy, after
+`tofu init -backend=false` so a fresh checkout validates, and in the setup
+task; the delta's `@e2e` scenario drives a real `tofu import` of every adopted
+object against the local fake API and asserts the resulting state. A hand-made
+change to a declared setting is not prevented by the mechanism — it is surfaced
+by the local drift check recorded in ADR-0006; drift reporting is out of this
+change's scope and belongs to `report-configuration-drift`. The adoption is
+confirmed by that scenario and, after the suite is GREEN, by one operator-run
+real adoption against the real organization whose transcript and committed
+encrypted state are the change's evidence.
 
 ## Pros and Cons of the Options
 

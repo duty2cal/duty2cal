@@ -177,24 +177,26 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-  owner["Organization owner"] --> cmd["scripts/adopt-public-home.sh --declaration infra --batch infra/adoption-batch.txt"]
-  cmd --> pre{"passphrase present, batch well formed, declaration valid?"}
-  pre -->|"no"| refuse["refuse; name the cause; nothing touched"]
-  pre -->|"yes"| stage["copy the declaration and the current encrypted state into a staging workspace"]
+  owner["Organization owner"] --> cmd["scripts/adopt-public-home.sh --declaration infra --batch infra/adoption-batch.txt --state infra/terraform.tfstate"]
+  cmd --> pre{"tofu/python3 present, passphrase valid, batch well formed, state inside declaration?"}
+  pre -->|"no"| refuse["refuse; name the cause; nothing read from GitHub"]
+  pre -->|"yes"| stage["stage the declaration and state; tofu init -backend=false; tofu validate; tofu state list decrypts the state"]
+  stage -->|"invalid declaration or wrong passphrase"| refuse
   stage --> imp["tofu import each batch address in order (reads only, against GitHub)"]
   imp -->|"already bound, missing live, undeclared, unreadable or unwritable"| refuseobj["discard the staged state; refuse; name the object; live unchanged"]
   imp --> verify["tofu plan -refresh-only -detailed-exitcode"]
   verify -->|"a bound object changed since the import"| refuseobj
-  verify -->|"no change"| bind["move the staged state over infra/terraform.tfstate; keep the backup"]
+  verify -->|"no change"| bind["move the staged state over infra/terraform.tfstate; create the first backup as a copy, else keep the previous state"]
   bind --> out["one 'adopted <address> <id>' line per object"]
 ```
 
 **Steps:**
 
-1. The command checks the passphrase (absent or shorter than 16 characters refuses), the batch's shape and the declaration itself (`tofu validate`). Nothing is read from GitHub and nothing is written before these pass.
-2. It copies the declaration into a temporary directory and copies the current encrypted state into a staging workspace there, so the repository's `infra/` is untouched while the batch runs.
-3. Each `address<TAB>import-id` line is imported in order. `tofu import` reads the live object; it creates, modifies and deletes nothing. An object already managed by the copied state, an import target the declaration does not name, a live object that does not exist, an object the token cannot read, or a state that cannot be written stops the batch: the staged state is discarded and the command refuses, naming the object.
-4. A refresh-only plan over the staged state compares the imported objects with GitHub again; a non-no-op change means a live object changed after it was read, so the batch is refused and the object named. With no change, the staged state and the live objects agree.
-5. The staged state is moved over `infra/terraform.tfstate`, the previous state is kept as its backup, and the command prints one `adopted` line per object.
+1. The command checks that `tofu` and `python3` exist, that the passphrase is present and at least 16 characters, that the batch is well formed, and that `--state` lies inside `--declaration`. Nothing is read from GitHub and nothing in the repository is written before these pass.
+2. It copies the declaration into a staging workspace and the current encrypted state to that workspace's root `terraform.tfstate`, so `infra/` is untouched while the batch runs. It then runs `tofu init -backend=false` and `tofu validate` inside the staged copy — a fresh checkout has no `infra/.terraform/`, so init comes first. An invalid declaration discards the staging directory and names the declaration error.
+3. `tofu state list` in the staged workspace proves the state decrypts before any import; a state encrypted with a different passphrase refuses here and names the applied state.
+4. Each `address<TAB>import-id` line is imported in order. `tofu import` reads the live object; it creates, modifies and deletes nothing. An object already managed by the copied state, an import target the declaration does not name, a live object that does not exist, an object the token cannot read, or a state that cannot be written stops the batch: the staged state is discarded and the command refuses, naming the object and the reason.
+5. A refresh-only plan over the staged state compares the imported objects with GitHub again; a non-no-op change means a live object changed after it was read, so the batch is refused and the object named. With no change, the staged state and the live objects agree.
+6. The staged state is moved over `infra/terraform.tfstate`; on the first adoption `<state>.backup` is created as a copy of the new state, and on later runs the previous state is kept as the backup. The command prints one `adopted` line per object.
 
-**Notes:** Adoption is read-only against GitHub by construction; the suite proves it from the fake API's request journal, where a non-`GET` request would be the evidence of a write. The declaration revision is the repository commit, so the command never edits the declaration.
+**Notes:** Adoption is read-only against GitHub by construction; the suite proves it from the fake API's request journal: a refused write or a GraphQL mutation would be the evidence of a write, while a query-only POST is a read. Every refusal step also asserts that the journal holds no unknown-path entry, so a refusal is never the fake's own missing fixture. The declaration revision is the repository commit, so the command never edits the declaration.
