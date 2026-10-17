@@ -61,7 +61,7 @@ Feature: Adopt the existing public-home configuration
     Then the adoption refuses the batch and names the archived repository
     And no object in the batch is bound
 
-  @givn.added @wip
+  @givn.added
   Scenario: A live object that changes after it was read refuses the batch
     Given the monorepo's live settings change after the adoption reads them
     When the organization owner adopts the batch

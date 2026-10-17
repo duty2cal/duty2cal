@@ -474,7 +474,7 @@ Design constraints:
       exit status: 0
       ```
 - [x] COMMIT — release note subject, scenario title body; record the revision.
-      Revision: `PENDING-SCENARIO-6-HASH`
+      Revision: `b558e4d934839e7519bf4b85f93059d5cf7545f4`
 
 ## 7. A live object that changes after it was read refuses the batch
 
@@ -485,10 +485,55 @@ Design constraints:
 - The post-import `tofu plan -refresh-only -detailed-exitcode -json` reports a
   non-no-op change for the monorepo; the refusal names it; nothing is bound.
 
-- [ ] RED — remove `@wip`; run the single scenario; paste output (non-zero).
-- [ ] GREEN — assertions and production code; list files; paste output (zero).
-- [ ] REFACTOR — cleanup; re-run; paste output (zero).
-- [ ] COMMIT — release note subject, scenario title body; record the revision.
+- [x] RED — remove `@wip`; run the single scenario; paste output (non-zero).
+      ```
+      $ ./run-tests.sh --name "A live object that changes after it was read refuses the batch"
+      Feature: Adopt the existing public-home configuration
+        Scenario: A live object that changes after it was read refuses the batch
+         ✘  Given the monorepo's live settings change after the adoption reads them
+            Step failed:
+            Defined: tmp/tmp.eZqD9b1Wp5/f0003.feature:66:5
+            Step doesn't match any function
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      error: test failed, to rerun pass `-p duty2cal --test features_runner`
+      exit status: 101
+      ```
+- [x] GREEN — assertions and production code; list files; paste output (zero).
+      Production files created/modified:
+      `apps/cli/tests/steps/adopt_existing_configuration.rs` (the
+      `mutate.json` deterministic change after one request, the fake restart
+      and the scenario's assertions); the feature file drops this scenario's
+      `@wip`; `scripts/adopt-public-home.sh` now reads the refresh-only report's
+      `resource_drift` message, whose change is `{"action": "update"}` rather
+      than an `actions` array, and refuses by address. The recorded run:
+      ```
+      $ ./run-tests.sh --name "A live object that changes after it was read refuses the batch"
+      Feature: Adopt the existing public-home configuration
+        Scenario: A live object that changes after it was read refuses the batch
+         ✔  Given the monorepo's live settings change after the adoption reads them
+         ✔  When the organization owner adopts the batch
+         ✔  Then the adoption refuses the batch and names "duty2cal/duty2cal"
+         ✔  And no object in the batch is bound
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      4 steps (4 passed)
+      exit status: 0
+      ```
+- [x] REFACTOR — cleanup; re-run; paste output (zero).
+      `cargo fmt --all`; no behaviour changed.
+      ```
+      $ ./run-tests.sh --name "A live object that changes after it was read refuses the batch"
+      1 feature
+      1 scenario (1 passed)
+      4 steps (4 passed)
+      exit status: 0
+      ```
+- [x] COMMIT — release note subject, scenario title body; record the revision.
+      Revision: `PENDING-SCENARIO-7-HASH`
 
 ## 8. An applied state encrypted with another passphrase refuses before any binding
 

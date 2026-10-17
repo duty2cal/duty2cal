@@ -330,7 +330,11 @@ with open(sys.argv[1], encoding="utf-8") as handle:
             continue
         change = message.get("change") or {}
         actions = change.get("actions") or []
-        if actions and actions != ["no-op"]:
+        action = change.get("action")
+        changed = bool(actions and actions != ["no-op"]) or bool(
+            action and action != "no-op"
+        )
+        if changed:
             address = ((change.get("resource") or {}).get("addr") or "").strip()
             if address:
                 addresses.append(address)

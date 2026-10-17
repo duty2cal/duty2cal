@@ -421,6 +421,30 @@ async fn it_does_not_exist_live(w: &mut DutyWorld) {
     restart_fake(w);
 }
 
+#[given("the monorepo's live settings change after the adoption reads them")]
+async fn the_monorepos_live_settings_change_after_the_adoption_reads_them(w: &mut DutyWorld) {
+    prepare(w);
+    let fixtures = fixtures_dir(w);
+    let repository = fs::read_to_string(fixtures.join("repos/duty2cal/duty2cal.json"))
+        .expect("read the monorepo fixture");
+    let mutated = repository.replace(
+        "\"description\": \"Convert a duty plan to a calendar\"",
+        "\"description\": \"Changed after the adoption read it\"",
+    );
+    assert_ne!(
+        mutated, repository,
+        "the monorepo fixture carries the description the scenario changes"
+    );
+    fs::write(
+        fixtures.join("mutate.json"),
+        format!(
+            "{{\"/repos/duty2cal/duty2cal\": {{\"after_requests\": 1, \"body\": {mutated}}}}}\n"
+        ),
+    )
+    .expect("write the deterministic monorepo mutation");
+    restart_fake(w);
+}
+
 #[given("the selected batch names the archived repository, which the declared configuration does not name")]
 async fn the_selected_batch_names_the_archived_repository(w: &mut DutyWorld) {
     prepare(w);
