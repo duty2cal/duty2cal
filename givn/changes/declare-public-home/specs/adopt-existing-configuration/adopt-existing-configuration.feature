@@ -19,7 +19,7 @@ Feature: Adopt the existing public-home configuration
     And no object is read from the live organization
     And no object in the batch is bound
 
-  @givn.added @wip
+  @givn.added
   Scenario: A malformed batch entry refuses before any import
     Given the selected batch has a line without an import identifier
     When the organization owner adopts the batch

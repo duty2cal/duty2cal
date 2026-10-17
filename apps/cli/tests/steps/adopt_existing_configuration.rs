@@ -75,10 +75,7 @@ fn copy_declaration(source: &Path, target: &Path) {
         let text = name.to_string_lossy();
         if matches!(
             text.as_ref(),
-            ".terraform"
-                | ".adoption-staging"
-                | "terraform.tfstate"
-                | "terraform.tfstate.backup"
+            ".terraform" | ".adoption-staging" | "terraform.tfstate" | "terraform.tfstate.backup"
         ) {
             continue;
         }
@@ -172,10 +169,7 @@ pub(crate) fn adoption_output(w: &DutyWorld) -> String {
 /// The adoption command as the design's interaction matrix invokes it.
 pub(crate) fn adopt(w: &mut DutyWorld) {
     let declaration = declaration_dir(w);
-    let batch = w
-        .batch
-        .clone()
-        .expect("the scenario prepared no batch");
+    let batch = w.batch.clone().expect("the scenario prepared no batch");
     let state = state_path(w);
     let port = w.fake_port.expect("the scenario started no fake API");
 
@@ -254,11 +248,8 @@ fn journal_lines(w: &DutyWorld) -> Vec<String> {
 #[given("the declared configuration fails validation")]
 async fn the_declared_configuration_fails_validation(w: &mut DutyWorld) {
     prepare(w);
-    fs::write(
-        declaration_dir(w).join("invalid.tf"),
-        INVALID_DECLARATION,
-    )
-    .expect("write the invalid declaration file");
+    fs::write(declaration_dir(w).join("invalid.tf"), INVALID_DECLARATION)
+        .expect("write the invalid declaration file");
 }
 
 #[given("the selected batch has a line without an import identifier")]

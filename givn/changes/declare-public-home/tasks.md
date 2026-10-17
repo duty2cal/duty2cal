@@ -138,7 +138,7 @@ Design constraints:
       ```
 - [x] COMMIT — `feat(adopt-existing-configuration): <release note>` with the
       scenario title in the body; record the revision.
-      Revision: `PENDING-SCENARIO-1-HASH`
+      Revision: `2bd68e3bc0d4ac0a7f0a290513039da57104d07f`
 
 ## 2. A malformed batch entry refuses before any import
 
@@ -147,11 +147,59 @@ Design constraints:
   identifier is refused naming the line; no import runs.
 - The batch format is `address<TAB>import-id`, `#` comments.
 
-- [ ] RED — remove `@wip` from this scenario only; run the single scenario;
+- [x] RED — remove `@wip` from this scenario only; run the single scenario;
       paste output (non-zero).
-- [ ] GREEN — assertions and production code; list files; paste output (zero).
-- [ ] REFACTOR — cleanup; re-run; paste output (zero).
-- [ ] COMMIT — release note subject, scenario title body; record the revision.
+      ```
+      $ ./run-tests.sh --name "A malformed batch entry refuses before any import"
+      ...
+        Scenario: A malformed batch entry refuses before any import
+         ✘  Given the selected batch has a line without an import identifier
+            Step failed:
+            Defined: tmp/tmp.9MJfJp8iGb/f0003.feature:24:5
+            Step doesn't match any function
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      error: test failed, to rerun pass `-p duty2cal --test features_runner`
+      exit status: 101
+      ```
+- [x] GREEN — assertions and production code; list files; paste output (zero).
+      The batch preflight in `scripts/adopt-public-home.sh` parses every line
+      before staging and refuses a line without a tab-separated import
+      identifier, naming the line number and quoting the line;
+      `apps/cli/tests/steps/adopt_existing_configuration.rs` adds the scenario's
+      Given and the two Then assertions (journal empty, no state recorded);
+      `givn/changes/declare-public-home/specs/adopt-existing-configuration/adopt-existing-configuration.feature`
+      drops this scenario's `@wip`.
+      ```
+      $ ./run-tests.sh --name "A malformed batch entry refuses before any import"
+      ...
+      Feature: Adopt the existing public-home configuration
+        Scenario: A malformed batch entry refuses before any import
+         ✔  Given the selected batch has a line without an import identifier
+         ✔  When the organization owner adopts the batch
+         ✔  Then the adoption refuses the batch and names the malformed batch line
+         ✔  And no object is imported
+         ✔  And no object in the batch is bound
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      5 steps (5 passed)
+      exit status: 0
+      ```
+- [x] REFACTOR — cleanup; re-run; paste output (zero).
+      `cargo fmt --all` normalised the step module; no behaviour changed.
+      ```
+      $ ./run-tests.sh --name "A malformed batch entry refuses before any import"
+      ...
+      1 feature
+      1 scenario (1 passed)
+      5 steps (5 passed)
+      exit status: 0
+      ```
+- [x] COMMIT — release note subject, scenario title body; record the revision.
+      Revision: `PENDING-SCENARIO-2-HASH`
 
 ## 3. A declared object that does not exist live refuses the whole batch
 
