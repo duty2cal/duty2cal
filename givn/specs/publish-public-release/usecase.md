@@ -1,4 +1,4 @@
-<!-- givn:base-sha256: 579cac31535395f6ebfdc5e988eeb3fe4cefc1734e177c4a109f50dfdc63cb2e -->
+<!-- givn:base-sha256: c01c72196fecabf26a00e45092a18aaa514b6dc9c55559952a8317ea3c7ae2fb -->
 # Use case: publish-public-release
 
 ## Level
@@ -12,7 +12,7 @@
 
 ## Goal
 
-Publish one version of the tool as a public release that a crew member can obtain for their own machine and trace to the revision and the automation that built it.
+Publish one version of the tool as a public release that a crew member on Windows x86_64 can obtain for their own machine and trace to the revision and the automation that built it.
 
 ## Trigger
 
@@ -22,28 +22,28 @@ The maintainer decides a version is ready and prepares its release.
 
 - A version number is decided, and the revision it names is the revision being released.
 - The change log committed in the repository is current for the revision being released.
-- The executable has been built for every supported platform by the project's own automation.
+- The Windows x86_64 executable has been built by the project's own automation and started on a Windows machine.
 - The public home exists and its owner-applied settings are in place: the gate on landing, secret scanning with push protection, the dependency alerts, code scanning, and release immutability.
 
 ## Main flow
 
-1. Maintainer decides the version; System prepares, for every supported platform, one archive holding that platform's executable together with a checksum covering that archive, and renders the release text for the version as the newest section of the change log the repository keeps.
+1. Maintainer decides the version; System prepares one archive holding the Windows executable together with a checksum covering that archive, and renders the release text for the version as the newest section of the change log the repository keeps.
 2. Maintainer inspects what was prepared before anything is public; System stages the complete set and publishes nothing from an incomplete preparation.
-3. Maintainer publishes the version; System waits for every check on the tagged revision to conclude, refuses when the concluded set is not green, and otherwise makes the release public with every archive of the version attached at once, and the release cannot change from that moment.
-4. Crew member obtains the archive for their machine; System offers each platform's archive at a stable address, each named for the platform it serves.
-5. Crew member extracts and runs the executable; System's published executable runs on that platform with no runtime installation and no companion library beyond the platform's own.
-6. Crew member, or anyone else, checks what they received; System publishes each archive's checksum, its build provenance and the bill of materials for it, so the file in hand can be traced to the revision and automation that produced it.
+3. Maintainer publishes the version; System waits for every check on the tagged revision to conclude, refuses when the concluded set is not green, and otherwise makes the release public with the Windows archive attached at once, and the release cannot change from that moment.
+4. Crew member on Windows obtains the archive; System offers the Windows archive at a stable address, named for the platform it serves. Nothing is offered for any other platform.
+5. Crew member extracts and runs the executable; System's published executable runs on Windows with no runtime installation and no companion library beyond the platform's own.
+6. Crew member, or anyone else, checks what they received; System publishes the archive's checksum, its build provenance and the bill of materials for it, so the file in hand can be traced to the revision and automation that produced it.
 7. Maintainer's release states what changed; System's release text is the newest section of the change log — the changes a user receives, grouped by kind, with dependency updates named beside them — rather than a flat list of revision subjects.
 
 ## Extensions
 
-- 1: a supported platform has no executable built → preparation fails and nothing is staged; an archive set missing a platform would promise a download that does not exist.
-- 1: an executable is supplied for a platform outside the supported set → preparation fails and nothing is staged; no invented platform is published.
+- 1: the Windows executable has not been built → preparation fails and nothing is staged; an archive set missing the supported platform would promise a download that does not exist.
+- 1: an executable is supplied for a platform outside the supported set, including a platform earlier releases offered → preparation fails and nothing is staged; no invented or withdrawn platform is published.
 - 1: a version's release was already prepared → preparation refuses rather than replacing the prepared set.
 - 1: an executable cannot be read → preparation fails and nothing is staged.
 - 1–2: the prepared set is incomplete or was not inspected → nothing is published.
 - 3: the version being published was already published → refuse; a published release's tag can never be reused, so a correction is a new version.
-- 5: an executable does not start on a machine of its platform's kind → that platform's archive is not published for that version.
+- 5: the Windows executable does not start on Windows → the archive is not published for that version.
 - 1: a version's notes would name nothing at all — no change a user receives and no dependency update → preparation fails and nothing is published; a version whose notes name nothing at all is not releasable.
 - 1: the committed change log does not match the revision being released → preparation fails and nothing is published, naming the version whose section differs.
 - 3: a check on the tagged revision concludes without success → publication refuses and names the check; nothing becomes public.
@@ -55,24 +55,24 @@ The maintainer decides a version is ready and prepares its release.
 ## Rules
 
 - **The supported platform set**
-  - The supported platforms are Windows x86_64, Linux x86_64, Linux arm64, macOS arm64 and macOS x86_64. Nothing else is offered for download.
-  - A release of a version offers exactly one archive for each supported platform, and never offers a promising platform that has no archive.
-  - Each archive's name states the tool, the version and the platform it serves, so a downloader selects by machine rather than by trial.
-  - Each archive holds its platform's executable under the name that platform uses — `duty2cal`, or `duty2cal.exe` on Windows — and holds nothing else.
-  - Every platform's archive uses the same archive format, so one documented extraction path serves all of them.
+  - The supported platform is Windows x86_64. Nothing else is supported, tested, distributed or offered for download. A platform may be added back only by a later change when users request it.
+  - A release of a version offers exactly one archive — the Windows x86_64 archive — and never offers a promising platform that has no archive.
+  - The archive's name states the tool, the version and the platform it serves, so a downloader selects by machine rather than by trial.
+  - The archive holds the Windows executable under the name the platform uses — `duty2cal.exe` — and holds nothing else.
+  - The archive uses the same `.tar.gz` format the project already publishes, so one documented extraction path serves it.
 - **What a published archive guarantees**
-  - The executable in a published archive runs on its platform with no runtime installation and no companion library beyond that platform's own.
-  - Each archive is published with a checksum covering that archive, so a downloader verifies what they received before extracting it, and the checksum names the file it covers.
-  - A platform's archive is published only after its executable was built for that platform and started on a machine of that platform's kind. The Windows executable is cross-built on Linux, as the confirmed distribution constraint requires, so its start — not its build — happens on Windows.
-  - Each archive carries build provenance and a bill of materials naming what went into the build, and a published release carries a release attestation, so the file in hand can be traced to the revision and the automation that produced it.
+  - The executable in a published archive runs on Windows with no runtime installation and no companion library beyond the platform's own.
+  - The archive is published with a checksum covering that archive, so a downloader verifies what they received before extracting it, and the checksum names the file it covers.
+  - The archive is published only after the Windows executable was built by the project's automation, as the confirmed distribution constraint requires, and started on a Windows machine. The start, not the build, happens on Windows.
+  - The archive carries build provenance and a bill of materials naming what went into the build, and a published release carries a release attestation, so the file in hand can be traced to the revision and the automation that produced it.
   - A version's release stays reachable after later versions are published, so a link to the latest release does not rot as versions change.
 - **Publication**
-  - A release is prepared as a draft, inspected, and only then published; every archive of the version is attached before the release becomes public, and no asset is attached by hand.
-  - A published release is immutable: its archives cannot be replaced or deleted and its version tag cannot be moved, so a correction is the next version rather than a repair in place.
+  - A release is prepared as a draft, inspected, and only then published; the Windows archive is attached before the release becomes public, and no asset is attached by hand.
+  - A published release is immutable: its archive cannot be replaced or deleted and its version tag cannot be moved, so a correction is the next version rather than a repair in place.
   - A version tag that has been published cannot be reused, not even after the release is deleted.
   - For a version that is the first one published, the revisions being released are all those reachable from the tagged revision, so a first release announces everything it contains.
   - A revision whose subject carries neither a release-note type nor a housekeeping type is omitted, and a commit message never makes a preparation fail.
-  - Publishing a version states the version once, in the archive names, the release text and the tag, so no two places disagree about what was released.
+  - Publishing a version states the version once, in the archive name, the release text and the tag, so no two places disagree about what was released.
   - A version is published only after every check run on the tagged revision — other than the check runs of the release workflow's own check suites, including an earlier release run's suite on the same revision — has concluded. The wait is bounded, and a check still queued or running at the bound refuses publication, naming it.
   - A concluded check that is not a success refuses publication, except a skipped or neutral check, which is allowed; at least one concluded success is required, and a revision whose only check runs belong to the release workflow's own suites is refused as carrying no check evidence.
   - When the check runs on the tagged revision cannot be read, publication refuses rather than treating the failure as an absence of checks or as a green set.
@@ -102,7 +102,8 @@ The maintainer decides a version is ready and prepares its release.
   - The project's code and its own automation are scanned for vulnerabilities on the way in, and findings appear as reviewable alerts.
 - **The public text a reader lands on**
   - The project's README states the repository's own clone address, so the first command a reader runs works.
-  - It names the archive for each supported platform and gives the command that verifies an archive's checksum and the command that verifies its build provenance, so a downloader can act on a release without asking anyone.
+  - It names the Windows x86_64 archive, states that other platforms are not supported or distributed and that their source can be built with a Rust toolchain, states that a platform may be added back when users request it, and gives the command that verifies the archive's checksum and the command that verifies its build provenance, so a downloader can act on a release without asking anyone.
+  - It states that an already-published release keeps its original assets and links, so only future releases are Windows-only.
   - It states the project's licence and links the licence text, and it keeps the third-party Unicode data file's own licence attributed rather than presenting two competing project licences.
   - The repository's description and topics, and its page's statement of the checks' state, are the host's rendering of that same text.
   - This text is checked by the project's own machinery before it is published, not merely written once.
@@ -116,17 +117,18 @@ The maintainer decides a version is ready and prepares its release.
 
 ## Examples
 
-- Complete preparation: executables for all five supported platforms and version 0.1.0 produce five archives, one per platform, each with its checksum and the release text; nothing is published until the maintainer publishes.
-- Missing platform build: executables for four platforms and no Linux arm64 make the preparation fail naming Linux arm64 and stage nothing.
+- Complete preparation: the Windows x86_64 executable and version 0.1.0 produce one archive, its checksum and the release text; nothing is published until the maintainer publishes.
+- Missing platform build: no Windows executable makes the preparation fail naming Windows x86_64 and stage nothing.
 - Unrecognised platform: an executable labelled `freebsd-x86_64` makes the preparation fail naming `freebsd-x86_64`, with no archive for it and nothing staged.
-- Checksum: a prepared Linux x86_64 archive is accompanied by a checksum that matches that archive and names it.
-- Same release prepared twice: the same executables and version produce archives that are byte-for-byte identical, so a third party can reproduce them.
-- Version already prepared: preparing version 0.1.0 where it is already staged refuses, and the existing archives stay untouched.
-- Unreadable executable: an executable path that cannot be read stages nothing, and the failure names the cause.
+- Previously offered platform: an executable labelled `linux-x86_64` makes the preparation fail naming `linux-x86_64`, with no archive for it and nothing staged, even though earlier releases offered that platform.
+- Checksum: the prepared Windows x86_64 archive is accompanied by a checksum that matches that archive and names it.
+- Same release prepared twice: the same executable and version produce an archive that is byte-for-byte identical, so a third party can reproduce it.
+- Version already prepared: preparing version 0.1.0 where it is already staged refuses, and the existing archive stays untouched.
+- Unreadable executable: a Windows executable path that cannot be read stages nothing, and the failure names the cause.
 - Release text: revisions carrying two `feat(…): <release note>` subjects plus `chore(…)` and `docs(…)` revisions produce a text that names the version and lists the two release notes in release order, omitting the housekeeping revisions.
 - First release: a tagged revision with no earlier release tag produces a text that lists the release notes of every revision it contains, housekeeping revisions omitted.
 - Subject carrying no release-note type: a revision whose subject carries neither a release-note type nor a housekeeping type is omitted from the text, and the preparation still succeeds.
-- Published release: a version published from an inspected set cannot have its archives or tag changed, so a correction appears as the next version.
+- Published release: a version published from an inspected set cannot have its archive or tag changed, so a correction appears as the next version.
 - Checks still running: a tagged revision whose checks are queued or running -> publication waits, then publishes only once every check has concluded and the concluded set is green.
 - A failed check: a tagged revision with one concluded failure and one check still running -> publication refuses naming the failure and does not wait for the other check; nothing is published.
 - Checks that never conclude: a tagged revision whose checks stay queued past the bound -> publication refuses naming every check still running, and nothing is published.
@@ -136,7 +138,7 @@ The maintainer decides a version is ready and prepares its release.
 - Retagged unpublished version: a tag re-pushed to the same revision after an earlier release run failed -> the earlier release run's check suite is excluded along with the current one, so its failed publish check cannot block the new publication.
 - No check evidence: a tagged revision whose only check runs belong to the release workflow -> publication refuses, because the revision carries no check evidence outside that workflow.
 - Branch and tag pushed together: the default branch and the version tag pushed together while the checks are running -> publication waits for those checks and publishes only after they conclude green, so the atomic push no longer races the gate.
-- Downloading for a machine: a Mac on Apple Silicon selects the macOS arm64 archive, the one whose name matches that machine.
+- Downloading for a machine: a Windows x86_64 machine selects the Windows x86_64 archive, the one whose name matches that machine; nothing is offered for any other machine, and the source can be built with a Rust toolchain.
 - Missing platform archive on the page: a Windows executable that failed to build stops the version from being published at all, rather than publishing it without Windows.
 - Notes grouped by kind: a history whose released revisions name a new capability, a fix, and work no user can see -> the notes for the version name the new capability before the fix, name no revision whose work no user can see, and form the newest section of the change log.
 - A change a user does not receive: a released revision that changed only the project's automation definitions, beside a released revision that changed the converter -> the notes name the converter change and no revision that changed only the automation, whatever the automation revision's subject says.
@@ -158,7 +160,7 @@ Nothing is published that the evidence does not support: an incomplete preparati
 
 ## Success guarantee
 
-A crew member obtains, for their own machine, an archive whose executable runs without installation and whose build can be traced to the released revision; the maintainer can state what the version changed, including any dependency update it carries; and nothing published contradicts the evidence recorded for it.
+The release of a version is obtainable and traceable for the supported platform: a crew member on Windows x86_64 obtains an archive whose executable runs without installation and whose build can be traced to the released revision and the automation that produced it, and nothing published contradicts the evidence recorded for it.
 
 This is a changing use case: it issues a release, rather than observing one.
 
@@ -175,7 +177,7 @@ This is a changing use case: it issues a release, rather than observing one.
 
 | Capability | Consumer action | E2E scenario |
 |---|---|---|
-| publish-public-release | prepare the release for a version | Maintainer prepares a release and runs the archived executable |
+| publish-public-release | prepare the release for a version | Maintainer prepares a Windows release and inspects the archived executable |
 | publish-public-release | generate the change log for a version | Maintainer generates the change log for a version and reads its newest section |
 
 ## Includes
@@ -189,11 +191,11 @@ This is a changing use case: it issues a release, rather than observing one.
 ## Out of scope
 
 - Changing the converter: no conversion rule, support boundary or diagnostic changes here.
-- Publishing packages: no container image, no registry publication, and no other package channel beyond the release archives.
-- Signing or notarising the macOS archives; the one-time download approval is documented instead.
-- Platforms beyond the five above: Windows on ARM, 32-bit Windows, other Unixes and further Linux architectures build from source.
+- Publishing packages: no container image, no registry publication, and no other package channel beyond the release archive.
+- Publishing Linux, macOS or any other platform: those platforms are not supported, tested or distributed, and their users may attempt a source build with a Rust toolchain; a platform returns only when users request it and a later change records it.
+- Platforms beyond Windows x86_64: Windows on ARM, 32-bit Windows, other Unixes and further Linux architectures are not supported or distributed; their users may attempt a source build with a Rust toolchain.
 - Hosted documentation, discussions, a wiki, a development container, funding metadata and AI code review.
-- Repairing a published release in place.
+- Repairing a published release in place, or removing or replacing an already-published Linux or macOS archive.
 - Merging dependency updates automatically, and bumping the deliberately pinned crates automatically.
 - The parked ideation questions (source-derived publication rights, FZ provenance, descriptive-fragment conflicts).
 
@@ -203,10 +205,10 @@ The flow this use case delivers:
 
 ```mermaid
 flowchart LR
-  maintainer["Release maintainer"] --> prepare["Prepare one archive and checksum per supported platform, plus the release text and the change log"]
+  maintainer["Release maintainer"] --> prepare["Prepare the Windows x86_64 archive and checksum, plus the release text and the change log"]
   prepare --> changelog["Change log: the newest section beside the earlier versions"]
-  prepare --> published["Published immutable release: five archives, provenance, bill of materials, with the change log beside the release text"]
-  published --> downloader["Crew member obtains the archive for their machine"]
+  prepare --> published["Published immutable release: one Windows archive, provenance, bill of materials, with the change log beside the release text"]
+  published --> downloader["Crew member on Windows obtains the archive"]
   downloader --> runs["Runs it with no installation"]
   published --> traces["Anyone traces the file to its released revision"]
 ```

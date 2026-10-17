@@ -6,16 +6,12 @@ Feature: Publish a public release
     Then  the prepared release holds exactly these archives, each with its checksum file
       | archive | executable |
       | duty2cal-0.1.0-windows-x86_64.tar.gz | duty2cal.exe |
-      | duty2cal-0.1.0-linux-x86_64.tar.gz | duty2cal |
-      | duty2cal-0.1.0-linux-arm64.tar.gz | duty2cal |
-      | duty2cal-0.1.0-macos-arm64.tar.gz | duty2cal |
-      | duty2cal-0.1.0-macos-x86_64.tar.gz | duty2cal |
     And  every archive holds only its own executable
 
   Scenario: A platform whose executable was not built stops the release
-    Given  an executable built for every supported platform except "linux-arm64"
+    Given  no executable was built for the supported platform
     When  the maintainer prepares the release for version 0.1.0
-    Then  the preparation fails and names "linux-arm64"
+    Then  the preparation fails and names "windows-x86_64"
     And  the prepared release holds no archive
 
   Scenario: An executable for an unrecognised platform is refused
@@ -27,7 +23,7 @@ Feature: Publish a public release
 
   Scenario: Each archive's checksum covers that archive
     Given  a prepared release for version 0.1.0
-    When  anyone verifies the checksum against the archive for "linux-x86_64"
+    When  anyone verifies the checksum against the archive for "windows-x86_64"
     Then  the checksum matches the archive it names
 
   Scenario: Preparing the same release twice produces the same archives
@@ -42,9 +38,9 @@ Feature: Publish a public release
     And  the staged archives keep their earlier modification times
 
   Scenario: An unreadable executable stops the preparation
-    Given  an executable built for the platform "linux-x86_64" that cannot be read
+    Given  an executable built for the platform "windows-x86_64" that cannot be read
     When  the maintainer prepares the release for version 0.1.0
-    Then  the preparation fails and names "linux-x86_64"
+    Then  the preparation fails and names "windows-x86_64"
     And  the prepared release holds no archive
 
   Scenario: The release text states the released revisions' release notes
@@ -56,15 +52,6 @@ Feature: Publish a public release
     And  the release text names the released change once
     And  the release text omits the work no user can see
 
-  @e2e
-  Scenario: Maintainer prepares a release and runs the archived executable
-    Given  the executable built for this machine
-    When  the maintainer prepares the release for version 0.1.0
-    Then  the preparation reports the archive and its checksum for this machine's platform
-    And  the release text names version 0.1.0
-    When  the maintainer extracts the archive for this machine's platform
-    And  runs the executable taken from that archive
-    Then  the executable prints "usage: duty2cal <duty-plan.pdf>" and reports failure through its process exit status
   Scenario: A version's notes group the changes a reader can see
     Given  a history whose released revisions name a new capability, a fix, and work no user can see
     And  a revision typed as a fix of that capability whose words name the project's own tooling
@@ -248,3 +235,19 @@ Feature: Publish a public release
     When  the publication gate examines the tagged revision
     Then  the gate waits for both suites' checks instead of refusing them as not yet concluded
     And  the gate reports the revision ready to publish only once every check in both suites has concluded successfully
+  @e2e
+  Scenario: Maintainer prepares a Windows release and inspects the archived executable
+    Given  a stand-in executable built for "windows-x86_64"
+    When  the maintainer prepares the release for version 0.1.0
+    Then  the preparation reports the archive and its checksum for "windows-x86_64"
+    And  the release text names version 0.1.0
+    When  the maintainer extracts the archive for "windows-x86_64"
+    Then  the extracted archive holds exactly the executable "duty2cal.exe"
+    And  the extracted executable is the executable the preparation staged
+
+  Scenario: An executable for the previously offered Linux platform is refused
+    Given  an executable built for every supported platform
+    And  an executable presented as the previously offered platform "linux-x86_64"
+    When  the maintainer prepares the release for version 0.1.0
+    Then  the preparation fails and names "linux-x86_64"
+    And  the prepared release holds no archive
