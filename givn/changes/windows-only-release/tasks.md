@@ -1668,23 +1668,44 @@ Revision: `0e26453528b141561edd8f337e29e75d8a3edbf4`
 
 # Final acceptance (after C6)
 
-- [ ] All six scenario boxes checked, each with RED/GREEN/REFACTOR output,
+- [x] All six scenario boxes checked, each with RED/GREEN/REFACTOR output,
       production-file list, and revision id.
-- [ ] No `@wip` remains in the delta feature (`grep -n '@wip'` prints nothing).
-- [ ] `nix-shell -p git-cliff --run './run-tests.sh'` exits 0 on the full
+- [x] No `@wip` remains in the delta feature (`grep -n '@wip'` prints nothing).
+- [x] `nix-shell -p git-cliff --run './run-tests.sh'` exits 0 on the full
       assembled corpus; paste the final summary line.
-- [ ] `nix-shell -p git-cliff --run './run-tests.sh --e2e'` exits 0; paste the
+- [x] `nix-shell -p git-cliff --run './run-tests.sh --e2e'` exits 0; paste the
       final summary line and confirm its scenario count is strictly less than
       the full-suite count recorded in Task 0.
-- [ ] `scripts/public-text-check.sh` exits 0.
-- [ ] No file under `givn/specs/**` was modified (`git diff --stat -- givn/specs`
+- [x] `scripts/public-text-check.sh` exits 0.
+- [x] No file under `givn/specs/**` was modified (`git diff --stat -- givn/specs`
       is empty).
-- [ ] Step files contain no empty bodies and no `machine_platform` /
+- [x] Step files contain no empty bodies and no `machine_platform` /
       `machine_executable` references.
-- [ ] The commit subjects and bodies follow the rule: release-note subject for
+- [x] The commit subjects and bodies follow the rule: release-note subject for
       every scenario revision, scenario title in the body; setup uses
       `test(release): Prepare the feature assembly for the narrowed platform set`;
       e2e uses `test(e2e): <release note>` as the served instruction directs.
+
+```
+$ grep -n '@wip' givn/changes/windows-only-release/specs/publish-public-release/publish-public-release.feature
+(no output, exit 1)
+$ nix-shell -p git-cliff --run 'GIVN_RESULT_FILE=/tmp/final-full.json ./run-tests.sh'
+121 scenarios (121 passed)
+{"scope":"regular","total":121,"passed":121,"failed":0,"skipped":0}
+exit=0
+$ nix-shell -p git-cliff --run 'GIVN_RESULT_FILE=/tmp/final-e2e.json ./run-tests.sh --e2e'
+3 scenarios (3 passed)
+{"scope":"e2e","total":3,"passed":3,"failed":0,"skipped":0}
+exit=0  (3 < 121: strict subset)
+$ scripts/public-text-check.sh
+public-text-check: clean - all 14 public-text promises present in README.md
+$ git diff --stat -- givn/specs
+(no output)
+$ grep -rnE 'machine_platform|machine_executable|distribution_platform' apps/cli/tests
+(no output, exit 1)
+$ cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings
+exit=0
+```
 
 ## Commit plan at a glance
 
