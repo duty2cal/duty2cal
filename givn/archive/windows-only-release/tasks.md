@@ -199,7 +199,7 @@ estimate.
 Files to create/change:
 
 - `scripts/assemble_features.py` — new, Python 3 standard library only,
-  `# SPDX-License-Identifier: MPL-2.0` on the second line.
+  the MPL-2.0 SPDX identifier on the second line.
 - `scripts/assemble-features.sh` — keep the no-argument entry point, keep
   printing the assembled root on stdout, delegate all Gherkin work to the
   helper. It must own the temporary root:
