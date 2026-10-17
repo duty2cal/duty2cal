@@ -418,7 +418,7 @@ Design constraints:
       exit status: 0
       ```
 - [x] COMMIT — release note subject, scenario title body; record the revision.
-      Revision: `PENDING-SCENARIO-5-HASH`
+      Revision: `53f32674dc6e9c3db703759d1c2ed2f42978c8b9`
 
 ## 6. A batch entry the declaration does not name refuses the whole batch
 
@@ -426,10 +426,55 @@ Design constraints:
 - `tofu import` refuses a target absent from the configuration; the refusal
   names the archived repository; no object is bound.
 
-- [ ] RED — remove `@wip`; run the single scenario; paste output (non-zero).
-- [ ] GREEN — assertions and production code; list files; paste output (zero).
-- [ ] REFACTOR — cleanup; re-run; paste output (zero).
-- [ ] COMMIT — release note subject, scenario title body; record the revision.
+- [x] RED — remove `@wip`; run the single scenario; paste output (non-zero).
+      ```
+      $ ./run-tests.sh --name "A batch entry the declaration does not name refuses the whole batch"
+      Feature: Adopt the existing public-home configuration
+        Scenario: A batch entry the declaration does not name refuses the whole batch
+         ✘  Given the selected batch names the archived repository, which the declared configuration does not name
+            Step failed:
+            Defined: tmp/tmp.ChppLXV3zY/f0003.feature:59:5
+            Step doesn't match any function
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      error: test failed, to rerun pass `-p duty2cal --test features_runner`
+      exit status: 101
+      ```
+- [x] GREEN — assertions and production code; list files; paste output (zero).
+      Production files created/modified:
+      `apps/cli/tests/steps/adopt_existing_configuration.rs` (the batch naming
+      `github_repository.archived`, which the declaration does not name, and
+      the refusal assertion); the feature file drops this scenario's `@wip`.
+      `tofu import` refuses the undeclared target before any read, so no
+      command change was needed; the refusal names the address and the import
+      identifier.
+      ```
+      $ ./run-tests.sh --name "A batch entry the declaration does not name refuses the whole batch"
+      Feature: Adopt the existing public-home configuration
+        Scenario: A batch entry the declaration does not name refuses the whole batch
+         ✔  Given the selected batch names the archived repository, which the declared configuration does not name
+         ✔  When the organization owner adopts the batch
+         ✔  Then the adoption refuses the batch and names the archived repository
+         ✔  And no object in the batch is bound
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      4 steps (4 passed)
+      exit status: 0
+      ```
+- [x] REFACTOR — cleanup; re-run; paste output (zero).
+      `cargo fmt --all`; no behaviour changed.
+      ```
+      $ ./run-tests.sh --name "A batch entry the declaration does not name refuses the whole batch"
+      1 feature
+      1 scenario (1 passed)
+      4 steps (4 passed)
+      exit status: 0
+      ```
+- [x] COMMIT — release note subject, scenario title body; record the revision.
+      Revision: `PENDING-SCENARIO-6-HASH`
 
 ## 7. A live object that changes after it was read refuses the batch
 

@@ -421,6 +421,16 @@ async fn it_does_not_exist_live(w: &mut DutyWorld) {
     restart_fake(w);
 }
 
+#[given("the selected batch names the archived repository, which the declared configuration does not name")]
+async fn the_selected_batch_names_the_archived_repository(w: &mut DutyWorld) {
+    prepare(w);
+    let declaration = declaration_dir(w);
+    let batch = declaration.join("scenario-archived-batch.txt");
+    fs::write(&batch, "github_repository.archived\tarchived\n")
+        .expect("write the batch naming an undeclared address");
+    w.batch = Some(batch);
+}
+
 #[given("the organization settings cannot be read with the owner's authority")]
 async fn the_organization_settings_cannot_be_read_with_the_owners_authority(w: &mut DutyWorld) {
     prepare(w);
@@ -601,6 +611,16 @@ async fn nothing_is_created_in_the_live_organization(w: &mut DutyWorld) {
         "the scenario read the live objects; journal was empty"
     );
     assert_no_live_write(w);
+}
+
+#[then("the adoption refuses the batch and names the archived repository")]
+async fn the_adoption_refuses_the_batch_and_names_the_archived_repository(w: &mut DutyWorld) {
+    assert_refused(w, "github_repository.archived");
+    let output = adoption_output(w);
+    assert!(
+        output.contains("archived"),
+        "the refusal names the archived repository; output was:\n{output}"
+    );
 }
 
 #[then("the applied state binds the monorepo once")]

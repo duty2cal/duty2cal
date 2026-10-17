@@ -54,7 +54,7 @@ Feature: Adopt the existing public-home configuration
     And no object in the batch is bound
     And the live configuration is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: A batch entry the declaration does not name refuses the whole batch
     Given the selected batch names the archived repository, which the declared configuration does not name
     When the organization owner adopts the batch
