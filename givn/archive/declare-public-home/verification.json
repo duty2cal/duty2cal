@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "declare-public-home",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
-  "started_at_unix": 1792271666,
-  "finished_at_unix": null
+  "status": "proven",
+  "candidate_revision": "47277e1577953d9b2d283dbb495cbd9a719c69e3",
+  "tested_revision": "47277e1577953d9b2d283dbb495cbd9a719c69e3",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 29.683252161
+    },
+    "regular": {
+      "status": "passed",
+      "total": 132,
+      "passed": 132,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 164.319721344
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 871,
+    "line_valid": 886,
+    "line_percent": 98
+  },
+  "started_at_unix": 1792272639,
+  "finished_at_unix": 1792272992
 }
