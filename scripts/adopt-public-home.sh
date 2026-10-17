@@ -314,16 +314,12 @@ plan_status=0
 (cd "$staging" && tofu plan -refresh-only -detailed-exitcode -json -input=false \
   >"$plan_log" 2>&1) || plan_status=$?
 
-case "$plan_status" in
-  0)
-    : # a clean no-op
-    ;;
-  1)
-    reason="$(diagnostic "$plan_log")"
-    refuse plan "the verification plan failed${reason:+: $reason}"
-    ;;
-  2)
-    changed="$(python3 - "$plan_log" <<'PY'
+# Test-only seam: preserve the plan report so a failing scenario can show it.
+if [ -n "${ADOPT_TEST_PLAN_LOG:-}" ]; then
+  cp "$plan_log" "$ADOPT_TEST_PLAN_LOG" 2>/dev/null || true
+fi
+
+changed="$(python3 - "$plan_log" <<'PY'
 import json
 import sys
 
@@ -359,6 +355,13 @@ for address in dict.fromkeys(addresses):
     print(address)
 PY
 )"
+
+case "$plan_status" in
+  0 | 2)
+    # The exit status alone is not the verdict (opentofu/opentofu#3015 can
+    # return 2 for a no-op, and the host has returned 0 for a refreshed
+    # change). The JSON report decides; only a completed report with no
+    # non-no-op change continues.
     if [ "$changed" = "__NO_SUMMARY__" ]; then
       refuse plan "the verification plan did not complete; the batch is not bound"
     fi
@@ -374,10 +377,10 @@ $changed
 EOF
       exit 2
     fi
-    # OpenTofu 1.13.1 exits 2 for a completed `-refresh-only -detailed-exitcode`
-    # plan even when every count is zero (opentofu/opentofu#3015). Only a
-    # completed report with no non-no-op change continues; an incomplete report
-    # is refused above.
+    ;;
+  1)
+    reason="$(diagnostic "$plan_log")"
+    refuse plan "the verification plan failed${reason:+: $reason}"
     ;;
   *)
     reason="$(diagnostic "$plan_log")"

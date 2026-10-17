@@ -373,8 +373,13 @@ pub(crate) fn assert_refused(w: &DutyWorld, object: &str) {
             .map(|dir| dir.join("fixtures/mutate.json"))
             .and_then(|path| fs::read_to_string(path).ok());
         let journal = journal_lines(w);
+        let plan = w
+            .env
+            .iter()
+            .find(|(key, _)| key == "ADOPT_TEST_PLAN_LOG")
+            .and_then(|(_, path)| fs::read_to_string(path).ok());
         panic!(
-            "a refusal exits 2; output was:\n{output}\ntrigger: {trigger_state:?}\nmutation: {mutation:?}\njournal: {journal:#?}"
+            "a refusal exits 2; output was:\n{output}\ntrigger: {trigger_state:?}\nmutation: {mutation:?}\nplan: {plan:?}\njournal: {journal:#?}"
         );
     }
     assert!(
@@ -574,6 +579,11 @@ async fn the_monorepos_live_settings_change_after_the_adoption_reads_them(w: &mu
     w.env.push((
         "ADOPT_TEST_TRIGGER".to_owned(),
         fixtures.join("mutate.trigger").display().to_string(),
+    ));
+    let plan_path = scenario_dir(w).join("plan.json");
+    w.env.push((
+        "ADOPT_TEST_PLAN_LOG".to_owned(),
+        plan_path.display().to_string(),
     ));
     restart_fake(w);
 }
