@@ -436,3 +436,20 @@ verification paths). Lint reports the single remaining `@wip` scenario (the
 E2E success, implemented next) and two shape advisories, with no errors.
 
 DESIGN-REVIEW: PASS
+
+## Identity fix re-review — 2026-10-17
+
+The change review's F1/F2 findings were fixed: the fake's fixtures now mirror
+the live read for every field the declaration deliberately differs on, the
+`@e2e` scenario asserts the applied state carries those live values through the
+real `tofu state show` path, and the `REUSE.toml` file-table row now says
+`unchanged` with its reason.
+
+A fresh reviewer confirmed both fixes and asked for two P3 cleanups, both
+applied: the assertion now covers all six declared-vs-live fields
+(`has_projects`, `allow_merge_commit`, `allow_rebase_merge`,
+`delete_branch_on_merge`, pages `has_issues`, `has_wiki`), and the stale
+`22 steps` evidence lines now read `23 steps`. The single scenario passes 7/7,
+the full suite 132/518, and the e2e suite 4/23.
+
+DESIGN-REVIEW: PASS

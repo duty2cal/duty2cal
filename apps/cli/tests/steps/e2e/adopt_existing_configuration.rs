@@ -209,31 +209,46 @@ async fn the_adoption_reports_every_object_as_bound(w: &mut DutyWorld) {
 
 #[then("the applied state records the live values rather than the declared ones")]
 async fn the_applied_state_records_the_live_values(w: &mut DutyWorld) {
-    // The declaration states the decided values (projects off, pages issues
-    // off); the live fixtures hold today's values (projects on, pages issues
-    // on). Adoption binds identity, so the state must carry the live values.
+    // The declaration states the decided values (projects off, merge and rebase
+    // off, delete-branch on, pages issues and wiki off); the live fixtures hold
+    // today's values. Adoption binds identity, so the state must carry the live
+    // values, not the decided ones.
     let declaration = declaration_text(w);
-    assert!(
-        declaration.contains("has_projects    = false")
-            || declaration.contains("has_projects = false"),
-        "the declaration states projects off; it was:\n{declaration}"
-    );
-    let mono = applied_state_show(w, "github_repository.mono");
-    assert!(
-        mono.lines()
-            .any(|line| line.trim().replace(' ', "") == "has_projects=true"),
-        "the applied state records the monorepo's live project setting; state was:\n{mono}"
-    );
+    for expected in [
+        "has_projects=false",
+        "allow_merge_commit=false",
+        "allow_rebase_merge=false",
+        "delete_branch_on_merge=true",
+        "has_issues=false",
+        "has_wiki=false",
+    ] {
+        assert!(
+            declaration.replace(' ', "").contains(expected),
+            "the declaration states {expected}; it was:\n{declaration}"
+        );
+    }
 
-    assert!(
-        declaration.contains("has_issues   = false") || declaration.contains("has_issues = false"),
-        "the declaration states pages issues off; it was:\n{declaration}"
-    );
+    let mono = applied_state_show(w, "github_repository.mono");
+    for expected in [
+        "has_projects=true",
+        "allow_merge_commit=true",
+        "allow_rebase_merge=true",
+        "delete_branch_on_merge=false",
+    ] {
+        assert!(
+            mono.lines()
+                .any(|line| line.trim().replace(' ', "") == expected),
+            "the applied state records the monorepo's live {expected}; state was:\n{mono}"
+        );
+    }
+
     let pages = applied_state_show(w, "github_repository.pages");
-    assert!(
-        pages
-            .lines()
-            .any(|line| line.trim().replace(' ', "") == "has_issues=true"),
-        "the applied state records the pages repository's live issue setting; state was:\n{pages}"
-    );
+    for expected in ["has_issues=true", "has_wiki=true"] {
+        assert!(
+            pages
+                .lines()
+                .any(|line| line.trim().replace(' ', "") == expected),
+            "the applied state records the pages repository's live {expected}; state was:\n{pages}"
+        );
+    }
 }

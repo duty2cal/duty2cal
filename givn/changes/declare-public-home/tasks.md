@@ -752,7 +752,7 @@ Evidence:
   $ ./run-tests.sh --e2e
   ...
   4 scenarios (4 passed)
-  22 steps (22 passed)
+  23 steps (23 passed)
   exit status: 0
   ```
 - [x] `./run-tests.sh --e2e` reaches the fake on loopback (smoke) before the
@@ -881,7 +881,7 @@ single-scenario re-run passes 7/7 steps, the full suite passes 132 scenarios /
       $ ./run-tests.sh --e2e
       ...
       4 scenarios (4 passed)
-      22 steps (22 passed)
+      23 steps (23 passed)
       exit status: 0
       ```
 - [x] `givn lint --change declare-public-home` has no errors.
