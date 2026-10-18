@@ -8,7 +8,7 @@ Feature: Export a duty-plan calendar
     When the crew member converts it
     Then that activity's title is "LU742 ABC-DEF Report 07:30 LT"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A travel activity without a report time keeps its title unchanged
     Given a supported duty plan travel leg without a report time
     When the crew member converts it

@@ -78,14 +78,32 @@ Interaction coverage (checked before writing tasks): the permanent inventory hol
   ```
   1 scenario (1 passed) / 3 steps (3 passed)
   ```
-- [x] COMMIT: `givn commit -m "feat(export-duty-plan-calendar): <release note>"`, body naming this scenario. Revision recorded below after the commit.
+- [x] COMMIT: `givn commit -m "feat(export-duty-plan-calendar): <release note>"`, body naming this scenario. Revision `64a4ee0`.
 
 ### 2. A travel activity without a report time keeps its title unchanged *(guard)*
 
-- [ ] RED: run `./run-tests.sh --name "A travel activity without a report time keeps its title unchanged"`; the new `Given` is undefined, so strict mode fails. Paste the output.
-- [ ] GREEN: add the `Given a supported duty plan travel leg without a report time` step (generated fixture: `LU742` `ABC`→`DEF`, 09:00–10:00, no `Report` cell). Production files: none — the title path appends nothing for `None`. Test file: `apps/cli/tests/steps/export_duty_plan_calendar.rs`. Run the single scenario; paste the output.
-- [ ] REFACTOR: no behaviour change; run the single scenario; paste the output.
-- [ ] COMMIT: same release-note subject, body naming this scenario. Record the revision identifier.
+- [x] RED: run `./run-tests.sh --name "A travel activity without a report time keeps its title unchanged"`; the new `Given` is undefined, so strict mode fails.
+
+  ```
+  ✘  Given a supported duty plan travel leg without a report time
+     Step doesn't match any function
+  1 scenario (1 failed) / 1 step (1 failed)
+  ```
+- [x] GREEN: added the `Given a supported duty plan travel leg without a report time` step (generated fixture: `LU742` `ABC`→`DEF`, 09:00–10:00, no `Report` cell). Production files: none — the title path appends nothing for `None`. Test file: `apps/cli/tests/steps/export_duty_plan_calendar.rs`.
+
+  ```
+  Scenario: A travel activity without a report time keeps its title unchanged
+  ✔  Given a supported duty plan travel leg without a report time
+  ✔  When the crew member converts it
+  ✔  Then that activity's title is "LU742 ABC-DEF"
+  1 scenario (1 passed) / 3 steps (3 passed)
+  ```
+- [x] REFACTOR: no behaviour change.
+
+  ```
+  1 scenario (1 passed) / 3 steps (3 passed)
+  ```
+- [x] COMMIT: same release-note subject, body naming this scenario. Revision recorded below after the commit.
 
 ### 3. Differing report times leave the title without a report suffix *(guard)*
 
