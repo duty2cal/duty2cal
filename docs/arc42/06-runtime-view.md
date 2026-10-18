@@ -214,7 +214,7 @@ flowchart TB
   adopt --> plan["tofu plan -out=plan.bin"]
   direct --> plan
   plan -->|"cannot read a setting, wrong passphrase, no authority"| stopnone2["refuse; name the object; nothing written"]
-  plan --> guard["preview guard: no create for a setting already live and unbound"]
+  plan --> guard["preview guard (full-declaration plan): no create for a setting already live and unbound"]
   guard -->|"an unadopted live setting would be created"| stopguard["refuse; name the setting; adopt it first; nothing written"]
   guard --> read["the plan names the two scanning statuses and no other difference"]
   read --> preflight["read-only refresh-only preflight on the applied state"]

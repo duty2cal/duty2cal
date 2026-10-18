@@ -84,7 +84,7 @@ New or changed files:
 | `infra/adoption-batch-security.txt` | new | The two settings to bind: one `address<TAB>repository-name` line each. The historical `infra/adoption-batch.txt` is not edited, because it would then refuse its already-bound lines. |
 | `infra/terraform.tfstate`, `infra/terraform.tfstate.backup` | changed after the apply | The encrypted state records the two new bindings and the enabled scanning values. |
 | `infra/terraform.tfstate.stale` | transient, git-ignored | Written only after an apply that fails after its first write; its presence refuses the preview and the apply; a green apply removes it. |
-| `.gitignore` | changed | Gains `infra/terraform.tfstate.stale` beside the existing `infra/plan.bin` rule. |
+| `.gitignore` | changed | Gains `infra/terraform.tfstate.stale` and `infra/guard.bin` beside the existing `infra/plan.bin` rule. |
 | `scripts/fake-github/serve.py` | changed | Opt-in write sandbox, status-only fixture responses, in-memory overlay, `applied_write` journal entries with the request body's keys, `manual_edit` journal entries, `after_applied_writes` + `once` fault conditions. |
 | `scripts/fake-github/fixtures/adopt-all/**` | changed | The two repository bodies gain `security_and_analysis` from the 2026-10-17 live read; the two vulnerability-alerts reads and the monorepo's automated-security-fixes read are added. |
 | `scripts/fake-github/fixtures/security-applied/**` | new | The same file set with both repository bodies at the state the 2026-10-18 live read (`evidence/live-read/`) reports: the earlier apply's field values and the security block; the security scenarios' base tree. |
@@ -204,7 +204,7 @@ names the object and binds nothing.
 ## The apply procedure
 
 The operator's routine, run after GREEN and after the second adoption. It is a
-sequence of the declaration's own commands plus two read-only checks; no second
+sequence of the declaration's own commands plus read-only checks; no second
 apply command and no wrapper around `tofu apply` is introduced.
 
 ```sh
@@ -212,10 +212,15 @@ cd infra
 test ! -e terraform.tfstate.stale ||
   { echo "refused: the applied state is stale" >&2; exit 2; }
 preview_report=$(mktemp)
+guard_report=$(mktemp)
 preflight_report=$(mktemp)
 state_before=$(mktemp)
 cp terraform.tfstate "$state_before"
 tofu init -input=false
+# Full-declaration guard plan: a create outside the targeted saved plan must
+# still be seen.
+tofu plan -input=false -no-color -out=guard.bin
+tofu show -json guard.bin >"$guard_report"
 tofu plan -input=false -no-color -target=github_repository.mono -out=plan.bin
 tofu show -json plan.bin >"$preview_report"
 tofu plan -refresh-only -detailed-exitcode -json -input=false \
@@ -238,7 +243,7 @@ guard_verdict=$(jq -r '
            or . == "github_repository_dependabot_security_updates.mono")
           and $repo.vulnerability_alerts == true)]
   | if length == 0 then "ok" else join(" ") end
-' "$preview_report")
+' "$guard_report")
 [ "$guard_verdict" = ok ] ||
   { echo "refused: adopt the setting first: $guard_verdict" >&2; exit 2; }
 
@@ -300,14 +305,14 @@ if ! tofu apply -input=false plan.bin; then
   rm -f "$failure_report"
   exit 1
 fi
-rm -f plan.bin "$preview_report" "$preflight_report" "$state_before" terraform.tfstate.stale
+rm -f plan.bin guard.bin "$preview_report" "$guard_report" "$preflight_report" "$state_before" terraform.tfstate.stale
 ```
 
 - **Environment:** `TF_VAR_state_passphrase` (at least 16 characters, from the
   password manager), `TF_VAR_billing_email` and `GITHUB_TOKEN` (the owner's
   token). No default, no repository secret, no workflow.
 - **The preview** reads the encrypted state, the declaration and the live
-  configuration, and names every difference. On this change's declaration it
+  configuration, and names every difference. On this change's declaration the
   targeted preview prints one changed resource and the two scanning statuses, and its summary
   reads `Plan: 0 to add, 1 to change, 0 to destroy.` It writes nothing to
   GitHub.
@@ -329,8 +334,8 @@ rm -f plan.bin "$preview_report" "$preflight_report" "$state_before" terraform.t
   While the sidecar exists the preview and the apply refuse and name the stale
   state, and a green apply removes it. The sidecar is git-ignored and never
   committed, like `plan.bin`.
-- **The preview guard: an unadopted object is not created.** The preview's own
-  JSON report (`tofu show -json plan.bin`) carries, in its refreshed prior state
+- **The preview guard: an unadopted object is not created.** The preview's full-declaration guard plan
+  (`tofu show -json guard.bin`) carries, in its refreshed prior state
   for `github_repository.mono`, the live `vulnerability_alerts` flag the
   provider read. A `create` action for either declared Dependabot setting is
   refused by address before any write; the owner adopts it first (the second
@@ -345,7 +350,7 @@ rm -f plan.bin "$preview_report" "$preflight_report" "$state_before" terraform.t
   the updates object exists live — enabled or disabled — and a `create` for it
   is a re-creation of an existing object, refused until the owner adopts it.
   No second API call and no new command are needed: the check is a read of the
-  saved plan's JSON, like the adoption verifier's.
+  guard plan's JSON, like the adoption verifier's.
 - **The saved plan is the applied revision.** `plan.bin` is encrypted by the
   declaration's `plan` encryption block and is git-ignored; `tofu apply
   plan.bin` applies exactly the previewed actions, and OpenTofu refuses a plan
@@ -541,7 +546,7 @@ One file per capability, as the project already does:
 
 | File | Contents |
 |---|---|
-| `apps/cli/tests/steps/enable_repository_security.rs` | Non-e2e steps: prepare a temporary declaration copy, adopt the base batch against a copy of `fixtures/security-applied`, run the base declaration's `tofu init`/`plan`/`apply` (the inherited applied state, including the state-only `ignore_vulnerability_alerts_during_read`), restore the security declaration, adopt the second batch, start the fake in `--writes` mode with the scenario's faults, run `tofu init`, `tofu plan -out`, `tofu show -json`, the preflight and `tofu apply`, capture stdout/stderr and the exit status, parse the plan JSON for the exact changed set and the guard, read the journal and the state, and snapshot the state bytes and the stale sidecar. |
+| `apps/cli/tests/steps/enable_repository_security.rs` | Non-e2e steps: prepare a temporary declaration copy, adopt the base batch against a copy of `fixtures/security-applied`, run the base declaration's `tofu init`/`plan`/`apply` (the inherited applied state, including the state-only `ignore_vulnerability_alerts_during_read`), restore the security declaration, adopt the second batch, start the fake in `--writes` mode with the scenario's faults, run `tofu init`, a full-declaration `tofu plan -out` for the guard, the targeted `tofu plan -out`, `tofu show -json`, the preflight and `tofu apply`, capture stdout/stderr and the exit status, parse the plan JSON for the exact changed set and the guard, read the journal and the state, and snapshot the state bytes and the stale sidecar. |
 | `apps/cli/tests/steps/e2e/enable_repository_security.rs` | The same real subprocesses, plus the committed transcript. It asserts on what the plan and the apply printed, on the journal entry for the applied write (body keys and `security_and_analysis`), and on the state read back with the real binary. |
 
 Both modules are declared in `apps/cli/tests/steps/mod.rs` and
@@ -603,9 +608,10 @@ rejected:
   live-change check is a read-only refresh-only plan immediately before
   `tofu apply`; its report is authoritative, not its exit status
   (opentofu/opentofu#3015). The residual window is recorded as R-031.
-- **The unadopted-setting guard reads the preview's own plan JSON** (rejected: a
+- **The unadopted-setting guard reads a full-declaration plan** (rejected: a
   second live API read, or a new command beside `tofu`; the refreshed prior
-  state in `tofu show -json` already carries the live alerts flag). Corrected
+  state in `tofu show -json` already carries the live alerts flag). The saved,
+  applied plan is targeted at the monorepo. Corrected
   during implementation: the plan JSON does not carry the dependency-updates
   status at all (provider 6.13.0 has no such repository-schema member), so both
   Dependabot creates are judged by the live `vulnerability_alerts` flag, which
@@ -735,7 +741,7 @@ state).
 
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
-| preview the declared configuration and read the named differences | Organization owner previews the security settings and only the declared differences are named | CLI (terminal) | `std::process::Command` runs `tofu init -input=false`, `tofu plan -input=false -no-color -out=<tmp>/plan.bin` and `tofu show -json <tmp>/plan.bin` in the scenario's declaration copy (primed by the base apply), with `TF_VAR_state_passphrase`, `TF_VAR_billing_email`, `GITHUB_TOKEN=test-token`, `GITHUB_BASE_URL=http://127.0.0.1:<port>` and `TF_CLI_CONFIG_FILE` set; asserts the plan text names both scanning statuses, the summary `0 to add, 1 to change, 0 to destroy`, the plan JSON's only changed resource is `github_repository.mono` and its only changed live attributes are the two scanning statuses (the state-only `ignore_vulnerability_alerts_during_read` is classified and allowed), and a journal with no applied and no refused write |
+| preview the declared configuration and read the named differences | Organization owner previews the security settings and only the declared differences are named | CLI (terminal) | `std::process::Command` runs `tofu init -input=false`, the full-declaration `tofu plan -input=false -no-color -out=<tmp>/guard.bin` and `tofu show -json <tmp>/guard.bin` for the guard, then the targeted `tofu plan -input=false -no-color -target=github_repository.mono -out=<tmp>/plan.bin` and `tofu show -json <tmp>/plan.bin` in the scenario's declaration copy (primed by the base apply), with `TF_VAR_state_passphrase`, `TF_VAR_billing_email`, `GITHUB_TOKEN=test-token`, `GITHUB_BASE_URL=http://127.0.0.1:<port>` and `TF_CLI_CONFIG_FILE` set; asserts the plan text names both scanning statuses, the summary `0 to add, 1 to change, 0 to destroy`, the plan JSON's only changed resource is `github_repository.mono` and its only changed live attributes are the two scanning statuses (the state-only `ignore_vulnerability_alerts_during_read` is classified and allowed), and a journal with no applied and no refused write |
 | apply the previewed revision and read the outcome | Organization owner applies the previewed revision and the security settings are enabled | CLI (terminal) | `std::process::Command` runs the targeted preflight, `tofu apply -input=false <tmp>/plan.bin`, then a targeted `tofu plan -target=github_repository.mono`; asserts the apply's outcome lines, the journal's single `applied_write` PATCH whose fields are the provider's update schema with both statuses enabled in `security_and_analysis`, the declared fields unchanged and the two statuses the only live difference in the targeted scope, the repository read reporting them enabled, the applied state read with `tofu state show` and the raw state's serial, and an empty targeted follow-up plan |
 
 ## Black-Box-First policy
@@ -835,7 +841,7 @@ server, the boundary the provider actually talks to.
   - *A read-back fault would also fail the follow-up preview.* Fix: the fault's
     `once: true` consumes it on the provider's post-`PATCH` read, so the next
     preview reads the overlay and names the still-unrecorded statuses.
-  - *A plan file must not enter the repository.* Fix: `infra/plan.bin` is
+  - *A plan file must not enter the repository.* Fix: `infra/plan.bin` and `infra/guard.bin` are
     git-ignored, encrypted by the `plan` encryption block, and deleted after
     the apply.
   - *The provider may fall back to `gh auth token` when no token is set.* Fix:
@@ -917,11 +923,13 @@ therefore not done when the suite is GREEN. The maintainer:
    and the admin permission, and GitHub's documentation still states the
    free public-repository secret-scanning availability and the administrator
    enablement of push protection; a refusal here stops the change;
-3. runs the targeted security preview
+3. runs the full-declaration guard plan
+   (`tofu plan -input=false -no-color -out=guard.bin`) and reads it: no
+   `create` for either Dependabot setting (the preview guard); then runs the
+   targeted security preview
    (`tofu plan -input=false -no-color -target=github_repository.mono -out=plan.bin`)
-   and reads it: `0 to add, 1 to change, 0 to destroy`, the two scanning
-   statuses as the only difference, and no `create` for either Dependabot
-   setting (the preview guard);
+   and reads it: `0 to add, 1 to change, 0 to destroy` and the two scanning
+   statuses as the only difference;
 4. runs the read-only refresh-only preflight scoped to the previewed object
    (`tofu plan -refresh-only -detailed-exitcode -json -target=github_repository.mono`),
    requires a completed report with no non-no-op change in that scope, and only
@@ -940,7 +948,7 @@ therefore not done when the suite is GREEN. The maintainer:
    `infra/terraform.tfstate` and its backup in one revision scoped
    `apply-configuration-change` — for example
    `feat(apply-configuration-change): enable secret scanning and push
-   protection` — and removes `plan.bin`. The scope is the use-case id because
+   protection` — and removes `plan.bin` and `guard.bin`. The scope is the use-case id because
    the archive adds `apply-configuration-change` to the changelog allow-list;
    `infra/` is outside the user-receiving paths, so this change is
    intentionally absent from `CHANGELOG.md` unless that list is widened in a

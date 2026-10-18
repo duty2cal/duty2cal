@@ -113,7 +113,7 @@ a gap.
 
 ## Apply semantics: the saved plan, the preflight and partial reporting
 
-A configuration change is a saved plan applied unchanged: `tofu plan -out`
+A configuration change is a saved plan applied unchanged (the saved plan is targeted at the changed repository; a full-declaration plan feeds the unadopted-setting guard): `tofu plan -out`
 produces the artifact the operator reads, and `tofu apply` of that file performs
 exactly those actions. OpenTofu refuses a plan whose state has moved on, so the
 applied revision is the previewed one, and the plan file is encrypted and

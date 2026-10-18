@@ -371,3 +371,13 @@ post-failure report, and the base state introduces an out-of-scope organization
 drift to prove the scoping; the preview, apply and refusal scenarios pass.
 
 DESIGN-REVIEW: PASS
+
+## Final design review — the guard split — 2026-10-18
+
+The targeted saved plan would have made the unadopted-setting guard vacuous. The
+design now runs a full-declaration `guard.bin` plan for the guard and the
+targeted `plan.bin` as the saved, applied plan; the step, the routine, the
+test-seam table, the matrix and arc42/06/08 match, and the unadopted-setting
+scenario passes over the full guard plan.
+
+DESIGN-REVIEW: PASS

@@ -468,14 +468,15 @@ pub(crate) fn ensure_base_state(w: &mut DutyWorld) {
 }
 
 /// The preview phase of the routine: stale check, `tofu init`,
-/// `tofu plan -out=plan.bin`, `tofu show -json`, and the unadopted-setting
-/// guard over the saved plan's JSON.
+/// a full-declaration plan for the unadopted-setting guard, then the
+/// targeted `tofu plan -out=plan.bin` and `tofu show -json`.
 pub(crate) fn preview(w: &mut DutyWorld) {
     let declaration = declaration_dir(w);
     let dir = scenario_dir_for(w);
     let report = dir.join("preview.json");
     let stale = stale_path(w);
-    let mut transcript = String::from("$ preview (tofu init; tofu plan -out; tofu show -json)\n");
+    let mut transcript =
+        String::from("$ preview (tofu init; guard plan; targeted plan -out; tofu show -json)\n");
 
     w.preview_transcript.clear();
     w.plan_path = None;
@@ -498,6 +499,38 @@ pub(crate) fn preview(w: &mut DutyWorld) {
         w.exit_status = init.status.code();
         w.preview_transcript = transcript.clone();
         w.scenario_transcript.push_str(&transcript);
+        return;
+    }
+
+    // The unadopted-setting guard reads a full-declaration plan: a plan
+    // targeted at the monorepo would omit an unbound Dependabot setting and
+    // the guard would miss it. The saved, applied plan is the targeted one.
+    let guard_plan = tofu(w, &["plan", "-input=false", "-no-color", "-out=guard.bin"]);
+    transcript.push_str("$ tofu plan -input=false -no-color -out=guard.bin\n");
+    transcript.push_str(&combined(&guard_plan));
+    if !guard_plan.status.success() {
+        w.exit_status = guard_plan.status.code();
+        w.preview_transcript = transcript.clone();
+        w.scenario_transcript.push_str(&transcript);
+        return;
+    }
+    let guard_show = tofu(w, &["show", "-json", "guard.bin"]);
+    let guard_report = dir.join("guard.json");
+    fs::write(&guard_report, &guard_show.stdout).expect("write the guard plan's JSON report");
+    transcript.push_str("$ tofu show -json guard.bin\n");
+    transcript.push_str(&combined(&guard_show));
+    if !guard_show.status.success() {
+        w.exit_status = guard_show.status.code();
+        w.preview_transcript = transcript.clone();
+        w.scenario_transcript.push_str(&transcript);
+        return;
+    }
+    let guard = jq(w, GUARD_FILTER, &guard_report, false);
+    if guard != "ok" {
+        transcript.push_str(&format!("refused: adopt the setting first: {guard}\n"));
+        w.preview_transcript = transcript.clone();
+        w.scenario_transcript.push_str(&transcript);
+        w.exit_status = Some(2);
         return;
     }
 
@@ -533,14 +566,8 @@ pub(crate) fn preview(w: &mut DutyWorld) {
         return;
     }
 
-    let verdict = jq(w, GUARD_FILTER, &report, false);
-    if verdict != "ok" {
-        transcript.push_str(&format!("refused: adopt the setting first: {verdict}\n"));
-        w.exit_status = Some(2);
-    } else {
-        w.plan_path = Some(declaration.join("plan.bin"));
-        w.exit_status = Some(0);
-    }
+    w.plan_path = Some(declaration.join("plan.bin"));
+    w.exit_status = Some(0);
     w.preview_transcript = transcript.clone();
     w.scenario_transcript.push_str(&transcript);
 }
