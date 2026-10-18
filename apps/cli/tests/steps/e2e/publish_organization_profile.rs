@@ -49,18 +49,27 @@ const CHANGES: &str = r#"
 "#;
 
 /// Where a scenario's terminal transcript is committed as evidence.
-fn transcript_path(slug: &str) -> PathBuf {
-    repository_root()
-        .join("givn/changes/publish-organization-profile/evidence/visual")
-        .join(slug)
-        .join("transcript.txt")
+///
+/// Only the active change writes evidence. Once the change is archived, a run
+/// from a later change or from the archive gate leaves the archived transcript
+/// untouched, so the archive gate does not see unrelated churn.
+fn transcript_path(slug: &str) -> Option<PathBuf> {
+    let active = repository_root().join("givn/changes/publish-organization-profile");
+    active.is_dir().then(|| {
+        active
+            .join("evidence/visual")
+            .join(slug)
+            .join("transcript.txt")
+    })
 }
 
 /// Commit the transcript the consumer read, with the run-specific directory and
 /// transport details replaced by placeholders so only the command's output
 /// remains (design.md "Evidence").
 fn commit_transcript(w: &DutyWorld, slug: &str) {
-    let path = transcript_path(slug);
+    let Some(path) = transcript_path(slug) else {
+        return;
+    };
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).expect("create the evidence directory");
     }
