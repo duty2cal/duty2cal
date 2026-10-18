@@ -37,7 +37,7 @@ resource "github_repository" "pages" {
 
   has_issues   = false
   has_wiki     = false
-  has_projects = true
+  has_projects = false
 
   lifecycle {
     ignore_changes = [pages]

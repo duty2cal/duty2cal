@@ -245,7 +245,7 @@ async fn the_applied_state_records_the_live_values(w: &mut DutyWorld) {
     }
 
     let pages = applied_state_show(w, "github_repository.pages");
-    for expected in ["has_issues=true", "has_wiki=true"] {
+    for expected in ["has_issues=true", "has_wiki=true", "has_projects=true"] {
         assert!(
             pages
                 .lines()
