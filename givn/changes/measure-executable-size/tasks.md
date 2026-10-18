@@ -455,7 +455,7 @@ transcript. The `@e2e` tag is immutable.
 - [x] REFACTOR: re-run; paste zero output.
   - Evidence: `refactor-exit=0`; `1 scenario (1 passed)`, `11 steps (11
     passed)`.
-- [ ] COMMIT: `givn commit -m "feat(measure-distributed-executable-size): Maintainer requests an attribution for a revision and reads the report"`; record the hash.
+- [x] COMMIT: revision `bf24188` (`feat(measure-distributed-executable-size): Maintainer requests an attribution for a revision and reads the report`; the scenario title is in the body).
 - [x] E2E suite: run `./run-tests.sh --e2e`; paste zero output and the
   scenario count.
   - Evidence: `{"scope":"e2e","total":9,"passed":9,"failed":0,"skipped":0}`;
