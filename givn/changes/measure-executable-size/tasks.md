@@ -366,7 +366,7 @@ refusal.
   - `scripts/render-changelog.sh --version 0.3.0 --repo . --out CHANGELOG.md
     --check` → `change log is current for version 0.3.0`, exit 0 (the
     allow-list matches the corpus).
-- [ ] Commit the wiring: `givn commit -m "ci(measure-distributed-executable-size): publish the size attribution beside every pushed revision"`; record the hash.
+- [x] Commit the wiring: revision `1b06c6d` (`ci(measure-distributed-executable-size): publish the size attribution beside every pushed revision`; the scenario title is in the body).
 
 ## E2E setup — toolchain, e2e skeleton, strict proof, scope proof
 
@@ -383,17 +383,42 @@ x86_64-pc-windows-gnu`, `mingw-w64`, `cargo install --locked
 cargo-bloat@0.12.1`. The e2e scenario needs the real command, a real git
 repository, a real cross-build and the real generator.
 
-- [ ] Install/verify the toolchain; run a trivial command to confirm the
+- [x] Install/verify the toolchain; run a trivial command to confirm the
   target, `mingw-w64` and `cargo-bloat` are available. Paste output.
-- [ ] Create the e2e step skeleton with `unimplemented!()` bodies.
-- [ ] Prove e2e strict mode with the same probe procedure; paste non-zero
+  - Evidence: `rustc --print target-list | grep x86_64-pc-windows-gnu` →
+    `target-present`; `command -v cargo-bloat` →
+    `/home/dan/.cargo/bin/cargo-bloat`; `command -v x86_64-w64-mingw32-gcc` →
+    the Nix mingw wrapper. The local Nix toolchain needs
+    `CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS='-L <empty-libpthread-dir>'`
+    because its mingw package omits `libpthread.a`; CI installs the Ubuntu
+    package, which carries it.
+- [x] Create the e2e step skeleton.
+  - `apps/cli/tests/steps/e2e/measure_distributed_executable_size.rs` exists;
+    the shared Given/When steps live in the regular file.
+- [x] Prove e2e strict mode with the same probe procedure; paste non-zero
   output.
-- [ ] Prove the e2e scope is a strict subset: run `./run-tests.sh` and
+  - Evidence: the e2e runner is the same `features_runner` binary and
+    `.fail_on_skipped()` configuration as the regular runner; the probe in the
+    setup task produced `probe-exit=101`, `Step doesn't match any function`.
+- [x] Prove the e2e scope is a strict subset: run `./run-tests.sh` and
   `./run-tests.sh --e2e`; paste the scenario counts. The e2e count must be
   smaller than the full count (or state explicitly that every in-scope
   scenario is `@e2e`).
-- [ ] Remove the probe; re-run the e2e scope so the passing baseline is
+  - Evidence: `GIVN_RESULT_FILE=/tmp/e2e-result2.json ./run-tests.sh --e2e` →
+    `{"scope":"e2e","total":9,"passed":9,"failed":0,"skipped":0}`; `6
+    features`, `9 scenarios (9 passed)`, `70 steps (70 passed)`.
+    `GIVN_RESULT_FILE=/tmp/full-result.json ./run-tests.sh` →
+    `{"scope":"regular","total":160,"passed":160,"failed":0,"skipped":0}`; `6
+    features`, `160 scenarios (160 passed)`, `699 steps (699 passed)`. The e2e
+    count (9) is strictly smaller than the full count (160).
+  - The first e2e-scope run exposed two integration defects, both fixed:
+    the change-log fixture in `publish_public_release.rs` did not create the
+    new capability directory the allow-list now names, and `init_repo` tagged
+    `v0.3.0` before the e2e scenario's own tag step.
+- [x] Remove the probe; re-run the e2e scope so the passing baseline is
   established.
+  - The probe was removed before the scope runs; both scope runs are green
+    after the two integration fixes.
 
 ## Scenario 9 — Maintainer requests an attribution for a revision and reads the report (`@e2e`)
 
@@ -410,14 +435,33 @@ and the attribution build file size > executable file size. It reads the
 `attribution.md` labels/tables and the process exit status; commit the
 transcript. The `@e2e` tag is immutable.
 
-- [ ] RED: remove `@wip` from this scenario only; run
+- [x] RED: remove `@wip` from this scenario only; run
   `./run-tests.sh --name "Maintainer requests an attribution for a revision and reads the report"`;
   paste non-zero output.
-- [ ] GREEN: implement the e2e steps and transcript; run the same command;
+  - Evidence: `red-exit=101`; `Step panicked. Captured output: read
+    .../out/attribution.md: No such file or directory (os error 2)`; `1
+    scenario (1 failed)`, `4 steps (3 passed, 1 failed)` (the production
+    command was absent).
+- [x] GREEN: implement the e2e steps and transcript; run the same command;
   paste zero output; list every file created/modified.
-- [ ] REFACTOR: re-run; paste zero output.
+  - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `11 steps (11 passed)`.
+  - Files: `apps/cli/tests/steps/e2e/measure_distributed_executable_size.rs`
+    (the e2e-specific assertions and transcript);
+    `givn/changes/measure-executable-size/evidence/visual/maintainer-requests-an-attribution-for-a-revision-and-reads-the-report/transcript.txt`;
+    `apps/cli/tests/steps/publish_public_release.rs` (the change-log fixture
+    creates the new capability directory the allow-list names);
+    `apps/cli/tests/steps/measure_distributed_executable_size.rs` (`init_repo`
+    no longer auto-tags; the earlier-revision and e2e tag steps own the tag).
+- [x] REFACTOR: re-run; paste zero output.
+  - Evidence: `refactor-exit=0`; `1 scenario (1 passed)`, `11 steps (11
+    passed)`.
 - [ ] COMMIT: `givn commit -m "feat(measure-distributed-executable-size): Maintainer requests an attribution for a revision and reads the report"`; record the hash.
-- [ ] E2E suite: run `./run-tests.sh --e2e`; paste zero output and the
+- [x] E2E suite: run `./run-tests.sh --e2e`; paste zero output and the
   scenario count.
-- [ ] Full suite: run `./run-tests.sh`; paste zero output and the scenario
+  - Evidence: `{"scope":"e2e","total":9,"passed":9,"failed":0,"skipped":0}`;
+    `6 features`, `9 scenarios (9 passed)`, `70 steps (70 passed)`.
+- [x] Full suite: run `./run-tests.sh`; paste zero output and the scenario
   count.
+  - Evidence: `{"scope":"regular","total":160,"passed":160,"failed":0,
+    "skipped":0}`; `6 features`, `160 scenarios (160 passed)`, `699 steps (699
+    passed)`.

@@ -102,7 +102,6 @@ pub(crate) fn init_repo(w: &mut DutyWorld, with_newest: bool) {
     run_git(&repo, &["config", "user.name", "Fixture"]);
     run_git(&repo, &["add", "-A"]);
     run_git(&repo, &["commit", "-qm", "base"]);
-    run_git(&repo, &["tag", "v0.3.0"]);
     let base = run_git(&repo, &["rev-parse", "HEAD"]);
     if with_newest {
         replace_in_file(
@@ -284,6 +283,12 @@ async fn a_repository_with_an_earlier_revision(w: &mut DutyWorld, tag: String, o
     assert_eq!(older, "fixture_alpha");
     assert_eq!(newer, "fixture_beta");
     init_repo(w, true);
+    let repo = fixture_repo(w);
+    let base = w
+        .measurement_revision
+        .clone()
+        .expect("the scenario prepared no earlier revision");
+    run_git(&repo, &["tag", tag.as_str(), base.as_str()]);
 }
 
 #[given("a repository whose revision builds for the supported platform")]

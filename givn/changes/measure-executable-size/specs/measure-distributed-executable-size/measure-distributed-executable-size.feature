@@ -2,7 +2,7 @@
 
 Feature: Measure the distributed executable's size
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Maintainer requests an attribution for a revision and reads the report
     Given a repository whose revision builds for the supported platform
     And that revision is tagged "v0.3.0"
