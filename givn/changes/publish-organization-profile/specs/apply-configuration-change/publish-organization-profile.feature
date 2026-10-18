@@ -61,7 +61,7 @@ Feature: Publish the organization profile
     And the organization profile repository offers no public issue tracker for security reports
     And the pages repository serves no security policy of its own
 
-  @givn.added @wip
+  @givn.added
   Scenario: A profile repository that already exists live and is unbound refuses the preview
     Given the applied state binds every declared object except the organization profile repository and its two files
     And the live organization already has the organization profile repository
