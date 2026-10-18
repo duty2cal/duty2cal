@@ -10,7 +10,9 @@ separate the printed crew position from the flight number
 (separate-position-marker-and-flight-number), plus one dependency-update term
 added by the change to announce dependency updates
 (announce-dependency-updates), plus six infrastructure terms added by the
-public-home infrastructure ideation Handoff (public-home-infrastructure).
+public-home infrastructure ideation Handoff (public-home-infrastructure), plus
+one security term added by the change to enable repository security
+(enable-repository-security).
 Source: [Duty-plan calendar conversion](../ideation/duty-plan-calendar-conversion.md),
 [introduction/collision records](../../givn/ideation/duty-plan-calendar-conversion/domain-terms.md),
 [approved contract](../../givn/ideation/duty-plan-calendar-conversion/use-cases/export-duty-plan-calendar.md),
@@ -31,7 +33,7 @@ This is vocabulary/required behavior, not an implemented enforcement claim.
 | Check run | One check that reports on a commit, with a status (`queued`, `in_progress`, `completed`) and a conclusion when complete (`success`, `skipped`, `neutral`, `failure`, …). | The publication gate classifies every check run on the tagged revision outside the release-workflow suites. | the check-runs endpoint consumed by `scripts/await-green-checks.sh` | Not a check suite; not a workflow run. |
 | Check suite | The GitHub grouping that owns a set of check runs, usually one per workflow run. | The gate excludes every suite the release workflow created for the tagged revision, so the release's own checks cannot gate themselves. | `check_suite.id` in the check-runs response; `.github/workflows/release.yml` runs | Not a check run; not a workflow name. |
 | Checksum | A SHA-256 digest covering one archive, published beside it and naming the file it covers. | A downloader verifies what they received before extracting it. | `sha256sum`, `duty2cal-<version>-<platform>.tar.gz.sha256` | Not the archive's size; not the release attestation. |
-| Configuration change | A reviewed revision of the declared configuration that reaches GitHub through an apply. | Previewed and applied; a refusal leaves live unchanged; a partial failure is reported with a stale state. | `infra/` revision; `tofu plan` and `tofu apply` (planned) | Not a product change; not a release. |
+| Configuration change | A reviewed revision of the declared configuration that reaches GitHub through an apply. | Previewed as a saved plan and applied unchanged behind a read-only refresh-only preflight; a refusal before the first write leaves live and the state unchanged; a partial failure names the applied settings and the failed object and is marked stale beside the state, not recorded as applied; a stale marker refuses the preview and the apply until a green apply removes it. | `infra/` revision; `tofu plan -out` and `tofu apply <plan>`; the encrypted `infra/terraform.tfstate`; `infra/terraform.tfstate.stale` | Not a product change; not a release. |
 | Configuration drift | A difference between the declared configuration and what the organization currently holds. | A report names every difference it can compare and marks unreadable fields unchecked. | configuration drift check (`tofu plan -detailed-exitcode`, planned) | Not the **Drift check**, which compares a committed change log with a fresh render. |
 | Consulate visa duty | Non-flight DTUSA duty for a consulate visit to obtain a USA visa. | Own printed UTC interval. | `DutyEntry::NonFlightDuty`, `NON_FLIGHT_CODES` (`application/mod.rs`) | Not a flight, converter-performed visa application, or generic DT-suffix rule. |
 | Crew position | The letters a plan prints in its `Pos` column on a travel row: the assignment the crew member flies that leg under (FB, Flugbegleiter — cabin crew — or DH for positioning travel). | Printed verbatim in a travel title, one space from the flight number; a position printed beside a non-flight activity stays out of that activity's title. | the `Pos` column cell held by `DutyEntry::Travel.position` (`crates/duty2cal-core/src/domain/mod.rs`) | Not a flight-designator prefix, not a second activity for the leg, not duration or pay evidence. |
@@ -62,6 +64,7 @@ This is vocabulary/required behavior, not an implemented enforcement claim.
 | Released Roster detail-table family | The supported source layout: the monthly crew duty-plan detail table, with repeated headers and page continuations. | The first release's supported source; an unrecognized family fails explicitly. | `PdfRosterSource`, `SourceError::UnsupportedFamily` (`crates/duty2cal-pdf/src/lib.rs`) | Not every PDF producer layout; not the overview, statistics, or footer tables. |
 | Reserve duty | Bounded RE availability differing from SB in activation-to-report notice time. | Own UTC window; no notice calculator. | `DutyEntry::Availability`, `AVAILABILITY_CODES` (`application/mod.rs`) | Not an activation workflow or all-day default. |
 | Roster trip | Source grouping of assigned travel legs associated with one Trip ID. | Carry known ID within one unambiguous travel trip. | the Trip ID column cell and `Row::carried_trip` (`application/mod.rs`) | Not one leg, leisure trip, or independent aggregate. |
+| Security settings | The repository features that guard the public history: secret scanning, push protection, Dependabot alerts and Dependabot security updates. | Declared as the monorepo's repository settings and previewed and applied like any other declared value; advanced security and private vulnerability reporting are not expressible and stay manual. | `security_and_analysis` on `github_repository.mono`; `github_repository_vulnerability_alerts.mono`; `github_repository_dependabot_security_updates.mono` (`infra/`) | Not the organization's member defaults; not a protection rule set; not the release pipeline's attestations. |
 | Single-day standby | Isolated/replacement SBX standby with its own UTC window. | Current SBX interval, not a former flight's times. | `DutyEntry::Availability`, `row_interval` (`application/mod.rs`) | Single-day is not all-day; no extra cancelled-flight/import-cancellation logic. |
 | Software bill of materials | The machine-readable list of what went into an archive's build. | Published with every archive alongside its build provenance. | `anchore/sbom-action@v0` (syft reads `Cargo.lock`) | Not the checksum; not the provenance attestation. |
 | Source revision timestamp | UTC snapshot revision metadata using the user-accepted Created footer convention for this family. | Preferred DTSTAMP; actual construction-time fallback. | `SourceDocument::revision`, `created_footer` (`crates/duty2cal-pdf/src/lib.rs`) | Not activity start, month-first constant, or universal Created/Last-Modified equivalence. |
@@ -152,7 +155,13 @@ counterpart. The change to list only the changes a user receives
 receives. The change to declare the public home (declare-public-home) adds no
 new term: it realizes **Adoption** and **Declared configuration** in `infra/`
 and records their code symbols; **Configuration change**, **Configuration
-drift** and **Deploy key** remain planned for the apply and publishing seeds. Raw source-column labels
+drift** and **Deploy key** remain planned for the apply and publishing seeds. The
+change to enable repository security (enable-repository-security) adds
+**Security settings** and refines **Configuration change**, which now names the
+saved plan, the read-only refresh-only preflight, the apply, the state it
+records and the stale marker that refuses a partial state; **Configuration
+drift** and **Deploy key** remain planned for the drift-report and publishing
+changes. Raw source-column labels
 (A/C, Blocktime, Report (LT), Timezone Difference, Tags) and the FREE/OFF day
 codes are used verbatim in the specification and are not confirmed domain terms.
 

@@ -67,27 +67,35 @@ repository operation and its tests, not product blocks.
 
 ```mermaid
 flowchart TB
-  DECL["infra/ — declaration (organization, repositories, rule set, Pages source), adoption batch, encrypted state"]
+  DECL["infra/ — declaration (organization, repositories, rule set, Pages source, repository security settings), two adoption batches, encrypted state"]
   ADOPT["scripts/adopt-public-home.sh — preflight, staged imports, refresh verification, atomic binding"]
+  APPLY["tofu plan -out=plan.bin → tofu apply plan.bin — the preview and the configuration change"]
   SETUP["scripts/setup-infra-tests.sh — tool checks, provider mirror, fixture proof"]
-  FAKE["scripts/fake-github/serve.py — fixtures, request journal, fault injection"]
-  STEPS5["apps/cli/tests/steps/adopt_existing_configuration.rs + steps/e2e/adopt_existing_configuration.rs"]
+  FAKE["scripts/fake-github/serve.py — fixtures, request journal, fault injection, opt-in write sandbox"]
+  STEPS5["steps/adopt_existing_configuration.rs + steps/e2e/..."]
+  STEPS6["steps/enable_repository_security.rs + steps/e2e/..."]
   TOFU5["tofu + integrations/github provider"]
   ADOPT --> TOFU5
+  APPLY --> TOFU5
   ADOPT --> DECL
+  APPLY --> DECL
   STEPS5 -->|real subprocess| ADOPT
+  STEPS6 -->|"real subprocess (init, plan, apply)"| APPLY
   STEPS5 -->|starts| FAKE
+  STEPS6 -->|"starts with --writes"| FAKE
   TOFU5 -->|"GITHUB_BASE_URL"| FAKE
   SETUP -->|mirrors provider| TOFU5
 ```
 
 | Block | Responsibility |
 |---|---|
-| `infra/` | The declared configuration: `github_organization_settings`, both `github_repository` resources, `github_repository_ruleset.main` (the existing `main protection` rule set) and `github_repository_pages.pages`; the adoption batch; the encrypted state and its backup; the provider lock file. |
+| `infra/` | The declared configuration: `github_organization_settings`, both `github_repository` resources (the monorepo's `security_and_analysis` included), `github_repository_ruleset.main` (the existing `main protection` rule set), `github_repository_pages.pages`, and `github_repository_vulnerability_alerts.mono` / `github_repository_dependabot_security_updates.mono`; the two adoption batches; the encrypted state and its backup; the provider lock file. |
 | `scripts/adopt-public-home.sh` | The adoption interface: validate the declaration and passphrase, import the selected batch into a staged copy of the state, verify the batch with a refresh-only plan, then bind atomically and report one line per object, or refuse and name the object. |
+| The apply | The declaration's normal mechanism, no wrapper: `tofu init`, `tofu plan -out=plan.bin` (the preview; `plan.bin` is encrypted and git-ignored), `tofu apply plan.bin` (the configuration change), then a fresh plan that must be empty. The state is committed only after a green apply. |
 | `scripts/setup-infra-tests.sh` | Prepares the offline test environment: `tofu` and `python3` checks, the provider mirror and `terraformrc`, and the one-import proof that the fixture set satisfies the provider. |
-| `scripts/fake-github/serve.py` and its fixtures | The digital twin of GitHub's REST API: deterministic JSON fixtures per scenario, a journal of every request, and fault injection for unreadable, missing and changed objects. |
-| `apps/cli/tests/steps/adopt_existing_configuration.rs`, `apps/cli/tests/steps/e2e/adopt_existing_configuration.rs` | The capability's step definitions; they drive the adoption command as a real subprocess against the fake. |
+| `scripts/fake-github/serve.py` and its fixtures | The digital twin of GitHub's REST API: deterministic JSON fixtures per scenario, a journal of every request, and fault injection for unreadable, missing and changed objects; `--writes` adds an opt-in sandbox that accepts exactly the repository `PATCH`, the vulnerability-alerts `PUT` and the Dependabot-security-updates `PUT` and overlays the result on later reads. |
+| `apps/cli/tests/steps/adopt_existing_configuration.rs`, `apps/cli/tests/steps/e2e/adopt_existing_configuration.rs` | The adoption capability's step definitions; they drive the adoption command as a real subprocess against the fake. |
+| `apps/cli/tests/steps/enable_repository_security.rs`, `apps/cli/tests/steps/e2e/enable_repository_security.rs` | The security-settings capability's step definitions; they prime the state with the real adoption command, then drive `tofu init`, `plan` and `apply` as real subprocesses against the fake in `--writes` mode. |
 
 ## Level 2 — Key building blocks
 

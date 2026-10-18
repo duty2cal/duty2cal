@@ -76,7 +76,7 @@ flowchart TB
   gh{{"GitHub REST API"}}
   ws --> env --> tool
   ws --> decl --> tool
-  tool -->|"read-only import / refresh"| gh
+  tool -->|"read-only import / refresh; one previewed apply"| gh
   tool -->|"writes the encrypted state"| decl
 ```
 
@@ -96,5 +96,7 @@ flowchart TB
 - Linux is the cross-build, CI and local test host, not a published platform; it does not appear on the release page.
 - Already-published Linux and macOS archives stay as they were: releases are immutable, so this narrowing applies to future releases only.
 - The applied state is deployed as a committed ciphertext: `infra/terraform.tfstate` and its backup are in the repository, protected by the passphrase and by OpenTofu's `enforced = true` encryption. Losing the passphrase loses the state; re-adopting rebuilds it without changing anything live.
+- The security change from this workstation, after the earlier configuration change, enables secret scanning and push protection on the monorepo. The two Dependabot settings are adopted read-only first, so the apply carries one live change; a read-only refresh-only preflight refuses a live edit made since the preview before `tofu apply` runs. The state that records the change is committed only after the apply is green; a partial apply's state is marked stale beside itself and is not committed.
+- The administer token, the passphrase, the billing email and the transient encrypted plan file never leave the workstation; the plan file is git-ignored and deleted after the apply.
 - The administer token and the passphrase are not deployed to any service: there is no apply in Actions and no configuration drift job in CI, so divergence from the declaration is found by the maintainer's local check.
 - The test environment deploys no service: the fake GitHub API runs on loopback from the suite's step definitions, and the provider is installed from a local mirror.

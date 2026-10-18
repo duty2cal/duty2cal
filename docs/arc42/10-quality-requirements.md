@@ -30,6 +30,8 @@ flowchart TB
   repro --> rp1["Reviewable declaration"]
   repro --> rp2["All-or-none adoption with no live change"]
   repro --> rp3["Encrypted state at rest"]
+  repro --> rp4["Security settings declared and applied"]
+  repro --> rp5["A refusal changes nothing and a partial failure is named"]
 ```
 
 ## Quality scenarios
@@ -54,6 +56,8 @@ flowchart TB
 | QS-016 | Configuration reproducibility | The maintainer adopts a batch whose objects all exist live. | Every object in the batch is bound in the applied state, the command prints one `adopted` line per object, and the API journal records no refused write and no mutation (a GraphQL query POST is a read); the live configuration is unchanged. |
 | QS-017 | State secrecy | The applied state is committed to the repository. | The committed file is ciphertext: `state` and `plan` encryption are `enforced`, the passphrase is required and has no default, and no workflow holds it. |
 | QS-018 | Atomicity of a batch | One object of the batch cannot be read, is already bound, does not exist live, is not named by the declaration, changes after it is read, or the state cannot be decrypted or written. | The command refuses, names the object and the reason, and binds nothing: the applied state contains none of the batch's objects and no live object changed. |
+| QS-019 | Declared security settings | The declaration enables secret scanning and push protection on the monorepo, both Dependabot settings are already on and bound, and the live monorepo reports both scanning settings disabled. | The preview names exactly the two scanning statuses and proposes no object to create or delete; the apply enables both, writes only the repository change, the state records both as enabled, and a later preview reports no differences. |
+| QS-020 | Truthful apply outcome | An apply whose authority cannot perform the first change, and an apply whose earlier settings succeed and whose later setting fails. | The first exits non-zero, names the repository, and writes nothing; the second exits non-zero, names the applied settings and the failed setting, and the applied state records only what succeeded. |
 
 **Stimulus / response / metric** for the primary scenario:
 

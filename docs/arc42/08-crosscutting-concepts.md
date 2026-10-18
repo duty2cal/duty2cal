@@ -97,6 +97,49 @@ rebuilds it), and no automated service can read the state — which is exactly
 why the configuration drift check runs locally and the future publishing key is
 not exposed to a workflow.
 
+## Declared security settings on the public repository
+
+A public repository adds a credential surface, so the settings that guard it are
+declared values, not remembered ones. The monorepo's `security_and_analysis`
+supplies secret scanning and push protection, and the two Dependabot settings
+use their own resources because the repository's `vulnerability_alerts` field is
+deprecated in the pinned provider. The settings that are already on are bound to
+the live configuration before the change is applied, so the preview reports only
+real differences and a later manual change to either is a difference the local
+check can name. Settings the provider cannot supply for a public repository —
+advanced security — are never declared, and settings the provider cannot express
+at all, such as private vulnerability reporting, stay manual and are recorded as
+a gap.
+
+## Apply semantics: the saved plan, the preflight and partial reporting
+
+A configuration change is a saved plan applied unchanged: `tofu plan -out`
+produces the artifact the operator reads, and `tofu apply` of that file performs
+exactly those actions. OpenTofu refuses a plan whose state has moved on, so the
+applied revision is the previewed one, and the plan file is encrypted and
+git-ignored so no transient artifact enters the repository. A declaration edit
+made after the preview is not carried; it takes effect only after a new preview.
+
+A saved plan does not re-read the live configuration at apply time, so the
+routine runs a read-only `tofu plan -refresh-only -detailed-exitcode -json`
+immediately before the apply and refuses a non-no-op change by address. The
+JSON report is authoritative, not the exit status — OpenTofu 1.13.1 can return
+exit 2 for a no-op — and an incomplete report is refused. The preview itself
+refuses a plan that would create a setting which already exists live and is
+unbound, naming it. A live edit made during the preflight is the residual
+window (R-031).
+
+A failure is reported the way the declaration's other operations report one. A
+refusal before the first write — an unreadable setting, a wrong passphrase, an
+authority that cannot perform the change — leaves the live configuration and the
+state unchanged and names the object. A failure after an earlier resource was
+applied stops the run, names the applied resources and the failed address, and
+leaves the state recording only what succeeded; the routine writes
+`terraform.tfstate.stale` beside that state and does not commit it. While the
+marker exists the preview and the apply refuse and name the stale state, and a
+green apply removes it, so the revision is recorded only when every change
+succeeded.
+
 ## Adoption is read-only against the live organization
 
 `tofu import` and `tofu plan -refresh-only` issue reads; the adoption command
@@ -107,3 +150,5 @@ not "no POST". A
 refusal that would need a write — creating a missing object, changing a value,
 removing a legacy object — is reported as belonging to a configuration change
 instead.
+
+

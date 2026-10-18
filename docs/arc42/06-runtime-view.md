@@ -200,3 +200,62 @@ flowchart TB
 6. The staged state is moved over `infra/terraform.tfstate`; on the first adoption `<state>.backup` is created as a copy of the new state, and on later runs the previous state is kept as the backup. The command prints one `adopted` line per object.
 
 **Notes:** Adoption is read-only against GitHub by construction; the suite proves it from the fake API's request journal: a refused write or a GraphQL mutation would be the evidence of a write, while a query-only POST is a read. Every refusal step also asserts that the journal holds no unknown-path entry, so a refusal is never the fake's own missing fixture. The declaration revision is the repository commit, so the command never edits the declaration.
+
+## Scenario: The declared security settings are previewed and applied
+
+**Trigger:** The maintainer has declared the monorepo's security settings and
+asks for a preview, then applies the previewed revision.
+
+```mermaid
+flowchart TB
+  owner["Organization owner"] --> adopt["adopt the two Dependabot settings (read-only)"]
+  adopt -->|refused| stopnone["refuse; name the setting; nothing bound, nothing live changed"]
+  adopt --> plan["tofu plan -out=plan.bin"]
+  plan -->|"cannot read a setting, wrong passphrase, no authority"| stopnone2["refuse; name the object; nothing written"]
+  plan --> guard["preview guard: no create for a setting already live and unbound"]
+  guard -->|"an unadopted live setting would be created"| stopguard["refuse; name the setting; adopt it first; nothing written"]
+  guard --> read["the plan names the two scanning statuses and no other difference"]
+  read --> preflight["read-only refresh-only preflight on the applied state"]
+  preflight -->|"a manual edit changed a live object"| stophange["refuse; name the object; the saved plan is not applied"]
+  preflight --> apply["tofu apply plan.bin"]
+  apply -->|"an earlier setting applied and a later one failed"| partial["exit non-zero; name the applied settings and the failed address; write terraform.tfstate.stale; do not commit the partial state"]
+  apply --> patch["one PATCH: secret scanning and push protection enabled"]
+  patch --> back["the provider reads the repository back"]
+  back -->|"the read fails"| err["the apply reports the repository and the reason; live is changed, the state is not reported as applied"]
+  back --> recorded["the encrypted state records both statuses enabled"]
+  recorded --> again["tofu plan: no differences"]
+  again --> commit["commit the declaration and the state in one revision"]
+```
+
+**Steps:**
+
+1. Before anything else, a `terraform.tfstate.stale` marker is checked; while
+   it exists the preview and the apply refuse and name the stale state. The two
+   Dependabot settings are then adopted with the second batch: the existing
+   adoption command binds them read-only, so they are not reported as
+   creations. A refusal binds nothing.
+2. The preview reads the encrypted state, the declaration and the live
+   configuration. On this declaration it names the two scanning statuses as the
+   only live difference and proposes nothing to create or delete. A `create`
+   for a setting that already exists live and is unbound is refused by address
+   before any write. It writes nothing.
+3. The previewed revision is saved to `plan.bin` (encrypted, git-ignored). A
+   read-only `tofu plan -refresh-only -detailed-exitcode -json` immediately
+   before the apply names a live edit made since the preview and refuses; its
+   JSON report is authoritative, not its exit status. With no change,
+   `tofu apply plan.bin` applies exactly the previewed plan.
+4. The provider charges the declared change to GitHub with one repository
+   `PATCH`, reading the repository back afterwards. Success enables both
+   settings; the failed read is reported as a failure of the repository and the
+   state does not claim the statuses.
+5. The encrypted state records the enabled statuses; a second plan reports no
+   differences, the plan file and the stale marker are removed, and the
+   declaration and state are committed together.
+
+**Notes:** The suite drives steps 2–4 against the fake with a write sandbox and
+asserts the journal's single applied write and its body keys; the live API's
+acceptance of push protection is proven only by the operator's real apply,
+which is a required step after GREEN. A partial failure is reported by resource
+address, writes the stale marker beside the state, and the state is
+deliberately not committed.
+

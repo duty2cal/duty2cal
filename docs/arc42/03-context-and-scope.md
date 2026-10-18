@@ -36,30 +36,32 @@ The public home's configuration is also described from the project's side. The
 maintainer edits the declaration under `infra/`, runs the adoption command once
 to bind the objects that already exist, and later previews and applies changes.
 GitHub remains the only owner of the live settings; the project's side reads
-them to adopt them and reads them again for the local configuration drift
-check. The binding itself is recorded in an encrypted state file committed in
-the repository.
+them to adopt them, reads them again for the local configuration drift check,
+and — when a previewed change is applied — writes the declared values. The
+binding and the applied values are recorded in an encrypted state file
+committed in the repository.
 
 ```mermaid
 flowchart LR
   owner["Organization owner"] -->|"edits infra/ and runs the adoption"| adm["Adoption command and OpenTofu"]
-  adm -->|"read-only import of the existing objects"| gh["GitHub (organization, both repositories, rule set, Pages source)"]
+  adm -->|"read-only import of the existing objects"| gh["GitHub (organization, both repositories, rule set, Pages source, repository security settings)"]
   adm -->|"writes the encrypted applied state"| state["infra/terraform.tfstate (ciphertext, committed)"]
-  owner -->|"later: local preview and drift check"| adm
+  owner -->|"later: preview, apply and local drift check"| adm
+  adm -->|"a previewed change, written once by the apply"| gh
   secrets["State passphrase and administer token (environment only)"] --> adm
 ```
 
 | Partner | Input to the project | Output from the project |
 |---|---|---|
-| GitHub | The live configuration of the declared objects, read only | Nothing during adoption; later, a previewed configuration change |
-| Organization owner | The declaration, the selected batch, the passphrase and the token | One adopted/bound line per object, or a refusal naming the object |
-| Repository reader | The declaration, the batch and the encrypted state | The reviewable intended configuration; ciphertext they cannot open |
+| GitHub | The live configuration of the declared objects, read (adoption, preview, drift check) | The declared changes of one previewed revision, written by an apply; nothing during adoption or a preview |
+| Organization owner | The declaration, the selected batches, the passphrase and the token | One adopted/bound line per object, a preview naming every difference, one reported change per applied object, or a refusal naming the object |
+| Repository reader | The declaration, the batches and the encrypted state | The reviewable intended configuration; ciphertext they cannot open |
 
 The release page's text is the newest section of the repository's change log — the changes a user receives (capability changes and dependency updates), grouped by kind — and the change log itself is one of the files a release publishes, so a reader of the source and a reader of the release page see the same history. Each version carries exactly one archive, for Windows x86_64; there is no per-platform asset set, and nothing is offered for a platform the release does not support. A crew member on any other platform obtains the tool by building the source with a Rust toolchain.
 
 ## Technical context
 
-For the converter, all interfaces are the local filesystem. There is no network interface, no database, and no external service in the product. The public-home adoption tooling adds one separate, read-only interface to the project's side: it reads GitHub's REST API during adoption and verification and never writes.
+For the converter, all interfaces are the local filesystem. There is no network interface, no database, and no external service in the product. The public-home tooling adds one separate interface to the project's side: it reads GitHub's REST API during adoption, preview and the drift check, and writes only the declared changes of a previewed configuration change, from the maintainer's workstation.
 
 ```mermaid
 flowchart LR
@@ -75,7 +77,7 @@ flowchart LR
 | Published calendar | Local file write (RFC 5545 text, CRLF, UTF-8) | Out |
 | Diagnostic report | Local file write (plain text, numbered) | Out |
 | Construction clock | Operating-system clock (UTC) | In |
-| Public-home adoption | GitHub REST API over HTTPS (read-only: object reads and a refresh comparison; no write request) | In (adoption tooling only, never the converter) |
+| Public-home adoption, preview and configuration change | GitHub REST API over HTTPS: object reads for adoption, preview and the drift check; writes only the declared changes of a previewed revision, from the maintainer's workstation | In (reads) and out (an apply only), never the converter |
 
 ## Scope boundary
 
