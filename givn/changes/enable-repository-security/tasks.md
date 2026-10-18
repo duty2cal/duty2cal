@@ -376,6 +376,6 @@ Design constraints:
       (a separate, pre-existing issue); the adoption command's whole-state
       verification is a recorded defect: it must scope the refresh to the batch
       addresses.
-- [ ] Archive-time obligation: when the archive creates
+- **Archive-time obligation (not a task box):** when the archive creates
       `givn/specs/apply-configuration-change/`, add the capability to
       `cliff.toml` and its parser rows in the same revision.
