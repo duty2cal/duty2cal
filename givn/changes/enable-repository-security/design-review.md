@@ -314,3 +314,24 @@ Every grilling question G1–G15 is resolved and every hardening edit is applied
 the lint has no errors. The plan is ready for the task list.
 
 DESIGN-REVIEW: PASS
+
+## Implementation corrections — 2026-10-18
+
+Measured while implementing the apply routine, and re-reviewed in a fresh
+context:
+
+- A refused `PATCH` makes SDKv2 persist the planned repository values, and the
+  first apply after an adoption rewrites the encrypted state envelope. The
+  stale signal is therefore live drift against the restored pre-apply state,
+  not the failed state's bytes or values. An incomplete post-failure report
+  keeps the restored state, writes no marker and reports the state unverified;
+  the no-drift inference assumes an update-only plan.
+- The failed read-back after the `PATCH` marks the applied state stale (the
+  state may carry the planned values), and the next preview refuses; this
+  replaces the earlier "state does not claim the statuses" wording in the
+  feature, use case, design traceability row and tasks.
+
+The executable step mirrors the three outcomes; scenario 2 passes 9/9 after the
+corrections. Re-review verdict: `DESIGN-REVIEW: PASS`.
+
+DESIGN-REVIEW: PASS

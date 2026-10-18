@@ -120,10 +120,10 @@ fn scenario_dir_for(w: &DutyWorld) -> PathBuf {
         .expect("scenario prepared no working directory")
 }
 
-/// The applied state's decrypted values, canonically ordered. A failed apply
-/// persists a refreshed state with a new serial even when no resource changed,
-/// so the routine's write signal is the resource values, not the state bytes
-/// (design.md "The apply procedure", "A partial failure").
+/// The applied state's decrypted values, canonically ordered: the scenario's
+/// "state unchanged" invariant. A failed apply rewrites the envelope and may
+/// persist planned values, so bytes and serials are not evidence; the routine's
+/// write signal is live drift (design.md "The apply procedure").
 fn state_values(w: &DutyWorld) -> Vec<u8> {
     let dir = scenario_dir_for(w);
     let show = tofu(w, &["show", "-json"]);
@@ -454,6 +454,12 @@ fn apply_previewed(w: &mut DutyWorld) {
             let _ = fs::remove_file(&failed_state);
             transcript
                 .push_str("refused before the first write; the pre-apply state is restored\n");
+        } else if drift_verdict == "incomplete" {
+            let _ = fs::remove_file(&failed_state);
+            transcript.push_str(
+                "refused: live could not be verified after the failed apply; \
+                 the applied state is unverified\n",
+            );
         } else {
             fs::copy(&failed_state, state_path(w)).expect("keep the failed apply's state");
             let _ = fs::remove_file(&failed_state);

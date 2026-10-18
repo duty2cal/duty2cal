@@ -71,15 +71,15 @@ Feature: Enable repository security
     And the applied state is unchanged
 
   @givn.added @wip
-  Scenario: A failed read-back after the PATCH is reported and the state does not claim the statuses
+  Scenario: A failed read-back after the PATCH is reported and the state is marked stale
     Given the applied state binds every declared object
     And a previewed revision that enables secret scanning and push protection
     And the read of the monorepo fails once after the PATCH is applied
     When the organization owner applies the previewed revision
     Then the apply fails and names "duty2cal/duty2cal"
     And the monorepo reports secret scanning and push protection enabled
-    And the applied state does not record the enabled statuses
-    And a later preview names secret scanning and push protection
+    And the applied state is marked stale
+    And a new preview refuses and names the stale applied state
 
   @givn.added @wip
   Scenario: A partial failure reports the applied settings and names the failed one

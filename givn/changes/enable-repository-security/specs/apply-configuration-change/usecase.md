@@ -148,7 +148,7 @@ The declared values are decided (Q5 closed 2026-10-17).
 | Authority before the first write | The owner's authority covers the repositories but not the organization settings. | Apply refuses before any write and names the organization settings; nothing changes. |
 | Partial failure | The scanning settings apply; the Dependabot security-updates change then fails on authority. | Report names the applied settings, the failed setting and the reason; the applied state does not record the failed setting and is marked stale; the next preview refuses and names the stale state. |
 | Manual edit since preview | Live `has_projects` was changed by hand after the preview that saw it on. | The read-only refresh-only preflight names `has_projects` and refuses the apply; the saved plan is not applied; a new preview shows the edit. |
-| Read-back failure after the PATCH | The repository `PATCH` succeeds; the provider's read-back then fails. | The apply reports the repository and the reason; live carries the enabled statuses, the applied state does not claim them, and the next preview names them. |
+| Read-back failure after the PATCH | The repository `PATCH` succeeds; the provider's read-back then fails. | The apply reports the repository and the reason; live carries the enabled statuses, the applied state may record the planned statuses and is marked stale, and the next preview refuses and names the stale state. |
 
 ## Scenario skeletons
 

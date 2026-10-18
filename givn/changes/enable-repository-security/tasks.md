@@ -29,7 +29,9 @@ Design constraints:
   verdict, and the stale marker on partial failure. The failure path keeps a
   pre-apply state copy, restores it after a non-zero apply, and runs the
   read-only refresh-only report: no drift keeps the restored state and writes
-  no marker; drift reinstalls the failed apply's state and writes the marker.
+  no marker; drift reinstalls the failed apply's state and writes the marker;
+  an incomplete report keeps the restored state, writes no marker and reports
+  the applied state as unverified.
   This is because SDKv2 persists the planned values for a refused update and
   OpenTofu persists a refreshed envelope, so neither bytes nor values of the
   failed state are evidence of a write. Corrected during implementation; see
@@ -148,12 +150,13 @@ Design constraints:
 - [ ] REFACTOR — cleanup; re-run; paste zero.
 - [ ] COMMIT — release note subject, scenario title body; record the revision.
 
-## 5. A failed read-back after the PATCH is reported and the state does not claim the statuses
+## 5. A failed read-back after the PATCH is reported and the state is marked stale
 
 Design constraints:
 - The fake applies the PATCH, then faults the read-back GET once; the apply fails
-  naming the monorepo; live has the statuses enabled; the state does not record
-  them; a later preview names them.
+  naming the monorepo; live has the statuses enabled; the state may carry the
+  planned statuses and is marked stale; a new preview refuses and names the stale
+  state.
 - The journal proves the write happened.
 
 - [ ] RED — remove `@wip`; run the single scenario; paste non-zero.

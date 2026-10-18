@@ -275,8 +275,16 @@ if ! tofu apply -input=false plan.bin; then
   ' "$failure_report")
   if [ "$failure_verdict" = ok ]; then
     # No drift: the refusal happened before any write; keep the restored
-    # pre-apply state and write no marker.
+    # pre-apply state and write no marker. This inference holds for a plan
+    # whose write set is updates to objects already in the applied state;
+    # a plan containing a create needs the saved plan's create addresses
+    # checked against live before the pre-apply state is kept.
     rm -f "$state_failed"
+  elif [ "$failure_verdict" = incomplete ]; then
+    # Live could not be verified: keep the restored pre-apply state, write no
+    # marker, and state that the applied state is unverified.
+    rm -f "$state_failed"
+    printf 'refused: live could not be verified after the failed apply; the applied state is unverified\n' >&2
   else
     # Drift: a write landed; keep the failed apply's state and mark it stale.
     cp "$state_failed" terraform.tfstate
@@ -303,7 +311,12 @@ rm -f plan.bin "$preview_report" "$preflight_report" "$state_before" terraform.t
   that copy and runs the read-only refresh-only report; no drift proves the
   refusal happened before any write, so the restored state stays and no marker
   is written, while drift proves a write landed, so the failed apply's state is
-  reinstalled and the marker is written. The failed state itself is not
+  reinstalled and the marker is written. The no-drift inference holds for a plan
+  whose write set is updates to objects already in the applied state — this
+  change's plan; a plan containing a create needs the saved plan's create
+  addresses checked against live before the pre-apply state is kept. An
+  incomplete report (no `change_summary`) keeps the restored state, writes no
+  marker and states that the applied state is unverified. The failed state itself is not
   evidence: SDKv2 persists the planned values for a failed update (measured
   with a refused `PATCH` on 2026-10-18), and OpenTofu also persists a refreshed
   envelope, so neither bytes nor values distinguish a refusal from a write.
@@ -346,8 +359,9 @@ rm -f plan.bin "$preview_report" "$preflight_report" "$state_before" terraform.t
   apply").
 - **A refusal** — an unreadable setting, an unset or wrong passphrase, or an
   authority that cannot perform the change — stops the run before or at the
-  first write. OpenTofu exits non-zero, names the object, and no live value and
-  no state byte changes.
+  first write. OpenTofu exits non-zero and names the object; the routine
+  restores the pre-apply state, so the state on disk is unchanged even though
+  the failed apply itself may have written the planned values.
 - **A partial failure** — an earlier resource applied and a later one failed —
   exits non-zero, names the applied resources and the failed address.
   OpenTofu's state then records the applied resources and not the failed one;
@@ -583,7 +597,11 @@ rejected:
   the failed state therefore marks a pure refusal stale, and a later preview
   would no longer name the change. Restoring the pre-apply state and reading
   the read-only refresh-only report separates a refusal (no drift) from a
-  partial apply (drift)).
+  partial apply (drift); an incomplete report keeps the restored state, writes
+  no marker and reports the applied state as unverified. The no-drift inference
+  assumes a plan whose write set is updates to objects already in the applied
+  state; a plan containing a create needs its create addresses checked against
+  live before the pre-apply state is kept).
 - **The commit scope is the use-case id, `apply-configuration-change`, not
   `enable-repository-security`** (rejected: scoping by this change's id, which
   the changelog allow-list does not name, so a user-receiving change would be
@@ -620,7 +638,7 @@ rejected:
 | Rule: settings the authority cannot read are named | The provider read fails and the preview names the repository | The unreadable-settings scenario |
 | Extension: the live configuration changed since the preview is refused | The read-only refresh-only preflight immediately before `tofu apply` reports the drift by address and refuses; the JSON report is authoritative (opentofu/opentofu#3015). A live edit during the preflight is the only residual window (R-031) | "A live edit between the preview and the apply is refused and named" |
 | Extension: a setting that already exists live is not created | The preview's plan JSON is checked before any write; a `create` for an already-live, unbound setting refuses by address | "The preview refuses to add a Dependabot setting that already exists live and is unbound" |
-| Minimal guarantee: a failed PATCH is not recorded as applied | The provider's post-`PATCH` read-back failure is reported; live carries the change, the state does not claim the enabled statuses, and the next preview names them | "A failed read-back after the PATCH is reported and the state does not claim the statuses" |
+| Minimal guarantee: a failed PATCH is not recorded as applied | The provider's post-`PATCH` read-back failure is reported; live carries the change, the state may carry the planned values and is marked stale (SDKv2 persists them), and the next preview refuses until a green apply | "A failed read-back after the PATCH is reported and the state is marked stale" |
 | Minimal guarantee: a failure names the object and the reason | Provider error text carries the address and the API reason; the steps assert the address | The failure scenarios |
 | Persona impact: organization owner | Preview, apply, refuse, partial outcome | `@e2e` transcripts |
 | Persona impact: contributor reviewer | The declaration, the second batch and the encrypted state are readable in one history | Design-level; the reviewed revision |
