@@ -662,27 +662,6 @@ pub(crate) fn apply_previewed(w: &mut DutyWorld) {
     w.scenario_transcript.push_str(&transcript);
 }
 
-/// Assert the fake saw no write request at all.
-fn assert_no_write_request(w: &DutyWorld) {
-    let journal = journal_lines(w);
-    for line in &journal {
-        let writes = line.contains("\"applied_write\": true")
-            || line.contains("\"manual_edit\": true")
-            || line.contains("\"refused_write\": true")
-            || line.contains("\"method\": \"PATCH\"")
-            || line.contains("\"method\": \"PUT\"")
-            || line.contains("\"method\": \"DELETE\"");
-        assert!(
-            !writes,
-            "no write request may reach GitHub; journal was:\n{journal:#?}"
-        );
-    }
-    assert!(
-        !journal.is_empty(),
-        "the preview read the live configuration; journal was empty"
-    );
-}
-
 #[given("the applied state binds every declared object")]
 async fn the_applied_state_binds_every_declared_object(w: &mut DutyWorld) {
     ensure_base_state(w);
@@ -748,11 +727,6 @@ async fn the_preview_fails_and_names(w: &mut DutyWorld, object: String) {
         "the preview names {object}; output was:\n{}",
         w.preview_transcript
     );
-}
-
-#[then("no write request reaches GitHub")]
-async fn no_write_request_reaches_github(w: &mut DutyWorld) {
-    assert_no_write_request(w);
 }
 
 #[then("the applied state is unchanged")]
@@ -1087,8 +1061,10 @@ async fn the_preview_names(w: &mut DutyWorld, object: String) {
     );
 }
 
-#[given("the read of the monorepo fails once after the PATCH is applied")]
-async fn the_read_of_the_monorepo_fails_once_after_the_patch(w: &mut DutyWorld) {
+#[given("the read of the monorepo fails once after the security settings are applied")]
+async fn the_read_of_the_monorepo_fails_once_after_the_security_settings_are_applied(
+    w: &mut DutyWorld,
+) {
     assert!(
         w.plan_path.is_some(),
         "the scenario holds no previewed revision"

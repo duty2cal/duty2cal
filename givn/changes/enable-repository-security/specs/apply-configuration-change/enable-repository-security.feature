@@ -13,7 +13,7 @@ Feature: Enable repository security
     And the plan's only changed resource is "github_repository.mono"
     And the plan's only changed live attributes are "secret_scanning" and "secret_scanning_push_protection"
     And the preview reports no object to create or delete
-    And no write request reaches GitHub
+    And the live configuration is unchanged
 
   @givn.added @e2e
   Scenario: Organization owner applies the previewed revision and the security settings are enabled
@@ -23,7 +23,7 @@ Feature: Enable repository security
     Then the apply reports the monorepo as changed and exits successfully
     And the monorepo reports secret scanning and push protection enabled
     And the applied state records both settings as enabled
-    And the journal's repository request changed only "security_and_analysis" with both statuses enabled
+    And the live configuration changed only the security settings
     And no other declared field of the monorepo changed
     And a later preview reports no differences
 
@@ -32,7 +32,7 @@ Feature: Enable repository security
     Given the owner's authority cannot read the monorepo's security settings
     When the organization owner previews the declaration
     Then the preview fails and names "duty2cal/duty2cal"
-    And no write request reaches GitHub
+    And the live configuration is unchanged
     And the applied state is unchanged
 
   @givn.added
@@ -67,14 +67,14 @@ Feature: Enable repository security
     When the organization owner previews the declaration
     Then the preview is refused and names "github_repository_vulnerability_alerts.mono"
     And the preview names "github_repository_dependabot_security_updates.mono"
-    And no write request reaches GitHub
+    And the live configuration is unchanged
     And the applied state is unchanged
 
   @givn.added
-  Scenario: A failed read-back after the PATCH is reported and the state is marked stale
+  Scenario: A failed read-back after the security settings are applied is reported and the state is marked stale
     Given the applied state binds every declared object
     And a previewed revision that enables secret scanning and push protection
-    And the read of the monorepo fails once after the PATCH is applied
+    And the read of the monorepo fails once after the security settings are applied
     When the organization owner applies the previewed revision
     Then the apply fails and names "duty2cal/duty2cal"
     And the monorepo reports secret scanning and push protection enabled

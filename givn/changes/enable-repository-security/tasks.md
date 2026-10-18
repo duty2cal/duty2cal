@@ -87,7 +87,7 @@ Design constraints:
 - [x] REFACTOR — cleanup; re-run; paste the zero output.
       `cargo fmt`; `cargo check -p duty2cal --tests` exits 0; the single
       scenario still exits 0 with `1 scenario (1 passed)`.
-- [x] COMMIT — `feat(apply-configuration-change): <release note>` with the
+- [x] COMMIT: `ec38b47` — `feat(apply-configuration-change): <release note>` with the
       scenario title in the body; record the revision.
       Revision: `ec38b47` — `feat(apply-configuration-change): enable secret
       scanning and push protection` (carries the setup task and this scenario).
@@ -115,7 +115,7 @@ Design constraints:
 - [x] REFACTOR — cleanup; re-run; paste zero.
       `cargo fmt`; `cargo check -p duty2cal --tests` exits 0; the single
       scenario still exits 0 with `1 scenario (1 passed)`.
-- [x] COMMIT — release note subject, scenario title body; record the revision.
+- [x] COMMIT: `abd3bc2` — release note subject, scenario title body; record the revision.
       Revision: `abd3bc2` — `feat(apply-configuration-change): enable secret
       scanning and push protection`.
       The failure path was corrected during this scenario: a refused PATCH
@@ -145,7 +145,7 @@ Design constraints:
 - [x] REFACTOR — cleanup; re-run; paste zero.
       `cargo fmt`; `cargo check -p duty2cal --tests` exits 0; the single
       scenario still exits 0 with `8 steps (8 passed)`.
-- [x] COMMIT — release note subject, scenario title body; record the revision.
+- [x] COMMIT: `e830590` — release note subject, scenario title body; record the revision.
       Revision: `e830590` — `feat(apply-configuration-change): enable secret
       scanning and push protection`.
 
@@ -177,7 +177,7 @@ Design constraints:
 - [x] REFACTOR — cleanup; re-run; paste zero.
       `cargo fmt`; `cargo check -p duty2cal --tests` exits 0; the single
       scenario still exits 0 with `9 steps (9 passed)`.
-- [x] COMMIT — release note subject, scenario title body; record the revision.
+- [x] COMMIT: `7287552` — release note subject, scenario title body; record the revision.
       Revision: `7287552` — `feat(apply-configuration-change): enable secret
       scanning and push protection`.
 
@@ -207,7 +207,7 @@ Design constraints:
 - [x] REFACTOR — cleanup; re-run; paste zero.
       `cargo fmt`; `cargo check -p duty2cal --tests` exits 0; the single
       scenario still exits 0 with `8 steps (8 passed)`.
-- [x] COMMIT — release note subject, scenario title body; record the revision.
+- [x] COMMIT: `e19691d` — release note subject, scenario title body; record the revision.
       Revision: `e19691d` — `feat(apply-configuration-change): enable secret
       scanning and push protection`.
 
@@ -237,7 +237,7 @@ Design constraints:
       `cargo fmt`; `cargo check -p duty2cal --tests` exits 0; the shared
       stale-preview assertion was factored into one helper; the single scenario
       still exits 0 with `8 steps (8 passed)`.
-- [x] COMMIT — release note subject, scenario title body; record the revision.
+- [x] COMMIT: `6a0f096` — release note subject, scenario title body; record the revision.
       Revision: `6a0f096` — `feat(apply-configuration-change): enable secret
       scanning and push protection`.
 
@@ -302,7 +302,7 @@ Design constraints:
 - [x] REFACTOR — cleanup; re-run; paste zero.
       `cargo fmt`; `cargo check -p duty2cal --tests` exits 0; the single
       scenario still exits 0 with `10 steps (10 passed)`.
-- [x] COMMIT — `test(e2e): <release note>` with the scenario title in the body;
+- [x] COMMIT: `52b8c26` — `test(e2e): <release note>` with the scenario title in the body;
       record the revision.
       Revision: `52b8c26` — `test(e2e): enable secret scanning and push
       protection`; transcript committed under
@@ -343,7 +343,7 @@ Design constraints:
       `cargo fmt`; the fixture path was factored into one helper; `cargo check
       -p duty2cal --tests` exits 0; the single scenario still exits 0 with
       `9 steps (9 passed)`.
-- [x] COMMIT — `test(e2e): <release note>` with the scenario title in the body;
+- [x] COMMIT: `a8fbd40` — `test(e2e): <release note>` with the scenario title in the body;
       record the revision.
       Revision: `a8fbd40` — `test(e2e): enable secret scanning and push
       protection`; transcript committed under

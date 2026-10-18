@@ -22,6 +22,18 @@ issued; every command below is a `GET`.
 | `repo-pages-automated-security-fixes.json` | `gh api repos/duty2cal/duty2cal.github.io/automated-security-fixes` | `{"enabled":false,"paused":false}` |
 | `classic-protection.json` | `gh api repos/duty2cal/duty2cal/branches/main/protection` | `404 Branch not protected` — the classic protection was removed by hand on 2026-10-18 |
 
+## Post-apply read — 2026-10-18
+
+One authenticated, read-only read of the same objects after the operator's
+targeted security apply. No write request was issued; every command below is a
+`GET`.
+
+| File | Command | Values used |
+|---|---|---|
+| `post-apply-security.json` | `gh api repos/duty2cal/duty2cal --jq .security_and_analysis` | secret scanning and push protection `enabled`; Dependabot security updates `enabled`; non-provider patterns and validity checks `disabled` |
+| `post-apply-repo-settings.json` | `gh api repos/duty2cal/duty2cal --jq '{description,has_projects,has_wiki,has_downloads,allow_merge_commit,allow_squash_merge,allow_rebase_merge,delete_branch_on_merge,topics}'` | the declared repository settings are unchanged: description, projects/wiki/downloads off, merge and squash off, rebase on, delete-branch-on-merge on, the same topics |
+| `post-apply-org-settings.json` | `gh api orgs/duty2cal --jq '{default_repository_permission,members_can_create_public_repositories,members_can_create_private_repositories}'` | default repository permission `read`; members may create public and private repositories |
+
 ## `security_and_analysis` (monorepo)
 
 ```json

@@ -1,0 +1,72 @@
+# Real operator apply — 2026-10-18 (scrubbed)
+
+The operator run against the real organization. Token, passphrase, billing
+email and temporary paths are replaced with placeholders; no live credential
+appears. Recorded from the run summarized in design.md "Live operator run".
+
+$ export TF_VAR_state_passphrase="<passphrase>"
+$ export TF_VAR_billing_email="<billing-email>"
+$ export GITHUB_TOKEN="<token>"
+
+# The second adoption batch is refused because its whole-state refresh sees the
+# pre-existing organization billing drift. Nothing is bound by the refusal.
+$ ./scripts/adopt-public-home.sh --declaration ./infra \
+    --batch ./infra/adoption-batch-security.txt \
+    --api-url https://api.github.com --token "$GITHUB_TOKEN"
+refused github_organization_settings.org: the live object changed after it was read
+
+# Recovery: import the two Dependabot resources directly by their
+# repository-name ids; adopt-before-create still holds.
+$ tofu import -input=false github_repository_vulnerability_alerts.mono 1416075332
+github_repository_vulnerability_alerts.mono: Importing from ID "1416075332"...
+github_repository_vulnerability_alerts.mono: Import prepared!
+  Prepared github_repository_vulnerability_alerts for import
+github_repository_vulnerability_alerts.mono: Refreshing state... [id=1416075332]
+Import successful!
+
+$ tofu import -input=false github_repository_dependabot_security_updates.mono duty2cal
+github_repository_dependabot_security_updates.mono: Importing from ID "duty2cal"...
+github_repository_dependabot_security_updates.mono: Import prepared!
+  Prepared github_repository_dependabot_security_updates for import
+github_repository_dependabot_security_updates.mono: Refreshing state... [id=duty2cal]
+Import successful!
+
+# Targeted security preview: only the monorepo's two scanning statuses change.
+$ tofu plan -input=false -no-color -target=github_repository.mono -out=plan.bin
+
+  # github_repository.mono will be updated in-place
+  ~ resource "github_repository" "mono" {
+        id = "duty2cal/duty2cal"
+        ...
+      ~ security_and_analysis {
+          ~ secret_scanning {
+              ~ status = "disabled" -> "enabled"
+            }
+          ~ secret_scanning_push_protection {
+              ~ status = "disabled" -> "enabled"
+            }
+        }
+    }
+
+Plan: 0 to add, 1 to change, 0 to destroy.
+
+# Apply the saved plan.
+$ tofu apply -input=false -no-color plan.bin
+github_repository.mono: Modifying... [id=duty2cal/duty2cal]
+github_repository.mono: Modifications complete after <elapsed> [id=duty2cal/duty2cal]
+
+Apply complete! Resources: 0 added, 1 changed, 0 destroyed.
+
+# Targeted follow-up preview is empty.
+$ tofu plan -input=false -no-color -target=github_repository.mono
+No changes. Your infrastructure matches the configuration.
+$ echo $?
+0
+
+# Post-apply authenticated read of the monorepo's security settings.
+$ gh api repos/duty2cal/duty2cal --jq .security_and_analysis
+{"dependabot_security_updates":{"status":"enabled"},"secret_scanning":{"status":"enabled"},"secret_scanning_non_provider_patterns":{"status":"disabled"},"secret_scanning_push_protection":{"status":"enabled"},"secret_scanning_validity_checks":{"status":"disabled"}}
+
+# The full configuration preview still names the pre-existing organization
+# billing drift (github_organization_settings.org). That is a separate issue
+# outside this change and was not applied by the targeted run.

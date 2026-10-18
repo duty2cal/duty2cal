@@ -652,7 +652,7 @@ rejected:
 
 | Use-case element | Technical decision | Evidence |
 |---|---|---|
-| Goal: the live configuration matches the applied revision | Declared scanning fields plus the two bound toggles; `tofu apply plan.bin` | `@e2e` "Organization owner applies the previewed revision and the security settings are enabled"; the post-apply empty plan |
+| Goal: the live configuration matches the applied revision | Declared scanning fields plus the two bound toggles; `tofu apply plan.bin` | `@e2e` "Organization owner applies the previewed revision and the security settings are enabled"; the post-apply empty targeted security plan |
 | Main flow 2: the preview names every difference by object and field | Plan against the adopted state and the encrypted state | `@e2e` "Organization owner previews the security settings and only the declared differences are named" |
 | Rule: an existing setting is adopted before it is updated | Second adoption batch binds both Dependabot settings; a preview that would still create a live, unbound setting is refused by the plan-JSON guard | The preview scenario's "no object to create or delete" assertion; "The preview refuses to add a Dependabot setting that already exists live and is unbound" |
 | Rule: a refused apply makes no live change | Authority gaps are refused by the provider before the write; the journal shows no applied write | "An unreadable repository setting refuses the preview and names the repository"; "An apply whose first change is refused changes nothing" |
@@ -902,22 +902,32 @@ therefore not done when the suite is GREEN. The maintainer:
 
 1. runs `scripts/adopt-public-home.sh --batch infra/adoption-batch-security.txt`
    once against the real organization, with the real token, passphrase and
-   billing email, and reads the two `adopted` lines;
+   billing email; on 2026-10-18 the command refused the batch because its
+   whole-state refresh saw the pre-existing organization billing drift, so the
+   two Dependabot resources are imported directly (`tofu import
+   github_repository_vulnerability_alerts.mono 1416075332` and `tofu import
+   github_repository_dependabot_security_updates.mono duty2cal`), which
+   satisfies adopt-before-create;
 2. confirms the read-only pre-flight: the live read still reports both fields
    and the admin permission, and GitHub's documentation still states the
    free public-repository secret-scanning availability and the administrator
    enablement of push protection; a refusal here stops the change;
-3. runs `tofu plan -input=false -no-color -out=plan.bin` and reads it: `0 to
-   add, 1 to change, 0 to destroy`, the two scanning statuses as the only
-   difference, and no `create` for either Dependabot setting (the preview
-   guard);
+3. runs the targeted security preview
+   (`tofu plan -input=false -no-color -target=github_repository.mono -out=plan.bin`)
+   and reads it: `0 to add, 1 to change, 0 to destroy`, the two scanning
+   statuses as the only difference, and no `create` for either Dependabot
+   setting (the preview guard);
 4. runs the read-only refresh-only preflight (`tofu plan -refresh-only
    -detailed-exitcode -json`), requires a completed report with no non-no-op
-   change, and only then runs `tofu apply -input=false plan.bin`; on success,
-   `tofu plan` again confirms no differences and `terraform.tfstate.stale` is
-   absent;
-5. records the scrubbed transcripts (preflight, plan, apply, follow-up plan)
-   and the two adopted lines under
+   change in the security scope, and only then applies the saved plan targeted
+   to that scope
+   (`tofu apply -input=false -target=github_repository.mono plan.bin`); on
+   success, a targeted `tofu plan -target=github_repository.mono` confirms no
+   differences and `terraform.tfstate.stale` is absent. The full preview still
+   names the pre-existing organization billing drift, a separate issue outside
+   this change; the full configuration is not clean;
+5. records the scrubbed transcripts (preflight, targeted plan, apply, targeted
+   follow-up plan), the adoption refusal and the two direct-import successes under
    `givn/changes/enable-repository-security/evidence/real-apply/transcript.txt`;
 6. commits the declaration, the second batch, the encrypted
    `infra/terraform.tfstate` and its backup in one revision scoped
@@ -978,3 +988,7 @@ sentence describes the operator-facing outcome; it is not a commit subject.
   unrelated adoption. The organization billing email drift is separate and
   pre-existing (the first apply recorded a value the provider cannot read
   back); the full preview still names it, and it is not applied here.
+- Design correction (2026-10-18): Post-GREEN steps 1, 4 and 5 and arc42
+  chapters 6 and 10 now record the targeted security scope. The targeted
+  security preview is empty; the full preview still names the pre-existing
+  organization billing drift, and the full configuration is not claimed clean.

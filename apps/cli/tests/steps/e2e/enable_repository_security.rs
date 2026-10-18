@@ -499,10 +499,8 @@ async fn the_applied_state_records_both_settings_enabled(w: &mut DutyWorld) {
     }
 }
 
-#[then(
-    regex = r#"^the journal's repository request changed only "([^"]+)" with both statuses enabled$"#
-)]
-async fn the_journal_repository_request_changed_only(w: &mut DutyWorld, member: String) {
+#[then("the live configuration changed only the security settings")]
+async fn the_live_configuration_changed_only_the_security_settings(w: &mut DutyWorld) {
     let journal = w.journal.clone().expect("the scenario kept no journal");
     assert_eq!(
         jq(
@@ -544,7 +542,7 @@ async fn the_journal_repository_request_changed_only(w: &mut DutyWorld, member: 
             true
         ),
         "true",
-        "the request carries the named member {member}"
+        "the request carries security_and_analysis"
     );
     let member_keys = jq(
         w,

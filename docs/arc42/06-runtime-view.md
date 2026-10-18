@@ -209,21 +209,23 @@ asks for a preview, then applies the previewed revision.
 ```mermaid
 flowchart TB
   owner["Organization owner"] --> adopt["adopt the two Dependabot settings (read-only)"]
-  adopt -->|refused| stopnone["refuse; name the setting; nothing bound, nothing live changed"]
+  adopt -->|"a batch object is unreadable, already bound, or not live"| stopnone["refuse; name the setting; nothing bound, nothing live changed"]
+  adopt -->|"whole-state refresh sees unrelated drift"| direct["import the two settings directly by repository-name ids"]
   adopt --> plan["tofu plan -out=plan.bin"]
+  direct --> plan
   plan -->|"cannot read a setting, wrong passphrase, no authority"| stopnone2["refuse; name the object; nothing written"]
   plan --> guard["preview guard: no create for a setting already live and unbound"]
   guard -->|"an unadopted live setting would be created"| stopguard["refuse; name the setting; adopt it first; nothing written"]
   guard --> read["the plan names the two scanning statuses and no other difference"]
   read --> preflight["read-only refresh-only preflight on the applied state"]
   preflight -->|"a manual edit changed a live object"| stophange["refuse; name the object; the saved plan is not applied"]
-  preflight --> apply["tofu apply plan.bin"]
+  preflight --> apply["tofu apply -target=github_repository.mono plan.bin"]
   apply -->|"an earlier setting applied and a later one failed"| partial["exit non-zero; name the applied settings and the failed address; write terraform.tfstate.stale; do not commit the partial state"]
   apply --> patch["one PATCH: secret scanning and push protection enabled"]
   patch --> back["the provider reads the repository back"]
   back -->|"the read fails"| err["the apply reports the repository and the reason; live is changed, the state is not reported as applied"]
   back --> recorded["the encrypted state records both statuses enabled"]
-  recorded --> again["tofu plan: no differences"]
+  recorded --> again["targeted tofu plan: no differences"]
   again --> commit["commit the declaration and the state in one revision"]
 ```
 
@@ -233,24 +235,31 @@ flowchart TB
    it exists the preview and the apply refuse and name the stale state. The two
    Dependabot settings are then adopted with the second batch: the existing
    adoption command binds them read-only, so they are not reported as
-   creations. A refusal binds nothing.
-2. The preview reads the encrypted state, the declaration and the live
-   configuration. On this declaration it names the two scanning statuses as the
-   only live difference and proposes nothing to create or delete. A `create`
+   creations. A refusal binds nothing. If that command refuses because its
+   whole-state refresh sees a pre-existing drift elsewhere, the two settings
+   are imported directly by their repository-name ids, which still satisfies
+   adopt-before-create.
+2. The targeted security preview reads the encrypted state, the declaration
+   and the live configuration. On this declaration it names the two scanning
+   statuses as the only live difference and proposes nothing to create or
+   delete. A `create`
    for a setting that already exists live and is unbound is refused by address
    before any write. It writes nothing.
 3. The previewed revision is saved to `plan.bin` (encrypted, git-ignored). A
    read-only `tofu plan -refresh-only -detailed-exitcode -json` immediately
    before the apply names a live edit made since the preview and refuses; its
-   JSON report is authoritative, not its exit status. With no change,
-   `tofu apply plan.bin` applies exactly the previewed plan.
+   JSON report is authoritative, not its exit status. With no change in the
+   security scope, `tofu apply -target=github_repository.mono plan.bin`
+   applies exactly the previewed plan.
 4. The provider charges the declared change to GitHub with one repository
    `PATCH`, reading the repository back afterwards. Success enables both
    settings; the failed read is reported as a failure of the repository and the
    state does not claim the statuses.
-5. The encrypted state records the enabled statuses; a second plan reports no
-   differences, the plan file and the stale marker are removed, and the
-   declaration and state are committed together.
+5. The encrypted state records the enabled statuses; a second plan targeted to
+   the security scope reports no differences, the plan file and the stale
+   marker are removed, and the declaration and state are committed together.
+   The full preview still names the pre-existing organization billing drift, a
+   separate issue outside this change; the full configuration is not clean.
 
 **Notes:** The suite drives steps 2–4 against the fake with a write sandbox and
 asserts the journal's single applied write and its body keys; the live API's
