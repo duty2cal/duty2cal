@@ -939,8 +939,9 @@ therefore not done when the suite is GREEN. The maintainer:
    and `terraform.tfstate.stale` is absent. The full preview still
    names the pre-existing organization billing drift, a separate issue outside
    this change; the full configuration is not clean;
-5. records the scrubbed transcripts (targeted plan, apply, targeted follow-up
-   plan), the adoption refusal and the two direct-import successes under
+5. records the scrubbed transcripts (guard plan or its omission, targeted plan,
+   apply, targeted follow-up plan), the adoption refusal and the two
+   direct-import successes under
    `givn/changes/enable-repository-security/evidence/real-apply/transcript.txt`;
    the 2026-10-18 live run omitted the preflight, and the transcript records the
    omission; the suite proves the preflight rule;

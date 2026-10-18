@@ -74,3 +74,11 @@ $ gh api repos/duty2cal/duty2cal --jq .security_and_analysis
 # The full configuration preview still names the pre-existing organization
 # billing drift (github_organization_settings.org). That is a separate issue
 # outside this change and was not applied by the targeted run.
+
+## The unadopted-setting guard plan (omitted in the live run)
+
+The design's routine runs a full-declaration `tofu plan -input=false -no-color
+-out=guard.bin` before the targeted saved plan, so the guard sees a create for
+an unbound Dependabot setting that the targeted plan omits. The 2026-10-18 live
+run omitted this guard plan; the suite's unadopted-setting scenario proves the
+guard over the full-declaration plan (9/9).
