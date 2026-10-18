@@ -1108,18 +1108,184 @@ async fn the_applied_state_is_marked_stale(w: &mut DutyWorld) {
     );
 }
 
-#[then("a new preview refuses and names the stale applied state")]
-async fn a_new_preview_refuses_and_names_the_stale_state(w: &mut DutyWorld) {
+/// A preview made against a stale applied state refuses before `tofu` runs.
+fn assert_preview_refuses_stale(w: &mut DutyWorld) {
     preview(w);
     assert_ne!(
         w.exit_status,
         Some(0),
-        "the new preview is refused; output was:\n{}",
+        "the preview is refused; output was:\n{}",
         w.preview_transcript
     );
     assert!(
         w.preview_transcript.contains("applied state is stale"),
-        "the new preview names the stale applied state; output was:\n{}",
+        "the preview names the stale applied state; output was:\n{}",
         w.preview_transcript
+    );
+}
+
+#[then("a new preview refuses and names the stale applied state")]
+async fn a_new_preview_refuses_and_names_the_stale_state(w: &mut DutyWorld) {
+    assert_preview_refuses_stale(w);
+}
+
+#[then("a preview made after the failure refuses and names the stale applied state")]
+async fn a_preview_made_after_the_failure_refuses_and_names_the_stale_state(w: &mut DutyWorld) {
+    assert_preview_refuses_stale(w);
+}
+
+/// The off-routine apply of design.md "The apply procedure": produce the plan
+/// without the routine's guard, apply it, and write the failure-path sidecar.
+/// The scenario is the labelled off-routine skip probe, not the routine.
+fn apply_outside_routine(w: &mut DutyWorld) {
+    let declaration = declaration_dir(w);
+    let mut transcript = String::from(
+        "$ apply outside the routine (tofu init; tofu plan -out; tofu apply plan.bin)\n",
+    );
+    w.apply_transcript.clear();
+
+    for (label, args) in [
+        ("tofu init -input=false", vec!["init", "-input=false"]),
+        (
+            "tofu plan -input=false -no-color -out=plan.bin",
+            vec!["plan", "-input=false", "-no-color", "-out=plan.bin"],
+        ),
+    ] {
+        let output = tofu(w, &args);
+        transcript.push_str(&format!("$ {label}\n{}\n", combined(&output)));
+        if !output.status.success() {
+            w.stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+            w.stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+            w.exit_status = output.status.code();
+            w.apply_transcript = transcript.clone();
+            w.scenario_transcript.push_str(&transcript);
+            return;
+        }
+    }
+
+    let apply = tofu(
+        w,
+        &[
+            "apply",
+            "-input=false",
+            "-no-color",
+            "-parallelism=1",
+            "plan.bin",
+        ],
+    );
+    transcript.push_str(&format!(
+        "$ tofu apply -input=false -no-color -parallelism=1 plan.bin\n{}",
+        combined(&apply)
+    ));
+    w.stdout = String::from_utf8_lossy(&apply.stdout).into_owned();
+    w.stderr = String::from_utf8_lossy(&apply.stderr).into_owned();
+    w.exit_status = apply.status.code();
+    if apply.status.success() {
+        let _ = fs::remove_file(declaration.join("plan.bin"));
+        let _ = fs::remove_file(stale_path(w));
+    } else {
+        // A partial apply records the applied resources and not the failed
+        // one; the state is not committed and carries the stale sidecar.
+        let stamp = Command::new("date")
+            .args(["-u", "+%FT%TZ"])
+            .output()
+            .expect("read the current UTC time");
+        let stamp = String::from_utf8_lossy(&stamp.stdout).trim().to_string();
+        fs::write(stale_path(w), format!("{stamp}\n")).expect("write the stale marker");
+        transcript.push_str(&format!(
+            "stale applied state marked at {}\n",
+            stale_path(w).display()
+        ));
+    }
+    w.apply_transcript = transcript.clone();
+    w.scenario_transcript.push_str(&transcript);
+}
+
+#[given(
+    "the second adoption batch was skipped, so the applied state does not bind the \
+     Dependabot settings"
+)]
+async fn the_second_adoption_batch_was_skipped(w: &mut DutyWorld) {
+    ensure_base_adoption(w);
+    assert_dependabot_unbound(w);
+    w.applied_state_snapshot = Some(state_values(w));
+}
+
+#[given("the owner's authority cannot change the Dependabot security updates")]
+async fn the_owners_authority_cannot_change_the_dependabot_security_updates(w: &mut DutyWorld) {
+    assert!(
+        w.declaration.is_some(),
+        "the scenario primed no applied state"
+    );
+    let fixtures = fixtures_dir(w);
+    fs::write(
+        fixtures.join("faults.json"),
+        "[{\"path_regex\": \"^/repos/duty2cal/duty2cal/automated-security-fixes$\", \
+         \"method\": \"PUT\", \"status\": 403, \
+         \"body\": {\"message\": \"Resource not accessible by integration\"}}]\n",
+    )
+    .expect("write the refused Dependabot security-updates fault");
+    restart_fake_with(w, true);
+}
+
+#[when("the organization owner applies the previewed revision outside the routine")]
+async fn the_organization_owner_applies_the_previewed_revision_outside_the_routine(
+    w: &mut DutyWorld,
+) {
+    apply_outside_routine(w);
+}
+
+#[then("the apply reports secret scanning and push protection enabled")]
+async fn the_apply_reports_scanning_enabled(w: &mut DutyWorld) {
+    assert!(
+        w.apply_transcript.contains("github_repository.mono"),
+        "the apply reports the monorepo as applied; output was:\n{}",
+        w.apply_transcript
+    );
+    assert_scanning_status(w, "enabled");
+}
+
+#[then("the apply names the Dependabot security updates as failed")]
+async fn the_apply_names_the_dependabot_security_updates_as_failed(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the apply fails; output was:\n{}",
+        w.apply_transcript
+    );
+    assert!(
+        w.apply_transcript
+            .contains("github_repository_dependabot_security_updates.mono"),
+        "the apply names the failed setting; output was:\n{}",
+        w.apply_transcript
+    );
+    assert!(
+        w.apply_transcript
+            .contains("Resource not accessible by integration"),
+        "the apply names the reason; output was:\n{}",
+        w.apply_transcript
+    );
+}
+
+#[then(
+    "the applied state records the monorepo and the vulnerability alerts but not the \
+     security updates"
+)]
+async fn the_applied_state_records_the_applied_objects(w: &mut DutyWorld) {
+    let addresses = state_addresses(w);
+    for applied in [
+        "github_repository.mono",
+        "github_repository_vulnerability_alerts.mono",
+    ] {
+        assert!(
+            addresses.iter().any(|recorded| recorded == applied),
+            "the applied state records {applied}; it was: {addresses:?}"
+        );
+    }
+    assert!(
+        !addresses
+            .iter()
+            .any(|recorded| recorded == "github_repository_dependabot_security_updates.mono"),
+        "the applied state records no failed setting; it was: {addresses:?}"
     );
 }

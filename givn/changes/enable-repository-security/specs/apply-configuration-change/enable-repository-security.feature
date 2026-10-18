@@ -81,7 +81,7 @@ Feature: Enable repository security
     And the applied state is marked stale
     And a new preview refuses and names the stale applied state
 
-  @givn.added @wip
+  @givn.added
   Scenario: A partial failure reports the applied settings and names the failed one
     Given the second adoption batch was skipped, so the applied state does not bind the Dependabot settings
     And the owner's authority cannot change the Dependabot security updates
