@@ -129,8 +129,8 @@ biographies are not Gherkin actors.
       existing implemented scenarios; the six new scenarios are still
       `@wip`. Paste the summary.
 
-      At setup time only the existing scenarios ran; after scenarios 1-4 the
-      same command is the final non-e2e verification:
+      The same command is the final non-e2e verification after scenarios 1-4;
+      the two `@e2e` scenarios remain `@wip` and are excluded:
 
       ```text
       $ ./run-tests.sh --tags 'not @wip'
@@ -140,8 +140,6 @@ biographies are not Gherkin actors.
       631 steps (631 passed)
       EXIT:0
       ```
-
-      The two `@e2e` scenarios remain tagged `@wip` and are excluded.
 - [x] Confirm `verify.command` and `verify.e2e_command` are unchanged and the
       e2e command is a strict subset; paste both commands from
       `givn/commands.yaml`.
