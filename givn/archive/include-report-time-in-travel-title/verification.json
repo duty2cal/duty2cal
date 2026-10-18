@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "include-report-time-in-travel-title",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "ddece9d34921833e74ebea28e30b91f1fd21ba40",
+  "tested_revision": "ddece9d34921833e74ebea28e30b91f1fd21ba40",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 6,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 215.009497637
+    },
+    "regular": {
+      "status": "passed",
+      "total": 144,
+      "passed": 144,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 782.462807172
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 876,
+    "line_valid": 890,
+    "line_percent": 98
+  },
   "started_at_unix": 1792346744,
-  "finished_at_unix": null
+  "finished_at_unix": 1792348613
 }
