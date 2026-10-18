@@ -219,7 +219,7 @@ flowchart TB
   guard --> read["the plan names the two scanning statuses and no other difference"]
   read --> preflight["read-only refresh-only preflight on the applied state"]
   preflight -->|"a manual edit changed a live object"| stophange["refuse; name the object; the saved plan is not applied"]
-  preflight --> apply["tofu apply -target=github_repository.mono plan.bin"]
+  preflight --> apply["tofu apply plan.bin"]
   apply -->|"an earlier setting applied and a later one failed"| partial["exit non-zero; name the applied settings and the failed address; write terraform.tfstate.stale; do not commit the partial state"]
   apply --> patch["one PATCH: secret scanning and push protection enabled"]
   patch --> back["the provider reads the repository back"]
@@ -246,10 +246,13 @@ flowchart TB
    for a setting that already exists live and is unbound is refused by address
    before any write. It writes nothing.
 3. The previewed revision is saved to `plan.bin` (encrypted, git-ignored). A
-   read-only `tofu plan -refresh-only -detailed-exitcode -json` immediately
-   before the apply names a live edit made since the preview and refuses; its
-   JSON report is authoritative, not its exit status. With no change in the
-   security scope, `tofu apply -target=github_repository.mono plan.bin`
+   read-only `tofu plan -refresh-only -detailed-exitcode -json
+   -target=github_repository.mono` immediately before the apply names a live
+   edit made since the preview and refuses; its JSON report is authoritative,
+   not its exit status. The scope is the previewed object, so the pre-existing
+   organization billing drift outside it neither refuses the apply nor marks
+   the state stale. With no change in the
+   security scope, `tofu apply plan.bin`
    applies exactly the previewed plan.
 4. The provider charges the declared change to GitHub with one repository
    `PATCH`, reading the repository back afterwards. Success enables both

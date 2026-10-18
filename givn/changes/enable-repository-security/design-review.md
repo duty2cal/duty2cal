@@ -359,3 +359,15 @@ corrections. Re-review verdict: `DESIGN-REVIEW: PASS`.
   `evidence/visual/`.
 
 DESIGN-REVIEW: PASS
+
+
+## Final design review — 2026-10-18
+
+The changed design (targeted preview/preflight/failure report, direct-import
+recovery, preflight omission recorded, scoped use-case rule, targeted feature
+Then) was re-reviewed. The executable seam now uses
+`-target=github_repository.mono` for the preview, the preflight and the
+post-failure report, and the base state introduces an out-of-scope organization
+drift to prove the scoping; the preview, apply and refusal scenarios pass.
+
+DESIGN-REVIEW: PASS

@@ -28,7 +28,7 @@ declared configuration.
 
 1. Actor records the intended values as a revision of the declared configuration; System keeps that revision as the candidate for preview and apply.
 2. Actor asks for a preview; System reads the applied state, the live configuration and the revision, and names every difference by object and field; an object the declaration names that cannot be read, or a revision that would add an object which already exists live and is unbound, is refused and named.
-3. Actor asks to apply; System checks that the saved plan is the previewed revision and that the live configuration still matches what the preview saw (a read-only refresh-only plan reports no change), then applies the saved plan - the applied revision - object by object.
+3. Actor asks to apply; System checks that the saved plan is the previewed revision and that the previewed objects still match what the preview saw (a read-only refresh-only plan for those objects reports no change), then applies the saved plan - the applied revision - object by object.
 4. Actor wants the outcome; System reports every object it changed and records the applied revision in the applied state.
 5. Actor can stop; the live configuration matches the revision.
 
@@ -37,7 +37,7 @@ declared configuration.
 - 2: the live configuration cannot be read → refuse the preview and name the object; protects the success guarantee.
 - 2: the preview would add an object that already exists live and is not bound → refuse the preview and name the object; the owner adopts it first; protects the minimal guarantee (P1).
 - 2: the applied state is marked stale → refuse the preview and name the stale state until a green apply removes the marker; protects the minimal guarantee.
-- 3: the live configuration changed since the preview (a manual edit) → the read-only refresh-only preflight names the changed object and refuses the apply; the saved plan is not applied; protects the success guarantee and the no-silent-overwrite rule.
+- 3: the live configuration changed since the preview (a manual edit) → the read-only refresh-only preflight for the previewed objects names the changed object and refuses the apply; the saved plan is not applied; protects the success guarantee and the no-silent-overwrite rule.
 - 3: the owner's authority does not cover the first object → refuse before any write and name the object; nothing changes; protects the minimal guarantee.
 - 3: the live write succeeds and a later read-back fails → report the repository and the reason; mark the applied state stale; a new preview refuses and names the stale applied state; protects the truthful-reporting rule (P6).
 - 3: the first live change succeeds and a later object fails → report the applied objects, the failed object and the reason; write the stale marker beside the applied state and do not record the failed object; protects the minimal guarantee and the truthful-reporting rule (P6).
@@ -47,7 +47,7 @@ declared configuration.
 - **The applied revision is the previewed revision**: the saved plan is the applied revision.
 - **Readability**: an object the declaration names must be readable, or the preview refuses it and names the object.
 - **Adoption before update**: an object or setting that already exists live must be adopted before it is updated; a preview that would add it instead is refused and names it.
-- **Preflight**: immediately before applying the saved plan, the System compares the applied state with the live configuration in a read-only refresh-only plan; a non-no-op change is refused and names the object and field that changed.
+- **Preflight**: immediately before applying the saved plan, the System compares the applied state with the live configuration in a read-only refresh-only plan for the previewed objects; a non-no-op change is refused and names the address that changed.
 - **Refusal and partial outcomes**: a refused apply makes no live change; a failure after the first write is reported as partial, names the object and the reason, and its applied state carries a stale marker beside it (P4, P6).
 - **Recorded revision and stale state**: the applied revision is recorded only when every object succeeded; after a partial failure the applied state is marked stale, and while the marker exists the preview refuses and names the stale state.
 - **Unreadable authority**: settings the owner's authority cannot read are not declared silently; the preview names the object.
@@ -100,10 +100,10 @@ This is a changing use case: it changes the live organization and repositories.
 
 ## Out of scope
 
-- A declaration edited after the saved preview: the saved plan is the applied revision, so the edit is not applied; the edit takes effect only after a new preview, and no scenario in this delta asserts that behaviour.
-- An invalid declared revision: the preview refusing it and naming the problem is an internal safety branch, not a use-case promise in this delta.
-- An incomplete preflight report: the apply refusing it and not treating it as a no-op is an internal safety branch, not a use-case promise in this delta.
-- An applied state that cannot be read: the preview refusing it and naming it is not asserted in this delta.
+- A declaration edited after the saved preview: the saved plan is the applied revision, so the edit is not applied; the edit takes effect only after a new preview, and no scenario in this use case asserts that behaviour.
+- An invalid declared revision: the preview refusing it and naming the problem is an internal safety branch, not a use-case promise in this use case.
+- An incomplete preflight report: the apply refusing it and not treating it as a no-op is an internal safety branch, not a use-case promise in this use case.
+- An applied state that cannot be read: the preview refusing it and naming it is not asserted in this use case.
 - Review gating (open: Q10): this capability previews and applies a revision and reports the outcome; no approval gate is asserted.
 - Removing a declared object (open: Q11): this capability removes no object and disables no setting.
 - Adopting an already-existing object: the objects this revision retains are adopted first, by `adopt-existing-configuration`; the preview refuses to add one that is live and unbound, and names it.

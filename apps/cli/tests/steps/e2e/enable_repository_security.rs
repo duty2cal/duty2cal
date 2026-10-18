@@ -611,7 +611,7 @@ async fn no_other_declared_field_changed(w: &mut DutyWorld) {
     );
 }
 
-#[then("a later preview reports no differences")]
+#[then("a later targeted preview of the security settings reports no differences")]
 async fn a_later_preview_reports_no_differences(w: &mut DutyWorld) {
     preview(w);
     assert_eq!(

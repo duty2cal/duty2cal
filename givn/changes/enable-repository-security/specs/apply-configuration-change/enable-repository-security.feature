@@ -25,7 +25,7 @@ Feature: Enable repository security
     And the applied state records both settings as enabled
     And the live configuration changed only the security settings
     And no other declared field of the monorepo changed
-    And a later preview reports no differences
+    And a later targeted preview of the security settings reports no differences
 
   @givn.added
   Scenario: An unreadable repository setting refuses the preview and names the repository

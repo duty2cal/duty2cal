@@ -447,6 +447,21 @@ pub(crate) fn ensure_base_state(w: &mut DutyWorld) {
     w.applied_state_snapshot = Some(state_values(w));
 
     restart_fake_with(w, true);
+
+    // The live organization drifts after the base apply: a billing address
+    // outside the security preview. The scoped preflight must ignore it, and a
+    // refused security apply must not mark the state stale because of it.
+    let org = fixtures_dir(w).join("orgs/duty2cal.json");
+    let org_text = fs::read_to_string(&org).expect("read the organization fixture");
+    fs::write(
+        &org,
+        org_text.replace(
+            "\"billing_email\": \"billing@example.test\"",
+            "\"billing_email\": \"live-drift@example.test\"",
+        ),
+    )
+    .expect("introduce the out-of-scope organization drift");
+
     w.exit_status = None;
     w.stdout.clear();
     w.stderr.clear();
@@ -486,8 +501,19 @@ pub(crate) fn preview(w: &mut DutyWorld) {
         return;
     }
 
-    let plan = tofu(w, &["plan", "-input=false", "-no-color", "-out=plan.bin"]);
-    transcript.push_str("$ tofu plan -input=false -no-color -out=plan.bin\n");
+    let plan = tofu(
+        w,
+        &[
+            "plan",
+            "-input=false",
+            "-no-color",
+            "-target=github_repository.mono",
+            "-out=plan.bin",
+        ],
+    );
+    transcript.push_str(
+        "$ tofu plan -input=false -no-color -target=github_repository.mono -out=plan.bin\n",
+    );
     transcript.push_str(&combined(&plan));
     if !plan.status.success() {
         w.exit_status = plan.status.code();
@@ -567,10 +593,13 @@ pub(crate) fn apply_previewed(w: &mut DutyWorld) {
             "-detailed-exitcode",
             "-json",
             "-input=false",
+            "-target=github_repository.mono",
         ],
     );
     fs::write(&report, &preflight.stdout).expect("write the preflight's JSON report");
-    transcript.push_str("$ tofu plan -refresh-only -detailed-exitcode -json -input=false\n");
+    transcript.push_str(
+        "$ tofu plan -refresh-only -detailed-exitcode -json -input=false -target=github_repository.mono\n",
+    );
     if !preflight.stderr.is_empty() {
         transcript.push_str(&String::from_utf8_lossy(&preflight.stderr));
     }
@@ -617,6 +646,7 @@ pub(crate) fn apply_previewed(w: &mut DutyWorld) {
                 "-detailed-exitcode",
                 "-json",
                 "-input=false",
+                "-target=github_repository.mono",
             ],
         );
         fs::write(&failure_report, &drift.stdout).expect("write the post-failure report");
