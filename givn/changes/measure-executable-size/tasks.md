@@ -173,7 +173,7 @@ preflights the target/toolchain.
 - [x] REFACTOR: re-run; paste zero output.
   - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `5 steps (5 passed)`;
     scenario 1 re-ran green after the shared change.
-- [ ] COMMIT: `givn commit -m "fix(measure-distributed-executable-size): A build that fails produces no attribution"`; record the hash.
+- [x] COMMIT: revision `441c0a6` (`fix(measure-distributed-executable-size): A build that fails produces no attribution`; the scenario title is in the body).
 
 ## Scenario 3 — A build that keeps no names produces no attribution
 
@@ -186,12 +186,21 @@ needs: <tool message>`, `attribution: null`, exit non-zero. A missing
 generator is a separate reason (`the generator is not available: <message>`)
 and must not satisfy this scenario. The step preflights `cargo-bloat`.
 
-- [ ] RED: remove `@wip`; run
+- [x] RED: remove `@wip`; run
   `./run-tests.sh --name "A build that keeps no names produces no attribution"`;
   paste non-zero output.
-- [ ] GREEN: implement the generator classification and reason; implement the
+  - Evidence: `red-exit=101`; `1 scenario (1 failed)`, `3 steps (2 passed, 1
+    failed)` (the production command was absent).
+- [x] GREEN: implement the generator classification and reason; implement the
   fixture variant and step; run; paste zero output; list files.
-- [ ] REFACTOR: re-run; paste zero output.
+  - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `4 steps (4 passed)`.
+  - Files: `scripts/measure_executable_size.py` (a missing generator is
+    classified early as `the generator is not available`, never as the
+    missing-names reason); `apps/cli/tests/fixtures/size-attribution/**` and
+    the step file were already present.
+- [x] REFACTOR: re-run; paste zero output.
+  - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `4 steps (4 passed)`;
+    scenarios 1 and 2 re-ran green.
 - [ ] COMMIT: `givn commit -m "fix(measure-distributed-executable-size): A build that keeps no names produces no attribution"`; record the hash.
 
 ## Scenario 4 — An artifact that is not the supported platform's executable is refused as evidence

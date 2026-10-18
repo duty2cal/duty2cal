@@ -440,6 +440,22 @@ def measure(args: argparse.Namespace) -> int:
         toolchain_result = run(["rustc", "--version"], cwd=worktree, env=dict(os.environ))
         toolchain = first_line(toolchain_result.stdout) or "unavailable"
         version = generator_version(dict(os.environ), worktree)
+        if version is None:
+            report = {
+                "kind": "size-attribution",
+                "status": "unreadable",
+                "requested": args.revision,
+                "revision": revision,
+                "platform": PLATFORM,
+                "toolchain": toolchain,
+                "generator": {"name": GENERATOR, "version": "unavailable"},
+                "build_configuration": build_configuration,
+                "executable": None,
+                "attribution": None,
+                "reason": "the generator is not available: cargo bloat --version failed",
+            }
+            write_report(out, report)
+            return 1
         report: dict[str, object] = {
             "kind": "size-attribution",
             "status": "unreadable",

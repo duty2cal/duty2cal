@@ -33,7 +33,7 @@ Feature: Measure the distributed executable's size
     And the report's reason names the build's "fixture_compile_error" failure
     And the report states no attribution
 
-  @givn.added @wip
+  @givn.added
   Scenario: A build that keeps no names produces no attribution
     Given a revision whose build keeps no symbol names
     When the maintainer requests the size attribution for that revision
