@@ -52,7 +52,7 @@ Feature: Measure the distributed executable's size
       | an executable built for the host machine |
       | a release archive presented as the executable |
 
-  @givn.added @wip
+  @givn.added
   Scenario: An executable whose file size cannot be read leaves the attribution incomplete
     Given the supported platform's executable at the named path cannot be read
     When the maintainer requests the size attribution for the revision, describing that executable

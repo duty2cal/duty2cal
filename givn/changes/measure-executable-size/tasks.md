@@ -228,7 +228,7 @@ report exists.
 - [x] REFACTOR: re-run; paste zero output.
   - Evidence: `green-exit=0`; `2 scenarios (2 passed)`, `8 steps (8 passed)`;
     scenario 1 re-ran green.
-- [ ] COMMIT: `givn commit -m "fix(measure-distributed-executable-size): An artifact that is not the supported platform's executable is refused as evidence"`; record the hash.
+- [x] COMMIT: revision `0dbb11a` (`fix(measure-distributed-executable-size): An artifact that is not the supported platform's executable is refused as evidence`; the scenario title is in the body).
 
 ## Scenario 5 — An executable whose file size cannot be read leaves the attribution incomplete
 
@@ -241,12 +241,19 @@ name-retaining build, writes an `incomplete` report (`executable: null`,
 and exits 0. It never prints the split's total as the file size. The step
 does not rely on `chmod`.
 
-- [ ] RED: remove `@wip`; run
+- [x] RED: remove `@wip`; run
   `./run-tests.sh --name "An executable whose file size cannot be read leaves the attribution incomplete"`;
   paste non-zero output.
-- [ ] GREEN: implement the incomplete path and step; run; paste zero output;
+  - Evidence: `red-exit=101`; `1 scenario (1 failed)`, `3 steps (2 passed, 1
+    failed)` (the production command was absent).
+- [x] GREEN: implement the incomplete path and step; run; paste zero output;
   list files.
-- [ ] REFACTOR: re-run; paste zero output.
+  - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `4 steps (4 passed)`.
+  - Files: `scripts/measure_executable_size.py` (the incomplete reason replaces
+    the supplied path with `<executable>`, so a published report carries no
+    host path).
+- [x] REFACTOR: re-run; paste zero output.
+  - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `4 steps (4 passed)`.
 - [ ] COMMIT: `givn commit -m "fix(measure-distributed-executable-size): An executable whose file size cannot be read leaves the attribution incomplete"`; record the hash.
 
 ## Scenario 6 — A revision name that resolves to nothing is refused by name

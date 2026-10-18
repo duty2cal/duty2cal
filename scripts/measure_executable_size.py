@@ -491,7 +491,10 @@ def measure(args: argparse.Namespace) -> int:
             try:
                 data = supplied.read_bytes()
             except OSError as error:
-                incomplete_reason = f"the executable's file size is unavailable: {error}"
+                incomplete_reason = (
+                    "the executable's file size is unavailable: "
+                    + str(error).replace(str(supplied), "<executable>")
+                )
             else:
                 if not is_supported_executable(supplied):
                     report["reason"] = (
