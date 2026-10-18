@@ -21,8 +21,8 @@ resource "github_repository" "mono" {
   allow_auto_merge       = false
   allow_forking          = true
   allow_merge_commit     = false
-  allow_rebase_merge     = false
-  allow_squash_merge     = true
+  allow_rebase_merge     = true
+  allow_squash_merge     = false
   delete_branch_on_merge = true
 
   lifecycle {

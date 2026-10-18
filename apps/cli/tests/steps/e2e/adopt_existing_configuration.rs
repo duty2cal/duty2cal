@@ -217,7 +217,8 @@ async fn the_applied_state_records_the_live_values(w: &mut DutyWorld) {
     for expected in [
         "has_projects=false",
         "allow_merge_commit=false",
-        "allow_rebase_merge=false",
+        "allow_rebase_merge=true",
+        "allow_squash_merge=false",
         "delete_branch_on_merge=true",
         "has_issues=false",
         "has_wiki=false",
@@ -233,6 +234,7 @@ async fn the_applied_state_records_the_live_values(w: &mut DutyWorld) {
         "has_projects=true",
         "allow_merge_commit=true",
         "allow_rebase_merge=true",
+        "allow_squash_merge=true",
         "delete_branch_on_merge=false",
     ] {
         assert!(

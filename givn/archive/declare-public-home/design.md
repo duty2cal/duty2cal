@@ -109,7 +109,7 @@ New or changed files:
 | Resource address | Live counterpart | Declared values |
 |---|---|---|
 | `github_organization_settings.org` | organization `duty2cal` | Name `duty2cal`; profile fields and member defaults at today's values (profile fields empty, default repository permission `read`, members may create public and private repositories); `billing_email = var.billing_email` (`sensitive`, no default). |
-| `github_repository.mono` | `duty2cal/duty2cal` | `description = "Convert a duty plan to a calendar"`; today's topics verbatim; `has_issues = true` (today's live value, kept), `has_projects = false`, `has_wiki = false`, `has_discussions = false`, `allow_auto_merge = false`, `allow_forking = true`, `allow_merge_commit = false`, `allow_rebase_merge = false`, `allow_squash_merge = true`, `delete_branch_on_merge = true`; no `license_template`; `lifecycle { ignore_changes = [pages] }`. |
+| `github_repository.mono` | `duty2cal/duty2cal` | `description = "Convert a duty plan to a calendar"`; today's topics verbatim; `has_issues = true` (today's live value, kept), `has_projects = false`, `has_wiki = false`, `has_discussions = false`, `allow_auto_merge = false`, `allow_forking = true`, `allow_merge_commit = false`, `allow_rebase_merge = true`, `allow_squash_merge = false`, `delete_branch_on_merge = true`; no `license_template`; `lifecycle { ignore_changes = [pages] }`. |
 | `github_repository.pages` | `duty2cal/duty2cal.github.io` | Public; `has_issues = false`, `has_wiki = false` (the draft's values), `has_projects = true` (today's live value; the draft does not specify it); description at today's live value; `lifecycle { ignore_changes = [pages] }`. |
 | `github_repository_ruleset.main` | rule set `main protection` | `name = "main protection"` (the live name, so the binding is the same object); target branch, `enforcement = "active"`; deletion, non-fast-forward and `required_linear_history`; no bypass actors; condition `~DEFAULT_BRANCH`. |
 | `github_repository_pages.pages` | Pages on the pages repository | `build_type = "legacy"`; `source { branch = "main", path = "/" }` — the existing form, imported rather than enabled anew. |
@@ -139,7 +139,7 @@ names every such difference for a later decision. `license_template` is omitted
 because it only acts at creation.
 
 The first configuration change therefore changes the monorepo's `has_projects`,
-`allow_merge_commit`, `allow_rebase_merge` and `delete_branch_on_merge`, and
+`allow_merge_commit`, `allow_squash_merge` and `delete_branch_on_merge`, and
 the pages repository's `has_issues` and `has_wiki`; every other declared value
 matches live.
 
@@ -422,7 +422,7 @@ IDs so the link is readable here and in the proposal.
 - **Decides D2 (seed Q5):** the monorepo carries the decided values
   (`has_issues = true` kept; `has_projects = false`, `has_wiki = false`,
   `has_discussions = false` stated explicitly because the provider sends
-  `false` for an omitted Optional-only boolean; squash merges only;
+  `false` for an omitted Optional-only boolean; rebase merges only, no squash or merge commits;
   delete-branch-on-merge on; the current description and topics; auto-merge
   off; forking allowed; no licence template). The pages repository states
   `has_issues = false`, `has_wiki = false` (the draft's values) and
@@ -730,3 +730,17 @@ test-only `ADOPT_TEST_TRIGGER` is set; production runs never set it. This
 preserves the design's rule that the mutation never follows an implicit first
 read and removes the provider-read-count race that let the scenario pass
 locally and fail on the host.
+
+
+## Post-archive decision update — 2026-10-18
+
+The user superseded the squash-only merge policy before the first apply. The
+declaration now allows rebase merges and forbids squash and merge commits:
+`allow_rebase_merge = true`, `allow_squash_merge = false`,
+`allow_merge_commit = false`. Rebase-and-merge keeps every commit and a linear
+`main`; a literal fast-forward is a local `git rebase` plus push, because
+GitHub offers no ff-only merge button. The first apply therefore changes
+`allow_merge_commit` (true to false), `allow_squash_merge` (true to false) and
+`delete_branch_on_merge` (false to true); `allow_rebase_merge` already matches
+live. The verification receipt predates this change; CI on the revision that
+carries it is the evidence.
