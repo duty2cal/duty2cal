@@ -14,11 +14,11 @@ use std::process::Command;
 use cucumber::{given, then, when};
 
 use crate::steps::adopt_existing_configuration::{
-    copy_declaration, copy_tree, declaration_dir, journal_lines, repository_root, scenario_dir,
-    start_fake_with,
+    copy_declaration, copy_tree, declaration_dir, fixtures_dir, journal_lines, repository_root,
+    scenario_dir, start_fake_with, state_path,
 };
 use crate::steps::enable_repository_security::{
-    combined, fake_request, jq, state_addresses, tofu, PREFLIGHT_FILTER,
+    combined, fake_request, jq, state_addresses, state_values, tofu, PREFLIGHT_FILTER,
 };
 use crate::DutyWorld;
 
@@ -846,44 +846,116 @@ async fn the_pages_repository_serves_no_security_policy(w: &mut DutyWorld) {
     "the applied state binds every declared object except the organization profile repository \
      and its two files"
 )]
-async fn the_applied_state_binds_everything_except_the_profile(_w: &mut DutyWorld) {
-    unimplemented!(
-        "A profile repository that already exists live and is unbound refuses the preview: \
-         the applied state binds every declared object except the profile"
-    );
+async fn the_applied_state_binds_everything_except_the_profile(w: &mut DutyWorld) {
+    prime_base_state(w);
+    let addresses = state_addresses(w);
+    for address in PROFILE_ADDRESSES {
+        assert!(
+            !addresses.iter().any(|recorded| recorded == address),
+            "the applied state binds no {address} before the profile apply; it was: {addresses:?}"
+        );
+    }
+    w.applied_state_snapshot = Some(state_values(w));
 }
 
 #[given("the live organization already has the organization profile repository")]
-async fn the_live_organization_already_has_the_profile_repository(_w: &mut DutyWorld) {
-    unimplemented!(
-        "A profile repository that already exists live and is unbound refuses the preview: \
-         the live organization already has the profile repository"
-    );
+async fn the_live_organization_already_has_the_profile_repository(w: &mut DutyWorld) {
+    let fixtures = fixtures_dir(w);
+    fs::create_dir_all(fixtures.join("repos/duty2cal"))
+        .expect("create the repository fixture directory");
+    fs::write(
+        fixtures.join("repos/duty2cal/.github.json"),
+        "{\"id\": 900001, \"node_id\": \"R_fake_dot_github\", \
+         \"name\": \".github\", \"full_name\": \"duty2cal/.github\", \
+         \"private\": false, \"visibility\": \"public\", \"default_branch\": \"main\", \
+         \"has_issues\": true, \"has_projects\": true, \"has_wiki\": true, \
+         \"has_discussions\": false, \"has_pages\": false}\n",
+    )
+    .expect("write the live profile repository body");
 }
 
 #[given(
     "the declaration adds the organization profile repository, its profile content and its \
      default security policy"
 )]
-async fn the_declaration_adds_the_profile_objects(_w: &mut DutyWorld) {
-    unimplemented!(
-        "A profile repository that already exists live and is unbound refuses the preview: \
-         the declaration adds the profile repository and its two files"
+async fn the_declaration_adds_the_profile_objects(w: &mut DutyWorld) {
+    ensure_source_tree(w);
+    let declaration = declaration_dir(w).join("org_profile.tf");
+    let text = fs::read_to_string(&declaration)
+        .unwrap_or_else(|error| panic!("read {}: {error}", declaration.display()));
+    for resource in [
+        "resource \"github_repository\" \"dot_github\"",
+        "resource \"github_repository_file\" \"org_profile_readme\"",
+        "resource \"github_repository_file\" \"org_security\"",
+    ] {
+        assert!(
+            text.contains(resource),
+            "the declaration carries {resource}; it was:\n{text}"
+        );
+    }
+    assert!(
+        text.contains("file(\"${local.org_source_dir}/profile/README.md\")")
+            && text.contains("file(\"${local.org_source_dir}/SECURITY.md\")"),
+        "both files read the reviewed org/ copy; declaration was:\n{text}"
+    );
+    assert!(
+        source_tree(w).join("profile/README.md").is_file()
+            && source_tree(w).join("SECURITY.md").is_file(),
+        "the reviewed org/ copy sits beside the declaration"
     );
 }
 
 #[then("the preview is refused and names the organization profile repository")]
-async fn the_preview_is_refused_and_names_the_profile_repository(_w: &mut DutyWorld) {
-    unimplemented!(
-        "A profile repository that already exists live and is unbound refuses the preview: \
-         the preview is refused and names the profile repository"
+async fn the_preview_is_refused_and_names_the_profile_repository(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the preview is refused; output was:\n{}",
+        w.preview_transcript
+    );
+    for expected in [
+        "refused",
+        "organization profile repository",
+        "github_repository.dot_github",
+    ] {
+        assert!(
+            w.preview_transcript.contains(expected),
+            "the refusal names {expected}; output was:\n{}",
+            w.preview_transcript
+        );
+    }
+    let journal = journal_lines(w);
+    let writes = journal
+        .iter()
+        .skip(w.journal_offset)
+        .filter(|line| {
+            line.contains("\"applied_write\": true")
+                || line.contains("\"refused_write\": true")
+        })
+        .count();
+    assert_eq!(
+        writes, 0,
+        "the refused preview issued no write; journal was:\n{journal:#?}"
     );
 }
 
 #[then("no object in the preview is bound")]
-async fn no_object_in_the_preview_is_bound(_w: &mut DutyWorld) {
-    unimplemented!(
-        "A profile repository that already exists live and is unbound refuses the preview: \
-         no object in the preview is bound"
+async fn no_object_in_the_preview_is_bound(w: &mut DutyWorld) {
+    let addresses = state_addresses(w);
+    for address in PROFILE_ADDRESSES {
+        assert!(
+            !addresses.iter().any(|recorded| recorded == address),
+            "the refusal binds no {address}; it was: {addresses:?}"
+        );
+    }
+    let values = state_values(w);
+    let before = w
+        .applied_state_snapshot
+        .as_ref()
+        .expect("the scenario snapshotted no applied state");
+    assert_eq!(
+        &values, before,
+        "the refused preview changed the applied state at {}",
+        state_path(w).display()
     );
 }
