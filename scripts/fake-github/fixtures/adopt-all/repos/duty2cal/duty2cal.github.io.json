@@ -40,6 +40,13 @@
   "is_template": false,
   "web_commit_signoff_required": false,
   "topics": [],
+  "security_and_analysis": {
+    "secret_scanning": {"status": "disabled"},
+    "secret_scanning_push_protection": {"status": "disabled"},
+    "dependabot_security_updates": {"status": "disabled"},
+    "secret_scanning_non_provider_patterns": {"status": "disabled"},
+    "secret_scanning_validity_checks": {"status": "disabled"}
+  },
   "visibility": "public",
   "default_branch": "main",
   "permissions": {

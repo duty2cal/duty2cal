@@ -1,0 +1,613 @@
+// SPDX-License-Identifier: MPL-2.0
+//! Step definitions for the capability `enable-repository-security`.
+//!
+//! Each scenario drives the real `tofu` binary as a subprocess against the
+//! local fake GitHub API on loopback (design.md "Test seam" and "Step
+//! definitions"). The declaration copy is primed by the base batch's real
+//! adoption and the base declaration's real apply, then the second batch binds
+//! the two Dependabot settings. The preview and the apply are the operator's
+//! routine: `tofu init`, `tofu plan -out`, `tofu show -json`, the saved plan's
+//! guard, the read-only refresh-only preflight, and `tofu apply plan.bin`.
+#![allow(clippy::too_many_arguments)] // step signatures mirror the captured step text
+
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Output};
+
+use cucumber::{given, then, when};
+
+use crate::steps::adopt_existing_configuration::{
+    adopt, adoption_output, copy_declaration, copy_tree, declaration_dir, fixtures_dir,
+    journal_lines, repository_root, restart_fake_with, scenario_dir, start_fake_with, state_path,
+    terraformrc, BILLING_EMAIL, PASSPHRASE, TOKEN,
+};
+use crate::DutyWorld;
+
+/// The preview guard: refuse a create for a setting that is already live and
+/// unbound (design.md "The apply procedure").
+const GUARD_FILTER: &str = r#"
+(.prior_state.values.root_module.resources // []) as $res
+| ($res | map(select(.address == "github_repository.mono")) | .[0].values) as $repo
+| [ .resource_changes[]?
+    | select((.change.actions // []) | index("create"))
+    | .address
+    | select(
+        . == "github_repository_vulnerability_alerts.mono" and $repo.vulnerability_alerts == true
+        or . == "github_repository_dependabot_security_updates.mono"
+           and ($repo.security_and_analysis[0].dependabot_security_updates.status // "") == "enabled")]
+| if length == 0 then "ok" else join(" ") end
+"#;
+
+/// The live-change preflight: only a completed report with no non-no-op change
+/// continues; the JSON is the verdict, not the exit status
+/// (opentofu/opentofu#3015).
+const PREFLIGHT_FILTER: &str = r#"
+if (map(select(.type == "change_summary")) | length) == 0 then "incomplete"
+else
+  [ .[] | select(.type == "planned_change" or .type == "resource_drift")
+    | .change as $c
+    | (($c.actions // []) + (if $c.action then [$c.action] else [] end))
+    | select(any(.[]; . != "no-op"))
+    | ($c.resource.addr // empty) ]
+  | if length == 0 then "ok" else join(" ") end
+end
+"#;
+
+/// The sidecar that marks a partial apply's state stale.
+fn stale_path(w: &DutyWorld) -> PathBuf {
+    PathBuf::from(format!("{}.stale", state_path(w).display()))
+}
+
+/// The combined output of a child invocation.
+fn combined(output: &Output) -> String {
+    let mut text = String::from_utf8_lossy(&output.stdout).into_owned();
+    if !output.stderr.is_empty() {
+        text.push_str("[stderr]\n");
+        text.push_str(&String::from_utf8_lossy(&output.stderr));
+    }
+    text
+}
+
+/// Run the real `tofu` binary in the scenario's declaration with the fake's
+/// environment; neither the real endpoint nor `gh auth token` can be reached.
+fn tofu(w: &DutyWorld, args: &[&str]) -> Output {
+    let declaration = declaration_dir(w);
+    let port = w.fake_port.expect("the scenario started no fake API");
+    let rc = terraformrc();
+    assert!(
+        rc.is_file(),
+        "run ./scripts/setup-infra-tests.sh first: {} is absent",
+        rc.display()
+    );
+    Command::new("tofu")
+        .args(args)
+        .current_dir(&declaration)
+        .env("GITHUB_TOKEN", TOKEN)
+        .env("GITHUB_BASE_URL", format!("http://127.0.0.1:{port}"))
+        .env("TF_VAR_state_passphrase", PASSPHRASE)
+        .env("TF_VAR_billing_email", BILLING_EMAIL)
+        .env("TF_CLI_CONFIG_FILE", &rc)
+        .env("TF_IN_AUTOMATION", "1")
+        .output()
+        .expect("run the real tofu binary")
+}
+
+/// Run one of the routine's jq filters and return its verdict.
+fn jq(w: &DutyWorld, filter: &str, report: &Path, slurp: bool) -> String {
+    let mut command = Command::new("jq");
+    if slurp {
+        command.arg("-s");
+    }
+    command
+        .arg("-r")
+        .arg(filter)
+        .arg(report)
+        .current_dir(scenario_dir_for(w));
+    let output = command.output().expect("run jq");
+    assert!(
+        output.status.success(),
+        "jq failed on {}: {}",
+        report.display(),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout).trim().to_string()
+}
+
+/// The scenario directory without mutating the world.
+fn scenario_dir_for(w: &DutyWorld) -> PathBuf {
+    w.dir
+        .clone()
+        .expect("scenario prepared no working directory")
+}
+
+/// Remove the `security_and_analysis` block from the base declaration.
+fn remove_security_block(text: &str) -> String {
+    let mut result = String::new();
+    let mut depth = 0usize;
+    for line in text.lines() {
+        if depth == 0 && line.trim_start().starts_with("security_and_analysis {") {
+            depth = 1;
+            continue;
+        }
+        if depth > 0 {
+            for character in line.chars() {
+                match character {
+                    '{' => depth += 1,
+                    '}' => depth = depth.saturating_sub(1),
+                    _ => {}
+                }
+            }
+            continue;
+        }
+        result.push_str(line);
+        result.push('\n');
+    }
+    result
+}
+
+/// Prepare the inherited applied state: adopt the base batch against
+/// `security-applied`, apply the base declaration for real (which records the
+/// provider's state-only read flag and the live values), restore this change's
+/// declaration and adopt the second batch.
+fn ensure_base_state(w: &mut DutyWorld) {
+    if w.declaration.is_some() {
+        return;
+    }
+
+    let dir = scenario_dir(w);
+    let declaration = dir.join("infra");
+    copy_declaration(&repository_root().join("infra"), &declaration);
+
+    let fixtures = dir.join("fixtures");
+    copy_tree(
+        &repository_root().join("scripts/fake-github/fixtures/security-applied"),
+        &fixtures,
+    );
+    let journal = dir.join("journal.jsonl");
+    let (child, port) = start_fake_with(&fixtures, &journal, true);
+
+    w.declaration = Some(declaration.clone());
+    w.batch = Some(declaration.join("adoption-batch.txt"));
+    w.state = Some(declaration.join("terraform.tfstate"));
+    w.journal = Some(journal);
+    w.fake = Some(child);
+    w.fake_port = Some(port);
+    w.write_sandbox = true;
+
+    adopt(w);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the base batch is adopted; output was:\n{}",
+        adoption_output(w)
+    );
+
+    let repos = fs::read_to_string(declaration.join("repos.tf"))
+        .expect("read the scenario's repository declaration");
+    let base_repos = remove_security_block(&repos);
+    assert_ne!(
+        base_repos, repos,
+        "the declaration carries the scanning block the base declaration inherits"
+    );
+    fs::write(declaration.join("repos.tf"), &base_repos)
+        .expect("write the base declaration's repository file");
+    fs::remove_file(declaration.join("security.tf"))
+        .expect("remove the security declaration for the base apply");
+
+    let init = tofu(w, &["init", "-input=false", "-no-color"]);
+    assert!(
+        init.status.success(),
+        "the base declaration's tofu init failed:\n{}",
+        combined(&init)
+    );
+    let plan = tofu(
+        w,
+        &["plan", "-input=false", "-no-color", "-out=base-plan.bin"],
+    );
+    assert!(
+        plan.status.success(),
+        "the base declaration's plan failed:\n{}",
+        combined(&plan)
+    );
+    let plan_text = combined(&plan);
+    for line in plan_text.lines() {
+        let trimmed = line.trim();
+        if (trimmed.starts_with('+') || trimmed.starts_with('~') || trimmed.starts_with('-'))
+            && trimmed.contains(" = ")
+            && !trimmed.contains("ignore_vulnerability_alerts_during_read")
+        {
+            panic!("the base declaration's plan changes a live attribute:\n{plan_text}");
+        }
+    }
+    let apply = tofu(w, &["apply", "-input=false", "-no-color", "base-plan.bin"]);
+    assert!(
+        apply.status.success(),
+        "the base declaration's apply failed:\n{}",
+        combined(&apply)
+    );
+    let after = tofu(w, &["plan", "-input=false", "-no-color"]);
+    assert!(
+        after.status.success() && combined(&after).contains("No changes."),
+        "the base apply left a live change:\n{}",
+        combined(&after)
+    );
+    let _ = fs::remove_file(declaration.join("base-plan.bin"));
+
+    fs::write(declaration.join("repos.tf"), &repos)
+        .expect("restore this change's repository declaration");
+    fs::copy(
+        repository_root().join("infra/security.tf"),
+        declaration.join("security.tf"),
+    )
+    .expect("restore this change's security declaration");
+
+    w.batch = Some(declaration.join("adoption-batch-security.txt"));
+    adopt(w);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the second batch is adopted; output was:\n{}",
+        adoption_output(w)
+    );
+    assert!(
+        w.stdout
+            .contains("adopted github_repository_vulnerability_alerts.mono duty2cal")
+            && w.stdout
+                .contains("adopted github_repository_dependabot_security_updates.mono duty2cal"),
+        "the second batch binds both settings; output was:\n{}",
+        adoption_output(w)
+    );
+
+    w.applied_state_snapshot =
+        Some(fs::read(state_path(w)).expect("read the primed applied state"));
+
+    restart_fake_with(w, true);
+    w.exit_status = None;
+    w.stdout.clear();
+    w.stderr.clear();
+}
+
+/// The preview phase of the routine: stale check, `tofu init`,
+/// `tofu plan -out=plan.bin`, `tofu show -json`, and the unadopted-setting
+/// guard over the saved plan's JSON.
+fn preview(w: &mut DutyWorld) {
+    let declaration = declaration_dir(w);
+    let dir = scenario_dir_for(w);
+    let state = state_path(w);
+    let before = dir.join("state-before.tfstate");
+    let report = dir.join("preview.json");
+    let stale = stale_path(w);
+    let mut transcript = String::from("$ preview (tofu init; tofu plan -out; tofu show -json)\n");
+
+    w.preview_transcript.clear();
+    w.plan_path = None;
+
+    if stale.exists() {
+        transcript.push_str(&format!(
+            "refused: the applied state is stale ({})\n",
+            stale.display()
+        ));
+        w.preview_transcript = transcript.clone();
+        w.scenario_transcript.push_str(&transcript);
+        w.exit_status = Some(2);
+        return;
+    }
+
+    let _ = fs::copy(&state, &before);
+
+    let init = tofu(w, &["init", "-input=false"]);
+    transcript.push_str("$ tofu init -input=false\n");
+    transcript.push_str(&combined(&init));
+    if !init.status.success() {
+        w.exit_status = init.status.code();
+        w.preview_transcript = transcript.clone();
+        w.scenario_transcript.push_str(&transcript);
+        return;
+    }
+
+    let plan = tofu(w, &["plan", "-input=false", "-no-color", "-out=plan.bin"]);
+    transcript.push_str("$ tofu plan -input=false -no-color -out=plan.bin\n");
+    transcript.push_str(&combined(&plan));
+    if !plan.status.success() {
+        w.exit_status = plan.status.code();
+        w.preview_transcript = transcript.clone();
+        w.scenario_transcript.push_str(&transcript);
+        return;
+    }
+
+    let show = tofu(w, &["show", "-json", "plan.bin"]);
+    fs::write(&report, &show.stdout).expect("write the saved plan's JSON report");
+    transcript.push_str("$ tofu show -json plan.bin\n");
+    transcript.push_str(&combined(&show));
+    if !show.status.success() {
+        w.exit_status = show.status.code();
+        w.preview_transcript = transcript.clone();
+        w.scenario_transcript.push_str(&transcript);
+        return;
+    }
+
+    let verdict = jq(w, GUARD_FILTER, &report, false);
+    if verdict != "ok" {
+        transcript.push_str(&format!("refused: adopt the setting first: {verdict}\n"));
+        w.exit_status = Some(2);
+    } else {
+        w.plan_path = Some(declaration.join("plan.bin"));
+        w.exit_status = Some(0);
+    }
+    w.preview_transcript = transcript.clone();
+    w.scenario_transcript.push_str(&transcript);
+}
+
+/// The apply phase: stale check, the read-only refresh-only preflight with the
+/// report as the verdict, the saved plan's application, and the stale marker
+/// on a failure that changed the state.
+fn apply_previewed(w: &mut DutyWorld) {
+    let declaration = declaration_dir(w);
+    let dir = scenario_dir_for(w);
+    let state = state_path(w);
+    let before = dir.join("state-before.tfstate");
+    let report = dir.join("preflight.json");
+    let stale = stale_path(w);
+    let plan = w
+        .plan_path
+        .clone()
+        .unwrap_or_else(|| declaration.join("plan.bin"));
+    assert!(
+        plan.is_file(),
+        "the scenario holds no saved plan at {}",
+        plan.display()
+    );
+    let mut transcript = String::from("$ apply (preflight; tofu apply plan.bin)\n");
+
+    w.apply_transcript.clear();
+
+    if stale.exists() {
+        transcript.push_str(&format!(
+            "refused: the applied state is stale ({})\n",
+            stale.display()
+        ));
+        w.apply_transcript = transcript.clone();
+        w.scenario_transcript.push_str(&transcript);
+        w.exit_status = Some(2);
+        return;
+    }
+
+    if !before.exists() {
+        let _ = fs::copy(&state, &before);
+    }
+
+    let preflight = tofu(
+        w,
+        &[
+            "plan",
+            "-refresh-only",
+            "-detailed-exitcode",
+            "-json",
+            "-input=false",
+        ],
+    );
+    fs::write(&report, &preflight.stdout).expect("write the preflight's JSON report");
+    transcript.push_str("$ tofu plan -refresh-only -detailed-exitcode -json -input=false\n");
+    if !preflight.stderr.is_empty() {
+        transcript.push_str(&String::from_utf8_lossy(&preflight.stderr));
+    }
+    let verdict = jq(w, PREFLIGHT_FILTER, &report, true);
+    if verdict != "ok" {
+        transcript.push_str(&format!(
+            "refused: live changed after the preview: {verdict}\n"
+        ));
+        w.apply_transcript = transcript.clone();
+        w.scenario_transcript.push_str(&transcript);
+        w.exit_status = Some(2);
+        return;
+    }
+
+    let apply = tofu(w, &["apply", "-input=false", "plan.bin"]);
+    transcript.push_str("$ tofu apply -input=false plan.bin\n");
+    transcript.push_str(&combined(&apply));
+    if !apply.status.success() {
+        let state_changed = fs::read(&state)
+            .ok()
+            .zip(fs::read(&before).ok())
+            .map(|(after, before)| after != before)
+            .unwrap_or(false);
+        if state_changed {
+            let stamp = Command::new("date")
+                .args(["-u", "+%FT%TZ"])
+                .output()
+                .expect("read the current UTC time");
+            let stamp = String::from_utf8_lossy(&stamp.stdout).trim().to_string();
+            fs::write(&stale, format!("{stamp}\n")).expect("write the stale marker");
+            transcript.push_str(&format!(
+                "stale applied state marked at {}\n",
+                stale.display()
+            ));
+        }
+        w.stdout = String::from_utf8_lossy(&apply.stdout).into_owned();
+        w.stderr = String::from_utf8_lossy(&apply.stderr).into_owned();
+        w.exit_status = apply.status.code();
+    } else {
+        let _ = fs::remove_file(&plan);
+        let _ = fs::remove_file(dir.join("preview.json"));
+        let _ = fs::remove_file(&report);
+        let _ = fs::remove_file(&before);
+        let _ = fs::remove_file(&stale);
+        w.stdout = String::from_utf8_lossy(&apply.stdout).into_owned();
+        w.stderr = String::from_utf8_lossy(&apply.stderr).into_owned();
+        w.exit_status = Some(0);
+    }
+    w.apply_transcript = transcript.clone();
+    w.scenario_transcript.push_str(&transcript);
+}
+
+/// Assert the fake saw no write request at all.
+fn assert_no_write_request(w: &DutyWorld) {
+    let journal = journal_lines(w);
+    for line in &journal {
+        let writes = line.contains("\"applied_write\": true")
+            || line.contains("\"manual_edit\": true")
+            || line.contains("\"refused_write\": true")
+            || line.contains("\"method\": \"PATCH\"")
+            || line.contains("\"method\": \"PUT\"")
+            || line.contains("\"method\": \"DELETE\"");
+        assert!(
+            !writes,
+            "no write request may reach GitHub; journal was:\n{journal:#?}"
+        );
+    }
+    assert!(
+        !journal.is_empty(),
+        "the preview read the live configuration; journal was empty"
+    );
+}
+
+#[given("the applied state binds every declared object")]
+async fn the_applied_state_binds_every_declared_object(w: &mut DutyWorld) {
+    ensure_base_state(w);
+}
+
+#[given("a previewed revision that enables secret scanning and push protection")]
+async fn a_previewed_revision_that_enables_the_scanning_settings(w: &mut DutyWorld) {
+    ensure_base_state(w);
+    preview(w);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the preview succeeds; output was:\n{}",
+        w.preview_transcript
+    );
+}
+
+#[given("the owner's authority cannot read the monorepo's security settings")]
+async fn the_owners_authority_cannot_read_the_monorepos_security_settings(w: &mut DutyWorld) {
+    ensure_base_state(w);
+    let fixtures = fixtures_dir(w);
+    fs::write(
+        fixtures.join("faults.json"),
+        "[{\"path_regex\": \"^/repos/duty2cal/duty2cal$\", \"method\": \"GET\", \
+         \"status\": 403, \"body\": {\"message\": \"Resource not accessible by integration\"}}]\n",
+    )
+    .expect("write the unreadable-repository fault");
+    restart_fake_with(w, true);
+}
+
+#[given("the owner's authority cannot change the monorepo")]
+async fn the_owners_authority_cannot_change_the_monorepo(w: &mut DutyWorld) {
+    ensure_base_state(w);
+    let fixtures = fixtures_dir(w);
+    fs::write(
+        fixtures.join("faults.json"),
+        "[{\"path_regex\": \"^/repos/duty2cal/duty2cal$\", \"method\": \"PATCH\", \
+         \"status\": 403, \"body\": {\"message\": \"Resource not accessible by integration\"}}]\n",
+    )
+    .expect("write the refused-change fault");
+    restart_fake_with(w, true);
+}
+
+#[when("the organization owner previews the declaration")]
+async fn the_organization_owner_previews_the_declaration(w: &mut DutyWorld) {
+    ensure_base_state(w);
+    preview(w);
+}
+
+#[when("the organization owner applies the previewed revision")]
+async fn the_organization_owner_applies_the_previewed_revision(w: &mut DutyWorld) {
+    apply_previewed(w);
+}
+
+#[then(regex = r#"^the preview fails and names "([^"]+)"$"#)]
+async fn the_preview_fails_and_names(w: &mut DutyWorld, object: String) {
+    assert!(
+        w.exit_status != Some(0),
+        "the preview fails; output was:\n{}",
+        w.preview_transcript
+    );
+    assert!(
+        w.preview_transcript.contains(&object),
+        "the preview names {object}; output was:\n{}",
+        w.preview_transcript
+    );
+}
+
+#[then("no write request reaches GitHub")]
+async fn no_write_request_reaches_github(w: &mut DutyWorld) {
+    assert_no_write_request(w);
+}
+
+#[then("the applied state is unchanged")]
+async fn the_applied_state_is_unchanged(w: &mut DutyWorld) {
+    let state = fs::read(state_path(w)).expect("read the applied state");
+    let before = w
+        .applied_state_snapshot
+        .as_ref()
+        .expect("the scenario snapshotted no applied state");
+    assert_eq!(
+        &state,
+        before,
+        "the applied state at {} changed",
+        state_path(w).display()
+    );
+}
+
+#[then(regex = r#"^the apply fails and names "([^"]+)"$"#)]
+async fn the_apply_fails_and_names(w: &mut DutyWorld, object: String) {
+    assert!(
+        w.exit_status != Some(0),
+        "the apply fails; output was:\n{}",
+        w.apply_transcript
+    );
+    assert!(
+        w.apply_transcript.contains(&object),
+        "the apply names {object}; output was:\n{}",
+        w.apply_transcript
+    );
+}
+
+#[then("no setting changes live")]
+async fn no_setting_changes_live(w: &mut DutyWorld) {
+    let journal = journal_lines(w);
+    assert!(
+        journal
+            .iter()
+            .all(|line| !line.contains("\"applied_write\": true")),
+        "no setting may change live; journal was:\n{journal:#?}"
+    );
+    assert!(
+        journal
+            .iter()
+            .all(|line| !line.contains("\"manual_edit\": true")),
+        "no manual edit was made; journal was:\n{journal:#?}"
+    );
+}
+
+#[then("the applied state is not marked stale")]
+async fn the_applied_state_is_not_marked_stale(w: &mut DutyWorld) {
+    let stale = stale_path(w);
+    assert!(
+        !stale.exists(),
+        "a refusal before the first write writes no stale marker at {}",
+        stale.display()
+    );
+}
+
+#[then("a later preview names the same change again")]
+async fn a_later_preview_names_the_same_change_again(w: &mut DutyWorld) {
+    preview(w);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the later preview succeeds; output was:\n{}",
+        w.preview_transcript
+    );
+    for expected in [
+        "secret_scanning",
+        "secret_scanning_push_protection",
+        "1 to change",
+    ] {
+        assert!(
+            w.preview_transcript.contains(expected),
+            "the later preview names {expected}; output was:\n{}",
+            w.preview_transcript
+        );
+    }
+}

@@ -69,6 +69,15 @@ pub struct DutyWorld {
     /// The applied state's bytes before a scenario attempts a refused
     /// adoption, so "nothing was bound" is observable without decrypting.
     pub applied_state_snapshot: Option<Vec<u8>>,
+    /// The saved plan the preview wrote and the apply consumes
+    /// (`infra/plan.bin` in the scenario's declaration copy).
+    pub plan_path: Option<PathBuf>,
+    /// What the preview phase printed, for its refusal assertions.
+    pub preview_transcript: String,
+    /// What the apply phase printed, for its outcome assertions.
+    pub apply_transcript: String,
+    /// Whether the scenario's fake accepted the write sandbox.
+    pub write_sandbox: bool,
 }
 
 impl Drop for DutyWorld {

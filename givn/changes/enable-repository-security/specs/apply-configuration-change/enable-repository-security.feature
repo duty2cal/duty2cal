@@ -27,7 +27,7 @@ Feature: Enable repository security
     And no other declared field of the monorepo changed
     And a later preview reports no differences
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unreadable repository setting refuses the preview and names the repository
     Given the owner's authority cannot read the monorepo's security settings
     When the organization owner previews the declaration

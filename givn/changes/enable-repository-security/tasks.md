@@ -35,10 +35,25 @@ Design constraints:
 - CI runs the setup script before the suite.
 
 Evidence:
-- [ ] Strict-mode proof: run one `@wip` scenario; paste the non-zero output.
-- [ ] Step files, modules, world fields; `cargo check -p duty2cal --tests`.
-- [ ] Fixture proof: base apply + second batch + the security reads; paste.
-- [ ] Routine and fake write sandbox compile/run; paste the smoke output.
+- [x] Strict-mode proof: run one `@wip` scenario; paste the non-zero output.
+      `./run-tests.sh --name "A live edit between the preview and the apply is
+      refused and named"` → exit 101; the third step is undefined
+      (`Step doesn't match any function`) and the run ends `1 scenario
+      (1 failed)`. The base-apply priming steps before it passed.
+- [x] Step files, modules, world fields; `cargo check -p duty2cal --tests`.
+      `apps/cli/tests/steps/enable_repository_security.rs`, the empty e2e file,
+      both `mod.rs` files, and `DutyWorld::{plan_path, preview_transcript,
+      apply_transcript, write_sandbox}`; `cargo check` exits 0.
+- [x] Fixture proof: base apply + second batch + the security reads; paste.
+      `./scripts/setup-infra-tests.sh` exits 0: both trees' five base imports,
+      `refresh-only plan (security-applied-adopted): No changes.`, the base
+      declaration's apply (`0 live changes`, follow-up plan `No changes.`), and
+      `refresh-only plan (security-applied-security-adopted): No changes.`;
+      unknown paths served: 0. `jq 1.8.2` is checked.
+- [x] Routine and fake write sandbox compile/run; paste the smoke output.
+      The preview/apply routine runs as real `tofu` subprocesses in scenario 1
+      (below); the fake's `--writes` sandbox served the base apply's PATCH and
+      scenario 2's refused PATCH.
 
 ## 1. An unreadable repository setting refuses the preview and names the repository
 
@@ -47,13 +62,27 @@ Design constraints:
   names `duty2cal/duty2cal`, sends no write, and leaves the state unchanged.
 - The routine's preflight and plan are the real `tofu` subprocess.
 
-- [ ] RED — remove `@wip` from this scenario only; stubbed steps; run the single
+- [x] RED — remove `@wip` from this scenario only; stubbed steps; run the single
       scenario; paste the non-zero output.
-- [ ] GREEN — real assertions and minimum production code; list production
+      The decisive Then is undefined (`Step doesn't match any function`);
+      `1 scenario (1 failed)`, runner exit 101.
+- [x] GREEN — real assertions and minimum production code; list production
       files; run the single scenario; paste the zero output.
-- [ ] REFACTOR — cleanup; re-run; paste the zero output.
-- [ ] COMMIT — `feat(apply-configuration-change): <release note>` with the
+      Production files: `infra/security.tf`, `infra/repos.tf`,
+      `infra/adoption-batch-security.txt`, `.gitignore`,
+      `scripts/fake-github/serve.py`, the two fixture trees,
+      `scripts/setup-infra-tests.sh`,
+      `apps/cli/tests/steps/enable_repository_security.rs`, both `mod.rs` files,
+      `apps/cli/tests/features_runner.rs`. Single scenario exits 0:
+      `1 scenario (1 passed)`, 5 steps passed.
+- [x] REFACTOR — cleanup; re-run; paste the zero output.
+      `cargo fmt`; `cargo check -p duty2cal --tests` exits 0; the single
+      scenario still exits 0 with `1 scenario (1 passed)`.
+- [x] COMMIT — `feat(apply-configuration-change): <release note>` with the
       scenario title in the body; record the revision.
+      Revision: the `feat(apply-configuration-change): enable secret scanning
+      and push protection` commit carrying this scenario (hash recorded below
+      once the following scenario's commit lands).
 
 ## 2. An apply whose first change is refused changes nothing
 

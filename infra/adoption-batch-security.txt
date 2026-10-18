@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Daniel Kressner
+#
+# The second adoption batch: the monorepo's two Dependabot settings
+# (design.md "The adoption batch"). Both provider resources import by
+# repository name in 6.13.0, and both settings are already enabled live.
+github_repository_vulnerability_alerts.mono	duty2cal
+github_repository_dependabot_security_updates.mono	duty2cal

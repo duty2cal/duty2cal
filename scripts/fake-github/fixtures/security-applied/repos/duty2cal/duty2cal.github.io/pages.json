@@ -1,0 +1,18 @@
+{
+  "url": "https://api.github.com/repos/duty2cal/duty2cal.github.io/pages",
+  "status": "built",
+  "cname": null,
+  "custom_404": false,
+  "html_url": "https://duty2cal.github.io/",
+  "source": {"branch": "main", "path": "/"},
+  "build_type": "legacy",
+  "public": true,
+  "protected_domain_state": null,
+  "pending_domain_unverified_at": null,
+  "https_certificate": {
+    "state": "approved",
+    "description": "Certificate is approved",
+    "domains": ["duty2cal.github.io"],
+    "expires_at": "2027-01-01"
+  }
+}

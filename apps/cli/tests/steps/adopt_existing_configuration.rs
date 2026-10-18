@@ -141,7 +141,7 @@ fn fresh_dir() -> PathBuf {
 }
 
 /// The scenario's working directory, created on first use.
-fn scenario_dir(w: &mut DutyWorld) -> PathBuf {
+pub(crate) fn scenario_dir(w: &mut DutyWorld) -> PathBuf {
     if let Some(dir) = &w.dir {
         return dir.clone();
     }
@@ -151,7 +151,7 @@ fn scenario_dir(w: &mut DutyWorld) -> PathBuf {
 }
 
 /// Copy a directory tree (the declaration or the fake's fixtures).
-fn copy_tree(source: &Path, target: &Path) {
+pub(crate) fn copy_tree(source: &Path, target: &Path) {
     fs::create_dir_all(target).expect("create a copied directory");
     for entry in fs::read_dir(source).expect("read a source directory") {
         let entry = entry.expect("read a source entry");
@@ -168,7 +168,7 @@ fn copy_tree(source: &Path, target: &Path) {
 /// Copy the declaration into the scenario, excluding the machine-local cache,
 /// the staging workspace and the applied state (the wrapper copies the state
 /// itself, and a scenario owns the state it starts from).
-fn copy_declaration(source: &Path, target: &Path) {
+pub(crate) fn copy_declaration(source: &Path, target: &Path) {
     fs::create_dir_all(target).expect("create the copied declaration");
     for entry in fs::read_dir(source).expect("read the declaration") {
         let entry = entry.expect("read a declaration entry");
@@ -193,15 +193,26 @@ fn copy_declaration(source: &Path, target: &Path) {
 /// Start the fake GitHub API on an ephemeral loopback port and return it with
 /// the port it printed.
 pub(crate) fn start_fake(fixtures: &Path, journal: &Path) -> (Child, u16) {
+    start_fake_with(fixtures, journal, false)
+}
+
+/// Start the fake with the test-only write sandbox enabled when `writes` is
+/// set (design.md "Write sandbox").
+pub(crate) fn start_fake_with(fixtures: &Path, journal: &Path, writes: bool) -> (Child, u16) {
     let script = repository_root().join("scripts/fake-github/serve.py");
-    let mut child = Command::new("python3")
+    let mut command = Command::new("python3");
+    command
         .arg(&script)
         .arg("--fixtures")
         .arg(fixtures)
         .arg("--port")
         .arg("0")
         .arg("--journal")
-        .arg(journal)
+        .arg(journal);
+    if writes {
+        command.arg("--writes");
+    }
+    let mut child = command
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
         .spawn()
@@ -220,7 +231,7 @@ pub(crate) fn start_fake(fixtures: &Path, journal: &Path) -> (Child, u16) {
 }
 
 /// The terraformrc `scripts/setup-infra-tests.sh` writes.
-fn terraformrc() -> PathBuf {
+pub(crate) fn terraformrc() -> PathBuf {
     let cache = std::env::var_os("XDG_CACHE_HOME")
         .map(PathBuf::from)
         .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".cache")))
@@ -244,7 +255,7 @@ pub(crate) fn state_path(w: &DutyWorld) -> PathBuf {
 
 /// The scenario's fixture directory: the base fixture set with any scenario
 /// overrides (a fault, a mutation, a removed object).
-fn fixtures_dir(w: &DutyWorld) -> PathBuf {
+pub(crate) fn fixtures_dir(w: &DutyWorld) -> PathBuf {
     w.dir
         .clone()
         .expect("scenario prepared no directory")
@@ -255,6 +266,12 @@ fn fixtures_dir(w: &DutyWorld) -> PathBuf {
 /// a fresh journal. Scenario Givens that write `faults.json` or `mutate.json`
 /// call this before the adoption, because the fake loads them at startup.
 fn restart_fake(w: &mut DutyWorld) {
+    restart_fake_with(w, false);
+}
+
+/// Restart the fake over the scenario's fixtures, optionally in write-sandbox
+/// mode, with a fresh journal.
+pub(crate) fn restart_fake_with(w: &mut DutyWorld, writes: bool) {
     if let Some(mut child) = w.fake.take() {
         let _ = child.kill();
         let _ = child.wait();
@@ -262,9 +279,10 @@ fn restart_fake(w: &mut DutyWorld) {
     let fixtures = fixtures_dir(w);
     let journal = w.journal.clone().expect("the scenario kept no journal");
     let _ = fs::remove_file(&journal);
-    let (child, port) = start_fake(&fixtures, &journal);
+    let (child, port) = start_fake_with(&fixtures, &journal, writes);
     w.fake = Some(child);
     w.fake_port = Some(port);
+    w.write_sandbox = writes;
 }
 
 /// Prepare the temporary declaration, batch, state path and fake API.
