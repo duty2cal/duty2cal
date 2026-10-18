@@ -4,6 +4,9 @@
 - A release is published only after every check on the tagged revision has concluded successfully, so the branch and tag can be pushed together without racing the gate.
 - Offer one downloadable archive for Windows, the only platform the project distributes.
 - A travel activity's calendar title now ends with its report time in local time — `LU 742 Tychon-Mareum Report 07:30 LT` — so the briefing time is visible without opening the event, while the event details keep the labelled value.
+
+### Fixes
+- Find the built Windows executable in the downloaded release artifact, so the release preparation stages the archive instead of failing before publication.
 [0.3.0...0.4.0](https://github.com/duty2cal/duty2cal/compare/v0.3.0...v0.4.0)
 ## [0.3.0] - 2026-10-17
 
