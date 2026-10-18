@@ -79,6 +79,14 @@ def first_line(text: str) -> str:
     return ""
 
 
+def error_detail(text: str, worktree: Path, fallback: str) -> str:
+    """Keep the useful tail of a tool failure without the temp worktree path."""
+    lines = [line.rstrip() for line in text.strip().splitlines() if line.strip()]
+    if not lines:
+        return fallback
+    return "\n".join(lines[-20:]).replace(str(worktree), "<worktree>")
+
+
 def resolve_revision(repo: Path, revision: str) -> str | None:
     result = run(
         ["git", "rev-parse", "--verify", f"{revision}^{{commit}}"],
@@ -210,7 +218,9 @@ def build_shipped(
         env=env,
     )
     if result.returncode != 0:
-        detail = result.stderr.strip() or result.stdout.strip() or "cargo build failed"
+        detail = error_detail(
+            result.stderr or result.stdout, worktree, "cargo build failed"
+        )
         return None, f"the build could not be read: {detail}"
     executable = find_built_executable(target_dir)
     if executable is None:
@@ -256,7 +266,9 @@ def run_bloat(
     except FileNotFoundError as error:
         raise MeasurementError(f"the generator is not available: {error}") from error
     if result.returncode != 0:
-        detail = first_line(result.stderr) or first_line(result.stdout) or "cargo bloat failed"
+        detail = error_detail(
+            result.stderr or result.stdout, worktree, "cargo bloat failed"
+        )
         raise MeasurementError(
             "the build cannot retain the names the attribution needs: " + detail
         )

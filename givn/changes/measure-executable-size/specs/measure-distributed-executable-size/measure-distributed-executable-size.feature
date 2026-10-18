@@ -25,7 +25,7 @@ Feature: Measure the distributed executable's size
     And the attribution names the function "fixture_alpha"
     And the attribution names no function "fixture_beta"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A build that fails produces no attribution
     Given a revision that does not build
     When the maintainer requests the size attribution for that revision

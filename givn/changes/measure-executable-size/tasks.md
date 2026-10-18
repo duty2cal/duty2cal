@@ -147,7 +147,7 @@ v0.3.0` and `revision: <resolved sha>`; the function table names
     `givn/changes/measure-executable-size/design.md` (fixture LTO fallback).
 - [x] REFACTOR: clean up without behaviour change; re-run; paste zero output.
   - Evidence: `refactor-exit=0`; `1 scenario (1 passed)`, `6 steps (6 passed)`.
-- [ ] COMMIT: `givn commit -m "feat(measure-distributed-executable-size): Measure the executable's size by crate and function for a named revision"` with the scenario title in the body; record the hash.
+- [x] COMMIT: revision `7cbc9ba` (`feat(measure-distributed-executable-size): Measure the executable's size by crate and function for a named revision`; the scenario title is in the body).
 
 ## Scenario 2 — A build that fails produces no attribution
 
@@ -159,12 +159,20 @@ shipped build fails; the command writes an `unreadable` report with reason
 `fixture_compile_error`), `attribution: null`, exits non-zero. The step
 preflights the target/toolchain.
 
-- [ ] RED: remove `@wip`; run
+- [x] RED: remove `@wip`; run
   `./run-tests.sh --name "A build that fails produces no attribution"`;
   paste non-zero output.
-- [ ] GREEN: implement the failure classification and report; implement the
+  - Evidence: `red-exit=101`; `Step panicked. Captured output: read
+    .../out/attribution.md: No such file or directory (os error 2)`; `1
+    scenario (1 failed)`, `3 steps (2 passed, 1 failed)`.
+- [x] GREEN: implement the failure classification and report; implement the
   step; run; paste zero output; list files.
-- [ ] REFACTOR: re-run; paste zero output.
+  - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `5 steps (5 passed)`.
+  - Files: `scripts/measure_executable_size.py` (`error_detail` keeps the
+    failure tail and replaces the temporary worktree path with `<worktree>`).
+- [x] REFACTOR: re-run; paste zero output.
+  - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `5 steps (5 passed)`;
+    scenario 1 re-ran green after the shared change.
 - [ ] COMMIT: `givn commit -m "fix(measure-distributed-executable-size): A build that fails produces no attribution"`; record the hash.
 
 ## Scenario 3 — A build that keeps no names produces no attribution
