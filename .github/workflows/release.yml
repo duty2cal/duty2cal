@@ -160,9 +160,10 @@ jobs:
           # Every release-workflow suite on this revision is excluded, not only
           # this run's suite: a retagged unpublished version can still carry an
           # earlier release run's failed publish check.
-          releases="$(gh api --paginate --slurp \
+          releases="$(gh api --paginate \
             "repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=${GITHUB_SHA}&per_page=100" \
-            --jq '[.[].workflow_runs[] | select(.path == ".github/workflows/release.yml") | .check_suite_id] | unique | .[]')"
+            --jq '.workflow_runs[] | select(.path == ".github/workflows/release.yml") | .check_suite_id' \
+            | sort -u)"
           exclude=()
           while IFS= read -r id; do
             [ -n "$id" ] && exclude+=(--exclude-suite "$id")
