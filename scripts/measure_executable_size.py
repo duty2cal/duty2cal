@@ -194,9 +194,19 @@ def find_built_executable(target_dir: Path) -> Path | None:
 def read_sections(executable: Path) -> list[dict[str, object]] | None:
     objdump = shutil.which("x86_64-w64-mingw32-objdump")
     if objdump is None:
+        print(
+            "measure-executable-size: x86_64-w64-mingw32-objdump is not "
+            "available; section sizes will be omitted",
+            file=sys.stderr,
+        )
         return None
     result = run([objdump, "-h", str(executable)], cwd=executable.parent, env=dict(os.environ))
     if result.returncode != 0:
+        print(
+            "measure-executable-size: x86_64-w64-mingw32-objdump could not "
+            f"read the artifact: {first_line(result.stderr) or 'no output'}",
+            file=sys.stderr,
+        )
         return None
     sections: list[dict[str, object]] = []
     for line in result.stdout.splitlines():

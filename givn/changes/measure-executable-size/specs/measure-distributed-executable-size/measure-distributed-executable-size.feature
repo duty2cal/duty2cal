@@ -73,7 +73,7 @@ Feature: Measure the distributed executable's size
     Then the report lists the stripped executable's sections
     And the section table names the ".text" section
 
-  @givn.added @wip
+  @givn.added
   Scenario: An absent objdump leaves the section table unread
     Given a repository whose revision builds for the supported platform
     And "objdump" is not available on the host

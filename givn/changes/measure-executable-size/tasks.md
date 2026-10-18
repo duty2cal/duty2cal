@@ -304,7 +304,7 @@ no total or file size is derived from them.
     report says the section sizes could not be read).
 - [x] REFACTOR: re-run; paste zero output.
   - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `4 steps (4 passed)`.
-- [ ] COMMIT: `givn commit -m "feat(measure-distributed-executable-size): The attribution lists the stripped executable's sections"`; record the hash.
+- [x] COMMIT: revision `5486a84` (`feat(measure-distributed-executable-size): The attribution lists the stripped executable's sections`; the scenario title is in the body).
 
 ## Scenario 8 — An absent objdump leaves the section table unread
 
@@ -315,12 +315,19 @@ states that the section sizes could not be read, and the attribution still
 states the stripped executable's file size. An absent `objdump` is never a
 refusal.
 
-- [ ] RED: remove `@wip`; run
+- [x] RED: remove `@wip`; run
   `./run-tests.sh --name "An absent objdump leaves the section table unread"`;
   paste non-zero output.
-- [ ] GREEN: implement the best-effort section read and step; run; paste zero
+  - Evidence: `red-exit=101`; `1 scenario (1 failed)`, `4 steps (3 passed, 1
+    failed)` (the production command was absent).
+- [x] GREEN: implement the best-effort section read and step; run; paste zero
   output; list files.
-- [ ] REFACTOR: re-run; paste zero output.
+  - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `5 steps (5 passed)`.
+  - Files: `scripts/measure_executable_size.py` (the section reader prints a
+    diagnostic when `objdump` is absent or cannot read the artifact, while the
+    Markdown still says the section sizes could not be read).
+- [x] REFACTOR: re-run; paste zero output.
+  - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [ ] COMMIT: `givn commit -m "fix(measure-distributed-executable-size): An absent objdump leaves the section table unread"`; record the hash.
 
 ## Wiring — CI, cliff.toml, README
