@@ -615,9 +615,10 @@ async fn one_travel_activity(w: &mut DutyWorld, start: String, end: String) {
 
 #[then(regex = r#"^that activity's title is "(.*)"$"#)]
 async fn that_activity_title(w: &mut DutyWorld, title: String) {
-    let calendar = calendar(w);
+    let calendar = calendar(w).replace("\r\n ", "");
+    let expected = format!("SUMMARY:{title}");
     assert!(
-        calendar.contains(&format!("SUMMARY:{title}")),
+        calendar.lines().any(|line| line == expected),
         "the activity title is not {title:?}: {calendar}"
     );
 }

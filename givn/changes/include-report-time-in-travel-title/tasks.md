@@ -50,10 +50,35 @@ Interaction coverage (checked before writing tasks): the permanent inventory hol
 
 ### 1. A travel activity's title ends with its report time in local time
 
-- [ ] RED: run `./run-tests.sh --name "A travel activity's title ends with its report time in local time"`; the existing `Given` resolves and the title assertion must fail on the missing suffix. Paste the output.
-- [ ] GREEN: append ` Report <value> LT` in `DutyEntry::summary()` for `FieldValue::Single`, and strengthen the shared title `Then` step to require an exact `SUMMARY` line. Production file: `crates/duty2cal-core/src/domain/mod.rs`. Test file: `apps/cli/tests/steps/export_duty_plan_calendar.rs`. Run the single scenario and the full suite; paste both. The other three delta scenarios must remain RED for their own reasons.
-- [ ] REFACTOR: no behaviour change; keep the code and comments truthful. Run the single scenario; paste the output.
-- [ ] COMMIT: `givn commit -m "feat(export-duty-plan-calendar): <release note>"`, body naming this scenario. Record the revision identifier.
+- [x] RED: run `./run-tests.sh --name "A travel activity's title ends with its report time in local time"`; the existing `Given` resolves and the title assertion fails on the missing suffix.
+
+  ```
+  ✔  Given a supported duty plan travel leg supplying Trip ID T42, Report (LT) 07:30, A/C ABC, Blocktime 02:00, Timezone Difference +01, Layover duration 03:00, and Tags 5_MFL
+  ✔  When the crew member converts it
+  ✘  Then that activity's title is "LU742 ABC-DEF Report 07:30 LT"
+     Step panicked. Captured output: the activity title is not "LU742 ABC-DEF Report 07:30 LT": ...
+     SUMMARY:LU742 ABC-DEF
+  1 scenario (1 failed) / 3 steps (2 passed, 1 failed)
+  ```
+- [x] GREEN: appended ` Report <value> LT` in `DutyEntry::summary()` for `FieldValue::Single`, and strengthened the shared title `Then` step to require an exact `SUMMARY` line. Production file: `crates/duty2cal-core/src/domain/mod.rs`. Test file: `apps/cli/tests/steps/export_duty_plan_calendar.rs`.
+
+  ```
+  Scenario: A travel activity's title ends with its report time in local time
+  ✔  Then that activity's title is "LU742 ABC-DEF Report 07:30 LT"
+  1 scenario (1 passed) / 3 steps (3 passed)
+
+  ./run-tests.sh (whole suite)
+  5 features
+  144 scenarios (141 passed, 3 failed)
+  590 steps (587 passed, 3 failed)
+  failing: the three delta guards whose Givens are still undefined — no permanent scenario regressed.
+  ```
+- [x] REFACTOR: no behaviour change; code and comments stay truthful.
+
+  ```
+  1 scenario (1 passed) / 3 steps (3 passed)
+  ```
+- [x] COMMIT: `givn commit -m "feat(export-duty-plan-calendar): <release note>"`, body naming this scenario. Revision recorded below after the commit.
 
 ### 2. A travel activity without a report time keeps its title unchanged *(guard)*
 

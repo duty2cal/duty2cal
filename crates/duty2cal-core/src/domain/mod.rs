@@ -207,11 +207,18 @@ impl DutyEntry {
                 position,
                 from,
                 to,
+                report_lt,
                 ..
-            } => format!(
-                "{} {from}-{to}",
-                printed_identification(position.as_deref(), activity)
-            ),
+            } => {
+                let title = format!(
+                    "{} {from}-{to}",
+                    printed_identification(position.as_deref(), activity)
+                );
+                match report_lt {
+                    Some(FieldValue::Single(value)) => format!("{title} Report {value} LT"),
+                    None | Some(FieldValue::Differing { .. }) => title,
+                }
+            }
             Self::Availability { code, .. } | Self::NonFlightDuty { code, .. } => code.clone(),
             Self::Layover { station, .. } => format!("Layover {station}"),
         }

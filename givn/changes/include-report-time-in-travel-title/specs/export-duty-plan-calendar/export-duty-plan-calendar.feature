@@ -2,7 +2,7 @@
 
 Feature: Export a duty-plan calendar
 
-  @givn.added @wip
+  @givn.added
   Scenario: A travel activity's title ends with its report time in local time
     Given a supported duty plan travel leg supplying Trip ID T42, Report (LT) 07:30, A/C ABC, Blocktime 02:00, Timezone Difference +01, Layover duration 03:00, and Tags 5_MFL
     When the crew member converts it
