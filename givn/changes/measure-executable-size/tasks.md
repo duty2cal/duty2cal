@@ -328,7 +328,7 @@ refusal.
     Markdown still says the section sizes could not be read).
 - [x] REFACTOR: re-run; paste zero output.
   - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [ ] COMMIT: `givn commit -m "fix(measure-distributed-executable-size): An absent objdump leaves the section table unread"`; record the hash.
+- [x] COMMIT: revision `00d40b3` (`fix(measure-distributed-executable-size): An absent objdump leaves the section table unread`; the scenario title is in the body).
 
 ## Wiring — CI, cliff.toml, README
 
