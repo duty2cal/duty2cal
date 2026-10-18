@@ -1295,6 +1295,11 @@ async fn new_differing_report_times(w: &mut DutyWorld) {
     report_time_fragments(w, "07:30", "08:00");
 }
 
+#[given("a compatible departure and arrival fragment of one travel leg supplying the same report time 07:30")]
+async fn equal_report_times(w: &mut DutyWorld) {
+    report_time_fragments(w, "07:30", "07:30");
+}
+
 #[then(r#"the travel activity's description states "Report (LT) 07:30 (departure fragment)" and "Report (LT) 08:00 (arrival fragment)""#)]
 async fn both_fragment_values_retained(w: &mut DutyWorld) {
     let calendar = calendar(w);

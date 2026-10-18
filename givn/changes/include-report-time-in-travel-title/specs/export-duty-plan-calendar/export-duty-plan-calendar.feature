@@ -21,7 +21,7 @@ Feature: Export a duty-plan calendar
     Then that activity's title is "LU742 ABC-DEF"
     And the travel activity's description states "Report (LT) 07:30 (departure fragment)" and "Report (LT) 08:00 (arrival fragment)"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Equal report times on both fragments produce one title suffix
     Given a compatible departure and arrival fragment of one travel leg supplying the same report time 07:30
     When the crew member converts it
