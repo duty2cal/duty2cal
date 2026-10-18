@@ -18,6 +18,8 @@ resource "github_repository" "mono" {
   has_wiki        = false
   has_discussions = false
 
+  ignore_vulnerability_alerts_during_read = false
+
   allow_auto_merge       = false
   allow_forking          = true
   allow_merge_commit     = false
@@ -38,6 +40,8 @@ resource "github_repository" "pages" {
   has_issues   = false
   has_wiki     = false
   has_projects = false
+
+  ignore_vulnerability_alerts_during_read = false
 
   lifecycle {
     ignore_changes = [pages]

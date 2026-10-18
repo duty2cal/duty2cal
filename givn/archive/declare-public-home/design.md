@@ -109,8 +109,8 @@ New or changed files:
 | Resource address | Live counterpart | Declared values |
 |---|---|---|
 | `github_organization_settings.org` | organization `duty2cal` | Name `duty2cal`; profile fields and member defaults at today's values (profile fields empty, default repository permission `read`, members may create public and private repositories); `billing_email = var.billing_email` (`sensitive`, no default). |
-| `github_repository.mono` | `duty2cal/duty2cal` | `description = "Convert a duty plan to a calendar"`; today's topics verbatim; `has_issues = true` (today's live value, kept), `has_projects = false`, `has_wiki = false`, `has_discussions = false`, `allow_auto_merge = false`, `allow_forking = true`, `allow_merge_commit = false`, `allow_rebase_merge = true`, `allow_squash_merge = false`, `delete_branch_on_merge = true`; no `license_template`; `lifecycle { ignore_changes = [pages] }`. |
-| `github_repository.pages` | `duty2cal/duty2cal.github.io` | Public; `has_issues = false`, `has_wiki = false` (the draft's values), `has_projects = false` (decided 2026-10-18: projects are not needed); description at today's live value; `lifecycle { ignore_changes = [pages] }`. |
+| `github_repository.mono` | `duty2cal/duty2cal` | `description = "Convert a duty plan to a calendar"`; today's topics verbatim; `has_issues = true` (today's live value, kept), `has_projects = false`, `has_wiki = false`, `has_discussions = false`, `allow_auto_merge = false`, `allow_forking = true`, `allow_merge_commit = false`, `allow_rebase_merge = true`, `allow_squash_merge = false`, `delete_branch_on_merge = true`, `ignore_vulnerability_alerts_during_read = false`; no `license_template`; `lifecycle { ignore_changes = [pages] }`. |
+| `github_repository.pages` | `duty2cal/duty2cal.github.io` | Public; `has_issues = false`, `has_wiki = false` (the draft's values), `has_projects = false` (decided 2026-10-18: projects are not needed), `ignore_vulnerability_alerts_during_read = false`; description at today's live value; `lifecycle { ignore_changes = [pages] }`. |
 | `github_repository_ruleset.main` | rule set `main protection` | `name = "main protection"` (the live name, so the binding is the same object); target branch, `enforcement = "active"`; deletion, non-fast-forward and `required_linear_history`; no bypass actors; condition `~DEFAULT_BRANCH`. |
 | `github_repository_pages.pages` | Pages on the pages repository | `build_type = "legacy"`; `source { branch = "main", path = "/" }` — the existing form, imported rather than enabled anew. |
 
@@ -743,5 +743,9 @@ GitHub offers no ff-only merge button. The first apply therefore changes
 `allow_merge_commit` (true to false), `allow_squash_merge` (true to false) and
 `delete_branch_on_merge` (false to true); `allow_rebase_merge` already matches
 live. The pages repository's projects are also off (`has_projects = false`), so
-the first apply changes that field as well. The verification receipt predates
+the first apply changes that field as well. The provider's
+`ignore_vulnerability_alerts_during_read` flag is declared explicitly as
+`false` on both repositories: it only controls whether the provider skips the
+vulnerability-alert read, so the plan no longer proposes adding it to the
+state. The verification receipt predates
 these changes; CI on the revision that carries them is the evidence.

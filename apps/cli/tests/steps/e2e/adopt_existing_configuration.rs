@@ -220,6 +220,7 @@ async fn the_applied_state_records_the_live_values(w: &mut DutyWorld) {
         "allow_rebase_merge=true",
         "allow_squash_merge=false",
         "delete_branch_on_merge=true",
+        "ignore_vulnerability_alerts_during_read=false",
         "has_issues=false",
         "has_wiki=false",
     ] {
