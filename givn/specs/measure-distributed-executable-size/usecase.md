@@ -51,21 +51,11 @@ named revision.
 
 ## Examples
 
-- The maintainer requests an attribution for revision `v0.3.0`. The report
-  names `v0.3.0` as the requested revision and its resolved commit, and
-  Windows x86_64; it reports the stripped artifact's file size as 2,097,152 B
-  beside the split, and the split's total is a different number.
-- The build for `v0.3.0` on Windows x86_64 fails. No attribution is produced,
-  the report names the build as unreadable, and no number is inferred from the
-  archive.
-- The maintainer describes a host build or a release archive. The measurement
-  is refused, the report names the expected platform and states that no
-  attribution exists, and no number is taken from the artifact.
-- The file size cannot be read. The report gives the split, states the file
-  size is unavailable, and does not present the split's total as the file size.
-- A revision is pushed and reviewed as a change. The attribution for that
-  revision exists beside its run before the change lands, so the review reads
-  the numbers the revision produced.
+- The maintainer requests an attribution for revision `v0.3.0`; the report names `v0.3.0` as the requested revision and its resolved commit, and Windows x86_64, reports the stripped artifact's file size as 2,097,152 B beside the split, and the split's total is a different number.
+- The build for `v0.3.0` on Windows x86_64 fails; no attribution is produced, the report names the build as unreadable, and no number is inferred from the archive.
+- The maintainer describes a host build or a release archive; the measurement is refused, the report names the expected platform and states that no attribution exists, and no number is taken from the artifact.
+- The file size cannot be read; the report gives the split, states the file size is unavailable, and does not present the split's total as the file size.
+- A revision is pushed and reviewed as a change; the attribution for that revision exists beside its run before the change lands, so the review reads the numbers the revision produced.
 
 ## Minimal guarantee
 
@@ -90,11 +80,9 @@ committed state.
 
 ## Personas
 
-- `project-maintainer--release-owner` — reads the attribution as evidence.
-- `contributor--build-configuration-reviewer` — judges whether the attribution
-  is reproducible and names the right artifact.
-- `crew-member--personal-calendar-owner` — privacy lens: no plan-derived
-  content appears in a published attribution or panic sample.
+- project-maintainer--release-owner
+- contributor--build-configuration-reviewer
+- crew-member--personal-calendar-owner
 
 ## Capabilities
 
