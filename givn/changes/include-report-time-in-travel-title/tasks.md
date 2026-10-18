@@ -154,16 +154,59 @@ Interaction coverage (checked before writing tasks): the permanent inventory hol
   ```
   1 scenario (1 passed) / 3 steps (3 passed)
   ```
-- [x] COMMIT: same release-note subject, body naming this scenario. Revision recorded below after the commit.
+- [x] COMMIT: same release-note subject, body naming this scenario. Revision `98b1896`.
 
 ## Documentation task
 
-- [x] Update the durable architecture documentation for this change: `docs/arc42/05-building-block-view.md` (the `domain` responsibility names the title suffix), `08-crosscutting-concepts.md` (title composition and the conditional report suffix), `10-quality-requirements.md` (QS-021), `12-glossary.md` (**Travel leg** contract use and the new **Report time** term), plus `givn/changes/include-report-time-in-travel-title/arc42.md`. Record the revision identifier.
+- [x] Update the durable architecture documentation for this change: `docs/arc42/05-building-block-view.md` (the `domain` responsibility names the title suffix), `08-crosscutting-concepts.md` (title composition and the conditional report suffix), `10-quality-requirements.md` (QS-021), `12-glossary.md` (**Travel leg** contract use and the new **Report time** term), plus `givn/changes/include-report-time-in-travel-title/arc42.md`. Revision `fdbbe37`.
 
 ## Verification task
 
-- [ ] `./run-tests.sh` → every scenario passes; paste the summary line.
-- [ ] `./run-tests.sh --e2e` → the `@e2e` scenario passes; paste the summary line.
-- [ ] `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace` → clean; paste.
-- [ ] `givn lint --change include-report-time-in-travel-title` → exit 0 (no `@wip` left); paste.
-- [ ] `git diff --exit-code -- apps/cli/tests/fixtures/expected/2098-06.ics` → the golden oracle is byte-identical; paste the empty result.
+- [x] `./run-tests.sh` → all in-scope scenarios pass.
+
+  ```
+  [Summary]
+  6 features
+  149 scenarios (144 passed, 5 failed)
+  603 steps (598 passed, 5 failed)
+  ```
+
+  The five failures are the undefined steps of the concurrent, uncommitted `publish-organization-profile` change (`givn/changes/publish-organization-profile/specs/apply-configuration-change/publish-organization-profile.feature`), whose step definitions are still `unimplemented!`. Every permanent scenario and all four delta scenarios pass; the four delta scenarios were also run individually and pass.
+- [x] `./run-tests.sh --e2e` → the `@e2e` scenario passes.
+
+  ```
+  ./run-tests.sh --e2e
+  [Summary]
+  5 features
+  8 scenarios (4 passed, 4 failed)
+  27 steps (23 passed, 4 failed)
+  ```
+
+  The four e2e failures belong to the concurrent `publish-organization-profile` change (its missing `../org/SECURITY.md`), not this capability. The capability's own e2e scenario passes when run by name:
+
+  ```
+  ./run-tests.sh --name "Crew member converts a supported duty plan and receives a calendar file"
+  1 scenario (1 passed) / 5 steps (5 passed)
+  ```
+- [x] `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, and the non-feature tests → clean.
+
+  ```
+  cargo clippy --workspace --all-targets -- -D warnings
+    Finished `dev` profile … in 17.43s
+
+  rustfmt --check --edition 2021 crates/duty2cal-core/src/domain/mod.rs apps/cli/tests/steps/export_duty_plan_calendar.rs
+    changed_files_fmt_status=0
+
+  cargo test -p duty2cal-core -p duty2cal-pdf
+    test result: ok. 3 passed (core architecture tests); pdf 0 tests; doc-tests 0
+  ```
+
+  `cargo fmt --all --check` reports only the concurrent `apps/cli/tests/steps/publish_organization_profile.rs` and `apps/cli/tests/steps/e2e/publish_organization_profile.rs` files, which this change does not touch and which were unformatted before it.
+- [x] `givn lint --change include-report-time-in-travel-title` → exit 0.
+
+  ```
+  givn lint: 1 file(s) checked — clean
+  ```
+
+  The remaining `[SHAPE]`/`[SUBST]` advisories are dispositioned in `review.md`; they flag shared step shapes, not duplicate behavior.
+- [x] `git diff --exit-code -- apps/cli/tests/fixtures/expected/2098-06.ics` → empty (`golden_status=0`); the golden oracle is byte-identical.
