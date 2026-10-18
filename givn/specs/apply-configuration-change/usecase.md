@@ -20,14 +20,14 @@ declared configuration.
 
 ## Preconditions
 
-- The organization and both repositories exist.
+- The organization and the repositories the revision retains exist.
 - The owner can request the configuration change.
 - The applied state is not marked stale.
 
 ## Main flow
 
 1. Actor records the intended values as a revision of the declared configuration; System keeps that revision as the candidate for preview and apply.
-2. Actor asks for a preview; System reads the applied state, the live configuration and the revision, and names every difference by object and field; an object the declaration names that cannot be read, or a revision that would add an object which already exists live and is unbound, is refused and named.
+2. Actor asks for a preview; System reads the applied state, the live configuration and the revision, and names every difference among the previewed objects by object and field; an object the declaration names that cannot be read, or a revision that would add an object which already exists live and is unbound, is refused and named.
 3. Actor asks to apply; System checks that the saved plan is the previewed revision and that the previewed objects still match what the preview saw (a read-only refresh-only plan for those objects reports no change), then applies the saved plan - the applied revision - object by object.
 4. Actor wants the outcome; System reports every object it changed and records the applied revision in the applied state.
 5. Actor can stop; the live configuration matches the revision.
@@ -45,6 +45,8 @@ declared configuration.
 ## Rules
 
 - **The applied revision is the previewed revision**: the saved plan is the applied revision.
+- **Preview scope**: the previewed objects are the objects the revision adds or changes; the preview names every difference among them and no unrelated difference.
+- **No removal**: a revision this use case applies adds or changes declared objects; removing a declared object remains out of scope (Q11).
 - **Readability**: an object the declaration names must be readable, or the preview refuses it and names the object.
 - **Adoption before update**: an object or setting that already exists live must be adopted before it is updated; a preview that would add it instead is refused and names it.
 - **Preflight**: immediately before applying the saved plan, the System compares the applied state with the live configuration in a read-only refresh-only plan for the previewed objects; a non-no-op change is refused and names the address that changed.
@@ -62,6 +64,7 @@ declared configuration.
 - Manual edit since preview: live `has_projects` was changed by hand after the preview that saw it on. The read-only refresh-only preflight names `has_projects` and refuses the apply; the saved plan is not applied; a new preview shows the edit.
 - Partial failure: the scanning settings apply; the Dependabot security-updates change then fails on authority. The report names the applied settings, the failed setting and the reason; the applied state does not record the failed setting and is marked stale; the next preview refuses and names the stale state.
 - Read-back failure: the repository update succeeds; the provider's read-back then fails. The apply reports the repository and the reason; live carries the enabled statuses, the applied state is marked stale, and the next preview refuses and names the stale state.
+- Publish the profile: the declaration adds the public organization profile repository and its two files, and the live organization has no such repository. The targeted preview names the three creations and no other change; the apply creates them and records them; a later targeted preview of the profile objects reports no differences.
 
 ## Minimal guarantee
 
@@ -69,7 +72,7 @@ A refusal before the first live write leaves the live configuration and the appl
 
 ## Success guarantee
 
-The live configuration matches the declared configuration revision the apply accepted for every object the revision retains. (open: Q11)
+The live configuration matches the declared configuration revision the apply accepted for every object the revision retains.
 
 This is a changing use case: it changes the live organization and repositories.
 
@@ -82,6 +85,7 @@ This is a changing use case: it changes the live organization and repositories.
 ## Capabilities
 
 - enable-repository-security
+- publish-organization-profile
 
 ## Interactions
 
@@ -89,6 +93,8 @@ This is a changing use case: it changes the live organization and repositories.
 |---|---|---|
 | enable-repository-security | preview the declared configuration and read the named differences | Organization owner previews the security settings and only the declared differences are named |
 | enable-repository-security | apply the previewed revision and read the outcome | Organization owner applies the previewed revision and the security settings are enabled |
+| publish-organization-profile | preview the declared configuration and read the named differences | Organization owner previews the profile declaration and only the three creations are named |
+| publish-organization-profile | apply the previewed revision and read the outcome | Organization owner applies the previewed revision and the organization profile is published |
 
 ## Includes
 
@@ -105,7 +111,7 @@ This is a changing use case: it changes the live organization and repositories.
 - An incomplete preflight report: the apply refusing it and not treating it as a no-op is an internal safety branch, not a use-case promise in this use case.
 - An applied state that cannot be read: the preview refusing it and naming it is not asserted in this use case.
 - Review gating (open: Q10): this capability previews and applies a revision and reports the outcome; no approval gate is asserted.
-- Removing a declared object (open: Q11): this capability removes no object and disables no setting.
+- Removing a declared object (Q11): removal never occurs in this use case; no revision removes a declared object and no capability disables a setting.
 - Adopting an already-existing object: the objects this revision retains are adopted first, by `adopt-existing-configuration`; the preview refuses to add one that is live and unbound, and names it.
 - Removing the classic branch protection: it was removed by hand on 2026-10-18 and this change verifies it stays gone.
 - Requiring pull requests on the default branch (Q3) and modelling review gating in the apply flow (Q10).
@@ -114,7 +120,9 @@ This is a changing use case: it changes the live organization and repositories.
 - Private vulnerability reporting, release immutability and organization-level security defaults.
 - The deploy key and `PAGES_DEPLOY_KEY` secret: they are not part of this capability.
 - Reporting configuration drift, publishing the website, and repairing an already-published release.
-- Creating the organization or transferring a repository into it.
+- Creating the organization or transferring a repository into it; creating a
+  repository the revision declares and the live configuration lacks is the main
+  flow, not this exclusion.
 - Any product behaviour: the converter never contacts GitHub.
 
 ## Diagram

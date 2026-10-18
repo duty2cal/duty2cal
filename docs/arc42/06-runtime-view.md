@@ -271,3 +271,81 @@ which is a required step after GREEN. A partial failure is reported by resource
 address, writes the stale marker beside the state, and the state is
 deliberately not committed.
 
+## Scenario: The organization profile is previewed, applied and published
+
+**Trigger:** The maintainer has declared the organization profile repository and
+its two reviewed files and asks for a preview, then applies the previewed
+revision.
+
+```mermaid
+flowchart TB
+  owner["Organization owner"] --> plan["targeted tofu plan -out=plan.bin; tofu show -json"]
+  plan -->|"the declaration cannot be read"| stop["refuse; name the declaration problem; nothing written"]
+  plan -->|"the profile repository is absent live"| creates["the plan names three creates: the repository, profile/README.md, SECURITY.md"]
+  creates --> preflight["read-only refresh-only preflight"]
+  preflight -->|"a live edit since the preview"| stop
+  preflight --> apply["tofu apply plan.bin"]
+  apply --> post["POST /orgs/duty2cal/repos"]
+  post --> patch["PATCH /repos/duty2cal/.github (create follow-up, possibly a visibility-only second PATCH)"]
+  patch --> read["GET /repos/duty2cal/.github (+ vulnerability alerts)"]
+  read --> files["GET branch; GET content (404); PUT content; GET content; GET commit — for each file"]
+  files -->|"a write or read fails"| partial["report the applied objects and the failed object; mark the state stale; do not commit"]
+  files --> state["the encrypted state records the repository and both files"]
+  state --> again["targeted follow-up plan: no differences"]
+  again --> pin["owner pins duty2cal and duty2cal.github.io once, by hand"]
+```
+
+**Steps:**
+
+1. The owner records the declaration revision that adds
+   `github_repository.dot_github`, `github_repository_file.org_profile_readme`
+   and `github_repository_file.org_security`; the two file contents are read
+   from `org/` at plan time.
+2. A `tofu plan -out=plan.bin` targeted at the profile repository and its two
+   files reads the applied state and the live configuration. The profile
+   repository does not exist and is not bound, so the preview names three
+   creates and no update or delete; a declaration that cannot be read is
+   refused. The preview writes nothing. The plan is targeted to the revision's
+   scope — the three objects it adds — matching the sibling capability's
+   preview rule. The apply `@e2e` scenario primes from the unchanged
+   `security-applied` fixture, whose organization body carries
+   `billing@example.test`. The preview `@e2e` scenario reuses the sibling's
+   base priming, which introduces the known organization billing drift after
+   its base apply; that drift is outside the three targets, so the targeted
+   plan names no unrelated difference.
+3. The read-only refresh-only preflight, targeted at the same three objects,
+   compares them with live and refuses a manual edit by address; the saved plan
+   is not applied.
+4. `tofu apply plan.bin` creates the repository: `POST /orgs/duty2cal/repos`,
+   the provider's create follow-up `PATCH`, and the repository read. The
+   provider then creates `profile/README.md` and `SECURITY.md`: for each file
+   it reads the repository and the `main` branch, reads the absent path,
+   writes the reviewed content, and reads the file and its commit back. The two
+   file creations are independent and may run concurrently.
+5. The apply reports the three creations; the encrypted state records the
+   repository and both files; a follow-up plan targeted at the three objects
+   reports no differences. The
+   profile repository is public, with its issue tracker, projects and wiki
+   disabled, and GitHub now serves the profile page and the organization's
+   default security policy from it.
+6. Before the apply, the owner has enabled private vulnerability reporting on
+   `duty2cal/duty2cal` by hand, because the published policy names its route and
+   the provider cannot declare it. Once, after the apply, the owner pins
+   `duty2cal` and `duty2cal.github.io` in the organization's web settings. No
+   declaration, preview or drift check covers either step; chapter 7 records
+   both.
+
+**Notes:** The suite drives steps 2–5 against the fake in `--writes` mode and
+asserts the API responses, the journal's applied-write set and the state; the
+real GitHub acceptance and rendering are proven only by the operator's apply
+after GREEN. The state is primed by adopting both existing batches and applying
+the inherited pre-security base tree; that base apply performs the security
+change's scanning write, and the scenario takes the journal offset after it, so
+only the three profile creations are asserted. The apply scenario's base
+omits `org_profile.tf` and copies `org/` beside its `infra/`; the preview
+scenario reuses the sibling's base priming and writes its own 404 descriptors
+before the targeted plan, which excludes the introduced billing drift.
+A write failure after the repository creation is reported as a partial outcome
+and the state is not committed; the stale marker rules are the shared
+configuration-change rules, not re-asserted by this capability.
+

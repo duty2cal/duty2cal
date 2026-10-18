@@ -68,34 +68,44 @@ repository operation and its tests, not product blocks.
 ```mermaid
 flowchart TB
   DECL["infra/ — declaration (organization, repositories, rule set, Pages source, repository security settings), two adoption batches, encrypted state"]
+  PROFILE["infra/org_profile.tf — profile repository + profile and security-policy file resources"]
+  ORG["org/ — reviewed profile content and default security policy (CC0-1.0)"]
   ADOPT["scripts/adopt-public-home.sh — preflight, staged imports, refresh verification, atomic binding"]
   APPLY["tofu plan -out=plan.bin → tofu apply plan.bin — the preview and the configuration change"]
   SETUP["scripts/setup-infra-tests.sh — tool checks, provider mirror, fixture proof"]
-  FAKE["scripts/fake-github/serve.py — fixtures, request journal, fault injection, opt-in write sandbox"]
+  FAKE["scripts/fake-github/serve.py — fixtures, request journal, fault injection, opt-in write sandbox (create + contents overlays)"]
   STEPS5["steps/adopt_existing_configuration.rs + steps/e2e/..."]
   STEPS6["steps/enable_repository_security.rs + steps/e2e/..."]
+  STEPS7["steps/publish_organization_profile.rs + steps/e2e/..."]
   TOFU5["tofu + integrations/github provider"]
+  ORG -->|"file() at plan time"| PROFILE
   ADOPT --> TOFU5
   APPLY --> TOFU5
+  APPLY --> PROFILE
   ADOPT --> DECL
   APPLY --> DECL
   STEPS5 -->|real subprocess| ADOPT
   STEPS6 -->|"real subprocess (init, plan, apply)"| APPLY
+  STEPS7 -->|"real subprocess (init, plan, apply)"| APPLY
   STEPS5 -->|starts| FAKE
   STEPS6 -->|"starts with --writes"| FAKE
+  STEPS7 -->|"starts with --writes"| FAKE
+  STEPS7 -->|"raw TCP reads"| FAKE
   TOFU5 -->|"GITHUB_BASE_URL"| FAKE
   SETUP -->|mirrors provider| TOFU5
 ```
 
 | Block | Responsibility |
 |---|---|
-| `infra/` | The declared configuration: `github_organization_settings`, both `github_repository` resources (the monorepo's `security_and_analysis` included), `github_repository_ruleset.main` (the existing `main protection` rule set), `github_repository_pages.pages`, and `github_repository_vulnerability_alerts.mono` / `github_repository_dependabot_security_updates.mono`; the two adoption batches; the encrypted state and its backup; the provider lock file. |
-| `scripts/adopt-public-home.sh` | The adoption interface: validate the declaration and passphrase, import the selected batch into a staged copy of the state, verify the batch with a refresh-only plan, then bind atomically and report one line per object, or refuse and name the object. |
+| `infra/` | The declared configuration: `github_organization_settings`, the monorepo and Pages `github_repository` resources (the monorepo's `security_and_analysis` included), the profile repository and its two `github_repository_file` resources in `org_profile.tf` (source resolved by `variable "org_source_dir"`, whose default is `../org`), `github_repository_ruleset.main` (the existing `main protection` rule set), `github_repository_pages.pages`, and `github_repository_vulnerability_alerts.mono` / `github_repository_dependabot_security_updates.mono`; the two adoption batches; the encrypted state and its backup; the provider lock file. |
+| `org/` | The reviewed public copy: the profile content (`profile/README.md`) and the default security policy (`SECURITY.md`), both CC0-1.0 and covered by a `REUSE.toml` override. The profile repository is output; these files are the source. |
+| `scripts/adopt-public-home.sh` | The adoption interface: validate the declaration and passphrase, import the selected batch into a staged copy of the state, verify the batch with a refresh-only plan, then bind atomically and report one line per object, or refuse and name the object. It stages the declaration without `org_profile.tf`, because the profile repository is created, never adopted, so the refresh-only verification never evaluates the profile files. |
 | The apply | The declaration's normal mechanism, no wrapper: `tofu init`, `tofu plan -out=plan.bin` (the preview; `plan.bin` is encrypted and git-ignored), `tofu apply plan.bin` (the configuration change), then a fresh plan that must be empty. The state is committed only after a green apply. |
-| `scripts/setup-infra-tests.sh` | Prepares the offline test environment: `tofu` and `python3` checks, the provider mirror and `terraformrc`, and the one-import proof that the fixture set satisfies the provider. |
-| `scripts/fake-github/serve.py` and its fixtures | The digital twin of GitHub's REST API: deterministic JSON fixtures per scenario, a journal of every request, and fault injection for unreadable, missing and changed objects; `--writes` adds an opt-in sandbox that accepts exactly the repository `PATCH`, the vulnerability-alerts `PUT` and the Dependabot-security-updates `PUT` and overlays the result on later reads. |
+| `scripts/setup-infra-tests.sh` | Prepares the offline test environment: `tofu` and `python3` checks, the provider mirror and `terraformrc`, and the one-import proof that the fixture set satisfies the provider. The proof workspaces and the `security-applied` base workspace omit `org_profile.tf`, because they cover only the existing/adopted objects; the profile scenario owns the profile proof. |
+| `scripts/fake-github/serve.py` and its fixtures | The digital twin of GitHub's REST API: deterministic JSON fixtures per scenario, a journal of every request, and fault injection for unreadable, missing and changed objects; `--writes` adds an opt-in sandbox that accepts the repository `PATCH`, the vulnerability-alerts and Dependabot-security-updates `PUT`s, organization-repository creation, and repository-contents `PUT`s, with branch and commit overlays served back to the provider's reads. |
 | `apps/cli/tests/steps/adopt_existing_configuration.rs`, `apps/cli/tests/steps/e2e/adopt_existing_configuration.rs` | The adoption capability's step definitions; they drive the adoption command as a real subprocess against the fake. |
 | `apps/cli/tests/steps/enable_repository_security.rs`, `apps/cli/tests/steps/e2e/enable_repository_security.rs` | The security-settings capability's step definitions; they prime the state with the real adoption command, then drive `tofu init`, `plan` and `apply` as real subprocesses against the fake in `--writes` mode. |
+| `apps/cli/tests/steps/publish_organization_profile.rs`, `apps/cli/tests/steps/e2e/publish_organization_profile.rs` | The profile capability's step definitions; they copy `org/` beside the scenario's `infra/`, prime the same state, remove `org_profile.tf` for the base priming and restore it, drive the preview and the apply as real subprocesses, and read the published repository and contents back from the fake with raw loopback requests. |
 
 ## Level 2 — Key building blocks
 

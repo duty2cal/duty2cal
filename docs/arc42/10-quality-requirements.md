@@ -32,6 +32,7 @@ flowchart TB
   repro --> rp3["Encrypted state at rest"]
   repro --> rp4["Security settings declared and applied"]
   repro --> rp5["A refusal changes nothing and a partial failure is named"]
+  repro --> rp6["Public profile copy is truthful and self-contained"]
 ```
 
 ## Quality scenarios
@@ -59,6 +60,8 @@ flowchart TB
 | QS-019 | Declared security settings | The declaration enables secret scanning and push protection on the monorepo, both Dependabot settings are already on and bound, and the live monorepo reports both scanning settings disabled. | The targeted security preview names exactly the two scanning statuses and proposes no object to create or delete; the apply enables both, writes only the repository change, the state records both as enabled, and a later targeted security preview reports no differences; the full preview still names the pre-existing organization billing drift, a separate issue outside this change. |
 | QS-020 | Truthful apply outcome | A targeted apply whose authority cannot perform the first change, and a targeted apply whose earlier settings succeed and whose later setting fails. | The first exits non-zero, names the repository, and writes nothing; the second exits non-zero, names the applied settings and the failed setting, and the applied state records only what succeeded. |
 | QS-021 | Correctness (printed fidelity) | A supported travel leg supplies report time 07:30. | The published title ends with ` Report 07:30 LT`; a leg that supplies no report time keeps its previous title, and differing report values on the two fragments leave the title without a suffix while the description keeps both labelled values. |
+| QS-022 | Truthful public copy | The organization profile is published while the Pages site still serves a placeholder and the only distributed release is Windows x86_64. | The profile describes a local converter and its crew duty plan input, names Windows x86_64 as the only platform, makes no browser claim, links the stable latest-release address and the source and site repositories, states that the project is not affiliated with any provider or airline, attributes the third-party Unicode data to Unicode-3.0, links only absolute addresses, and embeds no image, badge or other third-party resource. |
+| QS-023 | Default security policy | A repository without its own security policy is read by a contributor. | The organization profile repository carries `SECURITY.md` at its root; the policy names the private vulnerability reporting route, forbids attaching a real duty plan or a converted calendar, and states that only the latest published release is supported; the Pages repository serves no policy of its own. The route is enabled manually before publication. |
 
 **Stimulus / response / metric** for the primary scenario:
 

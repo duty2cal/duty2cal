@@ -65,7 +65,12 @@ The public home's configuration is deployed from the maintainer's workstation,
 never from CI. The declaration lives in the repository; the binding between the
 declaration and GitHub's objects is an encrypted state file that is committed
 with it; the passphrase that opens it, and the token that authorizes the
-operation, exist only in the maintainer's environment.
+operation, exist only in the maintainer's environment. The declaration covers
+the organization settings, the monorepo, the Pages repository, the protection
+rule, the repository security settings, and the public organization profile
+repository with its two reviewed files. The last three of those are created by
+an apply when live lacks them; the others were adopted before their first
+change.
 
 ```mermaid
 flowchart TB
@@ -87,6 +92,69 @@ flowchart TB
 | GitHub | The only owner of the live settings; receives a write only from a later, separately reviewed apply. |
 | CI | Runs the same suite against a local fake API; holds no GitHub token and no passphrase, so it can neither apply nor report drift. |
 
+### The organization profile repository
+
+| Property | Value |
+|---|---|
+| Repository | `duty2cal/.github`, public, created by a previewed apply (it does not exist live before this change) |
+| Profile page | `profile/README.md` in that repository; GitHub renders it on the organization's overview page |
+| Default security policy | `SECURITY.md` at that repository's root; GitHub uses it for an organization repository that has no policy of its own; its private-reporting route is enabled manually before publication (see below) |
+| Source | `org/profile/README.md` and `org/SECURITY.md` in the monorepo, reviewed and covered by REUSE as CC0-1.0; the declaration resolves them through `variable "org_source_dir"` (default `../org` beside `infra/`) |
+| Licence | The page's own prose is CC0-1.0 and the project is MPL-2.0; third-party Unicode data is licensed under Unicode-3.0 and attributed with an absolute link to `LICENSES/Unicode-3.0.txt` |
+| Repository features | issue tracker, projects, wiki and discussions disabled; no Pages site, no declared scanning block; a public repository's scanning statuses are GitHub's computed defaults |
+| Publication mechanism | `github_repository_file` resources in `infra/org_profile.tf`, applied from the maintainer's workstation like every other declared change |
+| Adoption | none; the repository is absent live, so the apply creates it and the state records the new binding |
+
+The profile repository is output. A text change is a change to `org/`, reviewed
+in the same history as the declaration, previewed and applied like any other
+configuration change. The repository is never edited by hand; the declaration's
+file resources replace an existing file when the reviewed content differs.
+
+The profile page is a public presentation surface, not a system UI: GitHub
+renders it, and the project neither serves nor scripts that rendering. The
+page's truthfulness is a property of the reviewed `org/` text; its links are
+absolute and it embeds no third-party image or widget.
+
+### Manual operator prerequisite: private vulnerability reporting
+
+The default security policy names the private vulnerability reporting route
+`https://github.com/duty2cal/duty2cal/security/advisories/new`. That route
+exists only when the repository owner has enabled private vulnerability
+reporting on `duty2cal/duty2cal` (Settings → Code security and analysis); the
+pinned `integrations/github` provider (6.13.0) has no resource for it. The
+operator therefore enables it by hand **before** the profile is published:
+
+1. Open `https://github.com/duty2cal/duty2cal/settings/security_analysis` as
+   the organization owner.
+2. Enable private vulnerability reporting.
+3. Confirm the repository's "Security" tab offers "Report a vulnerability".
+
+The setting remains outside the declaration, the applied state and the drift
+check; chapter 11's R-030 records the gap. The default-security scenario asserts
+only that the published policy names the route; neither the fake nor the suite
+can prove the live setting, and the operator's confirmation is the acceptance
+evidence that the route exists.
+
+### Manual operator step: pinned repositories
+
+GitHub shows up to six pinned repositories on the organization overview, and
+the organization owner sets them in the organization's web settings. The pinned
+`integrations/github` provider (6.13.0) exposes no resource for them, and this
+change introduces no API script or other second write path. The step is
+therefore durable operator documentation, not a declared object:
+
+1. After the apply that creates the profile repository, open
+   `https://github.com/organizations/duty2cal/settings/profile` as the
+   organization owner.
+2. Pin `duty2cal` and `duty2cal.github.io`. Up to six repositories may be
+   pinned; the `.github` repository itself does not need to be pinned.
+3. Save, then open the organization overview once and confirm both appear.
+
+The step is one-time. It cannot be previewed, it is not recorded in the applied
+state, and the local configuration drift check cannot report a change to it; a
+later organization-settings change that clears the pins is repaired by
+repeating the step. Chapter 11 records the limitation.
+
 ## Deployment consequences
 
 - No package manager, service, or configuration file is required on the supported platform.
@@ -97,6 +165,12 @@ flowchart TB
 - Already-published Linux and macOS archives stay as they were: releases are immutable, so this narrowing applies to future releases only.
 - The applied state is deployed as a committed ciphertext: `infra/terraform.tfstate` and its backup are in the repository, protected by the passphrase and by OpenTofu's `enforced = true` encryption. Losing the passphrase loses the state; re-adopting rebuilds it without changing anything live.
 - The security change from this workstation, after the earlier configuration change, enables secret scanning and push protection on the monorepo. The two Dependabot settings are adopted read-only first, so the apply carries one live change; a read-only refresh-only preflight refuses a live edit made since the preview before `tofu apply` runs. The state that records the change is committed only after the apply is green; a partial apply's state is marked stale beside itself and is not committed.
+- The apply that publishes the profile creates `duty2cal/.github` and writes its two reviewed files. The repository is not adopted: it does not exist live, so the preview names the three creations and the apply records them. The profile and security-policy text stays in `org/` under CC0-1.0; the profile repository is output and is never edited by hand.
+- Before that apply, the owner enables private vulnerability reporting on `duty2cal/duty2cal` by hand, because the pinned provider cannot declare it and the published policy names its route. The setting is not in the declaration, the applied state or the drift check.
+- The declaration resolves its reviewed source through `variable "org_source_dir"`; the default is `../org` beside `infra/`. The adoption command stages the declaration without `org_profile.tf`, and the setup proof and security base workspaces omit it, so no non-profile workspace evaluates the profile files.
+- The organization profile page is GitHub's rendering of that output. This change does not publish a browser converter or a three-platform release: the live Pages site still serves a placeholder, and the profile describes the local Windows x86_64 tool. The page embeds no third-party resource, so opening it issues no request beyond GitHub's own.
+- Pinned repositories are a one-time manual step in the organization's web settings. They have no declared object, no state binding and no drift report; the step is recorded above and the limitation is a chapter-11 risk.
+- The test environment starts the fake in `--writes` mode only for the scenarios that apply a change; it now serves repository creation, repository contents, branches and commits from an in-memory overlay. The adoption scenarios keep the read-only server and still prove that adoption issues no write.
 - The administer token, the passphrase, the billing email and the transient encrypted plan file never leave the workstation; the plan file is git-ignored and deleted after the apply.
 - The administer token and the passphrase are not deployed to any service: there is no apply in Actions and no configuration drift job in CI, so divergence from the declaration is found by the maintainer's local check.
 - The test environment deploys no service: the fake GitHub API runs on loopback from the suite's step definitions, and the provider is installed from a local mirror.

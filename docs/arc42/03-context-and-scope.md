@@ -17,15 +17,16 @@ flowchart LR
 
 ### The public home and release channel
 
-GitHub is the project's public home and release channel: the repository holds the history and the gate every change passes before it lands; GitHub Actions runners build, package, attest and publish each version; GitHub Releases serves the one Windows x86_64 archive at a stable latest-release address; Dependabot proposes dependency updates; and code scanning reviews the code and the project's own automation.
+GitHub is the project's public home and release channel: the repository holds the history and the gate every change passes before it lands; GitHub Actions runners build, package, attest and publish each version; GitHub Releases serves the one Windows x86_64 archive at a stable latest-release address; Dependabot proposes dependency updates; and code scanning reviews the code and the project's own automation. The organization's overview page is GitHub's rendering of the reviewed profile content and the organization's default security policy, both published from the same declaration into the public `duty2cal/.github` repository.
 
-The relationship runs one way, outward: the project pushes commits and version tags to GitHub, and GitHub serves the published archive to a downloader. Nothing flows back into the product.
+The relationship runs one way, outward: the project pushes commits and version tags to GitHub, and GitHub serves the published archive and the organization profile to a reader. Nothing flows back into the product.
 
 ```mermaid
 flowchart LR
-  maint["Maintainer"] -->|"commits, pull requests, version tags"| gh["GitHub (public repository, Actions runners, Releases, Dependabot, code scanning)"]
+  maint["Maintainer"] -->|"commits, pull requests, version tags"| gh["GitHub (public repository, Actions runners, Releases, Dependabot, code scanning, organization profile)"]
   gh -->|"check results on the revision"| maint
   gh -->|"Windows x86_64 archive, checksum, provenance, bill of materials"| dl["Crew member"]
+  gh -->|"profile page + default security policy"| reader["Organization profile reader"]
 ```
 
 The product itself is unchanged: the converter has no network I/O and no runtime dependency, and it never contacts GitHub. Only the project's build-and-release automation runs on the host.
@@ -56,6 +57,8 @@ flowchart LR
 | GitHub | The live configuration of the declared objects, read (adoption, preview, drift check) | The declared changes of one previewed revision, written by an apply; nothing during adoption or a preview |
 | Organization owner | The declaration, the selected batches, the passphrase and the token | One adopted/bound line per object, a preview naming every difference, one reported change per applied object, or a refusal naming the object |
 | Repository reader | The declaration, the batches and the encrypted state | The reviewable intended configuration; ciphertext they cannot open |
+| Organization profile reader | The reviewed `org/` text and the default security policy, published by an apply | A public overview page and a default security policy that state the current release truthfully and request no third-party resource |
+| Contributor without a repository policy | Nothing; GitHub resolves the organization default | The organization's default `SECURITY.md` with the private reporting route |
 
 The release page's text is the newest section of the repository's change log — the changes a user receives (capability changes and dependency updates), grouped by kind — and the change log itself is one of the files a release publishes, so a reader of the source and a reader of the release page see the same history. Each version carries exactly one archive, for Windows x86_64; there is no per-platform asset set, and nothing is offered for a platform the release does not support. A crew member on any other platform obtains the tool by building the source with a Rust toolchain.
 
@@ -78,9 +81,11 @@ flowchart LR
 | Diagnostic report | Local file write (plain text, numbered) | Out |
 | Construction clock | Operating-system clock (UTC) | In |
 | Public-home adoption, preview and configuration change | GitHub REST API over HTTPS: object reads for adoption, preview and the drift check; writes only the declared changes of a previewed revision, from the maintainer's workstation | In (reads) and out (an apply only), never the converter |
+| Organization profile publication | The same GitHub REST API: the profile repository is created and its two files are written by a previewed apply; GitHub renders the page and serves the default security policy | Out (an apply only), never the converter |
+| Pinned repositories and private vulnerability reporting | The organization's and repository's web settings, changed once by the organization owner; no API or declaration path | Out (manual only), never the converter |
 
 ## Scope boundary
 
 Inside: reading one supported plan, resolving its activities and dates, composing one calendar, publishing it without clobbering, and reporting failures with diagnostics.
 
-Outside: importing the calendar into a client, reconciling revised plans, editing the official schedule, entitlement/legality calculations, visa or booking actions, standby activation, and release approval. The public home and release channel — the repository, its automation and its release pages — belong to a separate capability; the converter neither uses nor reaches them. See the use case's out-of-scope list for the full boundary.
+Outside: importing the calendar into a client, reconciling revised plans, editing the official schedule, entitlement/legality calculations, visa or booking actions, standby activation, and release approval. The public home and release channel — the repository, its automation, its release pages, the organization profile and the default security policy — belong to separate capabilities; the converter neither uses nor reaches them. See the use case's out-of-scope list for the full boundary.

@@ -71,9 +71,17 @@ live configuration is what GitHub holds; the applied state is the record that
 binds each declared object to its live identity. The state is not a copy of the
 intended values and adoption never reconciles the two: a declared value that
 differs from live is left for the first preview, so adoption cannot become an
-unreviewed apply. The declaration is text and is reviewed like code; the state
-is ciphertext and is reviewed for the fact that it is ciphertext, not for its
-contents.
+unreviewed apply. An object the declaration names and live lacks is different:
+there is nothing to adopt, so the preview names a creation, the apply creates
+it, and the state records the new binding — the organization profile repository
+and its two files enter this way. The declaration resolves the reviewed profile
+source through `variable "org_source_dir"` (default `../org` beside `infra/`),
+so it can be planned from `infra/`, from an adoption staging copy or from a
+test workspace. The adoption command stages the declaration without
+`org_profile.tf`, and the setup proof and security base workspaces omit it,
+because the profile repository is created, never adopted. The declaration is
+text and is reviewed like code; the state is ciphertext and is reviewed for the
+fact that it is ciphertext, not for its contents.
 
 ## All-or-none adoption
 
@@ -113,9 +121,69 @@ advanced security — are never declared, and settings the provider cannot expre
 at all, such as private vulnerability reporting, stay manual and are recorded as
 a gap.
 
+## Public organization copy
+
+The organization profile and the organization's default security policy are
+public copy, not product output. They live in `org/` in the monorepo, are
+reviewed like code, are licensed CC0-1.0, and are published into the public
+profile repository by the declaration; the profile repository is output and is
+never edited by hand. The copy states only what the repository keeps: a local
+converter, Windows x86_64 as the only distributed platform, no browser
+application, and no third-party provider name. It links the stable
+latest-release address, the source and the site repositories, attributes the
+third-party Unicode data to Unicode-3.0 with an absolute licence link, and
+states explicitly that the project is not affiliated with any duty-plan
+provider or airline. The two published terms are the **profile content**
+(`profile/README.md`) and the **default security policy** (`SECURITY.md`); the
+reviewed pair is the **reviewed public copy**.
+
+The page is self-contained: every link is absolute and there are no images,
+badges, statistics widgets or other third-party resources. A reader opening the
+profile therefore issues no request beyond GitHub's own, which is the same
+promise the converter makes at runtime. The content-invariant scenario compares
+the published bytes with the reviewed `org/` source and asserts the positive
+claims; the profile is not trusted because a reviewer once looked at it, and the
+absence of the excluded provider name is a review control rather than a stored
+deny-list.
+
+## Default community health files
+
+GitHub uses `SECURITY.md` at the root of a public `.github` repository as the
+organization's default security policy for an organization repository that has
+none of its own. The profile repository publishes that file, so a repository
+without a policy — including the Pages repository — inherits a confidential
+reporting route. The file is a short organization-wide policy, not a copy of the
+monorepo's longer policy: it names the private advisory route, forbids attaching
+a real plan or a converted calendar, states that only the latest published
+release is supported, and describes how a report is handled.
+
+The route exists only when the owner enables private vulnerability reporting on
+`duty2cal/duty2cal` by hand before publication, because the pinned provider has
+no resource for the setting; it remains outside the declaration, the applied
+state and the drift check (chapter 7, R-030). The suite asserts that the policy
+names the route; it cannot prove the live setting.
+
+The fallback itself is GitHub's behaviour, not the project's code. The
+capability proves that the file exists at the required path and carries the
+route; it does not simulate GitHub's renderer. `CONTRIBUTING.md`,
+`CODE_OF_CONDUCT.md` and the issue and pull-request templates remain in the
+monorepo and are not published into the profile repository by this change.
+
+## Declared objects and manual operator steps
+
+The declaration covers what the pinned provider can express. Two public-home
+facts do not fit that boundary and are recorded rather than forced into it:
+the organization's profile fields stay empty (they are settings, not profile
+copy), and the pinned repositories are set once in the web interface because the
+provider exposes no resource for them. A manual step has no preview, no state
+binding and no drift report; the deployment chapter records the step and the
+risk chapter records the consequence. This is preferable to inventing a second
+write path with its own credential, which would contradict the one-declaration,
+one-writer rule.
+
 ## Apply semantics: the saved plan, the preflight and partial reporting
 
-A configuration change is a saved plan applied unchanged (the saved plan is targeted at the changed repository; a full-declaration plan feeds the unadopted-setting guard): `tofu plan -out`
+A configuration change is a saved plan applied unchanged (the saved plan is targeted at the changed objects — a repository, or the profile repository and its two files; a full-declaration plan feeds the unadopted-setting guard where one is needed): `tofu plan -out`
 produces the artifact the operator reads, and `tofu apply` of that file performs
 exactly those actions. OpenTofu refuses a plan whose state has moved on, so the
 applied revision is the previewed one, and the plan file is encrypted and
@@ -141,6 +209,12 @@ leaves the state recording only what succeeded; the routine writes
 marker exists the preview and the apply refuse and name the stale state, and a
 green apply removes it, so the revision is recorded only when every change
 succeeded.
+
+The profile scenario's test tree is the inherited pre-security base tree:
+priming adopts both existing batches and runs the base declaration's real
+apply, which performs the security change's scanning write. The scenario takes
+its journal offset after that apply, so only the three profile creations are
+asserted, and the base workspaces omit `org_profile.tf`.
 
 ## Adoption is read-only against the live organization
 
