@@ -27,11 +27,9 @@ import tempfile
 from pathlib import Path
 
 PLATFORM = "x86_64-pc-windows-gnu"
-EXECUTABLE_NAME = "duty2cal.exe"
 UNREADABLE_EXIT = 1
 UNRESOLVED_EXIT = 2
 GENERATOR = "cargo-bloat"
-GENERATOR_VERSION = "0.12.1"
 TWO_NUMBER_SENTENCE = (
     "The size attribution is not the stripped executable's file size: the two\n"
     "numbers are different quantities and are never substituted for each other.\n"
