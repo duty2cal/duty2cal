@@ -129,14 +129,32 @@ Interaction coverage (checked before writing tasks): the permanent inventory hol
   ```
   1 scenario (1 passed) / 4 steps (4 passed)
   ```
-- [x] COMMIT: same release-note subject, body naming this scenario. Revision recorded below after the commit.
+- [x] COMMIT: same release-note subject, body naming this scenario. Revision `6198868`.
 
 ### 4. Equal report times on both fragments produce one title suffix *(guard)*
 
-- [ ] RED: run `./run-tests.sh --name "Equal report times on both fragments produce one title suffix"`; the new `Given` is undefined, so strict mode fails. Paste the output.
-- [ ] GREEN: add the `Given a compatible departure and arrival fragment of one travel leg supplying the same report time 07:30` step (both fragments print 07:30). Production files: none — `combine()` already collapses equal values to `FieldValue::Single`, so `summary()` appends one suffix. Test file: `apps/cli/tests/steps/export_duty_plan_calendar.rs`. Run the single scenario; paste the output.
-- [ ] REFACTOR: no behaviour change; run the single scenario; paste the output.
-- [ ] COMMIT: same release-note subject, body naming this scenario. Record the revision identifier.
+- [x] RED: run `./run-tests.sh --name "Equal report times on both fragments produce one title suffix"`; the new `Given` is undefined, so strict mode fails.
+
+  ```
+  ✘  Given a compatible departure and arrival fragment of one travel leg supplying the same report time 07:30
+     Step doesn't match any function
+  1 scenario (1 failed) / 1 step (1 failed)
+  ```
+- [x] GREEN: added the `Given a compatible departure and arrival fragment of one travel leg supplying the same report time 07:30` step (both fragments print 07:30). Production files: none — `combine()` already collapses equal values to `FieldValue::Single`, so `summary()` appends one suffix. Test file: `apps/cli/tests/steps/export_duty_plan_calendar.rs`.
+
+  ```
+  Scenario: Equal report times on both fragments produce one title suffix
+  ✔  Given a compatible departure and arrival fragment of one travel leg supplying the same report time 07:30
+  ✔  When the crew member converts it
+  ✔  Then that activity's title is "LU742 ABC-DEF Report 07:30 LT"
+  1 scenario (1 passed) / 3 steps (3 passed)
+  ```
+- [x] REFACTOR: no behaviour change.
+
+  ```
+  1 scenario (1 passed) / 3 steps (3 passed)
+  ```
+- [x] COMMIT: same release-note subject, body naming this scenario. Revision recorded below after the commit.
 
 ## Documentation task
 
