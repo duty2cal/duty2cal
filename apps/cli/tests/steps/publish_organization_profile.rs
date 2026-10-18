@@ -74,7 +74,7 @@ pub(crate) fn source_tree(w: &DutyWorld) -> PathBuf {
 
 /// The three pre-write descriptors the profile scenarios need plus the absent
 /// profile repository itself, so the preview guard's live read is a clean 404.
-fn write_profile_descriptors(fixtures: &Path) {
+pub(crate) fn write_profile_descriptors(fixtures: &Path) {
     for relative in [
         "repos/duty2cal/.github.json",
         "repos/duty2cal/.github/contents/profile/README.md.json",
@@ -349,12 +349,7 @@ fn publish_profile(w: &mut DutyWorld) {
 }
 
 /// Fetch one published file's bytes through the fake's contents API.
-pub(crate) fn published_file(
-    w: &DutyWorld,
-    repository: &str,
-    path: &str,
-    label: &str,
-) -> Vec<u8> {
+pub(crate) fn published_file(w: &DutyWorld, repository: &str, path: &str, label: &str) -> Vec<u8> {
     let request = format!("/repos/duty2cal/{repository}/contents/{path}?ref=main");
     let (status, body) = fake_request(w, "GET", &request, &[], None);
     assert_eq!(

@@ -14,7 +14,7 @@ Feature: Publish the organization profile
     And the applied state records the organization profile repository and both files
     And a later targeted preview of the organization profile reports no differences
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Organization owner previews the profile declaration and only the three creations are named
     Given the applied state binds every declared object
     And the live organization has no organization profile repository

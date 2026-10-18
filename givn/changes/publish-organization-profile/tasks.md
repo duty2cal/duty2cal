@@ -747,7 +747,7 @@ Design constraints:
       ```
 - [x] COMMIT — `givn commit -m "test(e2e): <release note>"` with the scenario
       title in the body, stage only this scenario's files; record the revision.
-      Revision: `<hash>`
+      Revision: `ebe14aea0fec62c6898d0db8a00c31be60087675`
 
 ## 6. @e2e Organization owner previews the profile declaration and only the three creations are named
 
@@ -762,12 +762,81 @@ Design constraints:
   declaration.
 - Commit the scrubbed transcript. Do not remove the `@e2e` tag.
 
-- [ ] RED — remove `@wip` from this scenario only; run
-      `./run-tests.sh --e2e --name "Organization owner previews the profile declaration and only the three creations are named"`;
-      paste the non-zero output.
-- [ ] GREEN — implement the e2e preview steps and transcript; list files; run
+- [x] RED — remove `@wip` from this scenario only; run
+      `./run-tests.sh --name "Organization owner previews the profile declaration and only the three creations are named"`;
+      paste the non-zero output. (Same `--tags`/`--name` runner limitation as
+      scenario 5.)
+
+      ```text
+      $ ./run-tests.sh --name "Organization owner previews the profile declaration and only the three creations are named"
+      Feature: Publish the organization profile
+        Scenario: Organization owner previews the profile declaration and only the three creations are named
+         ✔  Given the applied state binds every declared object
+         ✘  And the live organization has no organization profile repository
+            Step failed:
+            Defined: tmp/tmp.TdSyYddeAR/f0006.feature:20:5
+            Matched: apps/cli/tests/steps/e2e/publish_organization_profile.rs:310:1
+            Step panicked. Captured output: not implemented: Organization owner previews the profile declaration:
+                     the live organization has no profile repository
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      2 steps (1 passed, 1 failed)
+      ...
+      error: test failed, to rerun pass `-p duty2cal --test features_runner`
+      EXIT:101
+      ```
+- [x] GREEN — implement the e2e preview steps and transcript; list files; run
       the same command; paste the zero-exit output.
-- [ ] REFACTOR — clean up; re-run; paste the zero-exit output.
+
+      Files modified: `apps/cli/tests/steps/e2e/publish_organization_profile.rs`
+      (scenario 6 plan filters, journal and state invariants, transcript
+      commit), `apps/cli/tests/steps/publish_organization_profile.rs`
+      (`write_profile_descriptors` exposed as `pub(crate)` only), and the delta
+      feature's `@wip` removal. The transcript is
+      `givn/changes/publish-organization-profile/evidence/visual/organization-owner-previews-the-profile-declaration-and-only-the-three-creations-are-named/transcript.txt`.
+
+      ```text
+      $ ./run-tests.sh --name "Organization owner previews the profile declaration and only the three creations are named"
+      Feature: Publish the organization profile
+        Scenario: Organization owner previews the profile declaration and only the three creations are named
+         ✔  Given the applied state binds every declared object
+         ✔  And the live organization has no organization profile repository
+         ✔  And the declaration adds the organization profile repository, its profile content and its default security policy
+         ✔  When the organization owner previews the declaration
+         ✔  Then the preview names the organization profile repository as the only object to create
+         ✔  And the preview names the profile content and the default security policy as the only files to create
+         ✔  And the preview names no change other than the three creations
+         ✔  And the live configuration is unchanged
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      8 steps (8 passed)
+      EXIT:0
+      ```
+- [x] REFACTOR — clean up; re-run; paste the zero-exit output.
+
+      `cargo fmt --all` applied the workspace style to the new module; the
+      real-binary plan, journal, state and transcript behaviour is unchanged.
+
+      ```text
+      $ ./run-tests.sh --name "Organization owner previews the profile declaration and only the three creations are named"
+      Feature: Publish the organization profile
+        Scenario: Organization owner previews the profile declaration and only the three creations are named
+         ✔  Given the applied state binds every declared object
+         ✔  And the live organization has no organization profile repository
+         ✔  And the declaration adds the organization profile repository, its profile content and its default security policy
+         ✔  When the organization owner previews the declaration
+         ✔  Then the preview names the organization profile repository as the only object to create
+         ✔  And the preview names the profile content and the default security policy as the only files to create
+         ✔  And the preview names no change other than the three creations
+         ✔  And the live configuration is unchanged
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      8 steps (8 passed)
+      EXIT:0
+      ```
 - [ ] COMMIT — `test(e2e): <release note>`, scenario title in the body, stage
       only this scenario's files; record the revision.
       Revision: `<hash>`

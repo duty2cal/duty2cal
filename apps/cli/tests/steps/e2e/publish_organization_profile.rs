@@ -15,11 +15,11 @@ use std::path::PathBuf;
 use cucumber::{given, then};
 
 use crate::steps::adopt_existing_configuration::{
-    journal_lines, repository_root, BILLING_EMAIL, PASSPHRASE, TOKEN,
+    fixtures_dir, journal_lines, repository_root, BILLING_EMAIL, PASSPHRASE, TOKEN,
 };
-use crate::steps::enable_repository_security::{fake_request, jq, state_addresses};
+use crate::steps::enable_repository_security::{fake_request, jq, state_addresses, state_values};
 use crate::steps::publish_organization_profile::{
-    ensure_source_tree, preview, published_file, source_tree,
+    ensure_source_tree, preview, published_file, source_tree, write_profile_descriptors,
 };
 use crate::DutyWorld;
 
@@ -35,6 +35,15 @@ const CREATES: &str = r#"
 [ .resource_changes[]?
   | select((.change.actions // []) == ["create"])
   | .address ]
+| sort
+| join(" ")
+"#;
+
+/// Every non-no-op change in the saved plan, as `address action`.
+const CHANGES: &str = r#"
+[ .resource_changes[]?
+  | select((.change.actions // []) != ["no-op"])
+  | "\(.address) \(.change.actions | join(","))" ]
 | sort
 | join(" ")
 "#;
@@ -173,7 +182,10 @@ async fn the_apply_reports_the_profile_objects_as_created(w: &mut DutyWorld) {
 )]
 async fn the_profile_repository_is_public_and_offers_no_tracker(w: &mut DutyWorld) {
     let (status, body) = fake_request(w, "GET", "/repos/duty2cal/.github", &[], None);
-    assert_eq!(status, 200, "the fake serves the profile repository: {body}");
+    assert_eq!(
+        status, 200,
+        "the fake serves the profile repository: {body}"
+    );
     let report = scenario_dir_for(w).join("applied-repository.json");
     fs::write(&report, &body).expect("write the live profile repository body");
     for (field, expected) in [
@@ -202,8 +214,7 @@ async fn the_profile_repository_serves_the_reviewed_profile_content(
     path: String,
 ) {
     let published = published_file(w, ".github", &path, "profile-content");
-    let reviewed =
-        fs::read(source_tree(w).join(&path)).expect("read the reviewed profile content");
+    let reviewed = fs::read(source_tree(w).join(&path)).expect("read the reviewed profile content");
     assert_eq!(
         published, reviewed,
         "the fake serves the reviewed profile content byte for byte"
@@ -308,16 +319,35 @@ async fn a_later_targeted_preview_reports_no_differences(w: &mut DutyWorld) {
 // ---------------------------------------------------------------------------
 
 #[given("the live organization has no organization profile repository")]
-async fn the_live_organization_has_no_profile_repository(_w: &mut DutyWorld) {
-    unimplemented!(
-        "Organization owner previews the profile declaration: \n         the live organization has no profile repository"
+async fn the_live_organization_has_no_profile_repository(w: &mut DutyWorld) {
+    // The primed base state is the security-applied tree; the profile
+    // scenario adds the four 404 descriptors its own proof reads. The fixture
+    // loader reads them from disk, so no fake restart is needed.
+    write_profile_descriptors(&fixtures_dir(w));
+    w.journal_offset = journal_lines(w).len();
+    let (status, body) = fake_request(w, "GET", "/repos/duty2cal/.github", &[], None);
+    assert_eq!(
+        status, 404,
+        "the live organization has no profile repository; response was: {body}"
     );
 }
 
 #[then("the preview names the organization profile repository as the only object to create")]
-async fn the_preview_names_the_profile_repository_as_the_only_create(_w: &mut DutyWorld) {
-    unimplemented!(
-        "Organization owner previews the profile declaration: \n         the profile repository is the only object to create"
+async fn the_preview_names_the_profile_repository_as_the_only_create(w: &mut DutyWorld) {
+    let report = plan_report(w);
+    let creates = jq(w, CREATES, &report, false);
+    assert!(
+        creates
+            .split_whitespace()
+            .any(|address| address == "github_repository.dot_github"),
+        "the preview creates the profile repository; report was:\n{}",
+        fs::read_to_string(&report).unwrap_or_default()
+    );
+    assert_eq!(
+        creates.split_whitespace().count(),
+        3,
+        "the preview creates only the three profile objects; report was:\n{}",
+        fs::read_to_string(&report).unwrap_or_default()
     );
 }
 
@@ -325,13 +355,65 @@ async fn the_preview_names_the_profile_repository_as_the_only_create(_w: &mut Du
     "the preview names the profile content and the default security policy as the only files to \
      create"
 )]
-async fn the_preview_names_the_two_files_as_the_only_creates(_w: &mut DutyWorld) {
-    unimplemented!(
-        "Organization owner previews the profile declaration: \n         the two files are the only files to create"
+async fn the_preview_names_the_two_files_as_the_only_creates(w: &mut DutyWorld) {
+    let report = plan_report(w);
+    assert_eq!(
+        jq(
+            w,
+            "[ .resource_changes[]? \
+             | select((.change.actions // []) == [\"create\"]) \
+             | select(.address | startswith(\"github_repository_file.\")) \
+             | .address ] | sort | join(\" \")",
+            &report,
+            false
+        ),
+        "github_repository_file.org_profile_readme github_repository_file.org_security",
+        "the preview creates exactly the two reviewed files; report was:\n{}",
+        fs::read_to_string(&report).unwrap_or_default()
     );
 }
 
 #[then("the preview names no change other than the three creations")]
-async fn the_preview_names_no_change_other_than_the_three_creations(_w: &mut DutyWorld) {
-    unimplemented!("Organization owner previews the profile declaration: no other change");
+async fn the_preview_names_no_change_other_than_the_three_creations(w: &mut DutyWorld) {
+    let report = plan_report(w);
+    let mut expected: Vec<String> = PROFILE_ADDRESSES
+        .iter()
+        .map(|address| format!("{address} create"))
+        .collect();
+    expected.sort();
+    assert_eq!(
+        jq(w, CHANGES, &report, false),
+        expected.join(" "),
+        "the preview names exactly the three creations; report was:\n{}",
+        fs::read_to_string(&report).unwrap_or_default()
+    );
+
+    let journal = change_journal(w);
+    assert_eq!(
+        jq(
+            w,
+            "[ .[] | select(.applied_write == true) ] | length",
+            &journal,
+            true
+        ),
+        "0",
+        "the preview issued no write; journal was:\n{}",
+        fs::read_to_string(&journal).unwrap_or_default()
+    );
+    assert_no_refused_or_unknown(w, &journal);
+    let values = state_values(w);
+    let before = w
+        .applied_state_snapshot
+        .as_ref()
+        .expect("the scenario snapshotted no applied state");
+    assert_eq!(
+        &values,
+        before,
+        "the preview changed no applied state at {}",
+        crate::steps::adopt_existing_configuration::declaration_dir(w).display()
+    );
+    commit_transcript(
+        w,
+        "organization-owner-previews-the-profile-declaration-and-only-the-three-creations-are-named",
+    );
 }
