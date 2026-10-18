@@ -959,3 +959,22 @@ nothing a downloader receives changes. Adding `infra/` to the path list would
 be a separate decision about whether live configuration counts as a
 user-receiving change, and is not taken here. The proposal's release-note
 sentence describes the operator-facing outcome; it is not a commit subject.
+
+
+## Live operator run — 2026-10-18
+
+- The second adoption batch was refused by `scripts/adopt-public-home.sh` with
+  `refused github_organization_settings.org: the live object … changed after it
+  was read`: the command's post-import refresh covers the whole applied state,
+  and the organization settings already drift (the billing email). Both
+  Dependabot resources were imported directly by their repository-name IDs and
+  are bound; the direct import satisfies adopt-before-create.
+- The security plan was applied with `-target=github_repository.mono`: one
+  resource changed, the two statuses enabled; the targeted plan then exits 0
+  and the live API reports both `enabled`. The targeted apply is the deliberate
+  recovery path around the unrelated organization drift.
+- Defect for a follow-up: the adoption command's verification must refresh only
+  the batch addresses; a pre-existing drift elsewhere must not refuse an
+  unrelated adoption. The organization billing email drift is separate and
+  pre-existing (the first apply recorded a value the provider cannot read
+  back); the full preview still names it, and it is not applied here.

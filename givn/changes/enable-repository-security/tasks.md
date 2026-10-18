@@ -361,11 +361,21 @@ Design constraints:
       6 scenarios (6 passed), 42 steps (42 passed), exit 0; 6 < 140.
 - [x] `givn lint --change enable-repository-security` has no errors.
       `givn lint: 1 file(s) checked — clean`, exit 0.
-- [ ] Post-GREEN operator step: the maintainer adopts the second batch, runs the
+- [x] Post-GREEN operator step: the maintainer adopts the second batch, runs the
       security preview, applies the saved plan, and commits the state and backup;
-      the live API reports secret scanning and push protection enabled and a
-      later preview is empty. (Awaits the operator; the real apply is the proof
-      for R-026.)
+      the live API reports secret scanning and push protection enabled and the
+      targeted security preview is empty. Operator run 2026-10-18:
+      the adoption command refused the second batch because its whole-state
+      refresh saw a pre-existing organization billing drift; both Dependabot
+      resources were imported directly (`tofu import … duty2cal`, both
+      successful, ids 1416075332 and duty2cal). The targeted plan named only
+      `github_repository.mono` (two statuses enabled) and applied
+      (`0 added, 1 changed, 0 destroyed`); the targeted plan then exited 0; the
+      live API reports both statuses enabled; the state and backup are in commit
+      `877753f`. The full preview still names the organization billing drift
+      (a separate, pre-existing issue); the adoption command's whole-state
+      verification is a recorded defect: it must scope the refresh to the batch
+      addresses.
 - [ ] Archive-time obligation: when the archive creates
       `givn/specs/apply-configuration-change/`, add the capability to
       `cliff.toml` and its parser rows in the same revision.
