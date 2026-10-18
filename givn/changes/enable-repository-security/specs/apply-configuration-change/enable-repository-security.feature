@@ -2,7 +2,7 @@
 
 Feature: Enable repository security
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Organization owner previews the security settings and only the declared differences are named
     Given the applied state binds the organization, both repositories, the default-branch rule, the site source and the two Dependabot settings
     And that applied state was produced by the base declaration's own apply

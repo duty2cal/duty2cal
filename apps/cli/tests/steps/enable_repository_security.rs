@@ -69,7 +69,7 @@ fn stale_path(w: &DutyWorld) -> PathBuf {
 }
 
 /// The combined output of a child invocation.
-fn combined(output: &Output) -> String {
+pub(crate) fn combined(output: &Output) -> String {
     let mut text = String::from_utf8_lossy(&output.stdout).into_owned();
     if !output.stderr.is_empty() {
         text.push_str("[stderr]\n");
@@ -80,7 +80,7 @@ fn combined(output: &Output) -> String {
 
 /// Run the real `tofu` binary in the scenario's declaration with the fake's
 /// environment; neither the real endpoint nor `gh auth token` can be reached.
-fn tofu(w: &DutyWorld, args: &[&str]) -> Output {
+pub(crate) fn tofu(w: &DutyWorld, args: &[&str]) -> Output {
     let declaration = declaration_dir(w);
     let port = w.fake_port.expect("the scenario started no fake API");
     let rc = terraformrc();
@@ -149,7 +149,7 @@ fn fake_request(
 }
 
 /// The fake's live monorepo body, written to the scenario directory for `jq`.
-fn live_monorepo_report(w: &DutyWorld) -> PathBuf {
+pub(crate) fn live_monorepo_report(w: &DutyWorld) -> PathBuf {
     let (status, body) = fake_request(w, "GET", "/repos/duty2cal/duty2cal", &[], None);
     assert_eq!(
         status, 200,
@@ -161,7 +161,7 @@ fn live_monorepo_report(w: &DutyWorld) -> PathBuf {
 }
 
 /// Assert the live scanning statuses the fake reports.
-fn assert_scanning_status(w: &DutyWorld, expected: &str) {
+pub(crate) fn assert_scanning_status(w: &DutyWorld, expected: &str) {
     let report = live_monorepo_report(w);
     for field in ["secret_scanning", "secret_scanning_push_protection"] {
         let status = jq(
@@ -180,7 +180,7 @@ fn assert_scanning_status(w: &DutyWorld, expected: &str) {
 }
 
 /// The addresses the applied state records.
-fn state_addresses(w: &DutyWorld) -> Vec<String> {
+pub(crate) fn state_addresses(w: &DutyWorld) -> Vec<String> {
     let list = tofu(w, &["state", "list"]);
     assert!(
         list.status.success(),
@@ -217,7 +217,7 @@ fn object_live_id(w: &DutyWorld, address: &str) -> String {
 }
 
 /// Run one of the routine's jq filters and return its verdict.
-fn jq(w: &DutyWorld, filter: &str, report: &Path, slurp: bool) -> String {
+pub(crate) fn jq(w: &DutyWorld, filter: &str, report: &Path, slurp: bool) -> String {
     let mut command = Command::new("jq");
     if slurp {
         command.arg("-s");
@@ -238,7 +238,7 @@ fn jq(w: &DutyWorld, filter: &str, report: &Path, slurp: bool) -> String {
 }
 
 /// The scenario directory without mutating the world.
-fn scenario_dir_for(w: &DutyWorld) -> PathBuf {
+pub(crate) fn scenario_dir_for(w: &DutyWorld) -> PathBuf {
     w.dir
         .clone()
         .expect("scenario prepared no working directory")
@@ -248,7 +248,7 @@ fn scenario_dir_for(w: &DutyWorld) -> PathBuf {
 /// "state unchanged" invariant. A failed apply rewrites the envelope and may
 /// persist planned values, so bytes and serials are not evidence; the routine's
 /// write signal is live drift (design.md "The apply procedure").
-fn state_values(w: &DutyWorld) -> Vec<u8> {
+pub(crate) fn state_values(w: &DutyWorld) -> Vec<u8> {
     let dir = scenario_dir_for(w);
     let show = tofu(w, &["show", "-json"]);
     assert!(
@@ -301,7 +301,7 @@ fn remove_security_block(text: &str) -> String {
 /// provider's state-only read flag and the live values), and restore this
 /// change's declaration. The second adoption batch is a separate step so a
 /// scenario can prove the unadopted-setting guard.
-fn ensure_base_adoption(w: &mut DutyWorld) {
+pub(crate) fn ensure_base_adoption(w: &mut DutyWorld) {
     if w.declaration.is_some() {
         return;
     }
@@ -383,6 +383,27 @@ fn ensure_base_adoption(w: &mut DutyWorld) {
         "the base apply left a live change:\n{}",
         combined(&after)
     );
+
+    // The base declaration's own apply is part of the @e2e transcript: it is
+    // what records the state-only bookkeeping field and the live values.
+    let mut base =
+        String::from("$ base declaration's own apply (tofu init; tofu plan -out; tofu apply)\n");
+    base.push_str(&format!(
+        "$ tofu init -input=false -no-color\n{}",
+        combined(&init)
+    ));
+    base.push_str(&format!(
+        "$ tofu plan -input=false -no-color -out=base-plan.bin\n{}",
+        combined(&plan)
+    ));
+    base.push_str(&format!(
+        "$ tofu apply -input=false -no-color base-plan.bin\n{}",
+        combined(&apply)
+    ));
+    base.push_str("$ tofu plan -input=false -no-color (after the base apply)\n");
+    base.push_str(&combined(&after));
+    w.scenario_transcript.push_str(&base);
+
     let _ = fs::remove_file(declaration.join("base-plan.bin"));
 
     fs::write(declaration.join("repos.tf"), &repos)
@@ -396,7 +417,7 @@ fn ensure_base_adoption(w: &mut DutyWorld) {
 
 /// Adopt the second batch on top of the inherited applied state, record the
 /// state snapshot and restart the fake so the scenario's journal is its own.
-fn ensure_base_state(w: &mut DutyWorld) {
+pub(crate) fn ensure_base_state(w: &mut DutyWorld) {
     ensure_base_adoption(w);
     if state_addresses(w)
         .iter()
@@ -434,7 +455,7 @@ fn ensure_base_state(w: &mut DutyWorld) {
 /// The preview phase of the routine: stale check, `tofu init`,
 /// `tofu plan -out=plan.bin`, `tofu show -json`, and the unadopted-setting
 /// guard over the saved plan's JSON.
-fn preview(w: &mut DutyWorld) {
+pub(crate) fn preview(w: &mut DutyWorld) {
     let declaration = declaration_dir(w);
     let dir = scenario_dir_for(w);
     let report = dir.join("preview.json");
@@ -501,7 +522,7 @@ fn preview(w: &mut DutyWorld) {
 /// The apply phase: stale check, the read-only refresh-only preflight with the
 /// report as the verdict, the saved plan's application, and the stale marker
 /// on a failure that changed the state.
-fn apply_previewed(w: &mut DutyWorld) {
+pub(crate) fn apply_previewed(w: &mut DutyWorld) {
     let declaration = declaration_dir(w);
     let dir = scenario_dir_for(w);
     let before = dir.join("state-before-values.json");
