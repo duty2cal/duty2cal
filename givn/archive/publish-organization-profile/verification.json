@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "publish-organization-profile",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
-  "started_at_unix": 1792354621,
-  "finished_at_unix": null
+  "status": "proven",
+  "candidate_revision": "3bbd25415214ecd2f0a82e9df7b093e94e106a64",
+  "tested_revision": "3bbd25415214ecd2f0a82e9df7b093e94e106a64",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 347.861474081
+    },
+    "regular": {
+      "status": "passed",
+      "total": 150,
+      "passed": 150,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 1232.276277565
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 876,
+    "line_valid": 890,
+    "line_percent": 98
+  },
+  "started_at_unix": 1792357853,
+  "finished_at_unix": 1792360731
 }
