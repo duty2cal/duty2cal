@@ -26,6 +26,7 @@ flowchart TB
   rel2 --> ri6["Committed change log matches the released revision"]
   rel2 --> ri7["Dependency updates are releasable and announced"]
   rel2 --> ri8["Publication waits for every check to conclude"]
+  rel2 --> ri9["Measured size attribution"]
   root --> repro["Reproducibility of the public home"]
   repro --> rp1["Reviewable declaration"]
   repro --> rp2["All-or-none adoption with no live change"]
@@ -59,6 +60,7 @@ flowchart TB
 | QS-019 | Declared security settings | The declaration enables secret scanning and push protection on the monorepo, both Dependabot settings are already on and bound, and the live monorepo reports both scanning settings disabled. | The targeted security preview names exactly the two scanning statuses and proposes no object to create or delete; the apply enables both, writes only the repository change, the state records both as enabled, and a later targeted security preview reports no differences; the full preview still names the pre-existing organization billing drift, a separate issue outside this change. |
 | QS-020 | Truthful apply outcome | A targeted apply whose authority cannot perform the first change, and a targeted apply whose earlier settings succeed and whose later setting fails. | The first exits non-zero, names the repository, and writes nothing; the second exits non-zero, names the applied settings and the failed setting, and the applied state records only what succeeded. |
 | QS-021 | Correctness (printed fidelity) | A supported travel leg supplies report time 07:30. | The published title ends with ` Report 07:30 LT`; a leg that supplies no report time keeps its previous title, and differing report values on the two fragments leave the title without a suffix while the description keeps both labelled values. |
+| QS-022 | Measured size evidence | A revision is pushed, and the Windows cross-build produces its attribution; a build fails, a build keeps no names, and a stripped executable's file size cannot be read. | The report names the requested revision, the resolved revision and `x86_64-pc-windows-gnu`, records the build identity (toolchain, `cargo-bloat 0.12.1`, configuration digests), divides the build that retains the names by crate and by function, and states the stripped executable's file size beside the split; the two numbers are different quantities and neither is substituted for the other. A failed build or a build that keeps no names produces no attribution and names what could not be read; an unreadable file size leaves the report incomplete and never presents the split's total as the file size. The measurement is evidence, not a gate: its CI step publishes the report and exits zero, so it does not refuse a revision or a release. |
 
 **Stimulus / response / metric** for the primary scenario:
 

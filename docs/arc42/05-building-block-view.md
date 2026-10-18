@@ -34,6 +34,9 @@ flowchart TB
   REL[".github/workflows/release.yml — build matrix, Windows smoke, prepare, publish, verify"]
   COMM["community files — CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, issue and PR templates"]
   STEPS["apps/cli/tests/steps/publish_public_release.rs + steps/e2e/publish_public_release.rs"]
+  MEASURE["scripts/measure_executable_size.py — two builds, strip disabled for the attribution only"]
+  REPORT["attribution.json + attribution.md — revision, platform, crate/function split, stripped file size"]
+  STEPS9["apps/cli/tests/steps/measure_distributed_executable_size.rs + steps/e2e/..."]
   REL -->|invokes| PREP
   PREP -->|invokes| RENDER
   REL -->|publish job invokes| GATE
@@ -41,10 +44,13 @@ flowchart TB
   RENDER -->|writes| LOG
   CI -->|invokes| DCO
   CI -->|invokes| RENDER
+  CI -->|"windows-gnu-build invokes"| MEASURE
   CI -->|actionlint validates| REL
   STEPS -->|real subprocess| PREP
   STEPS -->|real subprocess| RENDER
   STEPS -->|real subprocess| GATE
+  STEPS9 -->|real subprocess| MEASURE
+  MEASURE -->|writes| REPORT
 ```
 
 | Release block | Responsibility |
@@ -55,10 +61,13 @@ flowchart TB
 | `CHANGELOG.md` | The generated change log: the newest section is the version being released, every earlier section stays verbatim, and the first section back-fills `0.1.0`; published among a release's assets. |
 | `scripts/dco-check.sh` | Check DCO sign-off over a pull request's commit range; run by the `dco` CI job on pull requests only. |
 | `scripts/await-green-checks.sh` | The publication gate: resolve every release-workflow check suite on the tagged revision, wait (bounded) for the remaining check runs to conclude, and refuse a concluded non-success, no success, no check evidence, an unreadable source, or the bound, naming the checks. |
+| `scripts/measure_executable_size.py` | The measurement: resolve a named revision into a temporary worktree, build the shipped artifact with the committed configuration, build the same revision again with `strip` disabled for that build only in a separate target directory, attribute it by crate and by function with the pinned generator, read the stripped artifact's file size, digest and section sizes, and write one report naming the revision, the platform and the build's identity. A failed build or a build that keeps no names yields no attribution; an unreadable file size leaves the report incomplete; nothing is inferred from the archive or a host build. |
 | `.github/workflows/release.yml` | On a `v*` tag: cross-build the Windows x86_64 executable on Linux, smoke that executable on Windows, prepare the staged set over the one binary, wait for the tagged revision's checks to conclude green, publish the immutable release with provenance and a bill of materials, then verify the published release by reading it back. |
-| `.github/workflows/ci.yml` | The gate on landing; the publishing change added the `actionlint` and `dco` jobs, and this change adds the `changelog` job (the pinned generator plus the drift check) and puts the pinned generator on the `test` job's `PATH`, because the suite's change-log scenarios drive the renderer as a real subprocess. No existing job changes otherwise. |
+| `.github/workflows/ci.yml` | The gate on landing; the publishing change added the `actionlint` and `dco` jobs, and the change to generate release notes adds the `changelog` job (the pinned generator plus the drift check) and puts the pinned generator on the `test` job's `PATH`, because the suite's change-log scenarios drive the renderer as a real subprocess. The size-attribution change adds the measurement step to the `windows-gnu-build` job and puts the Windows target, `mingw-w64` and the pinned generator on the `test` and `coverage` jobs so the suite's `@e2e` scenario drives the same command. |
+| `attribution.json` and `attribution.md` | The report a measurement writes, not a committed file: the machine-readable and human renderings of one dataset. They name the revision, the platform and the build's identity, keep the crate/function split and the stripped executable's file size as separate fields, and carry the status `complete`, `incomplete` or `unreadable`. The gate's Windows job uploads the pair beside the run for the revision it built; the release maintainer can request the same report for any named revision. |
 | Community files (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/ISSUE_TEMPLATE/*`, `.github/pull_request_template.md`) | The contributor routes: contribution and sign-off rules, conduct, the confidential reporting route, and issue and pull-request forms that ask for the export family and a stripped sample, never a real plan. |
 | `apps/cli/tests/steps/publish_public_release.rs` and `apps/cli/tests/steps/e2e/publish_public_release.rs` | The step definitions for this capability; the `@e2e` file drives `scripts/prepare-release.sh` and `scripts/render-changelog.sh` as real subprocesses, asserts the staged Windows archive and checksum, extracts it and inspects its only member and bytes, and reads the newest section out of the written change log. The real Windows executable is started by the `smoke-windows` job, not by the Linux suite. |
+| `apps/cli/tests/steps/measure_distributed_executable_size.rs`, `apps/cli/tests/steps/e2e/measure_distributed_executable_size.rs`, and `apps/cli/tests/fixtures/size-attribution/` | The measurement capability's step definitions and its two-crate fixture workspace. The scenarios drive the real command as a subprocess against real git repositories, real cross-builds and the real generator; the `@e2e` scenario commits its terminal transcript. |
 
 ## Public-home declaration toolbox (outside the product crates)
 

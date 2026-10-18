@@ -1,6 +1,6 @@
 # Change seed: measure-executable-size
 
-Status: ready
+Status: proposed by measure-executable-size
 
 - Use-case IDs: `measure-distributed-executable-size`
 - Topic: `release-executable-size`
@@ -70,9 +70,10 @@ Status: ready
 
 ### When is the attribution produced?
 
-The cadence is unresolved (Q6). Every change means the cross-build step also
-publishes an attribution, so a pull request that changes the profile shows its
-delta before landing; every release means the attribution arrives during
-preparation, after the lever has landed; on request means no automation holds
-the evidence. The seed's scope (a per-pull-request CI step versus a
-release-preparation step) depends on the answer.
+Resolved by D1 (2026-10-18): the attribution is produced for **every pushed
+revision** by the gate's Windows cross-build, and it can be requested for any
+named revision. Every change means the cross-build step also publishes an
+attribution, so a pull request that changes the profile shows its delta before
+landing; a named revision (for example `v0.3.0`) is measured on request by the
+same command. Rejected: release only (the evidence would arrive after a lever
+lands) and on demand only (no automated evidence in the review).
