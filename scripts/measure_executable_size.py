@@ -216,6 +216,16 @@ def read_sections(executable: Path) -> list[dict[str, object]] | None:
     return sections
 
 
+def supported_sections(executable: Path) -> list[dict[str, object]] | None:
+    """The section table, or None when it cannot name the contract's `.text`."""
+    sections = read_sections(executable)
+    if sections is None:
+        return None
+    if not any(section["name"] == ".text" for section in sections):
+        return None
+    return sections
+
+
 def build_shipped(
     worktree: Path, target_dir: Path, env: dict[str, str]
 ) -> tuple[Path | None, str | None]:
@@ -510,7 +520,7 @@ def measure(args: argparse.Namespace) -> int:
                     "source": "supplied",
                     "bytes": len(data),
                     "sha256": sha256_bytes(data),
-                    "sections": read_sections(supplied),
+                    "sections": supported_sections(supplied),
                 }
         else:
             shipped_env = build_environment(shipped_target, strip_names=False)
@@ -529,7 +539,7 @@ def measure(args: argparse.Namespace) -> int:
                     "source": "built",
                     "bytes": len(data),
                     "sha256": sha256_bytes(data),
-                    "sections": read_sections(executable),
+                    "sections": supported_sections(executable),
                 }
 
         attribution_env = build_environment(root / "attribution-target", strip_names=True)

@@ -66,7 +66,7 @@ Feature: Measure the distributed executable's size
     Then the measurement is refused, naming "v9.9.9"
     And no report is written
 
-  @givn.added @wip
+  @givn.added
   Scenario: The attribution lists the stripped executable's sections
     Given a repository whose revision builds for the supported platform
     When the maintainer requests the size attribution for that revision

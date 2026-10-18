@@ -280,7 +280,7 @@ only.
     unresolved ref).
 - [x] REFACTOR: re-run; paste zero output.
   - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `4 steps (4 passed)`.
-- [ ] COMMIT: `givn commit -m "fix(measure-distributed-executable-size): A revision name that resolves to nothing is refused by name"`; record the hash.
+- [x] COMMIT: revision `2e22568` (`fix(measure-distributed-executable-size): A revision name that resolves to nothing is refused by name`; the scenario title is in the body).
 
 ## Scenario 7 — The attribution lists the stripped executable's sections
 
@@ -291,12 +291,19 @@ After reading the stripped artifact, run
 executable` table includes a `.text` row. Section sizes are descriptive only;
 no total or file size is derived from them.
 
-- [ ] RED: remove `@wip`; run
+- [x] RED: remove `@wip`; run
   `./run-tests.sh --name "The attribution lists the stripped executable's sections"`;
   paste non-zero output.
-- [ ] GREEN: implement the section table and step; run; paste zero output;
+  - Evidence: `red-exit=101`; `1 scenario (1 failed)`, `3 steps (2 passed, 1
+    failed)` (the production command was absent).
+- [x] GREEN: implement the section table and step; run; paste zero output;
   list files.
-- [ ] REFACTOR: re-run; paste zero output.
+  - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `4 steps (4 passed)`.
+  - Files: `scripts/measure_executable_size.py` (`supported_sections` returns
+    the table only when it names the contract's `.text` row; otherwise the
+    report says the section sizes could not be read).
+- [x] REFACTOR: re-run; paste zero output.
+  - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `4 steps (4 passed)`.
 - [ ] COMMIT: `givn commit -m "feat(measure-distributed-executable-size): The attribution lists the stripped executable's sections"`; record the hash.
 
 ## Scenario 8 — An absent objdump leaves the section table unread
