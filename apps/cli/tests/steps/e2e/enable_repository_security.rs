@@ -107,24 +107,28 @@ const ENABLED_SETTINGS: &str = r#"
 "#;
 
 /// Where a scenario's terminal transcript is committed as evidence.
-fn transcript_path(slug: &str) -> PathBuf {
+///
+/// Only the active change writes evidence. Once the change is archived, a run
+/// of this scenario from a later change must leave the archived transcript
+/// untouched, so the archive gate does not see unrelated churn.
+fn transcript_path(slug: &str) -> Option<PathBuf> {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let active = root.join("givn/changes/enable-repository-security");
-    let home = if active.is_dir() {
+    active.is_dir().then(|| {
         active
-    } else {
-        root.join("givn/archive/enable-repository-security")
-    };
-    home.join("evidence/visual")
-        .join(slug)
-        .join("transcript.txt")
+            .join("evidence/visual")
+            .join(slug)
+            .join("transcript.txt")
+    })
 }
 
 /// Commit the transcript the consumer read, with the run-specific directory and
 /// transport details replaced by placeholders so only the command's output
 /// remains (design.md "Visual Design Contract").
 pub(crate) fn commit_transcript(w: &DutyWorld, slug: &str) {
-    let path = transcript_path(slug);
+    let Some(path) = transcript_path(slug) else {
+        return;
+    };
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).expect("create the evidence directory");
     }
