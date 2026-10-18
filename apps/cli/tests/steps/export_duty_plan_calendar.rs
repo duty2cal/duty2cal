@@ -1259,8 +1259,8 @@ async fn description_lists_approved_order(w: &mut DutyWorld) {
     }
 }
 
-#[given("a compatible departure and arrival fragment of one travel leg supplying Report (LT) 07:30 and Report (LT) 08:00 respectively")]
-async fn differing_report_times(w: &mut DutyWorld) {
+/// One travel leg split into fragments, each printing its own report time.
+fn report_time_fragments(w: &mut DutyWorld, departure: &str, arrival: &str) {
     let mut items = support::detail_header_row(600.0);
     items.extend(support::at(
         585.0,
@@ -1269,7 +1269,7 @@ async fn differing_report_times(w: &mut DutyWorld) {
             (ACTIVITY_X, "LU742"),
             (FROM_X, "ABC"),
             (START_X, "09:00"),
-            (support::REPORT_X, "07:30"),
+            (support::REPORT_X, departure),
         ],
     ));
     items.extend(support::at(
@@ -1279,10 +1279,20 @@ async fn differing_report_times(w: &mut DutyWorld) {
             (ACTIVITY_X, "LU742"),
             (TO_X, "DEF"),
             (END_X, "10:00"),
-            (support::REPORT_X, "08:00"),
+            (support::REPORT_X, arrival),
         ],
     ));
     write_fixture(w, &items);
+}
+
+#[given("a compatible departure and arrival fragment of one travel leg supplying Report (LT) 07:30 and Report (LT) 08:00 respectively")]
+async fn differing_report_times(w: &mut DutyWorld) {
+    report_time_fragments(w, "07:30", "08:00");
+}
+
+#[given("a compatible departure and arrival fragment of one travel leg supplying different report times 07:30 and 08:00")]
+async fn new_differing_report_times(w: &mut DutyWorld) {
+    report_time_fragments(w, "07:30", "08:00");
 }
 
 #[then(r#"the travel activity's description states "Report (LT) 07:30 (departure fragment)" and "Report (LT) 08:00 (arrival fragment)""#)]

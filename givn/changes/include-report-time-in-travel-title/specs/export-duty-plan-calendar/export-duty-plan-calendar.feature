@@ -14,7 +14,7 @@ Feature: Export a duty-plan calendar
     When the crew member converts it
     Then that activity's title is "LU742 ABC-DEF"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Differing report times leave the title without a report suffix
     Given a compatible departure and arrival fragment of one travel leg supplying different report times 07:30 and 08:00
     When the crew member converts it
