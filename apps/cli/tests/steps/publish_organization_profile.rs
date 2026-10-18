@@ -66,7 +66,7 @@ fn scenario_dir_for(w: &DutyWorld) -> PathBuf {
 }
 
 /// The profile source tree the scenario reads.
-fn source_tree(w: &DutyWorld) -> PathBuf {
+pub(crate) fn source_tree(w: &DutyWorld) -> PathBuf {
     w.source_tree
         .clone()
         .expect("the scenario prepared no org/ source tree")
@@ -349,7 +349,12 @@ fn publish_profile(w: &mut DutyWorld) {
 }
 
 /// Fetch one published file's bytes through the fake's contents API.
-fn published_file(w: &DutyWorld, repository: &str, path: &str, label: &str) -> Vec<u8> {
+pub(crate) fn published_file(
+    w: &DutyWorld,
+    repository: &str,
+    path: &str,
+    label: &str,
+) -> Vec<u8> {
     let request = format!("/repos/duty2cal/{repository}/contents/{path}?ref=main");
     let (status, body) = fake_request(w, "GET", &request, &[], None);
     assert_eq!(

@@ -67,12 +67,16 @@ biographies are not Gherkin actors.
   `repos/duty2cal/.github/contents/profile/README.md.json`,
   `repos/duty2cal/.github/contents/SECURITY.md.json`, and
   `repos/duty2cal/duty2cal.github.io/contents/SECURITY.md.json` (each
-  `{"__fake_response__": {"status": 404}}`). Adopt both existing batches, then
-  run the base declaration's real `tofu init`/`plan`/`apply` with
-  `security.tf`, the scanning block and `org_profile.tf` removed. That base
-  apply performs the security change's scanning write. Restore
-  `org_profile.tf` and the profile sources. Set `journal_offset` after the
-  base apply. The fake runs in `--writes` mode; kill it with `DutyWorld`.
+  `{"__fake_response__": {"status": 404}}`), plus the absent profile
+  repository descriptor `repos/duty2cal/.github.json`. Adopt both existing
+  batches, then run the base declaration's real `tofu init`/`plan`/`apply`
+  with `org_profile.tf` removed. `security.tf` and the scanning block remain,
+  so that base apply performs the security change's scanning write and the
+  inherited state matches the security-applied tree. Restore `org_profile.tf`
+  and the profile sources. Set `journal_offset` after the base apply. The
+  security capability's own base priming is separate: it removes
+  `security.tf`/the scanning block to reproduce the pre-security state. The
+  fake runs in `--writes` mode; kill it with `DutyWorld`.
 - **Environment:** `GITHUB_TOKEN=test-token`,
   `GITHUB_BASE_URL=http://127.0.0.1:<port>`,
   `TF_VAR_state_passphrase=test-passphrase-0123456789`,
@@ -548,20 +552,95 @@ Design constraints:
 
 ## E2E setup — before the first @e2e scenario
 
-- [ ] Bring up the local environment from the design's Local Runnability
+- [x] Bring up the local environment from the design's Local Runnability
       section: run `./scripts/setup-infra-tests.sh` (provider mirror,
       `terraformrc`, fixture proof) and confirm the fake starts on an
       ephemeral loopback port with `--writes`; no container or host service.
-- [ ] Confirm the e2e step module
+
+      ```text
+      $ ./scripts/setup-infra-tests.sh
+      jq-1.8.2
+      provider integrations/github 6.13.0 for linux_amd64
+      mirror /home/dan/.cache/duty2cal/terraform-provider-mirror
+      terraformrc /home/dan/.cache/duty2cal/terraformrc
+      ...
+      refresh-only plan (adopt-all) on the unchanged fake: No changes.
+      unknown paths served: 0
+      fixtures scripts/fake-github/fixtures/adopt-all proven for 5 objects
+      ...
+      base declaration apply: 0 live changes (follow-up plan: No changes.)
+      refresh-only plan (security-applied-security-adopted) on the unchanged fake: No changes.
+      unknown paths served: 0
+      fixtures scripts/fake-github/fixtures/security-applied proven for 5 base + 2 security objects
+      SETUP_EXIT:0
+      ```
+
+      The fake child starts on an ephemeral loopback port in `--writes` mode
+      from `start_fake_with(..., true)` and is killed by `DutyWorld`'s `Drop`.
+- [x] Confirm the e2e step module
       `apps/cli/tests/steps/e2e/publish_organization_profile.rs` exists and
       every e2e step starts as `unimplemented!`.
-- [ ] Prove `verify.e2e_command` is a strict subset: run `./run-tests.sh`
+
+      ```text
+      $ git show cc32948:apps/cli/tests/steps/e2e/publish_organization_profile.rs | grep -c 'unimplemented!'
+      11
+      ```
+
+      One stub per step of the two `@e2e` scenarios (7 + 4). The module is
+      declared in `apps/cli/tests/steps/e2e/mod.rs` as
+      `pub mod publish_organization_profile;`.
+- [x] Prove `verify.e2e_command` is a strict subset: run `./run-tests.sh`
       (with the new scenarios still `@wip`, or record the current full count)
       and `./run-tests.sh --e2e`; paste both scenario counts; the e2e count
       must be strictly less than the full count.
-- [ ] Confirm the e2e runner reaches the fake: a targeted e2e run of the apply
+
+      ```text
+      $ ./run-tests.sh --tags 'not @wip'
+      [Summary]
+      6 features
+      149 scenarios (149 passed)
+      640 steps (640 passed)
+      EXIT:0
+      ```
+
+      ```text
+      $ ./run-tests.sh --tags '@e2e and not @wip'
+      [Summary]
+      5 features
+      7 scenarios (7 passed)
+      51 steps (51 passed)
+      EXIT:0
+      ```
+
+      The e2e count is strictly smaller; the e2e command is the full runner
+      restricted to `@e2e`. The pinned cucumber-rs 0.23.0 rejects
+      `--tags` together with `--name` ("the argument '--tags <tagexpr>' cannot
+      be used with '--name <regex>'"), so each targeted single-scenario run
+      below is `./run-tests.sh --name "<title>"`; the name filter selects only
+      that scenario, which carries `@e2e`.
+- [x] Confirm the e2e runner reaches the fake: a targeted e2e run of the apply
       scenario with stubs fails at the first step, not at infrastructure.
       Paste the output.
+
+      ```text
+      $ ./run-tests.sh --name "Organization owner applies the previewed revision and the organization profile is published"
+      Feature: Publish the organization profile
+        Scenario: Organization owner applies the previewed revision and the organization profile is published
+         ✔  Given the applied state binds every declared object except the organization profile repository and its two files
+         ✘  And a previewed revision that declares the organization profile repository, its profile content and its default security policy
+            Step panicked. Captured output: not implemented: Organization owner applies the previewed revision: a previewed revision that declares the profile objects
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      2 steps (1 passed, 1 failed)
+      ...
+      error: test failed, to rerun pass `-p duty2cal --test features_runner`
+      EXIT:101
+      ```
+
+      The priming Given (adoption batches, the base declaration's real
+      `tofu init`/`plan`/`apply`) passed before the stub panicked, so the
+      run reached the fake and the real binary, not an infrastructure fault.
 
 Design constraints: e2e steps live in the separate `steps/e2e/` module; the
 transcript path is
@@ -588,13 +667,85 @@ Design constraints:
   `PUT`s may be in either order. Commit the scrubbed transcript.
 - Do not remove the `@e2e` tag.
 
-- [ ] RED — remove `@wip` from this scenario only; run
-      `./run-tests.sh --e2e --name "Organization owner applies the previewed revision and the organization profile is published"`;
-      paste the non-zero output.
-- [ ] GREEN — implement the e2e steps, the API reads and the transcript;
+- [x] RED — remove `@wip` from this scenario only; run
+      `./run-tests.sh --name "Organization owner applies the previewed revision and the organization profile is published"`;
+      paste the non-zero output. (The pinned runner rejects `--tags` with
+      `--name`; the name alone selects the `@e2e` scenario.)
+
+      ```text
+      $ ./run-tests.sh --name "Organization owner applies the previewed revision and the organization profile is published"
+      Feature: Publish the organization profile
+        Scenario: Organization owner applies the previewed revision and the organization profile is published
+         ✔  Given the applied state binds every declared object except the organization profile repository and its two files
+         ✘  And a previewed revision that declares the organization profile repository, its profile content and its default security policy
+            Step failed:
+            Defined: tmp/tmp.acUfv05qWT/f0006.feature:8:5
+            Matched: apps/cli/tests/steps/e2e/publish_organization_profile.rs:12:1
+            Step panicked. Captured output: not implemented: Organization owner applies the previewed revision: a previewed revision that declares the profile objects
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      2 steps (1 passed, 1 failed)
+      ...
+      error: test failed, to rerun pass `-p duty2cal --test features_runner`
+      EXIT:101
+      ```
+- [x] GREEN — implement the e2e steps, the API reads and the transcript;
       list files; run the same command; paste the zero-exit output.
-- [ ] REFACTOR — clean up; re-run; paste the zero-exit output.
-- [ ] COMMIT — `givn commit -m "test(e2e): <release note>"` with the scenario
+
+      Files modified: `apps/cli/tests/steps/e2e/publish_organization_profile.rs`
+      (scenario 5 steps, journal reads, transcript commit),
+      `apps/cli/tests/steps/publish_organization_profile.rs` (`source_tree`
+      and `published_file` exposed as `pub(crate)` only), and the delta
+      feature's `@wip` removal. The transcript is
+      `givn/changes/publish-organization-profile/evidence/visual/organization-owner-applies-the-previewed-revision-and-the-organization-profile-is-published/transcript.txt`.
+
+      ```text
+      $ ./run-tests.sh --name "Organization owner applies the previewed revision and the organization profile is published"
+      Feature: Publish the organization profile
+        Scenario: Organization owner applies the previewed revision and the organization profile is published
+         ✔  Given the applied state binds every declared object except the organization profile repository and its two files
+         ✔  And a previewed revision that declares the organization profile repository, its profile content and its default security policy
+         ✔  When the organization owner applies the previewed revision
+         ✔  Then the apply reports the organization profile repository and both files as created
+         ✔  And the organization profile repository is public and offers no issue tracker, projects or wiki
+         ✔  And the organization profile repository serves the reviewed profile content as "profile/README.md"
+         ✔  And the organization profile repository serves the default security policy as "SECURITY.md"
+         ✔  And the applied state records the organization profile repository and both files
+         ✔  And a later targeted preview of the organization profile reports no differences
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      9 steps (9 passed)
+      EXIT:0
+      ```
+- [x] REFACTOR — clean up; re-run; paste the zero-exit output.
+
+      Removed the unused `tofu` import and the unused plan-change filter (both
+      belong to scenario 6, which reintroduces the filter when it is
+      implemented). The real-binary, journal and transcript behaviour is
+      unchanged.
+
+      ```text
+      $ ./run-tests.sh --name "Organization owner applies the previewed revision and the organization profile is published"
+      Feature: Publish the organization profile
+        Scenario: Organization owner applies the previewed revision and the organization profile is published
+         ✔  Given the applied state binds every declared object except the organization profile repository and its two files
+         ✔  And a previewed revision that declares the organization profile repository, its profile content and its default security policy
+         ✔  When the organization owner applies the previewed revision
+         ✔  Then the apply reports the organization profile repository and both files as created
+         ✔  And the organization profile repository is public and offers no issue tracker, projects or wiki
+         ✔  And the organization profile repository serves the reviewed profile content as "profile/README.md"
+         ✔  And the organization profile repository serves the default security policy as "SECURITY.md"
+         ✔  And the applied state records the organization profile repository and both files
+         ✔  And a later targeted preview of the organization profile reports no differences
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      9 steps (9 passed)
+      EXIT:0
+      ```
+- [x] COMMIT — `givn commit -m "test(e2e): <release note>"` with the scenario
       title in the body, stage only this scenario's files; record the revision.
       Revision: `<hash>`
 

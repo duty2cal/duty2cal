@@ -2,7 +2,7 @@
 
 Feature: Publish the organization profile
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Organization owner applies the previewed revision and the organization profile is published
     Given the applied state binds every declared object except the organization profile repository and its two files
     And a previewed revision that declares the organization profile repository, its profile content and its default security policy
