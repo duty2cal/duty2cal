@@ -31,3 +31,7 @@ infra/.adoption-staging/
 .omp/hooks/pre/givn-attribution.js
 .githooks/commit-msg
 # givn:end:rules
+
+# Transient OpenTofu plan files: encrypted, never committed
+infra/plan.bin
+infra/*.tfplan
