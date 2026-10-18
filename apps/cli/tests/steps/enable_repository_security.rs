@@ -89,6 +89,14 @@ pub(crate) fn tofu(w: &DutyWorld, args: &[&str]) -> Output {
         "run ./scripts/setup-infra-tests.sh first: {} is absent",
         rc.display()
     );
+    // The profile declaration is planned by the security scenarios' guard plan
+    // too. The profile scenario names its own `org/` copy (which it may
+    // revise); every other scenario reads the repository's reviewed copy
+    // (design.md "Workspace shapes").
+    let org_source = w
+        .source_tree
+        .clone()
+        .unwrap_or_else(|| repository_root().join("org"));
     Command::new("tofu")
         .args(args)
         .current_dir(&declaration)
@@ -96,6 +104,7 @@ pub(crate) fn tofu(w: &DutyWorld, args: &[&str]) -> Output {
         .env("GITHUB_BASE_URL", format!("http://127.0.0.1:{port}"))
         .env("TF_VAR_state_passphrase", PASSPHRASE)
         .env("TF_VAR_billing_email", BILLING_EMAIL)
+        .env("TF_VAR_org_source_dir", org_source)
         .env("TF_CLI_CONFIG_FILE", &rc)
         .env("TF_IN_AUTOMATION", "1")
         .output()

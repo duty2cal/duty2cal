@@ -374,7 +374,10 @@ fn published_file(w: &DutyWorld, repository: &str, path: &str, label: &str) -> V
 /// Fetch the profile repository's live body.
 fn published_repository(w: &DutyWorld) -> String {
     let (status, body) = fake_request(w, "GET", "/repos/duty2cal/.github", &[], None);
-    assert_eq!(status, 200, "the fake serves the profile repository: {body}");
+    assert_eq!(
+        status, 200,
+        "the fake serves the profile repository: {body}"
+    );
     body
 }
 
@@ -443,8 +446,7 @@ fn jq_raw(w: &DutyWorld, filter: &str, report: &Path) -> String {
 
 /// A small standard-alphabet base64 decoder; whitespace is ignored.
 fn base64_decode(input: &str) -> Vec<u8> {
-    const TABLE: &[u8; 64] =
-        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut reverse = [255u8; 128];
     for (index, byte) in TABLE.iter().enumerate() {
         reverse[*byte as usize] = index as u8;
@@ -541,7 +543,8 @@ async fn the_apply_reports_the_profile_content_as_the_only_changed_object(w: &mu
         w.apply_transcript
     );
     assert!(
-        w.stdout.contains("github_repository_file.org_profile_readme"),
+        w.stdout
+            .contains("github_repository_file.org_profile_readme"),
         "the apply reports the profile content; output was:\n{}",
         w.stdout
     );
@@ -774,8 +777,11 @@ async fn a_contributor_reads_the_default_security_policy(w: &mut DutyWorld) {
         published, source,
         "the published default security policy is the reviewed copy byte for byte"
     );
-    fs::write(scenario_dir_for(w).join("published-security.md"), &published)
-        .expect("record the published default security policy");
+    fs::write(
+        scenario_dir_for(w).join("published-security.md"),
+        &published,
+    )
+    .expect("record the published default security policy");
     fs::write(
         scenario_dir_for(w).join("published-profile-repository.json"),
         published_repository(w),
@@ -783,7 +789,9 @@ async fn a_contributor_reads_the_default_security_policy(w: &mut DutyWorld) {
     .expect("record the profile repository body");
 }
 
-#[then("the organization profile repository carries the default security policy as \"SECURITY.md\"")]
+#[then(
+    "the organization profile repository carries the default security policy as \"SECURITY.md\""
+)]
 async fn the_profile_repository_carries_the_security_policy(w: &mut DutyWorld) {
     let published = published_security(w);
     let source = fs::read_to_string(source_tree(w).join("SECURITY.md"))
@@ -929,8 +937,7 @@ async fn the_preview_is_refused_and_names_the_profile_repository(w: &mut DutyWor
         .iter()
         .skip(w.journal_offset)
         .filter(|line| {
-            line.contains("\"applied_write\": true")
-                || line.contains("\"refused_write\": true")
+            line.contains("\"applied_write\": true") || line.contains("\"refused_write\": true")
         })
         .count();
     assert_eq!(
@@ -954,7 +961,8 @@ async fn no_object_in_the_preview_is_bound(w: &mut DutyWorld) {
         .as_ref()
         .expect("the scenario snapshotted no applied state");
     assert_eq!(
-        &values, before,
+        &values,
+        before,
         "the refused preview changed the applied state at {}",
         state_path(w).display()
     );

@@ -37,8 +37,7 @@ async fn the_profile_repository_is_public_and_offers_no_tracker(_w: &mut DutyWor
 }
 
 #[then(
-    regex = r#"^the organization profile repository serves the reviewed profile content as \
-               "([^"]+)"$"#
+    regex = r#"^the organization profile repository serves the reviewed profile content as "([^"]+)"$"#
 )]
 async fn the_profile_repository_serves_the_reviewed_profile_content(
     _w: &mut DutyWorld,
@@ -50,8 +49,7 @@ async fn the_profile_repository_serves_the_reviewed_profile_content(
 }
 
 #[then(
-    regex = r#"^the organization profile repository serves the default security policy as \
-               "([^"]+)"$"#
+    regex = r#"^the organization profile repository serves the default security policy as "([^"]+)"$"#
 )]
 async fn the_profile_repository_serves_the_default_security_policy(
     _w: &mut DutyWorld,
@@ -71,9 +69,7 @@ async fn the_applied_state_records_the_profile_objects(_w: &mut DutyWorld) {
 
 #[then("a later targeted preview of the organization profile reports no differences")]
 async fn a_later_targeted_preview_reports_no_differences(_w: &mut DutyWorld) {
-    unimplemented!(
-        "Organization owner applies the previewed revision: the follow-up preview"
-    );
+    unimplemented!("Organization owner applies the previewed revision: the follow-up preview");
 }
 
 #[given("the live organization has no organization profile repository")]
@@ -102,7 +98,5 @@ async fn the_preview_names_the_two_files_as_the_only_creates(_w: &mut DutyWorld)
 
 #[then("the preview names no change other than the three creations")]
 async fn the_preview_names_no_change_other_than_the_three_creations(_w: &mut DutyWorld) {
-    unimplemented!(
-        "Organization owner previews the profile declaration: no other change"
-    );
+    unimplemented!("Organization owner previews the profile declaration: no other change");
 }
