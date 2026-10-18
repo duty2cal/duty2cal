@@ -95,6 +95,14 @@ decided by the user on 2026-10-18; rejected alternatives are recorded.
   labelled and documented as the **off-routine skip path**: it produces the
   plan without the routine's guard, applies it, and writes the failure-path
   sidecar. The route still adopts first; TD-013 records the guard.
+- **Correction during implementation (2026-10-18):** the refreshed prior state
+  does not carry both live Dependabot values. Provider 6.13.0's repository
+  schema has no `security_and_analysis.dependabot_security_updates` member, and
+  its read flattens only three settings, so the dependency-updates `create` is
+  judged by the live `vulnerability_alerts` flag instead: with alerts enabled,
+  GitHub serves the automated-security-fixes endpoint, so that object exists
+  live and must be adopted before it is updated. `design.md` "The apply
+  procedure" and the decision record carry the corrected filter.
 - **Sources:** use case main flow 2, extensions, rules, example; feature skip
   and partial scenarios; `design.md` guard bullet, routine, matrix, TD-013,
   `docs/arc42/06` and chapter 11.

@@ -132,10 +132,23 @@ Design constraints:
   monorepo; the saved plan is not applied; a new preview names the edit.
 - The preflight's plan JSON is the verdict (opentofu#3015).
 
-- [ ] RED — remove `@wip`; run the single scenario; paste non-zero.
-- [ ] GREEN — assertions and production code; list files; paste zero.
-- [ ] REFACTOR — cleanup; re-run; paste zero.
-- [ ] COMMIT — release note subject, scenario title body; record the revision.
+- [x] RED — remove `@wip`; run the single scenario; paste non-zero.
+      Before the steps existed: `3 steps (2 passed, 1 failed)`; the manual-edit
+      Given was `Step doesn't match any function`; `1 scenario (1 failed)`,
+      runner exit 101.
+- [x] GREEN — assertions and production code; list files; paste zero.
+      Production files: `apps/cli/tests/steps/enable_repository_security.rs`
+      (loopback `PATCH` with `X-Fake-Manual-Edit`, the preflight refusal naming
+      the drifted address with its live id, the single-manual-edit journal
+      assertion, the unapplied saved plan, the re-preview naming
+      `has_projects`), the feature file (`@wip` removed). Single scenario exits
+      0: `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR — cleanup; re-run; paste zero.
+      `cargo fmt`; `cargo check -p duty2cal --tests` exits 0; the single
+      scenario still exits 0 with `8 steps (8 passed)`.
+- [x] COMMIT — release note subject, scenario title body; record the revision.
+      Revision: `e830590` — `feat(apply-configuration-change): enable secret
+      scanning and push protection`.
 
 ## 4. The preview refuses to add a Dependabot setting that already exists live and is unbound
 
@@ -145,10 +158,29 @@ Design constraints:
   unchanged.
 - The guard reads live and the plan's `to add` set.
 
-- [ ] RED — remove `@wip`; run the single scenario; paste non-zero.
-- [ ] GREEN — assertions and production code; list files; paste zero.
-- [ ] REFACTOR — cleanup; re-run; paste zero.
-- [ ] COMMIT — release note subject, scenario title body; record the revision.
+- [x] RED — remove `@wip`; run the single scenario; paste non-zero.
+      Before the steps existed: the first Given was `Step doesn't match any
+      function`; `1 scenario (1 failed)`, `1 step (1 failed)`, runner exit 101.
+- [x] GREEN — assertions and production code; list files; paste zero.
+      Production files: `apps/cli/tests/steps/enable_repository_security.rs`
+      (base-batch-only priming split from the second batch, the shared preview
+      `When` no longer re-primes the state, live Dependabot reads, the
+      declaration assertion, the refusal assertions), the feature file (`@wip`
+      removed). Single scenario exits 0: `1 scenario (1 passed)`,
+      `9 steps (9 passed)`.
+      Corrected during implementation: the plan's refreshed prior state does
+      not carry `security_and_analysis.dependabot_security_updates` — provider
+      6.13.0's repository schema has no such member and flattens only three
+      settings (measured 2026-10-18). Both Dependabot creates are therefore
+      judged by the live `vulnerability_alerts` flag, which proves the
+      automated-security-fixes object exists live. See `design.md` "The apply
+      procedure", the decision record and the `design-review.md` correction.
+- [x] REFACTOR — cleanup; re-run; paste zero.
+      `cargo fmt`; `cargo check -p duty2cal --tests` exits 0; the single
+      scenario still exits 0 with `9 steps (9 passed)`.
+- [x] COMMIT — release note subject, scenario title body; record the revision.
+      Revision: `7287552` — `feat(apply-configuration-change): enable secret
+      scanning and push protection`.
 
 ## 5. A failed read-back after the PATCH is reported and the state is marked stale
 
@@ -159,10 +191,26 @@ Design constraints:
   state.
 - The journal proves the write happened.
 
-- [ ] RED — remove `@wip`; run the single scenario; paste non-zero.
-- [ ] GREEN — assertions and production code; list files; paste zero.
-- [ ] REFACTOR — cleanup; re-run; paste zero.
-- [ ] COMMIT — release note subject, scenario title body; record the revision.
+- [x] RED — remove `@wip`; run the single scenario; paste non-zero.
+      Before the steps existed: the read-back Given was `Step doesn't match any
+      function`; `1 scenario (1 failed)`, `3 steps (2 passed, 1 failed)`,
+      runner exit 101.
+- [x] GREEN — assertions and production code; list files; paste zero.
+      Production files: `apps/cli/tests/steps/enable_repository_security.rs`
+      (the `after_applied_writes: 1` + `once` read-back fault, the live
+      scanning read, the stale-marker assertion, the refusing re-preview), the
+      feature file (`@wip` removed). Single scenario exits 0:
+      `1 scenario (1 passed)`, `8 steps (8 passed)`.
+      Corrected during implementation: a `once` status-500 fault is consumed by
+      the provider's 5xx retry and the apply succeeds (measured 2026-10-18), so
+      the fault uses a non-retried status (403) that fails the read-back
+      exactly once. See `design.md` "Fault injection".
+- [x] REFACTOR — cleanup; re-run; paste zero.
+      `cargo fmt`; `cargo check -p duty2cal --tests` exits 0; the single
+      scenario still exits 0 with `8 steps (8 passed)`.
+- [x] COMMIT — release note subject, scenario title body; record the revision.
+      Revision: `e19691d` — `feat(apply-configuration-change): enable secret
+      scanning and push protection`.
 
 ## 6. A partial failure reports the applied settings and names the failed one
 
@@ -174,10 +222,25 @@ Design constraints:
   refuses naming the stale state.
 - The scenario is labelled as the off-routine probe, not the routine.
 
-- [ ] RED — remove `@wip`; run the single scenario; paste non-zero.
-- [ ] GREEN — assertions and production code; list files; paste zero.
-- [ ] REFACTOR — cleanup; re-run; paste zero.
-- [ ] COMMIT — release note subject, scenario title body; record the revision.
+- [x] RED — remove `@wip`; run the single scenario; paste non-zero.
+      Before the steps existed: the skipped-batch Given was `Step doesn't match
+      any function`; `1 scenario (1 failed)`, `1 step (1 failed)`, runner exit
+      101.
+- [x] GREEN — assertions and production code; list files; paste zero.
+      Production files: `apps/cli/tests/steps/enable_repository_security.rs`
+      (the off-routine `init`/`plan -out`/`apply -parallelism=1` helper and its
+      failure-path stale sidecar, the refused automated-security-fixes fault,
+      the applied/failed-setting report assertions, the state-address
+      assertions, the refusing next preview), the feature file (`@wip`
+      removed). Single scenario exits 0: `1 scenario (1 passed)`,
+      `8 steps (8 passed)`.
+- [x] REFACTOR — cleanup; re-run; paste zero.
+      `cargo fmt`; `cargo check -p duty2cal --tests` exits 0; the shared
+      stale-preview assertion was factored into one helper; the single scenario
+      still exits 0 with `8 steps (8 passed)`.
+- [x] COMMIT — release note subject, scenario title body; record the revision.
+      Revision: `6a0f096` — `feat(apply-configuration-change): enable secret
+      scanning and push protection`.
 
 ## E2E setup task — before the first @e2e scenario
 

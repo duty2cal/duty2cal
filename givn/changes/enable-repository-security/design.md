@@ -221,7 +221,11 @@ tofu show -json plan.bin >"$preview_report"
 tofu plan -refresh-only -detailed-exitcode -json -input=false >"$preflight_report"
 
 # Preview guard: refuse a create for a setting already live and unbound. The
-# refreshed prior state carries both live Dependabot values.
+# refreshed prior state carries the live `vulnerability_alerts` flag; the
+# dependency-updates status is not in the repository schema (provider 6.13.0),
+# so its create is judged by the alerts flag: GitHub serves the
+# automated-security-fixes endpoint only while alerts are enabled, so the
+# setting's object exists live and must be adopted before it is updated.
 guard_verdict=$(jq -r '
   (.prior_state.values.root_module.resources // []) as $res
   | ($res | map(select(.address == "github_repository.mono")) | .[0].values) as $repo
@@ -229,9 +233,9 @@ guard_verdict=$(jq -r '
       | select((.change.actions // []) | index("create"))
       | .address
       | select(
-          . == "github_repository_vulnerability_alerts.mono" and $repo.vulnerability_alerts == true
-          or . == "github_repository_dependabot_security_updates.mono"
-             and ($repo.security_and_analysis[0].dependabot_security_updates.status // "") == "enabled")]
+          (. == "github_repository_vulnerability_alerts.mono"
+           or . == "github_repository_dependabot_security_updates.mono")
+          and $repo.vulnerability_alerts == true)]
   | if length == 0 then "ok" else join(" ") end
 ' "$preview_report")
 [ "$guard_verdict" = ok ] ||
@@ -325,12 +329,21 @@ rm -f plan.bin "$preview_report" "$preflight_report" "$state_before" terraform.t
   committed, like `plan.bin`.
 - **The preview guard: an unadopted object is not created.** The preview's own
   JSON report (`tofu show -json plan.bin`) carries, in its refreshed prior state
-  for `github_repository.mono`, the live `vulnerability_alerts` and
-  `security_and_analysis.dependabot_security_updates` values the provider read.
-  A `create` action for a declared setting whose object is already live and
-  unbound is refused by address before any write; the owner adopts it first
-  (the second batch). No second API call and no new command are needed: the
-  check is a read of the saved plan's JSON, like the adoption verifier's.
+  for `github_repository.mono`, the live `vulnerability_alerts` flag the
+  provider read. A `create` action for either declared Dependabot setting is
+  refused by address before any write; the owner adopts it first (the second
+  batch). The dependency-updates status is *not* available in the plan JSON:
+  provider 6.13.0's repository schema has no
+  `security_and_analysis.dependabot_security_updates` member, and its read
+  flattens only `advanced_security`, `secret_scanning` and
+  `secret_scanning_push_protection` (measured on 2026-10-18). The
+  dependency-updates create is therefore judged by the alerts flag: GitHub
+  serves the automated-security-fixes endpoint (200 `{enabled}`) only while
+  alerts are enabled and 404 otherwise, so a live-enabled alerts setting means
+  the updates object exists live — enabled or disabled — and a `create` for it
+  is a re-creation of an existing object, refused until the owner adopts it.
+  No second API call and no new command are needed: the check is a read of the
+  saved plan's JSON, like the adoption verifier's.
 - **The saved plan is the applied revision.** `plan.bin` is encrypted by the
   declaration's `plan` encryption block and is git-ignored; `tofu apply
   plan.bin` applies exactly the previewed actions, and OpenTofu refuses a plan
@@ -489,7 +502,7 @@ successfully. The scenarios need:
 | unreadable settings | status 403 for `GET` on `repos/duty2cal/duty2cal` |
 | first change refused | status 403 for `PATCH` on `repos/duty2cal/duty2cal` |
 | partial failure | status 403 for `PUT` on `repos/duty2cal/duty2cal/automated-security-fixes` |
-| read-back failure | status 500 for `GET` on `repos/duty2cal/duty2cal`, `after_applied_writes: 1`, `once: true` |
+| read-back failure | status 403 for `GET` on `repos/duty2cal/duty2cal`, `after_applied_writes: 1`, `once: true`. A 500 is not usable: the provider's HTTP client retries 5xx, so a `once` 500 is consumed by the retry and the apply succeeds (measured 2026-10-18); a non-retried status fails the read-back exactly once |
 | live change | none: the step toggles `has_projects` through the loopback write sandbox after the preview |
 
 `mutate.json` is unchanged and is not needed by this change.
@@ -584,7 +597,13 @@ rejected:
   (opentofu/opentofu#3015). The residual window is recorded as R-031.
 - **The unadopted-setting guard reads the preview's own plan JSON** (rejected: a
   second live API read, or a new command beside `tofu`; the refreshed prior
-  state in `tofu show -json` already carries both live Dependabot values).
+  state in `tofu show -json` already carries the live alerts flag). Corrected
+  during implementation: the plan JSON does not carry the dependency-updates
+  status at all (provider 6.13.0 has no such repository-schema member), so both
+  Dependabot creates are judged by the live `vulnerability_alerts` flag, which
+  means the automated-security-fixes object exists live. The read-back fault is
+  a non-retried status for the same reason: the provider retries a `once` 500
+  and the read-back then succeeds (both measured on 2026-10-18).
 - **A stale sidecar rather than a commit rule alone** (rejected: relying on the
   operator's memory not to commit a partial state, which leaves the on-disk
   state indistinguishable from an applied one and gives the future drift check
