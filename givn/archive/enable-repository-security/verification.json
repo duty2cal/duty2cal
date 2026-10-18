@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "enable-repository-security",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
-  "started_at_unix": 1792331415,
-  "finished_at_unix": null
+  "status": "proven",
+  "candidate_revision": "ac369e7b4eb03e996a443701850caae9f6d8b201",
+  "tested_revision": "ac369e7b4eb03e996a443701850caae9f6d8b201",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 6,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 171.653074811
+    },
+    "regular": {
+      "status": "passed",
+      "total": 140,
+      "passed": 140,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 686.004323198
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 871,
+    "line_valid": 886,
+    "line_percent": 98
+  },
+  "started_at_unix": 1792333635,
+  "finished_at_unix": 1792335181
 }
