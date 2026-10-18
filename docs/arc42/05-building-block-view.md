@@ -105,7 +105,7 @@ flowchart TB
 
 | Element | Responsibility |
 |---|---|
-| `domain` | `Roster` aggregate, `DutyEntry` values, the one rule that reads a travel leg's printed crew position and activity together, and the pure timing rules (`timing`). No I/O, no clock. |
+| `domain` | `Roster` aggregate, `DutyEntry` values, the one rule that reads a travel leg's printed crew position and activity together and composes the travel title (including the conditional ` Report <value> LT` report suffix), and the pure timing rules (`timing`). No I/O, no clock. |
 | `application` | Ports (`RosterSource`, `CalendarSink`, `Clock`), the `ConvertRoster` use case, `RawRosterTable` as the anti-corruption intermediate, and the row interpretation that classifies activities and pairs travel fragments by their two printed fields. |
 | `adapters/ics` | RFC 5545 serializer — the `CalendarSink` used by every facade. |
 
