@@ -254,7 +254,7 @@ does not rely on `chmod`.
     host path).
 - [x] REFACTOR: re-run; paste zero output.
   - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `4 steps (4 passed)`.
-- [ ] COMMIT: `givn commit -m "fix(measure-distributed-executable-size): An executable whose file size cannot be read leaves the attribution incomplete"`; record the hash.
+- [x] COMMIT: revision `cf3f1bb` (`fix(measure-distributed-executable-size): An executable whose file size cannot be read leaves the attribution incomplete`; the scenario title is in the body).
 
 ## Scenario 6 — A revision name that resolves to nothing is refused by name
 
@@ -265,12 +265,21 @@ command names the ref in `stderr`, writes no report (no worktree/output
 directory), exits non-zero. The step uses `git`, `python3` and the command
 only.
 
-- [ ] RED: remove `@wip`; run
+- [x] RED: remove `@wip`; run
   `./run-tests.sh --name "A revision name that resolves to nothing is refused by name"`;
   paste non-zero output.
-- [ ] GREEN: implement the resolution refusal and step; run; paste zero output;
+  - Evidence: `red-exit=101`; `1 scenario (1 failed)`, `3 steps (2 passed, 1
+    failed)` (the production command was absent).
+- [x] GREEN: implement the resolution refusal and step; run; paste zero output;
   list files.
-- [ ] REFACTOR: re-run; paste zero output.
+  - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `4 steps (4 passed)`.
+  - Files: `scripts/measure_executable_size.py` (named
+    `UNRESOLVED_EXIT`/`UNREADABLE_EXIT` codes);
+    `apps/cli/tests/steps/measure_distributed_executable_size.rs` (the refusal
+    step reads the report when it exists and the command transcript for an
+    unresolved ref).
+- [x] REFACTOR: re-run; paste zero output.
+  - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `4 steps (4 passed)`.
 - [ ] COMMIT: `givn commit -m "fix(measure-distributed-executable-size): A revision name that resolves to nothing is refused by name"`; record the hash.
 
 ## Scenario 7 — The attribution lists the stripped executable's sections

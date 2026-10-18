@@ -59,7 +59,7 @@ Feature: Measure the distributed executable's size
     Then the attribution states that the executable's file size is unavailable
     And the attribution's total is not presented as the executable's file size
 
-  @givn.added @wip
+  @givn.added
   Scenario: A revision name that resolves to nothing is refused by name
     Given a repository whose history does not contain the revision "v9.9.9"
     When the maintainer requests the size attribution for "v9.9.9"

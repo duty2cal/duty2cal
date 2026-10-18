@@ -518,17 +518,25 @@ async fn names_missing_capability(w: &mut DutyWorld) {
 }
 
 #[then(regex = r#"^the measurement is refused, naming "([^"]+)"$"#)]
-async fn measurement_refused(w: &mut DutyWorld, platform: String) {
+async fn measurement_refused(w: &mut DutyWorld, named: String) {
     assert_ne!(
         w.exit_status,
         Some(0),
         "the measurement was not refused: {}",
         w.command_transcript
     );
-    let text = report_text(w);
+    let out = w
+        .measurement_out
+        .as_ref()
+        .expect("the scenario ran no measurement");
+    let text = if out.join("attribution.md").is_file() {
+        report_text(w)
+    } else {
+        w.command_transcript.clone()
+    };
     assert!(
-        text.contains(&platform),
-        "the refusal does not name {platform:?}:\n{text}"
+        text.contains(&named),
+        "the refusal does not name {named:?}:\n{text}"
     );
 }
 

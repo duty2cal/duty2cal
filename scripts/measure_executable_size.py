@@ -28,6 +28,8 @@ from pathlib import Path
 
 PLATFORM = "x86_64-pc-windows-gnu"
 EXECUTABLE_NAME = "duty2cal.exe"
+UNREADABLE_EXIT = 1
+UNRESOLVED_EXIT = 2
 GENERATOR = "cargo-bloat"
 GENERATOR_VERSION = "0.12.1"
 TWO_NUMBER_SENTENCE = (
@@ -442,7 +444,7 @@ def measure(args: argparse.Namespace) -> int:
     out = Path(args.out).resolve()
     revision = resolve_revision(repo, args.revision)
     if revision is None:
-        return 2
+        return UNRESOLVED_EXIT
 
     root = Path(tempfile.mkdtemp(prefix="measure-executable-size-"))
     worktree: Path | None = None
@@ -467,7 +469,7 @@ def measure(args: argparse.Namespace) -> int:
                 "reason": "the generator is not available: cargo bloat --version failed",
             }
             write_report(out, report)
-            return 1
+            return UNREADABLE_EXIT
         report: dict[str, object] = {
             "kind": "size-attribution",
             "status": "unreadable",
@@ -502,7 +504,7 @@ def measure(args: argparse.Namespace) -> int:
                         f"expected {PLATFORM}; observed {artifact_description(data)}"
                     )
                     write_report(out, report)
-                    return 1
+                    return UNREADABLE_EXIT
                 executable = supplied
                 report["executable"] = {
                     "source": "supplied",
@@ -516,7 +518,7 @@ def measure(args: argparse.Namespace) -> int:
             if build_reason is not None:
                 report["reason"] = build_reason
                 write_report(out, report)
-                return 1
+                return UNREADABLE_EXIT
             assert executable is not None
             try:
                 data = executable.read_bytes()
@@ -538,7 +540,7 @@ def measure(args: argparse.Namespace) -> int:
         except MeasurementError as error:
             report["reason"] = str(error)
             write_report(out, report)
-            return 1
+            return UNREADABLE_EXIT
 
         report["attribution"] = attribution
         if incomplete_reason is not None:
@@ -565,7 +567,7 @@ def measure(args: argparse.Namespace) -> int:
             "reason": str(error),
         }
         write_report(out, report)
-        return 1
+        return UNREADABLE_EXIT
     finally:
         if worktree is not None:
             remove_worktree(repo, worktree)
