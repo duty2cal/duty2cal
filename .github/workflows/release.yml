@@ -107,12 +107,17 @@ jobs:
       - name: Lay the built executables out for the preparation
         run: |
           set -euo pipefail
-          mkdir -p binaries
-          for artifact in artifacts/binary-*; do
-            platform="${artifact#artifacts/binary-}"
-            mkdir -p "binaries/${platform}"
-            cp "$artifact"/duty2cal* "binaries/${platform}/"
-          done
+          # With one artifact, actions/download-artifact@v8 extracts its files
+          # into the download root rather than a per-artifact directory, so
+          # locate the executable instead of assuming either layout.
+          exe="$(find artifacts -type f -name 'duty2cal.exe' -print -quit)"
+          if [ -z "$exe" ]; then
+            echo "the downloaded artifacts hold no duty2cal.exe" >&2
+            find artifacts -type f | sort >&2
+            exit 1
+          fi
+          mkdir -p binaries/windows-x86_64
+          cp "$exe" binaries/windows-x86_64/duty2cal.exe
           find binaries -type f | sort
       - name: Prepare the release for the tag's version
         run: |
