@@ -15,7 +15,7 @@ Feature: Enable repository security
     And the preview reports no object to create or delete
     And no write request reaches GitHub
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Organization owner applies the previewed revision and the security settings are enabled
     Given the applied state binds every declared object
     And a previewed revision that enables secret scanning and push protection

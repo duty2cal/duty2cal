@@ -16,11 +16,11 @@ use std::path::PathBuf;
 use cucumber::{given, then};
 
 use crate::steps::adopt_existing_configuration::{
-    declaration_dir, BILLING_EMAIL, PASSPHRASE, TOKEN,
+    declaration_dir, repository_root, BILLING_EMAIL, PASSPHRASE, TOKEN,
 };
 use crate::steps::enable_repository_security::{
-    assert_scanning_status, combined, ensure_base_state, jq, scenario_dir_for, state_addresses,
-    tofu,
+    assert_scanning_status, combined, ensure_base_state, jq, live_monorepo_report, preview,
+    scenario_dir_for, state_addresses, state_values, tofu,
 };
 use crate::DutyWorld;
 
@@ -380,5 +380,255 @@ async fn the_preview_reports_no_create_or_delete(w: &mut DutyWorld) {
     commit_transcript(
         w,
         "organization-owner-previews-the-security-settings-and-only-the-declared-differences-are-named",
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Scenario 8: apply the previewed revision
+// ---------------------------------------------------------------------------
+
+/// The monorepo fields the declaration manages, compared after the write. The
+/// provider also writes its create-only defaults (`auto_init`,
+/// `gitignore_template` and `license_template`), which the live API read never
+/// returns, so the comparison covers the declared fields rather than the whole
+/// API body. GitHub treats `topics` as a set: the provider writes it reordered,
+/// so its comparison is order-insensitive.
+/// The fields the provider writes but the live API read does not return.
+const PROVIDER_ONLY_FIELDS: [&str; 3] = ["auto_init", "gitignore_template", "license_template"];
+
+/// The declared monorepo fields equal their fixture values after the write.
+const LIVE_DECLARED_FIELDS_EQUAL: &str = r#"
+.[0] as $live | .[1] as $base
+| [ "name", "description", "topics", "has_issues", "has_projects", "has_wiki",
+    "has_discussions", "allow_auto_merge", "allow_forking", "allow_merge_commit",
+    "allow_rebase_merge", "allow_squash_merge", "delete_branch_on_merge" ]
+| [ .[] | select(
+      if . == "topics"
+      then (($live[.] | sort) != ($base[.] | sort))
+      else $live[.] != $base[.]
+      end) ]
+| join(" ")
+"#;
+
+/// The security settings whose status differs between the live overlay and the
+/// fixture body.
+const LIVE_CHANGED_SECURITY_SETTINGS: &str = r#"
+.[0] as $live | .[1] as $base
+| ($live.security_and_analysis // {}) as $after
+| ($base.security_and_analysis // {}) as $before
+| [ ($after | keys[]) as $setting
+    | select((($before[$setting] // {}).status // null)
+             != (($after[$setting] // {}).status // null))
+    | $setting ]
+| sort
+| join(" ")
+"#;
+
+/// The monorepo's live body in the scenario's fixture tree.
+fn monorepo_fixture() -> PathBuf {
+    repository_root()
+        .join("scripts/fake-github/fixtures/security-applied/repos/duty2cal/duty2cal.json")
+}
+
+/// Run a `jq -s` filter over several JSON inputs.
+fn jq_files(w: &DutyWorld, filter: &str, files: &[&PathBuf]) -> String {
+    let mut command = std::process::Command::new("jq");
+    command.arg("-s").arg("-r").arg(filter);
+    for file in files {
+        command.arg(file);
+    }
+    command.current_dir(scenario_dir_for(w));
+    let output = command.output().expect("run jq");
+    assert!(
+        output.status.success(),
+        "jq failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout).trim().to_string()
+}
+
+#[then("the apply reports the monorepo as changed and exits successfully")]
+async fn the_apply_reports_the_monorepo_changed(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the apply succeeds; output was:\n{}",
+        w.apply_transcript
+    );
+    for expected in [
+        "github_repository.mono",
+        "Apply complete! Resources: 0 added, 1 changed, 0 destroyed.",
+    ] {
+        assert!(
+            w.apply_transcript.contains(expected),
+            "the apply reports {expected:?}; output was:\n{}",
+            w.apply_transcript
+        );
+    }
+    let preflight = w
+        .apply_transcript
+        .find("tofu plan -refresh-only")
+        .expect("the routine ran its read-only preflight");
+    let apply = w
+        .apply_transcript
+        .find("tofu apply -input=false plan.bin")
+        .expect("the routine applied the saved plan");
+    assert!(
+        preflight < apply,
+        "the preflight ran before the saved plan was applied; output was:\n{}",
+        w.apply_transcript
+    );
+}
+
+#[then("the applied state records both settings as enabled")]
+async fn the_applied_state_records_both_settings_enabled(w: &mut DutyWorld) {
+    let _ = state_values(w);
+    let report = scenario_dir_for(w).join("state-values.json");
+    for setting in ["secret_scanning", "secret_scanning_push_protection"] {
+        let filter = format!(
+            "[ .values.root_module.resources[]? \
+             | select(.address == \"github_repository.mono\") \
+             | .values.security_and_analysis[0].{setting}[0].status ] | .[0]"
+        );
+        assert_eq!(
+            jq(w, &filter, &report, false),
+            "enabled",
+            "the applied state records {setting} enabled; report was:\n{}",
+            fs::read_to_string(&report).unwrap_or_default()
+        );
+    }
+}
+
+#[then(
+    regex = r#"^the journal's repository request changed only "([^"]+)" with both statuses enabled$"#
+)]
+async fn the_journal_repository_request_changed_only(w: &mut DutyWorld, member: String) {
+    let journal = w.journal.clone().expect("the scenario kept no journal");
+    assert_eq!(
+        jq(
+            w,
+            "[ .[] | select(.applied_write == true) ] | length",
+            &journal,
+            true
+        ),
+        "1",
+        "the apply made exactly one write; journal was:\n{}",
+        fs::read_to_string(&journal).unwrap_or_default()
+    );
+    assert_eq!(
+        jq(
+            w,
+            "[ .[] | select(.applied_write == true) ][0].method",
+            &journal,
+            true
+        ),
+        "PATCH",
+        "the single write is a repository PATCH"
+    );
+    assert_eq!(
+        jq(
+            w,
+            "[ .[] | select(.applied_write == true) ][0].path",
+            &journal,
+            true
+        ),
+        "/repos/duty2cal/duty2cal",
+        "the single write targets the monorepo"
+    );
+    assert_eq!(
+        jq(
+            w,
+            "[ .[] | select(.applied_write == true) ][0].body_keys \
+             | index(\"security_and_analysis\") != null",
+            &journal,
+            true
+        ),
+        "true",
+        "the request carries the named member {member}"
+    );
+    let member_keys = jq(
+        w,
+        "[ .[] | select(.applied_write == true) ][0].body_keys | join(\" \")",
+        &journal,
+        true,
+    );
+    let fixture = monorepo_fixture();
+    let fixture_keys = jq(w, "keys | join(\" \")", &fixture, false);
+    for key in member_keys.split_whitespace() {
+        assert!(
+            fixture_keys.split_whitespace().any(|known| known == key)
+                || PROVIDER_ONLY_FIELDS.contains(&key),
+            "the request writes no unexpected field: {key}\n{member_keys}"
+        );
+    }
+    let security_keys = jq(
+        w,
+        "[ .[] | select(.applied_write == true) ][0].security_and_analysis | keys | join(\" \")",
+        &journal,
+        true,
+    );
+    let mut keys: Vec<String> = security_keys
+        .split_whitespace()
+        .map(str::to_owned)
+        .collect();
+    keys.sort();
+    assert_eq!(
+        keys,
+        vec!["secret_scanning", "secret_scanning_push_protection"],
+        "the security member names exactly the two settings; journal was:\n{}",
+        fs::read_to_string(&journal).unwrap_or_default()
+    );
+    let enabled = jq(
+        w,
+        "[ .[] | select(.applied_write == true) ][0].security_and_analysis \
+         | to_entries[] | select(.value.status == \"enabled\") | .key",
+        &journal,
+        true,
+    );
+    let mut enabled: Vec<String> = enabled.split_whitespace().map(str::to_owned).collect();
+    enabled.sort();
+    assert_eq!(
+        enabled,
+        vec!["secret_scanning", "secret_scanning_push_protection"],
+        "both statuses are enabled in the request; journal was:\n{}",
+        fs::read_to_string(&journal).unwrap_or_default()
+    );
+}
+
+#[then("no other declared field of the monorepo changed")]
+async fn no_other_declared_field_changed(w: &mut DutyWorld) {
+    let live = live_monorepo_report(w);
+    let fixture = monorepo_fixture();
+    assert_eq!(
+        jq_files(w, LIVE_DECLARED_FIELDS_EQUAL, &[&live, &fixture]),
+        "",
+        "no declared monorepo field changed live; live body was:\n{}",
+        fs::read_to_string(&live).unwrap_or_default()
+    );
+    assert_eq!(
+        jq_files(w, LIVE_CHANGED_SECURITY_SETTINGS, &[&live, &fixture]),
+        "secret_scanning secret_scanning_push_protection",
+        "only the two scanning statuses changed live; live body was:\n{}",
+        fs::read_to_string(&live).unwrap_or_default()
+    );
+}
+
+#[then("a later preview reports no differences")]
+async fn a_later_preview_reports_no_differences(w: &mut DutyWorld) {
+    preview(w);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the later preview succeeds; output was:\n{}",
+        w.preview_transcript
+    );
+    assert!(
+        w.preview_transcript.contains("No changes."),
+        "the later preview reports no differences; output was:\n{}",
+        w.preview_transcript
+    );
+    commit_transcript(
+        w,
+        "organization-owner-applies-the-previewed-revision-and-the-security-settings-are-enabled",
     );
 }
