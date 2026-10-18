@@ -7,6 +7,7 @@
 
 ### Fixes
 - Find the built Windows executable in the downloaded release artifact, so the release preparation stages the archive instead of failing before publication.
+- Read the release-workflow check suites from each API page, so the publication gate runs with the installed GitHub CLI.
 [0.3.0...0.4.0](https://github.com/duty2cal/duty2cal/compare/v0.3.0...v0.4.0)
 ## [0.3.0] - 2026-10-17
 
