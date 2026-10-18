@@ -40,7 +40,7 @@ Feature: Measure the distributed executable's size
     Then the report names the missing capability
     And the report states no attribution
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: An artifact that is not the supported platform's executable is refused as evidence
     Given <artifact>
     When the maintainer requests the size attribution for the revision, describing that artifact

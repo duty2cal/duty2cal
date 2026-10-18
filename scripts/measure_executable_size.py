@@ -146,6 +146,18 @@ def remove_worktree(repo: Path, worktree: Path) -> None:
     run(["git", "worktree", "prune"], cwd=repo, env=dict(os.environ))
 
 
+def artifact_description(data: bytes) -> str:
+    if len(data) < 2 or data[:2] != b"MZ":
+        return "not a PE file"
+    if len(data) < 64:
+        return "truncated DOS header"
+    pe_offset = struct.unpack_from("<I", data, 0x3C)[0]
+    if len(data) < pe_offset + 6 or data[pe_offset : pe_offset + 4] != b"PE\0\0":
+        return "not a PE image"
+    machine = struct.unpack_from("<H", data, pe_offset + 4)[0]
+    return f"PE machine 0x{machine:04x}"
+
+
 def is_supported_executable(path: Path) -> bool:
     try:
         with path.open("rb") as handle:
@@ -484,7 +496,7 @@ def measure(args: argparse.Namespace) -> int:
                 if not is_supported_executable(supplied):
                     report["reason"] = (
                         "the artifact is not the supported platform's executable: "
-                        f"expected {PLATFORM}"
+                        f"expected {PLATFORM}; observed {artifact_description(data)}"
                     )
                     write_report(out, report)
                     return 1

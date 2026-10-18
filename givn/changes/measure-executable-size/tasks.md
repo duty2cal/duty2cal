@@ -201,7 +201,7 @@ and must not satisfy this scenario. The step preflights `cargo-bloat`.
 - [x] REFACTOR: re-run; paste zero output.
   - Evidence: `green-exit=0`; `1 scenario (1 passed)`, `4 steps (4 passed)`;
     scenarios 1 and 2 re-ran green.
-- [ ] COMMIT: `givn commit -m "fix(measure-distributed-executable-size): A build that keeps no names produces no attribution"`; record the hash.
+- [x] COMMIT: revision `666cbe8` (`fix(measure-distributed-executable-size): A build that keeps no names produces no attribution`; the scenario title is in the body).
 
 ## Scenario 4 — An artifact that is not the supported platform's executable is refused as evidence
 
@@ -214,12 +214,20 @@ so it writes the `unreadable` report with a reason naming
 `x86_64-pc-windows-gnu` and `attribution: null`, then exits non-zero. The
 report exists.
 
-- [ ] RED: remove `@wip`; run
+- [x] RED: remove `@wip`; run
   `./run-tests.sh --name "An artifact that is not the supported platform's executable is refused as evidence"`;
   paste non-zero output.
-- [ ] GREEN: implement the PE check/refusal and the two examples; run; paste
+  - Evidence: `red-exit=101`; `2 scenarios (2 failed)`, `6 steps (4 passed, 2
+    failed)` (the production command was absent).
+- [x] GREEN: implement the PE check/refusal and the two examples; run; paste
   zero output; list files.
-- [ ] REFACTOR: re-run; paste zero output.
+  - Evidence: `green-exit=0`; `2 scenarios (2 passed)`, `8 steps (8 passed)`.
+  - Files: `scripts/measure_executable_size.py` (`artifact_description`
+    reports whether the refused artifact is not a PE file or carries another
+    machine, while the reason still names the expected platform).
+- [x] REFACTOR: re-run; paste zero output.
+  - Evidence: `green-exit=0`; `2 scenarios (2 passed)`, `8 steps (8 passed)`;
+    scenario 1 re-ran green.
 - [ ] COMMIT: `givn commit -m "fix(measure-distributed-executable-size): An artifact that is not the supported platform's executable is refused as evidence"`; record the hash.
 
 ## Scenario 5 — An executable whose file size cannot be read leaves the attribution incomplete
