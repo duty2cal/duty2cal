@@ -70,7 +70,7 @@ Feature: Enable repository security
     And no write request reaches GitHub
     And the applied state is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: A failed read-back after the PATCH is reported and the state is marked stale
     Given the applied state binds every declared object
     And a previewed revision that enables secret scanning and push protection

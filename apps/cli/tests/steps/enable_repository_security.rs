@@ -1065,3 +1065,61 @@ async fn the_preview_names(w: &mut DutyWorld, object: String) {
         w.preview_transcript
     );
 }
+
+#[given("the read of the monorepo fails once after the PATCH is applied")]
+async fn the_read_of_the_monorepo_fails_once_after_the_patch(w: &mut DutyWorld) {
+    assert!(
+        w.plan_path.is_some(),
+        "the scenario holds no previewed revision"
+    );
+    let fixtures = fixtures_dir(w);
+    // 403 rather than 500: the provider's HTTP client retries 5xx responses,
+    // so a `once` 500 is consumed by the retry and the apply succeeds
+    // (measured 2026-10-18). A non-retried status fails the read-back exactly
+    // once, and the `once` flag leaves the failure path's refresh-only report
+    // able to read the live overlay.
+    fs::write(
+        fixtures.join("faults.json"),
+        "[{\"path_regex\": \"^/repos/duty2cal/duty2cal$\", \"method\": \"GET\", \
+         \"status\": 403, \"body\": {\"message\": \"read-back failed\"}, \
+         \"after_applied_writes\": 1, \"once\": true}]\n",
+    )
+    .expect("write the read-back fault");
+    restart_fake_with(w, true);
+}
+
+#[then("the monorepo reports secret scanning and push protection enabled")]
+async fn the_monorepo_reports_scanning_enabled(w: &mut DutyWorld) {
+    assert_scanning_status(w, "enabled");
+}
+
+#[then("the applied state is marked stale")]
+async fn the_applied_state_is_marked_stale(w: &mut DutyWorld) {
+    let stale = stale_path(w);
+    assert!(
+        stale.is_file(),
+        "the failure path writes the stale marker at {}",
+        stale.display()
+    );
+    let stamp = fs::read_to_string(&stale).expect("read the stale marker");
+    assert!(
+        !stamp.trim().is_empty(),
+        "the stale marker records when it was written"
+    );
+}
+
+#[then("a new preview refuses and names the stale applied state")]
+async fn a_new_preview_refuses_and_names_the_stale_state(w: &mut DutyWorld) {
+    preview(w);
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the new preview is refused; output was:\n{}",
+        w.preview_transcript
+    );
+    assert!(
+        w.preview_transcript.contains("applied state is stale"),
+        "the new preview names the stale applied state; output was:\n{}",
+        w.preview_transcript
+    );
+}
