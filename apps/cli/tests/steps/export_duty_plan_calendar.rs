@@ -1213,6 +1213,23 @@ async fn a_leg_supplying_every_selected_field(w: &mut DutyWorld) {
     write_fixture(w, &items);
 }
 
+#[given("a supported duty plan travel leg without a report time")]
+async fn a_travel_leg_without_a_report_time(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "ABC"),
+            (TO_X, "DEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
 #[then("the travel activity's description lists them in the order Trip ID, Report (LT), A/C, Blocktime, Timezone Difference, Layover duration, Tags")]
 async fn description_lists_approved_order(w: &mut DutyWorld) {
     let calendar = calendar(w);
