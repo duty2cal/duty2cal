@@ -47,7 +47,7 @@ Feature: Enable repository security
     And the applied state is not marked stale
     And a later preview names the same change again
 
-  @givn.added @wip
+  @givn.added
   Scenario: A live edit between the preview and the apply is refused and named
     Given the applied state binds every declared object
     And a previewed revision that enables secret scanning and push protection

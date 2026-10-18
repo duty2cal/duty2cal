@@ -92,6 +92,104 @@ fn tofu(w: &DutyWorld, args: &[&str]) -> Output {
         .expect("run the real tofu binary")
 }
 
+/// Send one HTTP/1.1 request to the fake on loopback and return its status and
+/// body. The test-only manual edit is a direct loopback request, not a `tofu`
+/// invocation (design.md "Write sandbox").
+fn fake_request(
+    w: &DutyWorld,
+    method: &str,
+    path: &str,
+    headers: &[(&str, &str)],
+    body: Option<&str>,
+) -> (u16, String) {
+    use std::io::{Read, Write};
+
+    let port = w.fake_port.expect("the scenario started no fake API");
+    let payload = body.unwrap_or("");
+    let mut request = format!(
+        "{method} {path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\n\
+         Content-Length: {}\r\n",
+        payload.len()
+    );
+    for (name, value) in headers {
+        request.push_str(&format!("{name}: {value}\r\n"));
+    }
+    request.push_str("\r\n");
+    request.push_str(payload);
+
+    let mut stream =
+        std::net::TcpStream::connect(("127.0.0.1", port)).expect("connect to the fake GitHub API");
+    stream
+        .write_all(request.as_bytes())
+        .expect("send the request to the fake GitHub API");
+    let mut response = String::new();
+    stream
+        .read_to_string(&mut response)
+        .expect("read the fake GitHub API's response");
+    let (head, response_body) = response
+        .split_once("\r\n\r\n")
+        .expect("the fake GitHub API's response carries a body");
+    let status = head
+        .lines()
+        .next()
+        .and_then(|line| line.split_whitespace().nth(1))
+        .and_then(|code| code.parse().ok())
+        .expect("the fake GitHub API's status line");
+    (status, response_body.to_string())
+}
+
+/// The fake's live monorepo body, written to the scenario directory for `jq`.
+fn live_monorepo_report(w: &DutyWorld) -> PathBuf {
+    let (status, body) = fake_request(w, "GET", "/repos/duty2cal/duty2cal", &[], None);
+    assert_eq!(
+        status, 200,
+        "the fake serves the monorepo's live body; response was: {body}"
+    );
+    let report = scenario_dir_for(w).join("live-monorepo.json");
+    fs::write(&report, body).expect("write the live monorepo body");
+    report
+}
+
+/// Assert the live scanning statuses the fake reports.
+fn assert_scanning_status(w: &DutyWorld, expected: &str) {
+    let report = live_monorepo_report(w);
+    for field in ["secret_scanning", "secret_scanning_push_protection"] {
+        let status = jq(
+            w,
+            &format!(".security_and_analysis.{field}.status // empty"),
+            &report,
+            false,
+        );
+        assert_eq!(
+            status,
+            expected,
+            "the monorepo must report {field} {expected}; live body was:\n{}",
+            fs::read_to_string(&report).unwrap_or_default()
+        );
+    }
+}
+
+/// The live identifier of a drifted address, when the state records one.
+fn object_live_id(w: &DutyWorld, address: &str) -> String {
+    let report = scenario_dir_for(w).join("state-values.json");
+    if !report.is_file() {
+        return String::new();
+    }
+    let output = Command::new("jq")
+        .args([
+            "-r",
+            "--arg",
+            "address",
+            address,
+            "([.values.root_module.resources[]? | select(.address == $address) \
+             | (.values.full_name // .values.repository // empty)] | .[0] // empty)",
+        ])
+        .arg(&report)
+        .output()
+        .expect("run jq over the state's values");
+    String::from_utf8_lossy(&output.stdout).trim().to_string()
+}
+
 /// Run one of the routine's jq filters and return its verdict.
 fn jq(w: &DutyWorld, filter: &str, report: &Path, slurp: bool) -> String {
     let mut command = Command::new("jq");
@@ -417,8 +515,20 @@ fn apply_previewed(w: &mut DutyWorld) {
     }
     let verdict = jq(w, PREFLIGHT_FILTER, &report, true);
     if verdict != "ok" {
+        let named = verdict
+            .split_whitespace()
+            .map(|address| {
+                let id = object_live_id(w, address);
+                if id.is_empty() {
+                    address.to_string()
+                } else {
+                    format!("{address} ({id})")
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         transcript.push_str(&format!(
-            "refused: live changed after the preview: {verdict}\n"
+            "refused: live changed after the preview: {named}\n"
         ));
         w.apply_transcript = transcript.clone();
         w.scenario_transcript.push_str(&transcript);
@@ -674,4 +784,128 @@ async fn a_later_preview_names_the_same_change_again(w: &mut DutyWorld) {
             w.preview_transcript
         );
     }
+}
+
+#[given("the monorepo's projects are switched on by hand after the preview")]
+async fn the_monorepos_projects_are_switched_on_by_hand(w: &mut DutyWorld) {
+    assert!(
+        w.plan_path.is_some(),
+        "the scenario holds no previewed revision"
+    );
+    let report = live_monorepo_report(w);
+    assert_eq!(
+        jq(w, ".has_projects", &report, false),
+        "false",
+        "the preview saw the projects off"
+    );
+    let (status, body) = fake_request(
+        w,
+        "PATCH",
+        "/repos/duty2cal/duty2cal",
+        &[
+            ("Content-Type", "application/json"),
+            ("X-Fake-Manual-Edit", "true"),
+        ],
+        Some("{\"has_projects\": true}"),
+    );
+    assert_eq!(status, 200, "the manual edit applies; response was: {body}");
+}
+
+#[then(regex = r#"^the apply is refused before any write and names "([^"]+)"$"#)]
+async fn the_apply_is_refused_before_any_write_and_names(w: &mut DutyWorld, object: String) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the apply is refused; output was:\n{}",
+        w.apply_transcript
+    );
+    assert!(
+        w.apply_transcript.contains(&object),
+        "the apply names {object}; output was:\n{}",
+        w.apply_transcript
+    );
+    let journal = journal_lines(w);
+    assert!(
+        journal
+            .iter()
+            .all(|line| !line.contains("\"applied_write\": true")),
+        "the refused apply wrote nothing; journal was:\n{journal:#?}"
+    );
+    assert!(
+        journal
+            .iter()
+            .all(|line| !line.contains("\"refused_write\": true")),
+        "the refused apply attempted no write; journal was:\n{journal:#?}"
+    );
+}
+
+#[then("the only live change is the manual edit")]
+async fn the_only_live_change_is_the_manual_edit(w: &mut DutyWorld) {
+    let journal = journal_lines(w);
+    let manual = journal
+        .iter()
+        .filter(|line| line.contains("\"manual_edit\": true"))
+        .count();
+    assert_eq!(
+        manual, 1,
+        "exactly one manual edit was made; journal was:\n{journal:#?}"
+    );
+    assert!(
+        journal
+            .iter()
+            .all(|line| !line.contains("\"applied_write\": true")),
+        "no applied write landed; journal was:\n{journal:#?}"
+    );
+    let report = live_monorepo_report(w);
+    assert_eq!(
+        jq(w, ".has_projects", &report, false),
+        "true",
+        "the manual edit is live"
+    );
+    for field in ["secret_scanning", "secret_scanning_push_protection"] {
+        assert_eq!(
+            jq(
+                w,
+                &format!(".security_and_analysis.{field}.status // empty"),
+                &report,
+                false
+            ),
+            "disabled",
+            "the saved plan's {field} change did not land"
+        );
+    }
+}
+
+#[then("the saved plan is not applied")]
+async fn the_saved_plan_is_not_applied(w: &mut DutyWorld) {
+    let plan = w.plan_path.clone().expect("the preview saved a plan");
+    assert!(
+        plan.is_file(),
+        "the routine leaves the saved plan in place at {}",
+        plan.display()
+    );
+    assert_scanning_status(w, "disabled");
+    let journal = journal_lines(w);
+    assert!(
+        journal
+            .iter()
+            .all(|line| !line.contains("\"applied_write\": true")),
+        "the saved plan was not applied; journal was:\n{journal:#?}"
+    );
+}
+
+#[then("a new preview names the projects change")]
+async fn a_new_preview_names_the_projects_change(w: &mut DutyWorld) {
+    preview(w);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the new preview succeeds; output was:\n{}",
+        w.preview_transcript
+    );
+    assert!(
+        w.preview_transcript.contains("has_projects"),
+        "the new preview names the projects change; output was:\n{}",
+        w.preview_transcript
+    );
 }
