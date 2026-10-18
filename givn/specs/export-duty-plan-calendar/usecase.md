@@ -70,6 +70,7 @@ The Crew member supplies one duty-plan PDF for conversion.
 - If both travel endpoints are unqualified UTC clocks in one local-date block, there is no separate arrival-date block, and End clock precedes Start, interpret End as the following UTC day. This applies neither to equal clocks nor as a ground-duty or duration-based fallback.
 - Each timed event must have an end strictly after its start. A local-date change alone does not add a UTC day.
 - Preserve the printed crew position and flight number as the plan prints them, including leading zeroes, with one space between the two printed fields in a title; identifying text is not converted into a numeric quantity merely for formatting.
+- A travel activity's title ends with the plan's report time in local time, written ` Report <value> LT`, when the source supplies one report time (a single fragment, or equal values on both fragments). The description keeps the fully labelled Report (LT) value. No report time supplies no suffix; differing report values on the two fragments also supply no suffix because there is no single briefing time, while the description retains both labelled values.
 
 - **Approved inherited mappings**
 
@@ -107,6 +108,7 @@ The Crew member supplies one duty-plan PDF for conversion.
 - Consulate duty: DTUSA, station ABC, resolved 16 January 2099 UTC 09:00–15:00 → one six-hour non-flight visa duty.
 - Printed crew position with its flight number: Pos FB, flight number 123, ABC–DEF, resolved UTC 08:00–09:00 → one one-hour travel event titled `FB 123 ABC-DEF`.
 - Deadhead with zero accounting time: Pos DH, flight number 007, ABC–DEF, resolved UTC 06:00–07:00, blank aircraft, Blocktime 00:00 → one one-hour travel event titled `DH 007 ABC-DEF`.
+- Report time in the title: a travel leg with Report (LT) 07:30 → the title ends with the suffix `Report 07:30 LT`; the value stays descriptive and does not move the UTC interval.
 - Sparse trip context: legs 007 and 008 belong to T42 and only the first row prints Trip ID → both descriptions contain `Trip T42`, and a later trip T43 does not inherit T42.
 - Explicit next-day departure: local block 12 contains Start (13) 00:20 and arrival block 13 ends 08:10 UTC → one travel event on UTC day 13, lasting 7:50.
 - Split local dates, same UTC day: local block 12 starts 19:15 and block 13 ends (12) 21:05 UTC → one 1:50 travel event on UTC day 12.
