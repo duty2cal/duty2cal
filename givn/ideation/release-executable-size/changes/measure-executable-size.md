@@ -1,6 +1,6 @@
 # Change seed: measure-executable-size
 
-Status: proposed by measure-executable-size
+Status: implemented in measure-executable-size
 
 - Use-case IDs: `measure-distributed-executable-size`
 - Topic: `release-executable-size`
