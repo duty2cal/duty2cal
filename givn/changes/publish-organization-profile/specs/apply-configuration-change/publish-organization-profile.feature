@@ -49,7 +49,7 @@ Feature: Publish the organization profile
     And every link in the profile content is absolute
     And the profile content embeds no image, badge or other third-party resource
 
-  @givn.added @wip
+  @givn.added
   Scenario: The profile repository carries the organization's default security policy
     Given the organization profile repository is published
     And the pages repository has no security policy of its own

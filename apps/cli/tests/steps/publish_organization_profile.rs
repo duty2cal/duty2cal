@@ -36,6 +36,10 @@ const PROFILE_ADDRESSES: [&str; 3] = [
     "github_repository_file.org_security",
 ];
 
+/// The private vulnerability reporting route the policy names.
+const PRIVATE_REPORTING_ROUTE: &str =
+    "https://github.com/duty2cal/duty2cal/security/advisories/new";
+
 /// Whether the scenario primed the profile declaration (`org/` beside
 /// `infra/`). The shared preview/apply steps dispatch on it.
 pub(crate) fn is_profile_scenario(w: &DutyWorld) -> bool {
@@ -379,6 +383,13 @@ fn published_profile(w: &DutyWorld) -> String {
     let path = scenario_dir_for(w).join("published-profile.md");
     fs::read_to_string(&path)
         .unwrap_or_else(|error| panic!("read the published profile {}: {error}", path.display()))
+}
+
+/// The published default security policy.
+fn published_security(w: &DutyWorld) -> String {
+    let path = scenario_dir_for(w).join("published-security.md");
+    fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read the published policy {}: {error}", path.display()))
 }
 
 /// Every Markdown link target in the reviewed copy, in order.
@@ -740,60 +751,94 @@ async fn the_profile_content_embeds_no_third_party_resource(w: &mut DutyWorld) {
 }
 
 #[given("the pages repository has no security policy of its own")]
-async fn the_pages_repository_has_no_security_policy(_w: &mut DutyWorld) {
-    unimplemented!(
-        "The profile repository carries the default security policy: \
-         the pages repository has no security policy of its own"
+async fn the_pages_repository_has_no_security_policy(w: &mut DutyWorld) {
+    let (status, body) = fake_request(
+        w,
+        "GET",
+        "/repos/duty2cal/duty2cal.github.io/contents/SECURITY.md?ref=main",
+        &[],
+        None,
+    );
+    assert_eq!(
+        status, 404,
+        "the pages repository has no policy of its own; response was: {body}"
     );
 }
 
 #[when("a contributor reads the organization's default security policy")]
-async fn a_contributor_reads_the_default_security_policy(_w: &mut DutyWorld) {
-    unimplemented!(
-        "The profile repository carries the default security policy: \
-         a contributor reads the organization's default security policy"
+async fn a_contributor_reads_the_default_security_policy(w: &mut DutyWorld) {
+    let published = published_file(w, ".github", "SECURITY.md", "security");
+    let source = fs::read(source_tree(w).join("SECURITY.md"))
+        .expect("read the reviewed default security policy");
+    assert_eq!(
+        published, source,
+        "the published default security policy is the reviewed copy byte for byte"
     );
+    fs::write(scenario_dir_for(w).join("published-security.md"), &published)
+        .expect("record the published default security policy");
+    fs::write(
+        scenario_dir_for(w).join("published-profile-repository.json"),
+        published_repository(w),
+    )
+    .expect("record the profile repository body");
 }
 
 #[then("the organization profile repository carries the default security policy as \"SECURITY.md\"")]
-async fn the_profile_repository_carries_the_security_policy(_w: &mut DutyWorld) {
-    unimplemented!(
-        "The profile repository carries the default security policy: the SECURITY.md file"
+async fn the_profile_repository_carries_the_security_policy(w: &mut DutyWorld) {
+    let published = published_security(w);
+    let source = fs::read_to_string(source_tree(w).join("SECURITY.md"))
+        .expect("read the reviewed default security policy");
+    assert_eq!(published, source);
+    assert!(
+        published.contains("# Security policy"),
+        "the SECURITY.md file is the default security policy"
     );
 }
 
 #[then("the default security policy names the private vulnerability reporting route")]
-async fn the_security_policy_names_the_private_route(_w: &mut DutyWorld) {
-    unimplemented!(
-        "The profile repository carries the default security policy: the private reporting route"
-    );
+async fn the_security_policy_names_the_private_route(w: &mut DutyWorld) {
+    assert_contains(&published_security(w), PRIVATE_REPORTING_ROUTE);
 }
 
 #[then("the default security policy forbids attaching a real duty plan or a converted calendar")]
-async fn the_security_policy_forbids_attachments(_w: &mut DutyWorld) {
-    unimplemented!(
-        "The profile repository carries the default security policy: the attachment prohibition"
+async fn the_security_policy_forbids_attachments(w: &mut DutyWorld) {
+    assert_contains(
+        &published_security(w),
+        "Never attach a real duty plan or a converted calendar",
     );
 }
 
 #[then("the default security policy states that only the latest published release is supported")]
-async fn the_security_policy_states_the_supported_release(_w: &mut DutyWorld) {
-    unimplemented!(
-        "The profile repository carries the default security policy: the supported release"
+async fn the_security_policy_states_the_supported_release(w: &mut DutyWorld) {
+    assert_contains(
+        &published_security(w),
+        "Only the latest published release is supported",
     );
 }
 
 #[then("the organization profile repository offers no public issue tracker for security reports")]
-async fn the_profile_repository_offers_no_public_issue_tracker(_w: &mut DutyWorld) {
-    unimplemented!(
-        "The profile repository carries the default security policy: no public issue tracker"
+async fn the_profile_repository_offers_no_public_issue_tracker(w: &mut DutyWorld) {
+    let report = scenario_dir_for(w).join("published-profile-repository.json");
+    assert_eq!(
+        jq(w, ".has_issues", &report, false),
+        "false",
+        "the profile repository offers no public issue tracker"
     );
+    assert_contains(&published_security(w), "Do not open a public issue");
 }
 
 #[then("the pages repository serves no security policy of its own")]
-async fn the_pages_repository_serves_no_security_policy(_w: &mut DutyWorld) {
-    unimplemented!(
-        "The profile repository carries the default security policy: the pages repository 404"
+async fn the_pages_repository_serves_no_security_policy(w: &mut DutyWorld) {
+    let (status, body) = fake_request(
+        w,
+        "GET",
+        "/repos/duty2cal/duty2cal.github.io/contents/SECURITY.md?ref=main",
+        &[],
+        None,
+    );
+    assert_eq!(
+        status, 404,
+        "the pages repository serves no policy of its own; response was: {body}"
     );
 }
 
