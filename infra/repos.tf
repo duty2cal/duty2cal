@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: MPL-2.0
 # SPDX-FileCopyrightText: 2026 Daniel Kressner
 #
-# Both repositories with the decided values (design.md "Declared objects and
-# values", proposal D2). Every feature boolean is stated explicitly because the
-# provider sends `false` for an omitted Optional-only boolean; omission would
-# not be neutral. `license_template` is omitted because it only acts at
-# creation. `pages` is ignored because the Pages source is declared by
-# `github_repository_pages.pages` in pages.tf.
+# The monorepo and the Pages repository with the decided values (design.md
+# "Declared objects and values", proposal D2). The organization profile
+# repository is declared separately in org_profile.tf. Every feature boolean
+# is stated explicitly because the provider sends `false` for an omitted
+# Optional-only boolean; omission would not be neutral. `license_template` is
+# omitted because it only acts at creation. `pages` is ignored because the
+# Pages source is declared by `github_repository_pages.pages` in pages.tf.
 
 resource "github_repository" "mono" {
   name        = "duty2cal"

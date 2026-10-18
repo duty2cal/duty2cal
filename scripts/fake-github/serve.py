@@ -19,10 +19,13 @@ real API response. A GraphQL mutation and every non-GET, non-GraphQL-query
 request are refused with 405 and journaled as a refused write.
 
 ``--writes`` opts into the test-only write sandbox (design.md "Write sandbox"):
-a repository ``PATCH``, and the ``PUT``/``DELETE`` pairs for the vulnerability
-alerts and automated security fixes endpoints, update an in-memory overlay that
-reads consult before the fixture file. Every other write is still refused with
-405 and journaled.
+a repository ``PATCH``, the ``PUT``/``DELETE`` pairs for the vulnerability
+alerts and automated security fixes endpoints, an organization repository
+``POST``, and the contents ``PUT`` that publishes the profile files update an
+in-memory overlay that reads consult before the fixture file. A created
+repository also serves its branch, contents and commit reads from the overlay,
+with deterministic blob and commit SHAs. Every other write is still refused
+with 405 and journaled.
 
 A fixture body of ``{"__fake_response__": {"status": 204}}`` is a response
 descriptor: the server replies with that status and no body.
@@ -39,6 +42,8 @@ manual-edit recording (sorted body keys and the security block for a repository
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
 import json
 import os
 import re
@@ -62,6 +67,13 @@ class FakeState:
         self.repos: dict[str, dict] = {}
         self.alerts: dict[str, bool] = {}
         self.security_updates: dict[str, bool] = {}
+        # Repositories created by this run, their files and commits. The
+        # profile apply creates the repository and its two files, so the
+        # values cannot come from static fixtures (design.md "Deterministic
+        # overlay values").
+        self.created: set[str] = set()
+        self.files: dict[tuple[str, str], dict] = {}
+        self.commits: dict[tuple[str, str], dict] = {}
         self.applied_writes = 0
         self.fired_faults: set[int] = set()
         self.faults = self._load_json("faults.json") or []
@@ -115,15 +127,30 @@ class FakeState:
         if path == repository:
             return self.repos.get(repository)
         suffix = path[len(repository) :]
-        if suffix == "/vulnerability-alerts" and repository in self.alerts:
-            if self.alerts[repository]:
+        if suffix == "/vulnerability-alerts":
+            if repository in self.alerts:
+                if self.alerts[repository]:
+                    return {"__fake_response__": {"status": 204}}
+                return {"__fake_response__": {"status": 404}}
+            # A repository created by this run has GitHub's public-repository
+            # default: the alerts endpoint answers 204 (design.md "Repository
+            # creation and reads").
+            if repository in self.created:
                 return {"__fake_response__": {"status": 204}}
-            return {"__fake_response__": {"status": 404}}
         if suffix == "/automated-security-fixes" and repository in self.security_updates:
             return {
                 "enabled": self.security_updates[repository],
                 "paused": False,
             }
+        branch = re.match(r"^/branches/(.+)$", suffix)
+        if branch and repository in self.created:
+            return self.branch_body(repository, branch.group(1))
+        contents = contents_path(path)
+        if contents is not None and contents in self.files:
+            return self.file_body(*contents)
+        commit = re.match(r"^/commits/([^/]+)$", suffix)
+        if commit and (repository, commit.group(1)) in self.commits:
+            return self.commit_read_body(repository, commit.group(1))
         return None
 
     def apply_repository_patch(self, path: str, body: dict) -> dict:
@@ -169,6 +196,171 @@ class FakeState:
                     }
                     repository["security_and_analysis"] = security
             self.applied_writes += 1
+
+    # -- profile repository sandbox --------------------------------------
+
+    def fixture_exists(self, path: str) -> bool:
+        """Whether the fixture tree records an existing object at ``path``.
+
+        A ``__fake_response__`` descriptor is a synthesized answer, not an
+        object: a 404 descriptor records an absent object, so it does not make
+        the create path refuse.
+        """
+        body = self.fixture(path)
+        if body is None:
+            return False
+        status = response_descriptor(body)
+        if status is not None:
+            return status != 404
+        return True
+
+    def repository_template(self, owner: str, name: str, payload: dict) -> dict:
+        """The full repository body the create response and the reads carry."""
+        repository = f"/repos/{owner}/{name}"
+        features = {
+            key: bool(payload.get(key, False))
+            for key in ("has_issues", "has_projects", "has_wiki", "has_discussions")
+        }
+        return {
+            "id": 200000000 + int(sha1_hex(repository)[:7], 16) % 1000000,
+            "node_id": f"R_fake_{sha1_hex(repository)[:16]}",
+            "name": name,
+            "full_name": f"{owner}/{name}",
+            "private": False,
+            "visibility": payload.get("visibility", "public"),
+            "description": payload.get("description"),
+            "default_branch": "main",
+            "has_pages": False,
+            "allow_auto_merge": False,
+            "allow_forking": True,
+            "allow_merge_commit": False,
+            "allow_rebase_merge": True,
+            "allow_squash_merge": False,
+            "delete_branch_on_merge": True,
+            "security_and_analysis": {
+                "secret_scanning": {"status": "enabled"},
+                "secret_scanning_push_protection": {"status": "enabled"},
+                "dependabot_security_updates": {"status": "disabled"},
+            },
+            **features,
+        }
+
+    def create_repository(self, owner: str, payload: dict) -> tuple[int, dict]:
+        """Create a repository in the overlay, as ``POST /orgs/{owner}/repos``."""
+        name = payload.get("name")
+        if not isinstance(name, str) or not name:
+            return 422, {"message": "name is required"}
+        repository = f"/repos/{owner}/{name}"
+        with self.lock:
+            if repository in self.repos or self.fixture_exists(repository):
+                return 422, {"message": f"Repository {owner}/{name} already exists"}
+            body = self.repository_template(owner, name, payload)
+            self.repos[repository] = body
+            self.created.add(repository)
+            self.applied_writes += 1
+        return 201, body
+
+    def branch_body(self, repository: str, branch: str) -> dict:
+        return {
+            "name": branch,
+            "protected": False,
+            "commit": {
+                "sha": sha1_hex(f"{repository}:{branch}"),
+                "url": f"https://api.github.com{repository}/commits/"
+                f"{sha1_hex(f'{repository}:{branch}')}",
+            },
+        }
+
+    def file_body(self, repository: str, path: str) -> dict:
+        entry = self.files[(repository, path)]
+        owner_repo = repository[len("/repos/") :]
+        return {
+            "type": "file",
+            "encoding": "base64",
+            "size": len(entry["content"]),
+            "name": os.path.basename(path),
+            "path": path,
+            "content": base64.b64encode(entry["content"]).decode("ascii"),
+            "sha": entry["sha"],
+            # The provider parses the `ref` query parameter out of this URL.
+            "url": f"https://api.github.com/repos/{owner_repo}/contents/{path}"
+            f"?ref={entry['branch']}",
+            "download_url": None,
+        }
+
+    def commit_read_body(self, repository: str, sha: str) -> dict:
+        entry = self.commits[(repository, sha)]
+        return {
+            "sha": sha,
+            "commit": {
+                "message": entry["message"],
+                "author": entry["author"],
+                "committer": entry["committer"],
+            },
+        }
+
+    def put_file(
+        self, repository: str, path: str, payload: dict | None
+    ) -> tuple[int, dict | None, dict]:
+        """Write one file and its commit, as ``PUT .../contents/{path}``.
+
+        Returns ``(status, response body, journal fields)``. The response body
+        is ``None`` for a refusal.
+        """
+        if payload is None:
+            return 422, None, {"reason": "malformed body"}
+        message = payload.get("message")
+        branch = payload.get("branch")
+        content = payload.get("content")
+        if not isinstance(message, str) or not message:
+            return 422, None, {"reason": "message is required"}
+        if not isinstance(branch, str) or not branch:
+            return 422, None, {"reason": "branch is required"}
+        if not isinstance(content, str):
+            return 422, None, {"reason": "content is required"}
+        try:
+            data = base64.b64decode(content)
+        except (ValueError, TypeError):
+            return 422, None, {"reason": "content is not base64"}
+        with self.lock:
+            if repository not in self.created:
+                return 404, None, {"reason": "repository was not created by this run"}
+            key = (repository, path)
+            current = self.files.get(key)
+            supplied = payload.get("sha")
+            if supplied is not None and (
+                current is None or supplied != current.get("sha")
+            ):
+                return 409, None, {"reason": "sha does not match the current blob"}
+            self.applied_writes += 1
+            sequence = self.applied_writes
+            entry = {
+                "content": data,
+                "sha": blob_sha(data),
+                "branch": branch,
+                "message": message,
+                "author": fake_identity(),
+                "committer": fake_identity(),
+            }
+            commit_sha = sha1_hex(f"{repository}{path}{entry['sha']}{sequence}")
+            entry["commit"] = commit_sha
+            self.files[key] = entry
+            self.commits[(repository, commit_sha)] = entry
+            body = {
+                "content": self.file_body(repository, path),
+                "commit": {
+                    "sha": commit_sha,
+                    "message": message,
+                    "author": fake_identity(),
+                    "committer": fake_identity(),
+                },
+            }
+            fields = {
+                "content_length": len(data),
+                "blob_sha": entry["sha"],
+                "commit_sha": commit_sha,
+            }
+        return (201 if current is None else 200), body, fields
 
 
 def graphql_operation(payload: dict) -> str | None:
@@ -228,6 +420,28 @@ def response_descriptor(body):
     return int(descriptor.get("status", 200))
 
 
+def sha1_hex(text: str) -> str:
+    """A deterministic 40-character identifier for the overlay."""
+    return hashlib.sha1(text.encode("utf-8")).hexdigest()
+
+
+def blob_sha(data: bytes) -> str:
+    """The blob SHA of ``data`` (Git's blob identity is the byte hash)."""
+    return hashlib.sha1(data).hexdigest()
+
+
+def fake_identity() -> dict:
+    return {"name": "fake", "email": "fake@example.test"}
+
+
+def contents_path(path: str) -> tuple[str, str] | None:
+    """The repository and file path of a contents request, or ``None``."""
+    match = re.match(r"^(/repos/[^/]+/[^/]+)/contents/(.+)$", path)
+    if match is None:
+        return None
+    return match.group(1), match.group(2)
+
+
 class Handler(BaseHTTPRequestHandler):
     """Serve one fixture tree; the state arrives through the server object."""
 
@@ -259,7 +473,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def journal(self, status: int, *, unknown_path=False, refused_write=False,
                 operation=None, mutated=False, applied_write=False,
-                manual_edit=False, body=None) -> None:
+                manual_edit=False, body=None, fields=None) -> None:
         entry = {
             "method": self.command,
             "path": request_path(self.path),
@@ -278,6 +492,8 @@ class Handler(BaseHTTPRequestHandler):
                 security = body.get("security_and_analysis")
                 if isinstance(security, dict):
                     entry["security_and_analysis"] = security
+            if isinstance(fields, dict):
+                entry.update(fields)
         self.state.record(entry)
 
     def unknown(self) -> None:
@@ -375,6 +591,28 @@ class Handler(BaseHTTPRequestHandler):
         except (UnicodeDecodeError, json.JSONDecodeError):
             payload = {}
 
+        organization = re.match(r"^/orgs/([^/]+)/repos$", path)
+        if organization is not None:
+            if not self.state.writes:
+                self.refused_method()
+                return
+            fault = self.fault_for(path)
+            if fault is not None:
+                status = int(fault.get("status", 500))
+                self.respond(status, fault.get("body", {"message": "injected fault"}))
+                self.journal(status)
+                return
+            status, body = self.state.create_repository(
+                organization.group(1), payload
+            )
+            self.respond(status, body)
+            self.journal(
+                status,
+                applied_write=status == 201,
+                body=payload if status == 201 else None,
+            )
+            return
+
         if path != "/graphql":
             self.respond(405, {"message": f"refused write: {self.command} {path}"})
             self.journal(405, refused_write=True)
@@ -442,7 +680,23 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(status, fault.get("body", {"message": "injected fault"}))
             self.journal(status)
             return
-        self.read_body()
+        body = self.read_body()
+        contents = contents_path(path)
+        if contents is not None:
+            if not self.state.writes:
+                self.refused_method()
+                return
+            status, response_body, fields = self.state.put_file(
+                contents[0], contents[1], body
+            )
+            self.respond(status, response_body)
+            self.journal(
+                status,
+                applied_write=status in (200, 201),
+                body=body if status in (200, 201) else None,
+                fields=fields,
+            )
+            return
         if path.endswith("/vulnerability-alerts"):
             self.settings_write("vulnerability-alerts", True)
             return

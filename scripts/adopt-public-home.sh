@@ -206,6 +206,9 @@ for entry in "$declaration_abs"/* "$declaration_abs"/.[!.]* "$declaration_abs"/.
   name="${entry##*/}"
   case "$name" in
     .adoption-staging|.terraform|terraform.tfstate|terraform.tfstate.backup) continue ;;
+    # The profile repository is created, never adopted; the verification plan
+    # must not evaluate the profile files (design.md "Workspace shapes").
+    org_profile.tf) continue ;;
   esac
   cp -R "$entry" "$staging/" ||
     refuse declaration "cannot copy $name into the staging workspace"

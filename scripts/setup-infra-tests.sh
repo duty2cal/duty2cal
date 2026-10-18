@@ -158,6 +158,9 @@ prove_each_import() { # <fixtures> <batch> <label>
     local workspace="$proof/entry-$label-$entry"
     mkdir -p "$workspace"
     cp infra/*.tf infra/.terraform.lock.hcl "$workspace/"
+    # The profile repository is never adopted; this proof covers only the
+    # existing objects (design.md "Workspace shapes").
+    rm -f "$workspace/org_profile.tf"
     (
       cd "$workspace"
       tofu init -backend=false -input=false -no-color >/dev/null 2>&1 ||
@@ -204,6 +207,7 @@ prove_each_import scripts/fake-github/fixtures/adopt-all infra/adoption-batch.tx
 workspace="$proof/adopt-all-workspace"
 mkdir -p "$workspace"
 cp infra/*.tf infra/.terraform.lock.hcl "$workspace/"
+rm -f "$workspace/org_profile.tf"
 (
   cd "$workspace"
   tofu init -backend=false -input=false -no-color >/dev/null 2>&1 ||
@@ -236,6 +240,7 @@ prove_each_import scripts/fake-github/fixtures/security-applied infra/adoption-b
 workspace="$proof/security-applied-workspace"
 mkdir -p "$workspace"
 cp infra/*.tf infra/.terraform.lock.hcl "$workspace/"
+rm -f "$workspace/org_profile.tf"
 rm "$workspace/security.tf"
 # Strip the scanning block, leaving the base declaration this change inherits.
 awk '

@@ -51,7 +51,7 @@ const GUARD_FILTER: &str = r#"
 /// The live-change preflight: only a completed report with no non-no-op change
 /// continues; the JSON is the verdict, not the exit status
 /// (opentofu/opentofu#3015).
-const PREFLIGHT_FILTER: &str = r#"
+pub(crate) const PREFLIGHT_FILTER: &str = r#"
 if (map(select(.type == "change_summary")) | length) == 0 then "incomplete"
 else
   [ .[] | select(.type == "planned_change" or .type == "resource_drift")
@@ -105,7 +105,7 @@ pub(crate) fn tofu(w: &DutyWorld, args: &[&str]) -> Output {
 /// Send one HTTP/1.1 request to the fake on loopback and return its status and
 /// body. The test-only manual edit is a direct loopback request, not a `tofu`
 /// invocation (design.md "Write sandbox").
-fn fake_request(
+pub(crate) fn fake_request(
     w: &DutyWorld,
     method: &str,
     path: &str,
@@ -345,6 +345,14 @@ pub(crate) fn ensure_base_adoption(w: &mut DutyWorld) {
         .expect("write the base declaration's repository file");
     fs::remove_file(declaration.join("security.tf"))
         .expect("remove the security declaration for the base apply");
+    // The profile repository is created, never part of the base state; the
+    // profile scenario owns its proof (design.md "Workspace shapes").
+    let profile_declaration = declaration.join("org_profile.tf");
+    let had_profile = profile_declaration.is_file();
+    if had_profile {
+        fs::remove_file(&profile_declaration)
+            .expect("remove the profile declaration for the base apply");
+    }
 
     let init = tofu(w, &["init", "-input=false", "-no-color"]);
     assert!(
@@ -413,6 +421,13 @@ pub(crate) fn ensure_base_adoption(w: &mut DutyWorld) {
         declaration.join("security.tf"),
     )
     .expect("restore this change's security declaration");
+    if had_profile {
+        fs::copy(
+            repository_root().join("infra/org_profile.tf"),
+            profile_declaration,
+        )
+        .expect("restore this change's profile declaration");
+    }
 }
 
 /// Adopt the second batch on top of the inherited applied state, record the
@@ -764,12 +779,22 @@ async fn the_owners_authority_cannot_change_the_monorepo(w: &mut DutyWorld) {
 
 #[when("the organization owner previews the declaration")]
 async fn the_organization_owner_previews_the_declaration(w: &mut DutyWorld) {
-    preview(w);
+    // The profile scenario owns the three profile targets; every other
+    // scenario follows the security routine (design.md "Step definitions").
+    if crate::steps::publish_organization_profile::is_profile_scenario(w) {
+        crate::steps::publish_organization_profile::preview(w);
+    } else {
+        preview(w);
+    }
 }
 
 #[when("the organization owner applies the previewed revision")]
 async fn the_organization_owner_applies_the_previewed_revision(w: &mut DutyWorld) {
-    apply_previewed(w);
+    if crate::steps::publish_organization_profile::is_profile_scenario(w) {
+        crate::steps::publish_organization_profile::apply_previewed(w);
+    } else {
+        apply_previewed(w);
+    }
 }
 
 #[then(regex = r#"^the preview fails and names "([^"]+)"$"#)]

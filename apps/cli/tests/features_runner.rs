@@ -79,6 +79,14 @@ pub struct DutyWorld {
     pub apply_transcript: String,
     /// Whether the scenario's fake accepted the write sandbox.
     pub write_sandbox: bool,
+    /// The scenario's copy of `org/`, placed beside its `infra/` copy, so the
+    /// declaration's `file()` source and the published content are read from
+    /// the same tree.
+    pub source_tree: Option<PathBuf>,
+    /// Journal lines written before the scenario's preview/apply, so the
+    /// priming adoption and base apply are not mistaken for the change's
+    /// writes.
+    pub journal_offset: usize,
 }
 
 impl Drop for DutyWorld {

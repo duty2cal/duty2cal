@@ -10,3 +10,12 @@ path = ["**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Daniel Kressner"
 SPDX-License-Identifier = "MPL-2.0"
+
+# The public profile and the organization's default security policy are prose
+# meant to be quoted, so they are CC0-1.0; `override` replaces the aggregate
+# MPL-2.0 annotation for these paths.
+[[annotations]]
+path = ["org/**"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Daniel Kressner"
+SPDX-License-Identifier = "CC0-1.0"
