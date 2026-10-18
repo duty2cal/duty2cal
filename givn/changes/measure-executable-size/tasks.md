@@ -348,9 +348,24 @@ refusal.
 - Evidence: `actionlint` (the workflow definition) and the rendered/extracted
   commands; no Gherkin scenario drives GitHub Actions.
 
-- [ ] Apply the CI wiring, `cliff.toml` and README changes.
-- [ ] Run `actionlint` or the project's workflow check; paste output.
-- [ ] Run `givn lint --change measure-executable-size`; paste output.
+- [x] Apply the CI wiring, `cliff.toml` and README changes.
+  - `.github/workflows/ci.yml`: `windows-gnu-build` installs
+    `cargo-bloat@0.12.1`, runs the measurement for `GITHUB_SHA` with the built
+    `duty2cal.exe`, appends the report or the missing-report note, exits 0 and
+    uploads `size-attribution/` with `if: always()`; `test` and `coverage` gain
+    the target, `mingw-w64` and the generator.
+  - `cliff.toml`: `measure-distributed-executable-size` added to the marked
+    allow-list and the breaking/new/fix/perf/revert parser rows.
+  - `README.md`: the command, the published `size-attribution` artifact, the
+    local toolchain setup and the two-number distinction.
+- [x] Run `actionlint` or the project's workflow check; paste output.
+  - Evidence: `nix-shell -p actionlint --run 'actionlint -no-color .github/workflows/ci.yml .github/workflows/release.yml'` → `actionlint-exit=0`.
+- [x] Run `givn lint --change measure-executable-size`; paste output.
+  - Evidence: `givn lint: 1 file(s) checked, 1 finding(s)`; the only finding is
+    the e2e scenario's expected `@wip` before its task starts; `lint-exit=2`.
+  - `scripts/render-changelog.sh --version 0.3.0 --repo . --out CHANGELOG.md
+    --check` → `change log is current for version 0.3.0`, exit 0 (the
+    allow-list matches the corpus).
 - [ ] Commit the wiring: `givn commit -m "ci(measure-distributed-executable-size): publish the size attribution beside every pushed revision"`; record the hash.
 
 ## E2E setup — toolchain, e2e skeleton, strict proof, scope proof
