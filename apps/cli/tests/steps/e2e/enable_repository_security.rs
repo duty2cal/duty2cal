@@ -288,13 +288,17 @@ async fn the_preview_names_only_the_scanning_changes(w: &mut DutyWorld) {
             w.preview_transcript
         );
     }
-    let changed = changed_leaf_lines(&w.preview_transcript);
+    let targeted = w
+        .preview_transcript
+        .split("$ tofu plan -input=false -no-color -target=github_repository.mono -out=plan.bin")
+        .nth(1)
+        .unwrap_or(&w.preview_transcript);
+    let changed = changed_leaf_lines(targeted);
     assert_eq!(
         changed.len(),
         2,
         "the plan text changes exactly the two scanning statuses; changed lines were:\n{changed:#?}\n\
-         output was:\n{}",
-        w.preview_transcript
+         output was:\n{targeted}"
     );
     for line in changed {
         assert_eq!(

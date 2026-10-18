@@ -393,6 +393,7 @@ pub(crate) fn build_history_with(
         "export-duty-plan-calendar",
         "publish-public-release",
         "adopt-existing-configuration",
+        "apply-configuration-change",
     ] {
         std::fs::create_dir_all(repo.join("givn/specs").join(capability))
             .expect("create a capability directory");
