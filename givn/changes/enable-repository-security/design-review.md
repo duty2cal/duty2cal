@@ -177,10 +177,10 @@ decided by the user on 2026-10-18; rejected alternatives are recorded.
   or should the claim be weakened?
 - **Disposition:** **Option 1 (+ the overlay assertion).** The journal entry
   carries the scrubbed request body's sorted top-level keys plus the full
-  `security_and_analysis` object; the step asserts the key set equals the
-  fixture's and only the nested member differs, and the follow-up read asserts
-  the overlay equals the fixture plus the two enabled statuses. Nothing is
-  weakened.
+  `security_and_analysis` object; the step asserts every key is a fixture key
+  or one of the provider's create-only defaults, the nested member names both
+  settings enabled, and the follow-up read's declared fields equal the
+  fixture's with only the two statuses differing. Nothing is weakened.
 - **Sources:** feature apply Thens; `design.md` write sandbox, matrix, obstacles.
 - **Rejected:** Option 3 (weaken the claim); Option 2 alone (overlay only).
 
@@ -341,5 +341,21 @@ context:
 
 The executable step mirrors the three outcomes; scenario 2 passes 9/9 after the
 corrections. Re-review verdict: `DESIGN-REVIEW: PASS`.
+
+- The provider's repository `PATCH` carries its update schema's fields, not the
+  whole API body: a measured write has 21 top-level keys, including the
+  create-only `auto_init`, `gitignore_template` and `license_template` that the
+  API read never returns, and it reorders `topics`. The e2e assertions
+  therefore compare the declared fields in the overlay, allow the three
+  provider-only keys in the journaled request, compare `topics` as a set, and
+  assert the journaled `security_and_analysis` for the write itself.
+- The base apply's state-only field is not visible in `tofu state show`, and
+  its state JSON value is null; the base-apply Given proves provenance from the
+  raw state's serial instead: seven imports plus the base apply make serial 8,
+  one write beyond the seven bound objects.
+- `security-applied`'s monorepo body omitted the live `allow_update_branch`
+  value (`false` in the 2026-10-18 read); the fixture now carries it.
+- Scenarios 7 and 8 pass 10/10 and 9/9; the transcripts are committed under
+  `evidence/visual/`.
 
 DESIGN-REVIEW: PASS

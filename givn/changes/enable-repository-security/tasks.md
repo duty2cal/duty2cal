@@ -116,9 +116,8 @@ Design constraints:
       `cargo fmt`; `cargo check -p duty2cal --tests` exits 0; the single
       scenario still exits 0 with `1 scenario (1 passed)`.
 - [x] COMMIT — release note subject, scenario title body; record the revision.
-      Revision: the `feat(apply-configuration-change): enable secret scanning
-      and push protection` commit that carries this scenario (bundle report
-      records its hash).
+      Revision: `abd3bc2` — `feat(apply-configuration-change): enable secret
+      scanning and push protection`.
       The failure path was corrected during this scenario: a refused PATCH
       still makes SDKv2 persist the planned values, so the routine restores
       the pre-apply state and keeps it only when the read-only refresh-only
@@ -252,9 +251,26 @@ Design constraints:
   committed under the change's evidence.
 
 Evidence:
-- [ ] Full and e2e scenario counts pasted; e2e strictly smaller.
-- [ ] Strict-mode proof for the e2e runner; paste non-zero.
-- [ ] The fake write sandbox is reached on loopback before the steps are written.
+- [x] Full and e2e scenario counts pasted; e2e strictly smaller.
+      `./run-tests.sh` over the assembled corpus runs 140 scenarios (138
+      passed, 2 failed — the two undefined `@e2e` scenarios); `./run-tests.sh
+      --e2e` runs 6 scenarios (4 passed, 2 failed). 6 < 140. Final counts are
+      under "Final verification".
+- [x] Strict-mode proof for the e2e runner; paste non-zero.
+      `./run-tests.sh --e2e` exits 101 with `Step doesn't match any function`
+      for both `@e2e` scenarios and ends `6 scenarios (4 passed, 2 failed)`;
+      the single-scenario run of scenario 7 exits 101 with `1 scenario
+      (1 failed)`, `1 step (1 failed)`.
+- [x] The fake write sandbox is reached on loopback before the steps are written.
+      The baseline e2e run's scenario 8 passed its priming Given, its previewed
+      revision Given and its apply When against the ephemeral loopback fake in
+      `--writes` mode (the `github_repository.mono` update landed); only its
+      undefined Then failed. Scenario 7's priming and preview served every read
+      from the same fake (no unknown-path 599). The steps live in
+      `apps/cli/tests/steps/e2e/enable_repository_security.rs`; the base apply
+      and the fake start/stop per scenario are the shared priming helper, the
+      fake being killed with the scenario's world. Transcripts are committed
+      under `evidence/visual/<slug>/transcript.txt`.
 
 ## 7. Organization owner previews the security settings and only the declared differences are named (@e2e)
 
@@ -266,12 +282,31 @@ Design constraints:
 - The plan JSON's changed set is asserted, with the state-only attribute
   classified.
 
-- [ ] RED — remove `@wip` from this scenario only; run the single scenario;
+- [x] RED — remove `@wip` from this scenario only; run the single scenario;
       paste non-zero.
-- [ ] GREEN — assertions and production code; list files; paste zero.
-- [ ] REFACTOR — cleanup; re-run; paste zero.
-- [ ] COMMIT — `test(e2e): <release note>` with the scenario title in the body;
+      The first Given is undefined (`Step doesn't match any function`);
+      `1 scenario (1 failed)`, `1 step (1 failed)`, runner exit 101.
+- [x] GREEN — assertions and production code; list files; paste zero.
+      Production files: `apps/cli/tests/steps/e2e/enable_repository_security.rs`
+      (the primed Given, the base apply's serial proof, the live disabled read,
+      the exact plan-text and plan-JSON assertions, the transcript),
+      `apps/cli/tests/steps/enable_repository_security.rs` (`pub(crate)`
+      helpers and the base apply in the scenario transcript), the feature file
+      (`@wip` removed). Single scenario exits 0: `1 scenario (1 passed)`,
+      `10 steps (10 passed)`.
+      Corrected during implementation: the base apply's state-only
+      `ignore_vulnerability_alerts_during_read` is not shown by `tofu state
+      show` and its state JSON value is null, so provenance is asserted from
+      the raw state's serial — seven imports plus the base apply make 8, one
+      write beyond the seven bound objects (`tofu state pull`).
+- [x] REFACTOR — cleanup; re-run; paste zero.
+      `cargo fmt`; `cargo check -p duty2cal --tests` exits 0; the single
+      scenario still exits 0 with `10 steps (10 passed)`.
+- [x] COMMIT — `test(e2e): <release note>` with the scenario title in the body;
       record the revision.
+      Revision: `52b8c26` — `test(e2e): enable secret scanning and push
+      protection`; transcript committed under
+      `evidence/visual/organization-owner-previews-the-security-settings-and-only-the-declared-differences-are-named/transcript.txt`.
 
 ## 8. Organization owner applies the previewed revision and the security settings are enabled (@e2e)
 
@@ -282,19 +317,50 @@ Design constraints:
   field changed; a later preview is empty.
 - The routine's preflight runs first; the saved plan is applied unchanged.
 
-- [ ] RED — remove `@wip` from this scenario only; run the single scenario;
+- [x] RED — remove `@wip` from this scenario only; run the single scenario;
       paste non-zero.
-- [ ] GREEN — assertions and production code; list files; paste zero.
-- [ ] REFACTOR — cleanup; re-run; paste zero.
-- [ ] COMMIT — `test(e2e): <release note>` with the scenario title in the body;
+      The shared priming Given, previewed revision Given and apply When pass;
+      the first e2e Then is undefined (`Step doesn't match any function`);
+      `1 scenario (1 failed)`, `4 steps (3 passed, 1 failed)`, runner exit 101.
+- [x] GREEN — assertions and production code; list files; paste zero.
+      Production files: `apps/cli/tests/steps/e2e/enable_repository_security.rs`
+      (the apply outcome and preflight order, the state read, the journal's
+      single applied write, the declared-field overlay, the later preview, the
+      transcript), the feature file (`@wip` removed), and
+      `scripts/fake-github/fixtures/security-applied/repos/duty2cal/duty2cal.json`
+      (`allow_update_branch: false`, the live read's value the fixture omitted).
+      Single scenario exits 0: `1 scenario (1 passed)`, `9 steps (9 passed)`.
+      Corrected during implementation: the provider's `PATCH` carries its
+      update schema's fields, not the whole API body — 21 top-level keys
+      including the create-only `auto_init`, `gitignore_template` and
+      `license_template`, and it reorders `topics`. The journal assertion
+      therefore accepts those three provider-only keys, and the live assertion
+      compares the declared fields with `topics` as a set; the journaled
+      `security_and_analysis` and the two live status differences carry the
+      "only" claim. See `design.md` "Write sandbox" and the `design-review.md`
+      correction.
+- [x] REFACTOR — cleanup; re-run; paste zero.
+      `cargo fmt`; the fixture path was factored into one helper; `cargo check
+      -p duty2cal --tests` exits 0; the single scenario still exits 0 with
+      `9 steps (9 passed)`.
+- [x] COMMIT — `test(e2e): <release note>` with the scenario title in the body;
       record the revision.
+      Revision: `a8fbd40` — `test(e2e): enable secret scanning and push
+      protection`; transcript committed under
+      `evidence/visual/organization-owner-applies-the-previewed-revision-and-the-security-settings-are-enabled/transcript.txt`.
 
 ## Final verification and operator apply
 
-- [ ] Every scenario box checked with pasted output and a revision.
-- [ ] `./run-tests.sh` exits 0 over the full suite.
-- [ ] `./run-tests.sh --e2e` exits 0 with a strictly smaller count.
-- [ ] `givn lint --change enable-repository-security` has no errors.
+- [x] Every scenario box checked with pasted output and a revision.
+      Scenarios 1-8 carry their RED/GREEN/REFACTOR outputs and the revisions
+      `ec38b47` (setup + 1), `abd3bc2`, `e830590`, `7287552`, `e19691d`,
+      `6a0f096`, `52b8c26` and `a8fbd40`.
+- [x] `./run-tests.sh` exits 0 over the full suite.
+      140 scenarios (140 passed), 584 steps (584 passed), exit 0.
+- [x] `./run-tests.sh --e2e` exits 0 with a strictly smaller count.
+      6 scenarios (6 passed), 42 steps (42 passed), exit 0; 6 < 140.
+- [x] `givn lint --change enable-repository-security` has no errors.
+      `givn lint: 1 file(s) checked — clean`, exit 0.
 - [ ] Post-GREEN operator step: the maintainer adopts the second batch, runs the
       security preview, applies the saved plan, and commits the state and backup;
       the live API reports secret scanning and push protection enabled and a

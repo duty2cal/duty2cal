@@ -477,11 +477,15 @@ apply wrote.
 The journal entry for an applied write carries `"applied_write": true`, the
 method, the path, and — for a repository `PATCH` — the scrubbed request body:
 its sorted top-level keys plus the full `security_and_analysis` object. The
-step asserts the key set equals the fixture body's key set (the provider sends
-the whole repository object) and that only `security_and_analysis` differs, so
-"wrote nothing else" is proven by the request, not inferred. The follow-up read
-asserts the overlay equals the expected fixture plus the two enabled statuses —
-the second proof of the same claim.
+step asserts that the request carries `security_and_analysis`, that every
+top-level key it sends is either a fixture key or one of the provider's
+create-only defaults (`auto_init`, `gitignore_template`,
+`license_template`), that the security object names exactly the two settings
+both enabled, and that the follow-up read's declared fields equal the fixture's
+with only the two statuses differing live — so "wrote nothing else" is proven
+by the request and the overlay, not inferred. The provider does not send the
+whole API body, only the fields its update schema controls (measured
+2026-10-18); the earlier wording was corrected during implementation.
 
 A test-only manual edit is a direct loopback `PATCH` from the step, not through
 `tofu`; the fake journals it with `"manual_edit": true` and the same body
@@ -728,7 +732,7 @@ state).
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
 | preview the declared configuration and read the named differences | Organization owner previews the security settings and only the declared differences are named | CLI (terminal) | `std::process::Command` runs `tofu init -input=false`, `tofu plan -input=false -no-color -out=<tmp>/plan.bin` and `tofu show -json <tmp>/plan.bin` in the scenario's declaration copy (primed by the base apply), with `TF_VAR_state_passphrase`, `TF_VAR_billing_email`, `GITHUB_TOKEN=test-token`, `GITHUB_BASE_URL=http://127.0.0.1:<port>` and `TF_CLI_CONFIG_FILE` set; asserts the plan text names both scanning statuses, the summary `0 to add, 1 to change, 0 to destroy`, the plan JSON's only changed resource is `github_repository.mono` and its only changed live attributes are the two scanning statuses (the state-only `ignore_vulnerability_alerts_during_read` is classified and allowed), and a journal with no applied and no refused write |
-| apply the previewed revision and read the outcome | Organization owner applies the previewed revision and the security settings are enabled | CLI (terminal) | `std::process::Command` runs the preflight, `tofu apply -input=false <tmp>/plan.bin`, then a second `tofu plan`; asserts the apply's outcome lines, the journal's single `applied_write` PATCH whose top-level key set equals the fixture and differs only in `security_and_analysis` with both statuses enabled, the overlay equal to the fixture plus those statuses, the repository read reporting them enabled, the state read with `tofu state show`, and an empty follow-up plan |
+| apply the previewed revision and read the outcome | Organization owner applies the previewed revision and the security settings are enabled | CLI (terminal) | `std::process::Command` runs the preflight, `tofu apply -input=false <tmp>/plan.bin`, then a second `tofu plan`; asserts the apply's outcome lines, the journal's single `applied_write` PATCH whose fields are the provider's update schema with both statuses enabled in `security_and_analysis`, the declared fields unchanged and the two statuses the only live difference, the repository read reporting them enabled, the applied state read with `tofu state show` and the raw state's serial, and an empty follow-up plan |
 
 ## Black-Box-First policy
 
@@ -799,11 +803,16 @@ server, the boundary the provider actually talks to.
   - *The fake must not accept arbitrary writes.* Fix: `--writes` enables an
     allow-list of three shapes; everything else is still 405 and journaled, and
     the apply scenarios assert the applied-write set exactly.
-  - *The provider sends the whole repository object on `PATCH`, not the changed
-    field.* Fix: the fake merges the body into the overlay; the journal records
-    the scrubbed body's sorted top-level keys and the `security_and_analysis`
-    member, and the scenario asserts the key set equals the fixture's and only
-    the nested member differs, with the overlay as the second proof.
+  - *The provider sends its update-schema fields on `PATCH`, not the changed
+    field only.* Fix: the fake merges the body into the overlay; the journal
+    records the scrubbed body's sorted top-level keys and the
+    `security_and_analysis` member, and the scenario asserts no unexpected key,
+    both enabled statuses in the member, unchanged declared fields in the
+    overlay, and the two statuses as the only live difference. The provider
+    writes three create-only defaults (`auto_init`, `gitignore_template`,
+    `license_template`) the API read never returns, and reorders `topics`
+    (measured 2026-10-18); the comparison allows the former and treats the
+    latter as a set.
   - *The partial-failure scenario needs a deterministic order.* Fix:
     `depends_on` plus `-parallelism=1`; the apply's actions are then repository
     → vulnerability alerts → Dependabot security updates.
