@@ -25,6 +25,16 @@ use crate::DutyWorld;
 
 /// The preview guard: refuse a create for a setting that is already live and
 /// unbound (design.md "The apply procedure").
+///
+/// The refreshed prior state exposes the live Dependabot alerts flag
+/// (`vulnerability_alerts`, measured true after the base apply) but not the
+/// dependency-updates status: provider 6.13.0's repository schema has no
+/// `security_and_analysis.dependabot_security_updates` member at all, so the
+/// dependency-updates create is judged by the alerts flag. GitHub serves the
+/// automated-security-fixes endpoint (200 `{enabled}`) only while alerts are
+/// enabled and 404 otherwise, so a live-enabled alerts setting means the
+/// dependency-updates object exists live and must be adopted before it is
+/// updated.
 const GUARD_FILTER: &str = r#"
 (.prior_state.values.root_module.resources // []) as $res
 | ($res | map(select(.address == "github_repository.mono")) | .[0].values) as $repo
@@ -32,9 +42,9 @@ const GUARD_FILTER: &str = r#"
     | select((.change.actions // []) | index("create"))
     | .address
     | select(
-        . == "github_repository_vulnerability_alerts.mono" and $repo.vulnerability_alerts == true
-        or . == "github_repository_dependabot_security_updates.mono"
-           and ($repo.security_and_analysis[0].dependabot_security_updates.status // "") == "enabled")]
+        (. == "github_repository_vulnerability_alerts.mono"
+         or . == "github_repository_dependabot_security_updates.mono")
+        and $repo.vulnerability_alerts == true)]
 | if length == 0 then "ok" else join(" ") end
 "#;
 
@@ -169,6 +179,22 @@ fn assert_scanning_status(w: &DutyWorld, expected: &str) {
     }
 }
 
+/// The addresses the applied state records.
+fn state_addresses(w: &DutyWorld) -> Vec<String> {
+    let list = tofu(w, &["state", "list"]);
+    assert!(
+        list.status.success(),
+        "tofu state list failed:\n{}",
+        combined(&list)
+    );
+    String::from_utf8_lossy(&list.stdout)
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_owned)
+        .collect()
+}
+
 /// The live identifier of a drifted address, when the state records one.
 fn object_live_id(w: &DutyWorld, address: &str) -> String {
     let report = scenario_dir_for(w).join("state-values.json");
@@ -272,9 +298,10 @@ fn remove_security_block(text: &str) -> String {
 
 /// Prepare the inherited applied state: adopt the base batch against
 /// `security-applied`, apply the base declaration for real (which records the
-/// provider's state-only read flag and the live values), restore this change's
-/// declaration and adopt the second batch.
-fn ensure_base_state(w: &mut DutyWorld) {
+/// provider's state-only read flag and the live values), and restore this
+/// change's declaration. The second adoption batch is a separate step so a
+/// scenario can prove the unadopted-setting guard.
+fn ensure_base_adoption(w: &mut DutyWorld) {
     if w.declaration.is_some() {
         return;
     }
@@ -365,7 +392,20 @@ fn ensure_base_state(w: &mut DutyWorld) {
         declaration.join("security.tf"),
     )
     .expect("restore this change's security declaration");
+}
 
+/// Adopt the second batch on top of the inherited applied state, record the
+/// state snapshot and restart the fake so the scenario's journal is its own.
+fn ensure_base_state(w: &mut DutyWorld) {
+    ensure_base_adoption(w);
+    if state_addresses(w)
+        .iter()
+        .any(|address| address == "github_repository_dependabot_security_updates.mono")
+    {
+        return;
+    }
+
+    let declaration = declaration_dir(w);
     w.batch = Some(declaration.join("adoption-batch-security.txt"));
     adopt(w);
     assert_eq!(
@@ -667,7 +707,6 @@ async fn the_owners_authority_cannot_change_the_monorepo(w: &mut DutyWorld) {
 
 #[when("the organization owner previews the declaration")]
 async fn the_organization_owner_previews_the_declaration(w: &mut DutyWorld) {
-    ensure_base_state(w);
     preview(w);
 }
 
@@ -906,6 +945,123 @@ async fn a_new_preview_names_the_projects_change(w: &mut DutyWorld) {
     assert!(
         w.preview_transcript.contains("has_projects"),
         "the new preview names the projects change; output was:\n{}",
+        w.preview_transcript
+    );
+}
+
+/// Assert the applied state binds neither Dependabot setting.
+fn assert_dependabot_unbound(w: &DutyWorld) {
+    let addresses = state_addresses(w);
+    for address in [
+        "github_repository_vulnerability_alerts.mono",
+        "github_repository_dependabot_security_updates.mono",
+    ] {
+        assert!(
+            !addresses.iter().any(|recorded| recorded == address),
+            "the applied state binds no {address}; it was: {addresses:?}"
+        );
+    }
+}
+
+#[given(
+    "the applied state binds the organization, both repositories, the default-branch rule \
+     and the site source"
+)]
+async fn the_applied_state_binds_the_base_objects(w: &mut DutyWorld) {
+    ensure_base_adoption(w);
+    let addresses = state_addresses(w);
+    for address in [
+        "github_organization_settings.org",
+        "github_repository.mono",
+        "github_repository.pages",
+        "github_repository_ruleset.main",
+        "github_repository_pages.pages",
+    ] {
+        assert!(
+            addresses.iter().any(|recorded| recorded == address),
+            "the applied state binds {address}; it was: {addresses:?}"
+        );
+    }
+}
+
+#[given("the applied state does not bind either Dependabot setting")]
+async fn the_applied_state_does_not_bind_either_dependabot_setting(w: &mut DutyWorld) {
+    assert_dependabot_unbound(w);
+    w.applied_state_snapshot = Some(state_values(w));
+}
+
+#[given("the monorepo reports Dependabot alerts and Dependabot security updates enabled")]
+async fn the_monorepo_reports_dependabot_enabled(w: &mut DutyWorld) {
+    let report = live_monorepo_report(w);
+    assert_eq!(
+        jq(
+            w,
+            ".security_and_analysis.dependabot_security_updates.status // empty",
+            &report,
+            false
+        ),
+        "enabled",
+        "the monorepo reports Dependabot security updates enabled"
+    );
+    let (status, _) = fake_request(
+        w,
+        "GET",
+        "/repos/duty2cal/duty2cal/vulnerability-alerts",
+        &[],
+        None,
+    );
+    assert_eq!(
+        status, 204,
+        "the fake reports the monorepo's Dependabot alerts enabled"
+    );
+}
+
+#[given("the declaration enables Dependabot alerts and Dependabot security updates")]
+async fn the_declaration_enables_the_dependabot_settings(w: &mut DutyWorld) {
+    let text = fs::read_to_string(declaration_dir(w).join("security.tf"))
+        .expect("read the scenario's security declaration");
+    for resource in [
+        "github_repository_vulnerability_alerts",
+        "github_repository_dependabot_security_updates",
+    ] {
+        assert!(
+            text.contains(&format!("resource \"{resource}\" \"mono\"")),
+            "the declaration binds {resource}.mono"
+        );
+    }
+    let normalized = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    assert_eq!(
+        normalized.matches("enabled = true").count(),
+        2,
+        "the declaration enables both Dependabot settings"
+    );
+}
+
+#[then(regex = r#"^the preview is refused and names "([^"]+)"$"#)]
+async fn the_preview_is_refused_and_names(w: &mut DutyWorld, object: String) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the preview is refused; output was:\n{}",
+        w.preview_transcript
+    );
+    assert!(
+        w.preview_transcript.contains("refused"),
+        "the preview reports the refusal; output was:\n{}",
+        w.preview_transcript
+    );
+    assert!(
+        w.preview_transcript.contains(&object),
+        "the preview names {object}; output was:\n{}",
+        w.preview_transcript
+    );
+}
+
+#[then(regex = r#"^the preview names "([^"]+)"$"#)]
+async fn the_preview_names(w: &mut DutyWorld, object: String) {
+    assert!(
+        w.preview_transcript.contains(&object),
+        "the preview names {object}; output was:\n{}",
         w.preview_transcript
     );
 }

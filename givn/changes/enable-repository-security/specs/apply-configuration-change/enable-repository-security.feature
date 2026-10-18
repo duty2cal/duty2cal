@@ -58,7 +58,7 @@ Feature: Enable repository security
     And the saved plan is not applied
     And a new preview names the projects change
 
-  @givn.added @wip
+  @givn.added
   Scenario: The preview refuses to add a Dependabot setting that already exists live and is unbound
     Given the applied state binds the organization, both repositories, the default-branch rule and the site source
     And the applied state does not bind either Dependabot setting
