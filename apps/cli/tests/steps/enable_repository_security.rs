@@ -120,6 +120,33 @@ fn scenario_dir_for(w: &DutyWorld) -> PathBuf {
         .expect("scenario prepared no working directory")
 }
 
+/// The applied state's decrypted values, canonically ordered. A failed apply
+/// persists a refreshed state with a new serial even when no resource changed,
+/// so the routine's write signal is the resource values, not the state bytes
+/// (design.md "The apply procedure", "A partial failure").
+fn state_values(w: &DutyWorld) -> Vec<u8> {
+    let dir = scenario_dir_for(w);
+    let show = tofu(w, &["show", "-json"]);
+    assert!(
+        show.status.success(),
+        "tofu show -json failed:\n{}",
+        combined(&show)
+    );
+    let report = dir.join("state-values.json");
+    fs::write(&report, &show.stdout).expect("write the state's JSON report");
+    let output = Command::new("jq")
+        .args(["-S", "-c", ".values"])
+        .arg(&report)
+        .output()
+        .expect("run jq over the state's values");
+    assert!(
+        output.status.success(),
+        "jq failed over the state's values: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    output.stdout
+}
+
 /// Remove the `security_and_analysis` block from the base declaration.
 fn remove_security_block(text: &str) -> String {
     let mut result = String::new();
@@ -258,8 +285,7 @@ fn ensure_base_state(w: &mut DutyWorld) {
         adoption_output(w)
     );
 
-    w.applied_state_snapshot =
-        Some(fs::read(state_path(w)).expect("read the primed applied state"));
+    w.applied_state_snapshot = Some(state_values(w));
 
     restart_fake_with(w, true);
     w.exit_status = None;
@@ -273,8 +299,6 @@ fn ensure_base_state(w: &mut DutyWorld) {
 fn preview(w: &mut DutyWorld) {
     let declaration = declaration_dir(w);
     let dir = scenario_dir_for(w);
-    let state = state_path(w);
-    let before = dir.join("state-before.tfstate");
     let report = dir.join("preview.json");
     let stale = stale_path(w);
     let mut transcript = String::from("$ preview (tofu init; tofu plan -out; tofu show -json)\n");
@@ -292,8 +316,6 @@ fn preview(w: &mut DutyWorld) {
         w.exit_status = Some(2);
         return;
     }
-
-    let _ = fs::copy(&state, &before);
 
     let init = tofu(w, &["init", "-input=false"]);
     transcript.push_str("$ tofu init -input=false\n");
@@ -344,8 +366,10 @@ fn preview(w: &mut DutyWorld) {
 fn apply_previewed(w: &mut DutyWorld) {
     let declaration = declaration_dir(w);
     let dir = scenario_dir_for(w);
-    let state = state_path(w);
-    let before = dir.join("state-before.tfstate");
+    let before = dir.join("state-before-values.json");
+    let state_before = dir.join("state-before.tfstate");
+    let failed_state = dir.join("state-failed.tfstate");
+    let failure_report = dir.join("post-failure.json");
     let report = dir.join("preflight.json");
     let stale = stale_path(w);
     let plan = w
@@ -372,9 +396,9 @@ fn apply_previewed(w: &mut DutyWorld) {
         return;
     }
 
-    if !before.exists() {
-        let _ = fs::copy(&state, &before);
-    }
+    let values_before = state_values(w);
+    fs::write(&before, &values_before).expect("record the state's values before the apply");
+    fs::copy(state_path(w), &state_before).expect("record the applied state before the apply");
 
     let preflight = tofu(
         w,
@@ -406,12 +430,33 @@ fn apply_previewed(w: &mut DutyWorld) {
     transcript.push_str("$ tofu apply -input=false plan.bin\n");
     transcript.push_str(&combined(&apply));
     if !apply.status.success() {
-        let state_changed = fs::read(&state)
-            .ok()
-            .zip(fs::read(&before).ok())
-            .map(|(after, before)| after != before)
-            .unwrap_or(false);
-        if state_changed {
+        // A failed provider update still makes OpenTofu persist the planned
+        // values. Restore the pre-apply state, then ask live: a refresh-only
+        // report with no drift proves the refusal happened before any write,
+        // so the pre-apply state stays and no marker is written. Drift proves
+        // a write landed, so the failed apply's state is kept and marked
+        // stale (design.md "The apply procedure").
+        fs::copy(state_path(w), &failed_state).expect("record the failed apply's state");
+        fs::copy(&state_before, state_path(w)).expect("restore the pre-apply state");
+        let drift = tofu(
+            w,
+            &[
+                "plan",
+                "-refresh-only",
+                "-detailed-exitcode",
+                "-json",
+                "-input=false",
+            ],
+        );
+        fs::write(&failure_report, &drift.stdout).expect("write the post-failure report");
+        let drift_verdict = jq(w, PREFLIGHT_FILTER, &failure_report, true);
+        if drift_verdict == "ok" {
+            let _ = fs::remove_file(&failed_state);
+            transcript
+                .push_str("refused before the first write; the pre-apply state is restored\n");
+        } else {
+            fs::copy(&failed_state, state_path(w)).expect("keep the failed apply's state");
+            let _ = fs::remove_file(&failed_state);
             let stamp = Command::new("date")
                 .args(["-u", "+%FT%TZ"])
                 .output()
@@ -419,7 +464,7 @@ fn apply_previewed(w: &mut DutyWorld) {
             let stamp = String::from_utf8_lossy(&stamp.stdout).trim().to_string();
             fs::write(&stale, format!("{stamp}\n")).expect("write the stale marker");
             transcript.push_str(&format!(
-                "stale applied state marked at {}\n",
+                "stale applied state marked at {}; live drift: {drift_verdict}\n",
                 stale.display()
             ));
         }
@@ -536,17 +581,30 @@ async fn no_write_request_reaches_github(w: &mut DutyWorld) {
 
 #[then("the applied state is unchanged")]
 async fn the_applied_state_is_unchanged(w: &mut DutyWorld) {
-    let state = fs::read(state_path(w)).expect("read the applied state");
+    let values = state_values(w);
     let before = w
         .applied_state_snapshot
         .as_ref()
         .expect("the scenario snapshotted no applied state");
     assert_eq!(
-        &state,
+        &values,
         before,
-        "the applied state at {} changed",
+        "the applied state's values at {} changed",
         state_path(w).display()
     );
+    // A failed apply's routine keeps a byte copy of the pre-apply state; a
+    // refusal before the first write restores it exactly.
+    let routine_copy = scenario_dir_for(w).join("state-before.tfstate");
+    if routine_copy.is_file() {
+        let restored = fs::read(state_path(w)).expect("read the restored applied state");
+        let pre_apply = fs::read(&routine_copy).expect("read the routine's state copy");
+        assert_eq!(
+            restored,
+            pre_apply,
+            "the applied state at {} was not restored byte for byte",
+            state_path(w).display()
+        );
+    }
 }
 
 #[then(regex = r#"^the apply fails and names "([^"]+)"$"#)]

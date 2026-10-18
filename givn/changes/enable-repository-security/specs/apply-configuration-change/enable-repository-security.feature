@@ -35,7 +35,7 @@ Feature: Enable repository security
     And no write request reaches GitHub
     And the applied state is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: An apply whose first change is refused changes nothing
     Given the applied state binds every declared object
     And a previewed revision that enables secret scanning and push protection

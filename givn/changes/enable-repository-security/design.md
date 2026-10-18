@@ -254,9 +254,36 @@ preflight_verdict=$(jq -sr '
   { echo "refused: live changed after the preview: $preflight_verdict" >&2; exit 2; }
 
 if ! tofu apply -input=false plan.bin; then
-  # A partial apply wrote the state; a refusal before the first write did not.
-  cmp -s terraform.tfstate "$state_before" ||
+  # SDKv2 persists the planned values for a failed update, so the failed
+  # state is not evidence of a write. Restore the pre-apply state and ask
+  # live with the read-only refresh-only report.
+  state_failed=$(mktemp)
+  cp terraform.tfstate "$state_failed"
+  cp "$state_before" terraform.tfstate
+  failure_report=$(mktemp)
+  tofu plan -refresh-only -detailed-exitcode -json -input=false >"$failure_report"
+  failure_verdict=$(jq -sr '
+    if (map(select(.type == "change_summary")) | length) == 0 then "incomplete"
+    else
+      [ .[] | select(.type == "planned_change" or .type == "resource_drift")
+        | .change as $c
+        | (($c.actions // []) + (if $c.action then [$c.action] else [] end))
+        | select(any(.[]; . != "no-op"))
+        | ($c.resource.addr // empty) ]
+      | if length == 0 then "ok" else join(" ") end
+    end
+  ' "$failure_report")
+  if [ "$failure_verdict" = ok ]; then
+    # No drift: the refusal happened before any write; keep the restored
+    # pre-apply state and write no marker.
+    rm -f "$state_failed"
+  else
+    # Drift: a write landed; keep the failed apply's state and mark it stale.
+    cp "$state_failed" terraform.tfstate
     date -u +%FT%TZ > terraform.tfstate.stale
+    rm -f "$state_failed"
+  fi
+  rm -f "$failure_report"
   exit 1
 fi
 rm -f plan.bin "$preview_report" "$preflight_report" "$state_before" terraform.tfstate.stale
@@ -271,11 +298,18 @@ rm -f plan.bin "$preview_report" "$preflight_report" "$state_before" terraform.t
   reads `Plan: 0 to add, 1 to change, 0 to destroy.` It writes nothing to
   GitHub.
 - **The stale check.** A `terraform.tfstate.stale` sidecar beside the state means
-  an earlier apply failed after its first write. The failure path writes it only
-  when the state bytes changed (a refusal before any write leaves them
-  identical, so no marker); while it exists the preview and the apply refuse and
-  name the stale state, and a green apply removes it. The sidecar is git-ignored
-  and never committed, like `plan.bin`.
+  an earlier apply failed after its first write. The routine keeps a pre-apply
+  copy of the state outside the state path. After a non-zero apply it restores
+  that copy and runs the read-only refresh-only report; no drift proves the
+  refusal happened before any write, so the restored state stays and no marker
+  is written, while drift proves a write landed, so the failed apply's state is
+  reinstalled and the marker is written. The failed state itself is not
+  evidence: SDKv2 persists the planned values for a failed update (measured
+  with a refused `PATCH` on 2026-10-18), and OpenTofu also persists a refreshed
+  envelope, so neither bytes nor values distinguish a refusal from a write.
+  While the sidecar exists the preview and the apply refuse and name the stale
+  state, and a green apply removes it. The sidecar is git-ignored and never
+  committed, like `plan.bin`.
 - **The preview guard: an unadopted object is not created.** The preview's own
   JSON report (`tofu show -json plan.bin`) carries, in its refreshed prior state
   for `github_repository.mono`, the live `vulnerability_alerts` and
@@ -541,6 +575,15 @@ rejected:
   operator's memory not to commit a partial state, which leaves the on-disk
   state indistinguishable from an applied one and gives the future drift check
   no signal).
+- **The stale signal is live drift against the restored pre-apply state, not
+  the failed state's bytes or values** (corrected during implementation after
+  measuring OpenTofu 1.13.1 + SDKv2: a refused `PATCH` still persists the
+  planned repository values into the state, and the first apply after an
+  adoption also persists a refreshed envelope. A byte or value comparison of
+  the failed state therefore marks a pure refusal stale, and a later preview
+  would no longer name the change. Restoring the pre-apply state and reading
+  the read-only refresh-only report separates a refusal (no drift) from a
+  partial apply (drift)).
 - **The commit scope is the use-case id, `apply-configuration-change`, not
   `enable-repository-security`** (rejected: scoping by this change's id, which
   the changelog allow-list does not name, so a user-receiving change would be
@@ -784,9 +827,13 @@ the `DutyWorld` fields, which the runner instruments.
   acceptance (R-028).** The sandbox twins the API shape, not its policy. The
   operator's real apply after GREEN is the missing evidence and is required.
 - **A partial apply's state is real and is marked stale (R-029).** The state
-  records the applied resources and not the failed one; the failure path writes
-  `terraform.tfstate.stale`, only a green apply's state is committed, and the
-  next preview refuses and names the stale state until a green apply removes it.
+  records the applied resources and not the failed one; on failure the routine
+  restores the pre-apply state and keeps it only when live shows no drift, and
+  otherwise reinstalls the failed apply's state and writes
+  `terraform.tfstate.stale`. Only a green apply's state is committed, and the
+  next preview refuses and names the stale state until a green apply removes
+  it. A failed update's state values may include the planned object, so the
+  marker never rests on them.
 - **Private vulnerability reporting remains manual (R-030).** No resource exists
   in provider 6.13.0; the setting is off and undeclarable, recorded as a gap.
 - **The saved-plan window is the preflight window (R-031).** A manual live edit

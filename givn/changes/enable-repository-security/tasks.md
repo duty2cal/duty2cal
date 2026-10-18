@@ -26,7 +26,14 @@ Design constraints:
   `infra/adoption-batch-security.txt`.
 - Apply routine: the design's preflight (stale marker, unadopted-setting guard),
   saved-plan application, refresh-only preflight with the plan JSON as the
-  verdict, and the stale marker on partial failure.
+  verdict, and the stale marker on partial failure. The failure path keeps a
+  pre-apply state copy, restores it after a non-zero apply, and runs the
+  read-only refresh-only report: no drift keeps the restored state and writes
+  no marker; drift reinstalls the failed apply's state and writes the marker.
+  This is because SDKv2 persists the planned values for a refused update and
+  OpenTofu persists a refreshed envelope, so neither bytes nor values of the
+  failed state are evidence of a write. Corrected during implementation; see
+  `design.md` "The apply procedure" and the decision record.
 - Fake: `--writes` sandbox, the `security-applied` base tree, the read-back
   fault, the journal body/keys, and the one-import-per-object proof for both
   batches.
@@ -80,22 +87,40 @@ Design constraints:
       scenario still exits 0 with `1 scenario (1 passed)`.
 - [x] COMMIT — `feat(apply-configuration-change): <release note>` with the
       scenario title in the body; record the revision.
-      Revision: the `feat(apply-configuration-change): enable secret scanning
-      and push protection` commit carrying this scenario (hash recorded below
-      once the following scenario's commit lands).
+      Revision: `ec38b47` — `feat(apply-configuration-change): enable secret
+      scanning and push protection` (carries the setup task and this scenario).
 
 ## 2. An apply whose first change is refused changes nothing
 
 Design constraints:
 - The fake refuses the monorepo PATCH (401/403); the apply fails naming the
-  repository; live and state unchanged; no stale marker; a later preview names
-  the same change.
+  repository; live and the pre-apply state's values/bytes unchanged (the
+  routine restores the state); no stale marker; a later preview names the same
+  change.
 - The saved plan is applied only after the preflight.
 
-- [ ] RED — remove `@wip`; run the single scenario; paste non-zero.
-- [ ] GREEN — assertions and production code; list files; paste zero.
-- [ ] REFACTOR — cleanup; re-run; paste zero.
-- [ ] COMMIT — release note subject, scenario title body; record the revision.
+- [x] RED — remove `@wip`; run the single scenario; paste non-zero.
+      The decisive Then ("the applied state is not marked stale") is
+      undefined (`Step doesn't match any function`); `8 steps (7 passed,
+      1 failed)`, runner exit 101.
+- [x] GREEN — assertions and production code; list files; paste zero.
+      Production files: `apps/cli/tests/steps/enable_repository_security.rs`
+      (refused-PATCH fault, restore-and-verify failure path, later preview),
+      `apps/cli/tests/steps/adopt_existing_configuration.rs` (writes-aware fake
+      launcher), `apps/cli/tests/features_runner.rs`; `design.md` and this file
+      for the corrected failure path. Single scenario exits 0: `9 steps
+      (9 passed)`, 1 scenario passed.
+- [x] REFACTOR — cleanup; re-run; paste zero.
+      `cargo fmt`; `cargo check -p duty2cal --tests` exits 0; the single
+      scenario still exits 0 with `1 scenario (1 passed)`.
+- [x] COMMIT — release note subject, scenario title body; record the revision.
+      Revision: the `feat(apply-configuration-change): enable secret scanning
+      and push protection` commit that carries this scenario (bundle report
+      records its hash).
+      The failure path was corrected during this scenario: a refused PATCH
+      still makes SDKv2 persist the planned values, so the routine restores
+      the pre-apply state and keeps it only when the read-only refresh-only
+      report shows no drift (design.md "The apply procedure").
 
 ## 3. A live edit between the preview and the apply is refused and named
 

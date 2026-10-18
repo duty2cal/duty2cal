@@ -66,8 +66,9 @@ pub struct DutyWorld {
     /// The passphrase the adoption should present, when a scenario primes the
     /// applied state with a different one.
     pub passphrase: Option<String>,
-    /// The applied state's bytes before a scenario attempts a refused
-    /// adoption, so "nothing was bound" is observable without decrypting.
+    /// What the scenario expects the applied state to keep: the raw bytes for
+    /// a refused adoption, or the normalized `.values` JSON for the security
+    /// routine's failed apply (a refreshed state envelope is not a write).
     pub applied_state_snapshot: Option<Vec<u8>>,
     /// The saved plan the preview wrote and the apply consumes
     /// (`infra/plan.bin` in the scenario's declaration copy).
