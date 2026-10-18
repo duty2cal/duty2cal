@@ -374,6 +374,44 @@ fn published_repository(w: &DutyWorld) -> String {
     body
 }
 
+/// The published profile content the reader scenario reads.
+fn published_profile(w: &DutyWorld) -> String {
+    let path = scenario_dir_for(w).join("published-profile.md");
+    fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read the published profile {}: {error}", path.display()))
+}
+
+/// Every Markdown link target in the reviewed copy, in order.
+fn markdown_links(text: &str) -> Vec<String> {
+    let mut links = Vec::new();
+    let mut rest = text;
+    while let Some(start) = rest.find("](") {
+        let after = &rest[start + 2..];
+        let Some(end) = after.find(')') else {
+            break;
+        };
+        links.push(after[..end].trim().to_string());
+        rest = &after[end + 1..];
+    }
+    let mut rest = text;
+    while let Some(start) = rest.find("<https://") {
+        let after = &rest[start + 1..];
+        let Some(end) = after.find('>') else {
+            break;
+        };
+        links.push(after[..end].to_string());
+        rest = &after[end + 1..];
+    }
+    links
+}
+
+fn assert_contains(text: &str, needle: &str) {
+    assert!(
+        text.contains(needle),
+        "the published content contains {needle:?}; content was:\n{text}"
+    );
+}
+
 /// A `jq` read that preserves the string's own bytes (no trailing-newline
 /// trimming), for content comparisons.
 fn jq_raw(w: &DutyWorld, filter: &str, report: &Path) -> String {
@@ -564,92 +602,141 @@ async fn the_organization_profile_repository_itself_is_unchanged(w: &mut DutyWor
 }
 
 #[given("the organization profile repository is published")]
-async fn the_organization_profile_repository_is_published(_w: &mut DutyWorld) {
-    unimplemented!(
-        "the published profile content scenario: the organization profile repository is published"
-    );
+async fn the_organization_profile_repository_is_published(w: &mut DutyWorld) {
+    prime_base_state(w);
+    publish_profile(w);
+    let addresses = state_addresses(w);
+    for address in PROFILE_ADDRESSES {
+        assert!(
+            addresses.iter().any(|recorded| recorded == address),
+            "the applied state binds {address}; it was: {addresses:?}"
+        );
+    }
 }
 
 #[when("a reader reads the published profile content")]
-async fn a_reader_reads_the_published_profile_content(_w: &mut DutyWorld) {
-    unimplemented!(
-        "The published profile content states only supported claims: \
-         a reader reads the published profile content"
+async fn a_reader_reads_the_published_profile_content(w: &mut DutyWorld) {
+    let published = published_file(w, ".github", "profile/README.md", "profile");
+    let source = fs::read(source_tree(w).join("profile/README.md"))
+        .expect("read the reviewed profile content");
+    assert_eq!(
+        published, source,
+        "the published profile content is the reviewed copy byte for byte"
     );
+    fs::write(scenario_dir_for(w).join("published-profile.md"), &published)
+        .expect("record the published profile content");
 }
 
 #[then(
     "the profile content describes the converter as a local tool that reads a crew duty plan \
      and writes a calendar"
 )]
-async fn the_profile_content_describes_the_local_converter(_w: &mut DutyWorld) {
-    unimplemented!(
-        "The published profile content states only supported claims: the local converter claim"
-    );
+async fn the_profile_content_describes_the_local_converter(w: &mut DutyWorld) {
+    let text = published_profile(w);
+    assert_contains(&text, "crew duty plan (PDF)");
+    assert_contains(&text, "iCalendar");
+    assert_contains(&text, "The conversion runs locally");
+    assert_contains(&text, "no file leaves your device");
 }
 
 #[then("the profile content names Windows x86_64 as the only distributed platform")]
-async fn the_profile_content_names_windows_only(_w: &mut DutyWorld) {
-    unimplemented!(
-        "The published profile content states only supported claims: the Windows x86_64 claim"
-    );
+async fn the_profile_content_names_windows_only(w: &mut DutyWorld) {
+    let text = published_profile(w);
+    assert_contains(&text, "Windows x86_64");
+    assert_contains(&text, "Other platforms are not");
+    assert_contains(&text, "supported or distributed");
+    for other in ["macOS", "MacOS", "Linux", "linux", "three platforms"] {
+        assert!(
+            !text.contains(other),
+            "the profile content names no {other}; content was:\n{text}"
+        );
+    }
 }
 
 #[then("the profile content makes no claim that the converter runs in a browser")]
-async fn the_profile_content_makes_no_browser_claim(_w: &mut DutyWorld) {
-    unimplemented!(
-        "The published profile content states only supported claims: the browser claim"
-    );
+async fn the_profile_content_makes_no_browser_claim(w: &mut DutyWorld) {
+    let text = published_profile(w).to_lowercase();
+    for claim in ["browser", "wasm", "web app", "web ui", "web application"] {
+        assert!(
+            !text.contains(claim),
+            "the profile content makes no {claim} claim"
+        );
+    }
 }
 
 #[then(regex = r#"^the profile content links the stable latest-release address "([^"]+)"$"#)]
-async fn the_profile_content_links_the_stable_release(_w: &mut DutyWorld, _address: String) {
-    unimplemented!(
-        "The published profile content states only supported claims: the stable release address"
+async fn the_profile_content_links_the_stable_release(w: &mut DutyWorld, address: String) {
+    assert_eq!(
+        address, "https://github.com/duty2cal/duty2cal/releases/latest",
+        "the step names the stable latest-release address"
     );
+    let text = published_profile(w);
+    assert_contains(&text, &address);
 }
 
 #[then(
-    regex = r#"^the profile content links the source repository "([^"]+)" and the site \
-               repository "([^"]+)"$"#
+    regex = r#"^the profile content links the source repository "([^"]+)" and the site repository "([^"]+)"$"#
 )]
 async fn the_profile_content_links_the_repositories(
-    _w: &mut DutyWorld,
-    _source: String,
-    _site: String,
+    w: &mut DutyWorld,
+    source: String,
+    site: String,
 ) {
-    unimplemented!(
-        "The published profile content states only supported claims: the repository links"
-    );
+    let text = published_profile(w);
+    assert_contains(&text, &source);
+    assert_contains(&text, &site);
 }
 
 #[then(
     "the profile content states that the project is not affiliated with any duty-plan provider \
      or airline"
 )]
-async fn the_profile_content_states_non_affiliation(_w: &mut DutyWorld) {
-    unimplemented!(
-        "The published profile content states only supported claims: the non-affiliation sentence"
+async fn the_profile_content_states_non_affiliation(w: &mut DutyWorld) {
+    let text = published_profile(w);
+    assert_contains(
+        &text,
+        "Not affiliated with any duty-plan provider or airline.",
     );
 }
 
 #[then("the profile content attributes the third-party Unicode data to Unicode-3.0")]
-async fn the_profile_content_attributes_unicode(_w: &mut DutyWorld) {
-    unimplemented!(
-        "The published profile content states only supported claims: the Unicode-3.0 attribution"
+async fn the_profile_content_attributes_unicode(w: &mut DutyWorld) {
+    let text = published_profile(w);
+    assert_contains(&text, "Unicode-3.0");
+    assert_contains(
+        &text,
+        "https://github.com/duty2cal/duty2cal/blob/main/LICENSES/Unicode-3.0.txt",
     );
 }
 
 #[then("every link in the profile content is absolute")]
-async fn every_link_in_the_profile_content_is_absolute(_w: &mut DutyWorld) {
-    unimplemented!("The published profile content states only supported claims: absolute links")
+async fn every_link_in_the_profile_content_is_absolute(w: &mut DutyWorld) {
+    let text = published_profile(w);
+    let links = markdown_links(&text);
+    assert!(!links.is_empty(), "the profile content carries links");
+    for link in links {
+        assert!(
+            link.starts_with("https://"),
+            "every profile link is absolute; found {link:?}"
+        );
+    }
 }
 
 #[then("the profile content embeds no image, badge or other third-party resource")]
-async fn the_profile_content_embeds_no_third_party_resource(_w: &mut DutyWorld) {
-    unimplemented!(
-        "The published profile content states only supported claims: no third-party resource"
-    );
+async fn the_profile_content_embeds_no_third_party_resource(w: &mut DutyWorld) {
+    let text = published_profile(w);
+    for forbidden in ["![", "<img", "src=", "shields.io", "http://", "badge"] {
+        assert!(
+            !text.contains(forbidden),
+            "the profile content embeds no {forbidden}; content was:\n{text}"
+        );
+    }
+    for link in markdown_links(&text) {
+        assert!(
+            link.starts_with("https://github.com/"),
+            "the profile content links only github.com; found {link:?}"
+        );
+    }
 }
 
 #[given("the pages repository has no security policy of its own")]

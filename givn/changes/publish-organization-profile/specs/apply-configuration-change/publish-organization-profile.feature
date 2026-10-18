@@ -35,7 +35,7 @@ Feature: Publish the organization profile
     And the default security policy served by the organization profile repository is unchanged
     And the organization profile repository itself is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: The published profile content states only supported claims and requests no third-party resource
     Given the organization profile repository is published
     When a reader reads the published profile content
