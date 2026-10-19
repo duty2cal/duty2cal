@@ -1507,79 +1507,118 @@ a navigable URL/history entry; an ephemeral object URL is allowed and revoked on
 
 ## E2E setup task — local environment, browser driver, e2e skeleton, subset proof
 
-- [ ] Bring up the local environment from design.md's "Local runnability & digital twins":
-  run `./scripts/run-web.sh` (it builds `web/pkg` if needed and serves `web/` at
-  `http://127.0.0.1:8000/`). Confirm it starts cleanly, then check reachability:
+- [x] Brought up the local environment from design.md's "Local runnability & digital
+  twins": `./scripts/run-web.sh` built nothing (the committed `web/pkg` was present) and
+  served `web/` on loopback. Reachability was checked and the manual server was stopped
+  before any driver run (the driver starts its own loopback server on `127.0.0.1:0`):
   ```
   $ ./scripts/run-web.sh &
+  serving http://127.0.0.1:8000/
+  Serving HTTP on 127.0.0.1 port 8000 (http://127.0.0.1:8000/) ...
   $ curl -fsS http://127.0.0.1:8000/ >/dev/null && echo "web reachable"
   web reachable
   ```
   There is no application server, database, queue, container, credential or external
   service; the page has no digital twin because it has no runtime external dependency.
-  Stop the manual server before running the driver (the driver starts its own loopback
-  server on `127.0.0.1:0`).
-- [ ] Install the browser driver and browser exactly as design.md names (re-run is
-  idempotent; Node is the pinned `web/e2e/.nvmrc`):
+- [x] Installed the driver dependencies with the pinned Node (`node --version` →
+  `v24.21.0`, matching `web/e2e/.nvmrc` = `24`):
   ```
-  npm ci --prefix web/e2e
-  npx --prefix web/e2e playwright install --with-deps chromium
+  $ npm ci --prefix web/e2e
+  added 4 packages in 527ms
+  $ npx --prefix web/e2e playwright --version
+  Version 1.64.1
   ```
-- [ ] Confirm the e2e step skeleton is in the exact design location and separate from the
-  regular file: `apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs` (the browser
-  `@e2e` steps, alongside the existing CLI e2e steps), using the shared
-  `apps/cli/tests/steps/browser.rs`. Every new body is
-  `unimplemented!("<step name>")`.
-- [ ] Prove strict mode for the e2e runner with a deliberately undefined `@e2e` step:
-  1. Add a temporary `@e2e` probe scenario under
+  `npx --prefix web/e2e playwright install --with-deps chromium` could not install the
+  OS packages on this host because `sudo` requires a password (`PW_INSTALL_EXIT=1`;
+  Playwright fell back to ubuntu24.04-x64). The browser itself was installed without the
+  apt step and the configured Chromium was exercised:
+  ```
+  $ npx --prefix web/e2e playwright install chromium
+  Chrome Headless Shell 156.0.8078.4 (playwright chromium-headless-shell v1248) downloaded
+  .../chromium_headless_shell-1248
+  PW_BROWSER_EXIT=0
+  $ $CHROMIUM_PATH --version
+  Chromium 155.0.8059.79
+  ```
+  The driver launches `$CHROMIUM_PATH` when it is set (design's supplied browser); the
+  `start` proof below is the real launch evidence.
+- [x] Confirmed the e2e step skeleton is in the exact design location and separate from
+  the regular file: `apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs` holds the
+  browser `@e2e` steps beside the existing CLI e2e steps; the regular browser variants
+  stay in `apps/cli/tests/steps/export_duty_plan_calendar.rs`, both using the shared
+  `apps/cli/tests/steps/browser.rs`. `apps/cli/tests/steps/mod.rs` registers `browser`
+  and `e2e`. Before RED the five new bodies were the committed
+  `unimplemented!("<step name>")` stubs; the RED transcript above shows cucumber matching
+  `the crew member saves the offered calendar` in this file at line 92.
+- [x] Proved strict mode for the e2e runner with a deliberately undefined `@e2e` step:
+  1. Added the temporary `strict-mode-probe.feature` under
      `givn/changes/build-browser-converter/specs/export-duty-plan-calendar/`.
-  2. Run `./run-tests.sh --e2e` and paste the non-zero output:
+  2. Ran the e2e suite; the probe's undefined step failed the run (exit 101):
      ```
      $ ./run-tests.sh --e2e
      Feature: Strict-mode probe
        Scenario: An undefined e2e step fails the run
         ✘  Given an e2e step that has no definition
+           Step failed:
+           Defined: tmp/tmp.M6Di2GmJVM/f0007.feature:6:5
            Step doesn't match any function
      [Summary]
-     <features> features
-     3 scenarios (<passed> passed, <failed> failed)
+     7 features
+     10 scenarios (8 passed, 2 failed)
+     66 steps (64 passed, 2 failed)
      E2E_PROBE_EXIT=101
      ```
-     cucumber-rs 0.23 refuses `--tags` together with `--name`, so `--e2e` (which supplies
-     `--tags "@e2e"`) cannot be combined with a name filter; the probe is selected by the
-     `@e2e` filter instead. This is a framework constraint, recorded, not a workaround:
-     the tag is untouched and the runner still exits non-zero.
-  3. Remove the probe scenario.
-- [ ] Prove `verify.e2e_command` is a strict subset, never equal to `verify.command`:
-  - Run the full suite and record the count:
+     (The other failure was the browser scenario's still-RED stub; neither failure was
+     skipped or ignored.) cucumber-rs 0.23 refuses `--tags` together with `--name`, so
+     `--e2e` (which supplies `--tags "@e2e"`) cannot be combined with a name filter; the
+     probe is selected by the `@e2e` filter instead. This is a framework constraint,
+     recorded, not a workaround: the tag is untouched and the runner still exits
+     non-zero.
+  3. Removed the probe scenario; `givn/changes/build-browser-converter/specs/export-duty-plan-calendar/`
+     contains only `export-duty-plan-calendar.feature` again.
+- [x] Proved `verify.e2e_command` is a strict subset, never equal to `verify.command`:
+  - Full suite before the new scenario was GREEN:
     ```
     $ ./run-tests.sh
     [Summary]
-    <features> features
-    <full_total> scenarios (<passed> passed, <failed> failed)
-    <steps> steps (<passed> passed, <failed> failed)
-    FULL_EXIT=<non-zero while @wip scenarios remain; record the count>
+    6 features
+    166 scenarios (165 passed, 1 failed)
+    738 steps (737 passed, 1 failed)
+    FULL_EXIT=101
     ```
-  - Run the e2e suite and record its count:
+    The single failure was the browser scenario's RED stub; every other scenario passed.
+  - E2E suite after the probe was removed and the scenario reached GREEN/REFACTOR:
     ```
     $ ./run-tests.sh --e2e
     [Summary]
-    <features> features
-    2 scenarios (<passed> passed, <failed> failed)
-    <steps> steps (<passed> passed, <failed> failed)
-    E2E_EXIT=<non-zero while the new @e2e scenario is @wip; record the count>
+    6 features
+    9 scenarios (9 passed)
+    71 steps (71 passed)
+    E2E_EXIT=0
     ```
-  - The e2e count is **2** (the existing CLI `@e2e` scenario plus the new browser
-    `@e2e` scenario) and is strictly less than `<full_total>`. Neither command is equal
-    to the other. Paste both counts into this task. If `e2e_total == full_total`, stop:
-    the filter is not real and the e2e gate is meaningless.
-- [ ] Confirm the e2e driver can reach the running local environment before writing any
-  scenario steps: exercise the driver's `start` action, which serves `web/` on an
-  ephemeral loopback port, launches Chromium, opens the page and returns the initial
-  rendered state plus the request log. Paste the result: `ok: true`, state `empty`, every
-  request origin = the loopback page origin. The driver has no path that reports an
-  unperformed action as success (unknown action → `{ "ok": false, "error": "unknown
-  action" }` and non-zero).
+  - The e2e count is **9**, not the 2 this plan predicted: the permanent corpus already
+    carries eight `@e2e` scenarios (`adopt-existing-configuration`,
+    `enable-repository-security` ×2, `publish-organization-profile` ×2,
+    `publish-public-release` ×2, and the existing CLI `export-duty-plan-calendar`), so
+    the new browser scenario makes 9. It is still strictly less than 166, and the two
+    commands are different (`./run-tests.sh` vs `./run-tests.sh --e2e`); the filter is
+    real. The planned "2" was a counting error, corrected here from the run output.
+- [x] Confirmed the e2e driver reaches the running local environment before writing any
+  scenario steps. The `start` action served `web/` on an ephemeral loopback port,
+  launched Chromium, opened the page and returned the initial state plus the request
+  log:
+  ```
+  $ printf '{"action":"start"}\n{"action":"read_state"}\n{"action":"stop"}\n' | node web/e2e/driver.mjs
+  start: {'ok': True, 'url': 'http://127.0.0.1:40491/index.html', 'origin': 'http://127.0.0.1:40491'}
+  state: True empty No plan selected.
+  request origins: ['http://127.0.0.1:40491']
+  requests: [('GET','document','index.html'), ('GET','stylesheet','styles.css'),
+             ('GET','script','capability.js'), ('GET','script','app.js'),
+             ('GET','script','duty2cal_wasm.js'), ('GET','script','wasm-inline.js')]
+  DRIVER_EXIT=0
+  ```
+  Every request origin is the loopback page origin, and the unknown-action path remains
+  fail-closed (`{ "ok": false, "error": "unknown action" }`).
 
 ## @e2e scenario
 
@@ -1616,35 +1655,65 @@ has this single `@e2e` scenario.
   viewport for the empty and ready states (see "Evidence rules").
 - `@e2e` tag stays on this scenario for the entire change (immutable).
 
-- [ ] RED — remove `@wip` from this scenario only (tags become `@givn.added @e2e`); write
-  the e2e steps with `unimplemented!()` bodies in the design's exact e2e file; run the
-  single-scenario command (`./run-tests.sh --name "<title>"`, because `--e2e` cannot be
-  combined with `--name` in cucumber-rs 0.23); paste the non-zero output:
+- [x] RED — removed `@wip` from this scenario only (tags are now `@givn.added @e2e`); the
+  five e2e-only steps in the design's exact e2e file stayed the committed
+  `unimplemented!()` stubs. The shared Given/empty/When/ready/offer steps already had
+  their regular implementations, so the run failed at the first e2e-only stub. Command:
   ```
-  $ ./run-tests.sh --name "Crew member converts a supported duty plan in the browser and saves the offered calendar"
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "Crew member converts a supported duty plan in the browser and saves the offered calendar"
   Feature: Export a duty-plan calendar
     Scenario: Crew member converts a supported duty plan in the browser and saves the offered calendar
      ✔  Given the converter page served from the built Site output
-     ✘  Then the page shows the empty state and offers no calendar
-        Step panicked. Captured output: not implemented: assert the initial empty rendered state
+     ✔  Then the page shows the empty state and offers no calendar
+     ✔  When the crew member supplies the supported duty plan "2026-06.pdf" through the file picker
+     ✔  Then the page shows that the calendar is ready
+     ✔  And the page offers the file "2026-06.ics"
+     ✘  When the crew member saves the offered calendar
+        Step failed:
+        Defined: tmp/tmp.s9TyjOLKVp/f0006.feature:11:5
+        Matched: apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs:92:1
+        Step panicked. Captured output: not implemented: the crew member saves the offered calendar
   [Summary]
   1 feature
   1 scenario (1 failed)
-  2 steps (1 passed, 1 failed)
+  6 steps (5 passed, 1 failed)
   RED_EXIT=101
   ```
-- [ ] GREEN — replace the stubs with real driver actions and assertions; production files
-  created/modified:
-  - `web/e2e/driver.mjs` — the remaining actions used by this scenario (`screenshot`,
-    `axe`, the request-log and storage observations) and the download capture.
-  - `apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs` — the real e2e steps.
-  - `apps/cli/tests/steps/browser.rs` — any client extension the e2e steps need.
-  - Evidence committed:
-    `givn/changes/build-browser-converter/evidence/visual/crew-member-converts-a-supported-duty-plan-in-the-browser-and-saves-the-offered-calendar/<viewport>.png`
-    and `<viewport>--empty.png` for 360x780 and 1920x1080.
-  Run the single-scenario command and paste the zero-exit output:
+- [x] GREEN — replaced the stubs with real driver actions and assertions; production and
+  test-support files modified:
+  - `web/e2e/driver.mjs` — `read_state` gained a `baseline` observation mode (visible
+    control labels, keyboard focus after `focus({ focusVisible: true })`, `lang`, real
+    title and one visible `h1`, duplicated visible text blocks, the reduced-motion
+    `--motion-duration`, and the form/email/submit/account-upload elements). It observes
+    only, restores focus before the capture, and asserts nothing. The `screenshot`
+    (viewport resize, fonts + two frames, `animations: 'disabled'`), `axe`, request-log
+    and storage observations, and the `save_offer` download capture already existed and
+    needed no protocol extension; `browser.rs` is unchanged.
+  - `apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs` — the save step clicks the
+    real offer and reads the captured download; the complete-calendar step asserts the
+    VCALENDAR shell, `VERSION`, `PRODID` and balanced `VEVENT`s; the reference step
+    asserts CRLF throughout and compares every captured `VEVENT` with
+    `apps/cli/tests/fixtures/expected/2026-06.ics` (`SUMMARY`, `DTSTART`, `DTEND`, `UID`,
+    `DTSTAMP`, no extra or partial event); the account step asserts no form, email,
+    password or telephone input, no submit control, no account/email/upload hint and the
+    visible local-processing statement; the visual-baseline step asserts both the ready
+    and (after a reload) empty states, runs axe on each, and captures the four committed
+    screenshots.
+  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — `driver` and `page_state` are
+    now `pub(crate)` for the e2e file, and the shared supported-plan When generates the
+    canonical `2026-06` plan whose committed reference is `2026-06.ics` (the minimal
+    one-event fixture could not match that reference). No assertion of the other browser
+    scenarios depended on the old content; they all still pass.
+  - Evidence committed (360x780 and 1920x1080; ready `<viewport>.png`, empty
+    `<viewport>--empty.png`):
+    `givn/changes/build-browser-converter/evidence/visual/crew-member-converts-a-supported-duty-plan-in-the-browser-and-saves-the-offered-calendar/`
+    now holds `360x780.png`, `360x780--empty.png`, `1920x1080.png` and
+    `1920x1080--empty.png`.
+  Run:
   ```
-  $ ./run-tests.sh --name "Crew member converts a supported duty plan in the browser and saves the offered calendar"
+  $ cargo fmt --all --check -> FMT_EXIT=0
+  $ cargo clippy --workspace --all-targets -- -D warnings -> CLIPPY_EXIT=0
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "Crew member converts a supported duty plan in the browser and saves the offered calendar"
   Feature: Export a duty-plan calendar
     Scenario: Crew member converts a supported duty plan in the browser and saves the offered calendar
      ✔  Given the converter page served from the built Site output
@@ -1665,19 +1734,25 @@ has this single `@e2e` scenario.
   12 steps (12 passed)
   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — confirm the e2e steps assert only through the real interface (no
-  in-process call, no fetch substitute), the screenshots are the committed evidence (not
-  debug captures), and the `@e2e` tag is still present; run the whole e2e suite:
+- [x] REFACTOR — the e2e steps assert only through the real interface: the only inputs
+  are the driver's `read_state`/`axe`/`screenshot` observations over the real page, the
+  real file input and the real captured browser download; there is no in-process call,
+  no fetch substitute and no page-side test hook. The four screenshots at the exact
+  evidence paths are the committed evidence (the ready and empty states at 360x780 and
+  1920x1080, verified as non-blank renders), not debug captures in `reports/visual/`.
+  The `@e2e` tag is still on the scenario. Ran the whole e2e suite:
   ```
   $ ./run-tests.sh --e2e
+  ...
   [Summary]
-  <features> features
-  2 scenarios (2 passed)
-  <steps> steps (<steps> passed)
+  6 features
+  9 scenarios (9 passed)
+  71 steps (71 passed)
   E2E_SUITE_EXIT=0
   ```
-  and re-run the single-scenario command:
+  and re-ran the single-scenario command:
   ```
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "Crew member converts a supported duty plan in the browser and saves the offered calendar"
   1 scenario (1 passed), 12 steps (12 passed)   REFACTOR_EXIT=0
   ```
 - [ ] COMMIT: one commit for RED+GREEN+REFACTOR; subject

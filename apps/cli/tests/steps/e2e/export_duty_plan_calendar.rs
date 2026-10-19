@@ -7,8 +7,9 @@
 use std::path::PathBuf;
 
 use cucumber::{given, then, when};
+use serde_json::{Map, Value};
 
-use crate::steps::export_duty_plan_calendar::{calendar, plan_with_row, transcript};
+use crate::steps::export_duty_plan_calendar::{calendar, driver, plan_with_row, transcript};
 use crate::steps::support::{ACTIVITY_X, DATE_X, END_X, FROM_X, START_X, TO_X};
 use crate::DutyWorld;
 
@@ -85,31 +86,335 @@ async fn success_exit_status(w: &mut DutyWorld) {
 
 // ---------------------------------------------------------------------------
 // Browser `@e2e` steps (design.md "Step definition locations"). The shared
-// steps live in the regular capability file; these are the observations only
-// the end-to-end run makes. Every body is the RED stub.
+// Given/When/Then steps live in the regular capability file; these are the
+// observations only the end-to-end run makes.
 // ---------------------------------------------------------------------------
 
+/// The committed per-viewport visual evidence directory for this scenario.
+fn evidence_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
+        "../../givn/changes/build-browser-converter/evidence/visual/\
+         crew-member-converts-a-supported-duty-plan-in-the-browser-and-saves-the-offered-calendar",
+    )
+}
+
+/// Read the page with the visual-baseline observations included.
+fn baseline_state(w: &mut DutyWorld) -> Value {
+    let mut params = Map::new();
+    params.insert("baseline".to_string(), Value::Bool(true));
+    driver(w).send("read_state", params)
+}
+
+/// Run axe on the current rendered state and fail on any violation.
+fn assert_axe_clean(w: &mut DutyWorld, displayed: &str) {
+    let result = driver(w).send("axe", Map::new());
+    let violations = result["violations"]
+        .as_array()
+        .expect("axe returns a violations array");
+    assert!(
+        violations.is_empty(),
+        "the {displayed} state has accessibility violations: {violations:?}"
+    );
+}
+
+/// Assert the rendered visual baseline at one of the scenario's states.
+fn assert_visual_baseline(state: &Value, displayed: &str) {
+    let baseline = state["baseline"]
+        .as_object()
+        .unwrap_or_else(|| panic!("the {displayed} state has no baseline observations: {state}"));
+    assert_eq!(
+        baseline["lang"].as_str(),
+        Some("en"),
+        "the {displayed} page does not declare English: {state}"
+    );
+    let title = baseline["title"].as_str().unwrap_or_default().trim();
+    assert!(
+        !title.is_empty() && title != "Document" && title != "Untitled",
+        "the {displayed} page has no real title: {state}"
+    );
+    assert_eq!(
+        baseline["h1Count"].as_u64(),
+        Some(1),
+        "the {displayed} page does not have exactly one h1: {state}"
+    );
+    let h1 = baseline["h1"].as_str().unwrap_or_default().trim();
+    assert!(
+        !h1.is_empty(),
+        "the {displayed} page has no visible h1: {state}"
+    );
+    assert_eq!(
+        baseline["h1Visible"].as_bool(),
+        Some(true),
+        "the {displayed} h1 is not visible: {state}"
+    );
+    let controls = baseline["controls"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the {displayed} state reports no controls: {state}"));
+    assert!(
+        !controls.is_empty(),
+        "the {displayed} state has no visible control: {state}"
+    );
+    for control in controls {
+        let label = control["label"].as_str().unwrap_or_default().trim();
+        assert!(
+            !label.is_empty(),
+            "a {} control has no visible label: {control}",
+            control["tag"]
+        );
+        assert_eq!(
+            control["focusVisible"].as_bool(),
+            Some(true),
+            "the {} control {label:?} has no visible keyboard focus: {control}",
+            control["tag"]
+        );
+    }
+    let duplicates = baseline["duplicates"]
+        .as_array()
+        .expect("the baseline reports duplicated text blocks");
+    assert!(
+        duplicates.is_empty(),
+        "the {displayed} state repeats visible text: {duplicates:?}"
+    );
+    assert_eq!(
+        baseline["reducedMotion"].as_str(),
+        Some("0ms"),
+        "the {displayed} page does not honor reduced motion: {state}"
+    );
+
+    let text = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    let tokens: Vec<&str> = text
+        .split(|character: char| !character.is_alphanumeric() && character != '_')
+        .filter(|token| !token.is_empty())
+        .collect();
+    for denied in ["ok", "failure", "status", "WASM"] {
+        assert!(
+            !tokens.contains(&denied),
+            "the {displayed} page shows the internal name {denied:?}: {text}"
+        );
+    }
+    for denied in [
+        "blob:",
+        "parse-error",
+        "showReady",
+        "acceptFile",
+        "createObjectURL",
+        "duty2cal_wasm",
+        "wasm-inline",
+    ] {
+        assert!(
+            !text.contains(denied),
+            "the {displayed} page shows the internal identifier {denied:?}: {text}"
+        );
+    }
+}
+
+/// Capture the committed screenshots for one displayed state at both viewports.
+fn capture_screenshots(w: &mut DutyWorld, empty: bool) {
+    let dir = evidence_dir();
+    std::fs::create_dir_all(&dir).expect("create the visual evidence directory");
+    for (width, height, viewport) in [(360_u32, 780_u32, "360x780"), (1920, 1080, "1920x1080")] {
+        let path = dir.join(if empty {
+            format!("{viewport}--empty.png")
+        } else {
+            format!("{viewport}.png")
+        });
+        let mut params = Map::new();
+        params.insert(
+            "path".to_string(),
+            Value::String(path.display().to_string()),
+        );
+        params.insert("width".to_string(), Value::from(width));
+        params.insert("height".to_string(), Value::from(height));
+        let result = driver(w).send("screenshot", params);
+        let saved_to = path.display().to_string();
+        assert_eq!(
+            result["savedTo"].as_str(),
+            Some(saved_to.as_str()),
+            "the driver did not capture {saved_to}: {result}"
+        );
+        assert!(path.is_file(), "the screenshot {saved_to} was not written");
+    }
+}
+
 #[when("the crew member saves the offered calendar")]
-async fn the_crew_member_saves_the_offered_calendar(_w: &mut DutyWorld) {
-    unimplemented!("the crew member saves the offered calendar")
+async fn the_crew_member_saves_the_offered_calendar(w: &mut DutyWorld) {
+    let path = w.working_dir().join("saved-2026-06.ics");
+    let mut params = Map::new();
+    params.insert("kind".to_string(), Value::String("calendar".to_string()));
+    params.insert(
+        "path".to_string(),
+        Value::String(path.display().to_string()),
+    );
+    let result = driver(w).send("save_offer", params);
+    assert_eq!(
+        result["suggestedFilename"].as_str(),
+        Some("2026-06.ics"),
+        "the browser's download does not carry the offered name: {result}"
+    );
+    let saved = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read the browser's download {}: {error}", path.display()));
+    w.calendars = vec![saved];
 }
 
 #[then("the browser has saved a complete RFC 5545 calendar")]
-async fn the_browser_saved_a_complete_calendar(_w: &mut DutyWorld) {
-    unimplemented!("the browser has saved a complete RFC 5545 calendar")
+async fn the_browser_saved_a_complete_calendar(w: &mut DutyWorld) {
+    let saved = w
+        .calendars
+        .last()
+        .expect("the save step captured no calendar");
+    assert!(
+        saved.starts_with("BEGIN:VCALENDAR\r\n"),
+        "the saved download does not open a VCALENDAR: {saved:?}"
+    );
+    assert!(
+        saved.trim_end_matches("\r\n").ends_with("END:VCALENDAR"),
+        "the saved download does not close its VCALENDAR: {saved:?}"
+    );
+    for required in ["VERSION:2.0", "PRODID:"] {
+        assert!(
+            saved.contains(required),
+            "the saved download has no {required}: {saved:?}"
+        );
+    }
+    let starts = saved.matches("BEGIN:VEVENT").count();
+    let ends = saved.matches("END:VEVENT").count();
+    assert!(
+        starts > 0 && starts == ends,
+        "the saved download has {starts} VEVENT starts and {ends} ends: {saved:?}"
+    );
+}
+
+/// The `VEVENT` blocks of a calendar, in order.
+fn event_blocks(calendar: &str) -> Vec<&str> {
+    let mut blocks = Vec::new();
+    let mut rest = calendar;
+    while let Some(start) = rest.find("BEGIN:VEVENT") {
+        let tail = &rest[start..];
+        let end = tail
+            .find("END:VEVENT")
+            .unwrap_or_else(|| panic!("unterminated VEVENT in {calendar:?}"));
+        blocks.push(&tail[..end + "END:VEVENT".len()]);
+        rest = &tail[end + "END:VEVENT".len()..];
+    }
+    blocks
 }
 
 #[then(regex = r#"^the saved calendar matches the reference calendar for "([^"]+)"$"#)]
-async fn the_saved_calendar_matches_the_reference(_w: &mut DutyWorld, _name: String) {
-    unimplemented!("the saved calendar matches the reference calendar")
+async fn the_saved_calendar_matches_the_reference(w: &mut DutyWorld, name: String) {
+    let saved = w
+        .calendars
+        .last()
+        .expect("the save step captured no calendar")
+        .clone();
+    let bytes = saved.as_bytes();
+    for (index, byte) in bytes.iter().enumerate() {
+        match byte {
+            b'\n' => assert!(
+                index > 0 && bytes[index - 1] == b'\r',
+                "the saved calendar has a bare LF at byte {index}: {saved:?}"
+            ),
+            b'\r' => assert!(
+                index + 1 < bytes.len() && bytes[index + 1] == b'\n',
+                "the saved calendar has a bare CR at byte {index}: {saved:?}"
+            ),
+            _ => {}
+        }
+    }
+
+    let stem = name.strip_suffix(".pdf").unwrap_or(&name);
+    let fixture_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/expected")
+        .join(format!("{stem}.ics"));
+    let expected = std::fs::read_to_string(&fixture_path)
+        .unwrap_or_else(|error| panic!("read {}: {error}", fixture_path.display()));
+    let expected_events = event_blocks(&expected);
+    let saved_events = event_blocks(&saved);
+    assert!(
+        !expected_events.is_empty(),
+        "the reference calendar has no VEVENT: {expected:?}"
+    );
+    assert_eq!(
+        saved_events.len(),
+        expected_events.len(),
+        "the saved calendar has {} events; the reference has {}: {saved:?}",
+        saved_events.len(),
+        expected_events.len()
+    );
+    for (index, (saved_event, expected_event)) in
+        saved_events.iter().zip(expected_events.iter()).enumerate()
+    {
+        assert_eq!(
+            saved_event, expected_event,
+            "VEVENT {index} differs from the reference; saved {saved_event:?}, reference {expected_event:?}"
+        );
+    }
 }
 
 #[then("the page asks for no account, email, or upload")]
-async fn the_page_asks_for_no_account(_w: &mut DutyWorld) {
-    unimplemented!("the page asks for no account, email, or upload")
+async fn the_page_asks_for_no_account(w: &mut DutyWorld) {
+    let state = baseline_state(w);
+    let baseline = state["baseline"]
+        .as_object()
+        .unwrap_or_else(|| panic!("the page reports no baseline: {state}"));
+    for field in [
+        "forms",
+        "emailInputs",
+        "submitControls",
+        "accountHints",
+        "fileInputsInForms",
+    ] {
+        assert_eq!(
+            baseline[field].as_u64(),
+            Some(0),
+            "the page offers {field}: {state}"
+        );
+    }
+    let text = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        text.contains("No account, email, or upload is used."),
+        "the page does not state that it asks for no account, email, or upload: {text}"
+    );
+    let lower = text.to_lowercase();
+    for request in [
+        "sign in",
+        "log in",
+        "log on",
+        "create an account",
+        "enter your email",
+    ] {
+        assert!(
+            !lower.contains(request),
+            "the page asks the crew member to {request}: {text}"
+        );
+    }
 }
 
 #[then("the page meets the visual baseline at every displayed state")]
-async fn the_page_meets_the_visual_baseline(_w: &mut DutyWorld) {
-    unimplemented!("the page meets the visual baseline at every displayed state")
+async fn the_page_meets_the_visual_baseline(w: &mut DutyWorld) {
+    // The ready state is the one the scenario just rendered.
+    let ready = baseline_state(w);
+    assert_eq!(
+        ready["state"].as_str(),
+        Some("ready"),
+        "the visual baseline ran outside the ready state: {ready}"
+    );
+    assert_visual_baseline(&ready, "ready");
+    assert_axe_clean(w, "ready");
+    capture_screenshots(w, false);
+
+    // Return to the empty state the scenario displayed first and assert it too.
+    driver(w).send("reload", Map::new());
+    let empty = baseline_state(w);
+    assert_eq!(
+        empty["state"].as_str(),
+        Some("empty"),
+        "the page did not return to the empty state for its capture: {empty}"
+    );
+    assert_visual_baseline(&empty, "empty");
+    assert_axe_clean(w, "empty");
+    capture_screenshots(w, true);
 }

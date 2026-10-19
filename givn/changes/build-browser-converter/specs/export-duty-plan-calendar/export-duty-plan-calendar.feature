@@ -1,7 +1,7 @@
 @givn.delta @export-duty-plan-calendar
 Feature: Export a duty-plan calendar
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Crew member converts a supported duty plan in the browser and saves the offered calendar
     Given the converter page served from the built Site output
     Then the page shows the empty state and offers no calendar
