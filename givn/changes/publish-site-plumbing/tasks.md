@@ -423,7 +423,7 @@ GREEN exit/output: exit 0; 1 scenario passed, 11 steps passed
 REFACTOR command: same
 REFACTOR exit/output: exit 0; 1 scenario passed, 11 steps passed
 transcript path: givn/changes/publish-site-plumbing/evidence/visual/organization-owner-applies-the-previewed-revision-and-the-pages-publishing-credential-is-created/transcript.txt
-commit: PENDING
+commit: 5a228a129b2737acd697de733c48ee56489e42bd
 ```
 
 ---
