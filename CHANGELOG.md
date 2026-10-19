@@ -1,3 +1,9 @@
+## [0.5.0] - 2026-10-19
+
+### New capabilities
+- A travel activity's calendar title now ends with its report time in local time — `LU 742 Tychon-Mareum Report 07:30 LT` — so the briefing time is visible without opening the event, while the event details keep the labelled value.
+- The Windows executable is smaller
+[0.4.0...0.5.0](https://github.com/duty2cal/duty2cal/compare/v0.4.0...v0.5.0)
 ## [0.4.0] - 2026-10-18
 
 ### New capabilities

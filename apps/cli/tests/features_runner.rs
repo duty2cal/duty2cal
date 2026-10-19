@@ -89,6 +89,24 @@ pub struct DutyWorld {
     /// priming adoption and base apply are not mistaken for the change's
     /// writes.
     pub journal_offset: usize,
+    /// The output directory a size-attribution scenario used.
+    pub measurement_out: Option<PathBuf>,
+    /// The `attribution.json` inside `measurement_out`.
+    pub attribution: Option<PathBuf>,
+    /// The executable a size-attribution scenario passed with `--executable`.
+    pub measurement_executable: Option<PathBuf>,
+    /// The revision a size-attribution scenario measured.
+    pub measurement_revision: Option<String>,
+    /// The output directory a size-lever scenario used.
+    pub lever_out: Option<PathBuf>,
+    /// The `size-lever.md` inside `lever_out`.
+    pub lever_report: Option<PathBuf>,
+    /// The revision a size-lever scenario measured.
+    pub lever_revision: Option<String>,
+    /// The published binary's size a size-lever scenario reports separately.
+    pub lever_published: Option<u64>,
+    /// The repository a size-lever scenario measures; the project root when absent.
+    pub lever_repo: Option<PathBuf>,
 }
 
 impl Drop for DutyWorld {

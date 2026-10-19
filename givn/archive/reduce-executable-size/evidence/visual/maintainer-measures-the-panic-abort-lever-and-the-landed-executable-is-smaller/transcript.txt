@@ -1,0 +1,39 @@
+$ python3 scripts/measure_size_lever.py --repo <project>/apps/cli/../.. --revision HEAD --lever panic=abort --out <scenario-dir>/lever --published-size 2097152
+
+measurement exit status: 0
+$ <scenario-dir>/host-lever-target/release/duty2cal <scenario-dir>/unsupported.pdf
+conversion failed for <scenario-dir>/unsupported.pdf: the source is not a readable PDF: could not parse PDF input; verify that the input is a valid, supported PDF [operation: open bytes]
+Diagnostic: <scenario-dir>/unsupported.parse-error-1.txt
+
+
+--- size-lever.md ---
+# Size lever
+
+- Requested: HEAD
+- Revision: 67aa202c69a74b1f697062db4b9943367e07a1bd
+- Platform: x86_64-pc-windows-gnu
+- Levers: panic=abort
+- Status: applied
+- Published binary (file): 2097152 B (reported separately)
+
+## Baseline
+
+- Baseline (rebuild, unchanged): 2098176 B
+
+## Cumulative
+
+| lever | baseline bytes | lever bytes | saved bytes | percent | status |
+|---|---:|---:|---:|---:|---|
+| panic=abort | 2098176 | 2014208 | 83968 | 4.00% | applied |
+
+## Landed
+
+- Landed (committed configuration): 2014208 B
+- Landed status: smaller
+
+## Failure outcome
+
+- Panic: the standard Rust panic message on stderr; the process aborts.
+- Conversion failure: a typed failure still attempts a numbered diagnostic naming the source and reason.
+- Lever executable: <scenario-dir>/lever/duty2cal-lever.exe
+diagnostic exit status: 1
