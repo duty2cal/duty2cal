@@ -2771,13 +2771,15 @@ fn assert_no_calendar_offer(w: &mut DutyWorld) {
     assert!(!calendar, "the page offered a calendar: {state}");
 }
 
-/// A generated June 2026 plan whose Created footer supplies the revision.
+/// A generated fictional June 2099 plan whose Created footer supplies the
+/// revision. The committed fixture keeps the source stem `2026-06`; only the
+/// calendar's own dates use the project's fictional-year convention.
 fn equivalence_plan() -> Vec<(f64, f64, String)> {
     let mut items = support::detail_header_row(600.0);
     items.extend(support::at(
         585.0,
         &[
-            (DATE_X, "2026-06-07"),
+            (DATE_X, "2099-06-07"),
             (ACTIVITY_X, "LU742"),
             (FROM_X, "Tychon"),
             (TO_X, "Mareum"),
@@ -2787,13 +2789,13 @@ fn equivalence_plan() -> Vec<(f64, f64, String)> {
     ));
     items.extend(support::at(
         570.0,
-        &[(DATE_X, "2026-06-08"), (ACTIVITY_X, "U")],
+        &[(DATE_X, "2099-06-08"), (ACTIVITY_X, "U")],
     ));
     items.extend(support::at(
         520.0,
         &[
             (DATE_X, "Created"),
-            (support::TRIP_X, "2026-05-21"),
+            (support::TRIP_X, "2099-05-21"),
             (support::REPORT_X, "15:52"),
             (support::POS_X, "UTC"),
         ],
@@ -2931,7 +2933,7 @@ async fn supplies_an_unresolvable_plan(w: &mut DutyWorld, name: String) {
     let mut items = support::detail_header_row(600.0);
     items.extend(support::at(
         585.0,
-        &[(DATE_X, "2026-06-08"), (ACTIVITY_X, "ZZ999")],
+        &[(DATE_X, "2099-06-08"), (ACTIVITY_X, "ZZ999")],
     ));
     named_source(w, &name, support::build_pdf(&items));
     supply_through_picker(w);
@@ -2981,7 +2983,7 @@ async fn drops_the_supported_plan(w: &mut DutyWorld, name: String) {
     let mut items = support::detail_header_row(600.0);
     items.extend(support::at(
         585.0,
-        &[(DATE_X, "2026-06-08"), (ACTIVITY_X, "U")],
+        &[(DATE_X, "2099-06-08"), (ACTIVITY_X, "U")],
     ));
     named_source(w, &name, support::build_pdf(&items));
     let path = w.source_path();
