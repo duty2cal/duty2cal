@@ -667,8 +667,8 @@ fails explicitly; no calendar is offered and a diagnostic is attempted.
   7 steps (7 passed)
   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A source outside the supported family is rejected with a diagnostic offer`; Hash: `<record the revision identifier here>`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+  `Scenario: A source outside the supported family is rejected with a diagnostic offer`; Hash: `b078df53e11e5314c19e7326a73c7c8d12f947ee`
 
 ### 5. An unresolved required activity is rejected with a diagnostic offer
 
