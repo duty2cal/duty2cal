@@ -686,32 +686,38 @@ failure is visible and a diagnostic is attempted.
   `2026-06.parse-error.txt`, and keeps `Choose another plan`.
 - The diagnostic download is captured and read; no Blob is fetched by the page.
 
-- [ ] RED — remove `@wip` from this scenario only; add its new step bodies as
-  `unimplemented!()` stubs (previously implemented shared steps stay implemented); run:
+- [x] RED — remove `@wip` from this scenario only; the three new step bodies stayed the
+  committed `unimplemented!()` stubs (previously implemented shared steps stayed
+  implemented); run:
   ```
-  $ ./run-tests.sh --name "An unresolved required activity is rejected with a diagnostic offer"
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "An unresolved required activity is rejected with a diagnostic offer"
   Feature: Export a duty-plan calendar
     Scenario: An unresolved required activity is rejected with a diagnostic offer
      ✔  Given the converter page served from the built Site output
      ✘  When the crew member supplies the supported duty plan "2026-06.pdf" containing a required activity the converter cannot resolve
-        Step panicked. Captured output: not implemented: build the unresolved-activity fixture and supply it
+        Step failed:
+        Defined: tmp/tmp.qi7Gf287xD/f0006.feature:57:5
+        Matched: apps/cli/tests/steps/export_duty_plan_calendar.rs:2910:1
+        Step panicked. Captured output: not implemented: the crew member supplies a plan containing a required activity the converter cannot resolve
   [Summary]
   1 feature
   1 scenario (1 failed)
   2 steps (1 passed, 1 failed)
   RED_EXIT=101
   ```
-- [ ] GREEN — real assertions; production files:
-  - None created. Exercised unchanged: `crates/duty2cal-core/src/application/mod.rs`
-    (`interpret`, `ConvertError`), `crates/duty2cal-core/src/domain/` (classification),
+- [x] GREEN — real assertions; production files:
+  - None created or modified. Exercised unchanged: `crates/duty2cal-core/src/application/mod.rs`
+    (`interpret`, `classify`, `ConvertError::UnresolvedRequiredActivity`),
     `ffi/wasm/src/lib.rs` (failure mapping), `web/app.js` (failure rendering).
-  - Test support: `apps/cli/tests/steps/support.rs` — a generated plan carrying an
-    unknown required code.
-  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the unresolved-activity steps
-    and diagnostic capture.
+  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the fixture builder with the
+    unknown required code `ZZ999`, the visible-reason assertion (the reason carries
+    `a required activity could not be resolved` and the code), and the captured
+    diagnostic asserting `Source PDF: 2026-06.pdf\nReason: <the visible reason>\n`.
   Run:
   ```
-  $ ./run-tests.sh --name "An unresolved required activity is rejected with a diagnostic offer"
+  $ cargo fmt --all --check -> FMT OK
+  $ cargo clippy --workspace --all-targets -- -D warnings -> clean (CLIPPY_EXIT=0)
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "An unresolved required activity is rejected with a diagnostic offer"
   Feature: Export a duty-plan calendar
     Scenario: An unresolved required activity is rejected with a diagnostic offer
      ✔  Given the converter page served from the built Site output
@@ -727,12 +733,15 @@ failure is visible and a diagnostic is attempted.
   7 steps (7 passed)
   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — confirm no partial calendar can be rendered down this path, re-run:
+- [x] REFACTOR — confirm no partial calendar can be rendered down this path: the failure
+  state is asserted together with the empty offer list, and the diagnostic carries the
+  same reason as the panel. No cleanup was needed; re-run:
   ```
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "An unresolved required activity is rejected with a diagnostic offer"
   1 scenario (1 passed), 7 steps (7 passed)   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: An unresolved required activity is rejected with a diagnostic offer`; Hash: `<record the revision identifier here>`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+  `Scenario: An unresolved required activity is rejected with a diagnostic offer`; Hash: `<recorded in the change's follow-up commit>`
 
 ### 6. A failed attempt withdraws a calendar offered by an earlier attempt
 
