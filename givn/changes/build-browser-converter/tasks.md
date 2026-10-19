@@ -741,7 +741,7 @@ failure is visible and a diagnostic is attempted.
   1 scenario (1 passed), 7 steps (7 passed)   REFACTOR_EXIT=0
   ```
 - [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: An unresolved required activity is rejected with a diagnostic offer`; Hash: `<recorded in the change's follow-up commit>`
+  `Scenario: An unresolved required activity is rejected with a diagnostic offer`; Hash: `c6eab05c1456d998273444f9c485eadb0d53c682`
 
 ### 6. A failed attempt withdraws a calendar offered by an earlier attempt
 
@@ -819,7 +819,7 @@ offered.
   1 scenario (1 passed), 8 steps (8 passed)   REFACTOR_EXIT=0
   ```
 - [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A failed attempt withdraws a calendar offered by an earlier attempt`; Hash: `<recorded in the change's follow-up commit>`
+  `Scenario: A failed attempt withdraws a calendar offered by an earlier attempt`; Hash: `66593deb59d84a0dea727e8f7c8bb092c6526a4d`
 
 ### 7. A calendar that cannot be offered is not reported as ready
 
@@ -894,7 +894,7 @@ failure and attempt a diagnostic; success is never reported without an offer.
   1 scenario (1 passed), 6 steps (6 passed)   REFACTOR_EXIT=0
   ```
 - [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A calendar that cannot be offered is not reported as ready`; Hash: `<recorded in the change's follow-up commit>`
+  `Scenario: A calendar that cannot be offered is not reported as ready`; Hash: `63974a1f333e793686dfe8bf36a4703b062cce52`
 
 ### 8. A diagnostic that cannot be offered does not hide the primary failure
 
@@ -966,7 +966,7 @@ primary failure remains visible and the page states that no diagnostic was offer
   1 scenario (1 passed), 6 steps (6 passed)   REFACTOR_EXIT=0
   ```
 - [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A diagnostic that cannot be offered does not hide the primary failure`; Hash: `<recorded in the change's follow-up commit>`
+  `Scenario: A diagnostic that cannot be offered does not hide the primary failure`; Hash: `78ad4e442a5cedf591da3a562324d2e7fab399ad`
 
 ### 9. A browser without WebAssembly shows the cannot-run message
 
