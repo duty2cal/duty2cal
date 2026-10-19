@@ -32,24 +32,13 @@ fi
 
 filter=()
 args=()
-has_name=0
 for a in "$@"; do
   if [ "$a" = "--e2e" ]; then
     filter+=(--tags "@e2e")
   else
     args+=("$a")
   fi
-  if [ "$a" = "--name" ]; then
-    has_name=1
-  fi
 done
-
-# cucumber-rs rejects `--tags` together with `--name`. A named targeted run is
-# already scoped to the single scenario the operator named, so the tag filter
-# is dropped for it (the count proof and the full @e2e run keep the filter).
-if [ "$has_name" = 1 ]; then
-  filter=()
-fi
 
 root="$(scripts/assemble-features.sh)"
 transcript="$(mktemp)"

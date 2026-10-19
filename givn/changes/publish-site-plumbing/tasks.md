@@ -7,7 +7,7 @@
 - **Interaction inventory:** 6 entries in the delta use case; 6 rows in the design's Interaction Coverage Matrix; the two new entries map to the two `@e2e` scenarios below.
 - **Runner:** `./run-tests.sh` → `cargo test -p duty2cal --test features_runner` over the assembled feature root.
 - **E2E runner:** `./run-tests.sh --e2e` → the same runner with `--tags @e2e`; distinct from `verify.command`.
-- **Single scenario:** `./run-tests.sh --name "<scenario title>"`; E2E: `./run-tests.sh --e2e --name "<scenario title>"`.
+- **Single scenario:** `./run-tests.sh --name "<scenario title>"`; E2E: `./run-tests.sh --name "<scenario title>"`.
 - **Commit scope:** `apply-configuration-change` for the feature commits; E2E commits use `test(e2e):`.
 - **Strict mode:** `apps/cli/tests/features_runner.rs` calls `.fail_on_skipped()`. Undefined, pending or skipped steps fail. Empty step bodies are banned; use `todo!()` while RED.
 - **Task order:** setup, 8 non-`@e2e` scenarios in feature order, E2E setup, 2 `@e2e` scenarios, operator apply, archive-time obligation.
@@ -382,15 +382,15 @@ commit: fffa813785ce2f1474fcc1406fa1640e3dd22f59
 
 **TDD evidence**
 
-- [x] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --e2e --name "Organization owner previews the pages plumbing and only the three live creations are named"`. Paste the non-zero output.
+- [x] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "Organization owner previews the pages plumbing and only the three live creations are named"`. Paste the non-zero output.
 - [x] GREEN: implement the E2E preview steps, the transcript capture and the assertions; list production files. Run the same command; exit zero.
 - [x] REFACTOR: clean up; rerun; exit zero.
 - [x] COMMIT: `givn commit -m "test(e2e): preview the pages plumbing through the real tofu CLI"`; record the hash.
 
 ```text
-RED command: ./run-tests.sh --e2e --name "Organization owner previews the pages plumbing and only the three live creations are named"
-RED exit/output: exit 101; "Step doesn't match any function" at "the pages repository has no deploy key and no rule set" (the first attempt exited 2 because cucumber-rs rejects `--tags` with `--name`; run-tests.sh now drops the incompatible tag filter for a named run, the counts run keeps it)
-GREEN production files: apps/cli/tests/steps/e2e/publish_site_plumbing.rs (S9 steps, evidence marker, scrubbed transcript); apps/cli/tests/steps/publish_site_plumbing.rs (`live_lists`/`report` visibility); apps/cli/tests/steps/enable_repository_security.rs + apps/cli/tests/steps/publish_site_plumbing.rs (terminal transcript hooks); run-tests.sh (named `--e2e` run)
+RED command: ./run-tests.sh --name "Organization owner previews the pages plumbing and only the three live creations are named"
+RED exit/output: exit 101; "Step doesn't match any function" at "the pages repository has no deploy key and no rule set"
+GREEN production files: apps/cli/tests/steps/e2e/publish_site_plumbing.rs (S9 steps, evidence marker, scrubbed transcript); apps/cli/tests/steps/publish_site_plumbing.rs (`live_lists`/`report` visibility); apps/cli/tests/steps/enable_repository_security.rs + apps/cli/tests/steps/publish_site_plumbing.rs (terminal transcript hooks)
 GREEN command: same
 GREEN exit/output: exit 0; 1 scenario passed, 12 steps passed
 REFACTOR command: same
@@ -409,13 +409,13 @@ commit: bf36589ab6d931ee9cf270a40aeb3fdb44074a57
 
 **TDD evidence**
 
-- [x] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --e2e --name "Organization owner applies the previewed revision and the pages publishing credential is created"`. Paste the non-zero output.
+- [x] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "Organization owner applies the previewed revision and the pages publishing credential is created"`. Paste the non-zero output.
 - [x] GREEN: implement the E2E apply/read-back steps and the transcript; list production files. Run the same command; exit zero.
 - [x] REFACTOR: clean up; rerun; exit zero.
 - [x] COMMIT: `givn commit -m "test(e2e): apply the pages publishing credential through the real tofu CLI"`; record the hash.
 
 ```text
-RED command: ./run-tests.sh --e2e --name "Organization owner applies the previewed revision and the pages publishing credential is created"
+RED command: ./run-tests.sh --name "Organization owner applies the previewed revision and the pages publishing credential is created"
 RED exit/output: exit 101; "Step doesn't match any function" at "the apply reports the deploy key, the secret and the rule set as created"
 GREEN production files: apps/cli/tests/steps/e2e/publish_site_plumbing.rs (the apply/read-back assertions, the journal's sealed-secret fields, the rule-set bypass and rules, the state's generated key material, and the scrub of private keys and sealed values from the transcript)
 GREEN command: same
