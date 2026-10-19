@@ -284,15 +284,15 @@ scenario.
 
 - `cargo check --workspace --all-targets` passes natively and the wasm build passes
   through `scripts/build-web.sh`.
-- This NixOS host cannot execute the toolchain's `cargo fmt`/`cargo clippy` proxies
-  (the rustup shim reports `cargo: No such file or directory`). The changed files pass
-  `rustfmt 1.9.0` in check mode, and `clippy 0.1.98` reports no warning with
-  `--workspace --all-targets -- -D warnings` on a matched toolchain; CI runs the pinned
-  stable equivalents.
+- `cargo fmt --all --check` exits 0, and
+  `cargo clippy --workspace --all-targets -- -D warnings` reports no warning. Host
+  workaround: the rustup proxies for `cargo-fmt`/`cargo-clippy` cannot execute on this
+  NixOS host, so the commands ran with the NixOS-provided `rustfmt 1.98.1`/`clippy
+  0.1.98` on PATH; CI runs the pinned stable equivalents.
 - `givn lint --change build-browser-converter` reports exactly the 16 expected `@wip`
   findings and nothing else.
 
-Setup commit: pending (recorded in the bookkeeping commit).
+Setup commit: `30008f0a8b71d57ae7d6b13a3860ad1f21c7acf1`.
 
 ## Scenarios (non-`@e2e` first, in feature order)
 
