@@ -1277,30 +1277,43 @@ unchanged.
   calls the captured download's cancel.
 - The page uses no File System Access API, `showSaveFilePicker`, or directory access.
 
-- [ ] RED — remove `@wip` from this scenario only; add its new step bodies as
-  `unimplemented!()` stubs (previously implemented shared steps stay implemented); run:
+- [x] RED — remove `@wip` from this scenario only; the When and Then step bodies
+  stayed the committed `unimplemented!()` stubs; run:
   ```
-  $ ./run-tests.sh --name "A cancelled save is not reported as a save"
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A cancelled save is not reported as a save"
   Feature: Export a duty-plan calendar
     Scenario: A cancelled save is not reported as a save
      ✔  Given the converter page served from the built Site output
      ✔  When the crew member supplies the supported duty plan "2026-06.pdf" through the file picker
      ✘  And the crew member dismisses the save of the offered calendar
-        Step panicked. Captured output: not implemented: dismiss the captured download
+        Step failed:
+        Defined: tmp/tmp.xPebOUFrOt/f0006.feature:126:5
+        Matched: apps/cli/tests/steps/export_duty_plan_calendar.rs:3004:1
+        Step panicked. Captured output: not implemented: the crew member dismisses the save of the offered calendar
   [Summary]
   1 feature
   1 scenario (1 failed)
   3 steps (2 passed, 1 failed)
   RED_EXIT=101
   ```
-- [ ] GREEN — real assertions; production files:
-  - `web/index.html` / `web/app.js` — offer copy that names the file and states the browser
-    chooses the location; no save claim, no write API.
-  - `web/e2e/driver.mjs` — the `dismiss_save` action.
-  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the cancelled-save steps.
+- [x] GREEN — real assertions; production files:
+  - `web/app.js` — `showReady` adds the offer note `Your browser chooses where to save
+    it.` beside the link that names `2026-06.ics`; no save claim and no File System
+    Access API, `showSaveFilePicker` or directory access.
+  - `web/e2e/driver.mjs` — the `dismiss_save` action, which clicks the calendar offer,
+    captures the browser's download and cancels it.
+  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the dismissal step (asserting
+    the dismissed download's suggested name) and the two assertions: the offer remains
+    in the ready state and the visible text never says `saved`.
+  - `apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs` — removed the duplicate
+    `the page has not reported that it saved a file` stub: cucumber step definitions are
+    global, and the shared regular implementation serves both the regular and the
+    `@e2e` scenario.
   Run:
   ```
-  $ ./run-tests.sh --name "A cancelled save is not reported as a save"
+  $ cargo fmt --all --check -> FMT_EXIT=0
+  $ cargo clippy --workspace --all-targets -- -D warnings -> CLIPPY_EXIT=0
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A cancelled save is not reported as a save"
   Feature: Export a duty-plan calendar
     Scenario: A cancelled save is not reported as a save
      ✔  Given the converter page served from the built Site output
@@ -1314,12 +1327,20 @@ unchanged.
   5 steps (5 passed)
   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — grep the page's visible copy for a save claim, re-run:
+- [x] REFACTOR — grep the page's visible copy for a save claim:
   ```
+  $ grep -in "saved" web/index.html web/app.js web/capability.js
+  NO_SAVED_CLAIM
+  ```
+  The only save wording is the link's `Save <name>` and `Your browser chooses where to
+  save it.`; neither is a claim about work the page performed. Re-run:
+  ```
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A cancelled save is not reported as a save"
   1 scenario (1 passed), 5 steps (5 passed)   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A cancelled save is not reported as a save`; Hash: `<record the revision identifier here>`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+  `Scenario: A cancelled save is not reported as a save`; Hash: recorded in the
+  scenario-commit record commit
 
 ### 14. The offered names use the source file's stem
 

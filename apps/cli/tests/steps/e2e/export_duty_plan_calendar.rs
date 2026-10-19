@@ -109,11 +109,6 @@ async fn the_saved_calendar_matches_the_reference(_w: &mut DutyWorld, _name: Str
     unimplemented!("the saved calendar matches the reference calendar")
 }
 
-#[then("the page has not reported that it saved a file")]
-async fn the_page_claims_no_save(_w: &mut DutyWorld) {
-    unimplemented!("the page has not reported that it saved a file")
-}
-
 #[then("the page asks for no account, email, or upload")]
 async fn the_page_asks_for_no_account(_w: &mut DutyWorld) {
     unimplemented!("the page asks for no account, email, or upload")
