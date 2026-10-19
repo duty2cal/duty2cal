@@ -2729,6 +2729,7 @@ fn capture_offer(w: &mut DutyWorld, kind: &str, file_name: &str) -> PathBuf {
 }
 
 /// The diagnostic the page offers, read back from the captured download.
+#[allow(dead_code)] // used by the size/family GREEN
 fn captured_diagnostic(w: &mut DutyWorld) -> String {
     let path = capture_offer(w, "diagnostic", "offered.parse-error.txt");
     std::fs::read_to_string(&path)
@@ -2736,6 +2737,7 @@ fn captured_diagnostic(w: &mut DutyWorld) -> String {
 }
 
 /// Assert the page shows a failure heading and a reason containing `needle`.
+#[allow(dead_code)] // used by the failure GREENs
 fn assert_failure_containing(w: &mut DutyWorld, needle: &str) {
     let state = page_state(w);
     assert_eq!(
@@ -2761,6 +2763,7 @@ fn assert_failure_containing(w: &mut DutyWorld, needle: &str) {
 }
 
 /// Assert the page offers no calendar download.
+#[allow(dead_code)] // used by the failure GREENs
 fn assert_no_calendar_offer(w: &mut DutyWorld) {
     let state = page_state(w);
     let calendar = state["offers"]
@@ -2886,23 +2889,13 @@ async fn supplies_that_plan(w: &mut DutyWorld) {
 #[when(
     regex = r#"^the crew member supplies the file "([^"]+)" that is not a supported duty plan$"#
 )]
-async fn supplies_an_unsupported_file(w: &mut DutyWorld, name: String) {
-    // A readable PDF without the supported detail-table header: the family
-    // check rejects it, not the page's size guard and not a read error.
-    let items = support::at(
-        700.0,
-        &[(DATE_X, "Notes"), (FROM_X, "This page is not a duty plan.")],
-    );
-    named_source(w, &name, support::build_pdf(&items));
-    supply_through_picker(w);
+async fn supplies_an_unsupported_file(_w: &mut DutyWorld, _name: String) {
+    unimplemented!("the crew member supplies the file that is not a supported duty plan")
 }
 
 #[when(regex = r#"^the crew member supplies the plan "([^"]+)" of (\d+) MiB$"#)]
-async fn supplies_an_oversized_plan(w: &mut DutyWorld, name: String, size: String) {
-    let bytes = support::build_pdf_at_size(&equivalence_plan(), mebibytes(&size));
-    assert_eq!(bytes.len(), mebibytes(&size));
-    named_source(w, &name, bytes);
-    supply_through_picker(w);
+async fn supplies_an_oversized_plan(_w: &mut DutyWorld, _name: String, _size: String) {
+    unimplemented!("the crew member supplies a plan larger than the supported size bound")
 }
 
 #[when(
@@ -2996,13 +2989,13 @@ async fn the_drop_was_accepted(_w: &mut DutyWorld) {
 }
 
 #[then("the page shows a failure heading and a failure naming the 20 MiB bound")]
-async fn the_failure_names_the_size_bound(w: &mut DutyWorld) {
-    assert_failure_containing(w, "20 MiB");
+async fn the_failure_names_the_size_bound(_w: &mut DutyWorld) {
+    unimplemented!("the page shows a failure heading and a failure naming the 20 MiB bound")
 }
 
 #[then(regex = r#"^the page shows a failure heading and a failure naming "([^"]+)"$"#)]
-async fn the_failure_names_the_file(w: &mut DutyWorld, name: String) {
-    assert_failure_containing(w, &name);
+async fn the_failure_names_the_file(_w: &mut DutyWorld, _name: String) {
+    unimplemented!("the page shows a failure heading and a failure naming the file")
 }
 
 #[then("the page shows a failure heading and the reason")]
@@ -3057,8 +3050,8 @@ async fn the_page_offers_the_file(w: &mut DutyWorld, name: String) {
 }
 
 #[then("the page offers no calendar")]
-async fn the_page_offers_no_calendar(w: &mut DutyWorld) {
-    assert_no_calendar_offer(w);
+async fn the_page_offers_no_calendar(_w: &mut DutyWorld) {
+    unimplemented!("the page offers no calendar")
 }
 
 #[then(regex = r#"^the page offers no calendar and no longer offers "([^"]+)"$"#)]
@@ -3072,47 +3065,18 @@ async fn the_page_offers_no_file_picker(_w: &mut DutyWorld) {
 }
 
 #[then(regex = r#"^the page offers the diagnostic text "([^"]+)"$"#)]
-async fn the_page_offers_the_diagnostic(w: &mut DutyWorld, name: String) {
-    let state = page_state(w);
-    let offered = state["offers"]
-        .as_array()
-        .expect("read_state returns offers")
-        .iter()
-        .any(|offer| {
-            offer["kind"].as_str() == Some("diagnostic")
-                && offer["name"].as_str() == Some(name.as_str())
-        });
-    assert!(
-        offered,
-        "the page does not offer the diagnostic {name:?}: {state}"
-    );
+async fn the_page_offers_the_diagnostic(_w: &mut DutyWorld, _name: String) {
+    unimplemented!("the page offers the diagnostic text")
 }
 
 #[then(r#"the diagnostic text identifies "2026-06.pdf" and the size failure"#)]
-async fn the_diagnostic_names_the_size_failure(w: &mut DutyWorld) {
-    let text = captured_diagnostic(w);
-    assert!(
-        text.starts_with("Source PDF: 2026-06.pdf\nReason: "),
-        "the diagnostic does not identify the plan: {text:?}"
-    );
-    assert!(
-        text.contains("20 MiB") && text.ends_with('\n'),
-        "the diagnostic does not state the size failure: {text:?}"
-    );
+async fn the_diagnostic_names_the_size_failure(_w: &mut DutyWorld) {
+    unimplemented!("the diagnostic text identifies the plan and the size failure")
 }
 
 #[then(regex = r#"^the diagnostic text identifies "([^"]+)" and the unsupported-family reason$"#)]
-async fn the_diagnostic_names_the_unsupported_family(w: &mut DutyWorld, name: String) {
-    let text = captured_diagnostic(w);
-    assert!(
-        text.starts_with(&format!("Source PDF: {name}\nReason: ")),
-        "the diagnostic does not identify the file: {text:?}"
-    );
-    assert!(
-        text.contains("not a supported Released Roster detail-table export")
-            && text.ends_with('\n'),
-        "the diagnostic does not state the unsupported-family reason: {text:?}"
-    );
+async fn the_diagnostic_names_the_unsupported_family(_w: &mut DutyWorld, _name: String) {
+    unimplemented!("the diagnostic text identifies the file and the unsupported-family reason")
 }
 
 #[then(regex = r#"^the diagnostic text identifies "([^"]+)" and the reason$"#)]
@@ -3121,20 +3085,8 @@ async fn the_diagnostic_names_the_reason(_w: &mut DutyWorld, _name: String) {
 }
 
 #[then("the page offers a way to choose another plan")]
-async fn the_page_offers_a_way_back(w: &mut DutyWorld) {
-    let state = page_state(w);
-    assert_eq!(
-        state["controls"]["chooseAnother"].as_bool(),
-        Some(true),
-        "the failure state offers no way back: {state}"
-    );
-    let text = state["visibleText"]
-        .as_str()
-        .expect("read_state returns visible text");
-    assert!(
-        text.contains("Choose another plan"),
-        "the visible way back is missing: {text}"
-    );
+async fn the_page_offers_a_way_back(_w: &mut DutyWorld) {
+    unimplemented!("the page offers a way to choose another plan")
 }
 
 #[then("the page states that no diagnostic was offered")]
