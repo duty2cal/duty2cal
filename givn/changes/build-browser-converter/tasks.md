@@ -1793,6 +1793,14 @@ checked task is a stub.
 | A converter module that cannot be instantiated shows the startup failure | `257f662` | `30008f0` | Startup-failure steps and driver mode |
 | Crew member converts ... and saves the offered calendar (`@e2e`) | `43e916d` | `4e0d466`, `63974a1` | Driver actions, e2e steps and screenshots |
 
+## Archive-phase evidence path
+
+The archive gate moves the change to `givn/archive/build-browser-converter/`
+before it runs the suite. The e2e step writes the four screenshots to the
+archived evidence directory when the active change's `proposal.md` is absent,
+so the archive verification does not recreate `givn/changes/` outside the
+candidate. The active-change run writes to the change evidence directory.
+
 ## Final verification (after every section is GREEN)
 
 - [x] `./run-tests.sh` — full suite exits 0. 166 scenarios (166 passed), 744 steps
