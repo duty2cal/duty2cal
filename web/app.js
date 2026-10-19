@@ -21,6 +21,7 @@ const offerArea = document.getElementById('offer');
 const failure = document.getElementById('failure');
 const failureReason = document.getElementById('failure-reason');
 const failureOffer = document.getElementById('failure-offer');
+const failureNote = document.getElementById('failure-note');
 const reset = document.getElementById('reset');
 
 /** Decode the build-time base64 string into the bytes `init` instantiates. */
@@ -89,16 +90,23 @@ function addOffer(container, name, content, type) {
 
 /** Show the ready state for a complete calendar. */
 function showReady(name, calendar) {
+  try {
+    addOffer(
+      offerArea,
+      `${stemOf(name)}.ics`,
+      calendar,
+      'text/calendar;charset=utf-8',
+    );
+  } catch {
+    // Success is never reported without an offer: this is a failure.
+    const reason = 'the calendar could not be offered for saving';
+    showFailure(name, reason, safeDiagnostic(name, reason));
+    return;
+  }
   status.textContent = 'Your calendar is ready to save.';
   const heading = document.createElement('h2');
   heading.textContent = 'Calendar ready';
-  offerArea.append(heading);
-  addOffer(
-    offerArea,
-    `${stemOf(name)}.ics`,
-    calendar,
-    'text/calendar;charset=utf-8',
-  );
+  offerArea.prepend(heading);
   offerArea.hidden = false;
 }
 
@@ -106,13 +114,21 @@ function showReady(name, calendar) {
 function showFailure(name, reason, diagnostic) {
   status.textContent = 'No calendar was created.';
   failureReason.textContent = `${name}: ${reason}`;
+  failureNote.textContent = '';
+  failureNote.hidden = true;
   if (diagnostic) {
-    addOffer(
-      failureOffer,
-      `${stemOf(name)}.parse-error.txt`,
-      diagnostic,
-      'text/plain;charset=utf-8',
-    );
+    try {
+      addOffer(
+        failureOffer,
+        `${stemOf(name)}.parse-error.txt`,
+        diagnostic,
+        'text/plain;charset=utf-8',
+      );
+    } catch {
+      // Keep the primary failure and say the diagnostic is unavailable.
+      failureNote.textContent = 'No diagnostic was offered.';
+      failureNote.hidden = false;
+    }
   }
   failure.hidden = false;
 }

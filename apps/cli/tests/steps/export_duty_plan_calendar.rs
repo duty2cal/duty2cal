@@ -2823,10 +2823,13 @@ async fn the_converter_page_without_webassembly(_w: &mut DutyWorld) {
 }
 
 #[given("the converter page served from the built Site output that cannot create a download offer for the calendar")]
-async fn the_converter_page_without_calendar_offer(_w: &mut DutyWorld) {
-    unimplemented!(
-        "the converter page served from the built Site output that cannot create a download offer for the calendar"
-    )
+async fn the_converter_page_without_calendar_offer(w: &mut DutyWorld) {
+    let mut params = Map::new();
+    params.insert(
+        "mode".to_string(),
+        Value::String("calendar-offer-failure".to_string()),
+    );
+    driver(w).send("start", params);
 }
 
 #[given("the converter page served from the built Site output that cannot create a download offer for the diagnostic")]
@@ -3031,10 +3034,50 @@ async fn the_failure_shows_the_reason(w: &mut DutyWorld) {
 }
 
 #[then("the page shows a failure heading and states that the calendar could not be offered")]
-async fn the_failure_states_the_calendar_could_not_be_offered(_w: &mut DutyWorld) {
-    unimplemented!(
-        "the page shows a failure heading and states that the calendar could not be offered"
-    )
+async fn the_failure_states_the_calendar_could_not_be_offered(w: &mut DutyWorld) {
+    let reason = "the calendar could not be offered for saving";
+    let state = page_state(w);
+    assert_eq!(
+        state["state"].as_str(),
+        Some("failure"),
+        "the offer failure was reported as another state: {state}"
+    );
+    let text = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        text.contains("Conversion failed"),
+        "the failure heading is not visible: {text}"
+    );
+    assert!(
+        !text.contains("Calendar ready"),
+        "the ready heading survives the offer failure: {text}"
+    );
+    assert!(
+        !state["status"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("ready to save"),
+        "the page still reports the calendar as ready: {state}"
+    );
+    let visible = state["failureReason"].as_str().unwrap_or_default();
+    assert!(
+        visible.contains(reason),
+        "the visible reason {visible:?} does not contain {reason:?}"
+    );
+
+    let name = w
+        .source_path()
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned();
+    let diagnostic = captured_diagnostic(w);
+    assert_eq!(
+        diagnostic,
+        format!("Source PDF: {name}\nReason: {reason}\n"),
+        "the fallback diagnostic does not carry the same reason"
+    );
 }
 
 #[then(regex = r#"^the page shows a failure heading and the primary failure naming "([^"]+)"$"#)]
