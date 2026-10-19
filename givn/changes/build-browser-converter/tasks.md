@@ -760,34 +760,41 @@ offered.
   download; every live URL is revoked on `pagehide`.
 - The stale offer's object URL is not retained after the second attempt.
 
-- [ ] RED — remove `@wip` from this scenario only; add its new step bodies as
-  `unimplemented!()` stubs (previously implemented shared steps stay implemented); run:
+- [x] RED — remove `@wip` from this scenario only; its two new step bodies
+  (`supplies_the_supported_plan`, `the_page_withdraws_the_calendar`) stayed the committed
+  `unimplemented!()` stubs. The run therefore fails at the first of them, one step earlier
+  than the planned transcript:
   ```
-  $ ./run-tests.sh --name "A failed attempt withdraws a calendar offered by an earlier attempt"
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A failed attempt withdraws a calendar offered by an earlier attempt"
   Feature: Export a duty-plan calendar
     Scenario: A failed attempt withdraws a calendar offered by an earlier attempt
      ✔  Given the converter page served from the built Site output
-     ✔  When the crew member supplies the supported duty plan "2026-06.pdf" through the file picker
-     ✔  Then the page shows that the calendar is ready
-     ✔  And the page offers the file "2026-06.ics"
-     ✔  When the crew member supplies the file "notes.pdf" that is not a supported duty plan
-     ✔  Then the page shows a failure heading and a failure naming "notes.pdf"
-     ✘  And the page offers no calendar and no longer offers "2026-06.ics"
-        Step panicked. Captured output: not implemented: assert the earlier offer was withdrawn
+     ✘  When the crew member supplies the supported duty plan "2026-06.pdf" through the file picker
+        Step failed:
+        Defined: tmp/tmp.5WtfSSWYY2/f0006.feature:67:5
+        Matched: apps/cli/tests/steps/export_duty_plan_calendar.rs:2874:1
+        Step panicked. Captured output: not implemented: the crew member supplies the supported duty plan through the file picker
   [Summary]
   1 feature
   1 scenario (1 failed)
-  8 steps (7 passed, 1 failed)
+  2 steps (1 passed, 1 failed)
   RED_EXIT=101
   ```
-- [ ] GREEN — real assertions and minimum production code; production files modified:
-  - `web/app.js` — clear-first `acceptFile`, offer revocation/tracking, status reset,
-    single-offer invariant.
-  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the two-attempt steps (the
-    driver keeps one browser context and calls `set_file` twice).
+- [x] GREEN — real assertions; production files:
+  - None modified. `web/app.js` already clears first in `acceptFile`: `clearAttempt`
+    calls `withdrawOffers`, which revokes every tracked URL and empties both offer
+    containers before the size guard or the read (implemented and committed with the
+    equivalence scenario). The first success's `2026-06.ics` link is therefore gone by
+    the time the second attempt settles.
+  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the supported-plan supply built
+    from the detail header plus one all-day `U` row, and the withdrawal assertion
+    (failure state, no calendar kind, the earlier name absent, ready heading absent).
+    The driver keeps one context and calls `set_file` twice.
   Run:
   ```
-  $ ./run-tests.sh --name "A failed attempt withdraws a calendar offered by an earlier attempt"
+  $ cargo fmt --all --check -> FMT OK
+  $ cargo clippy --workspace --all-targets -- -D warnings -> clean (CLIPPY_EXIT=0)
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A failed attempt withdraws a calendar offered by an earlier attempt"
   Feature: Export a duty-plan calendar
     Scenario: A failed attempt withdraws a calendar offered by an earlier attempt
      ✔  Given the converter page served from the built Site output
@@ -804,12 +811,15 @@ offered.
   8 steps (8 passed)
   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — ensure no object URL leaks across attempts; re-run:
+- [x] REFACTOR — no object URL leaks across attempts: `withdrawOffers` revokes each
+  tracked URL before clearing the list, so the second attempt starts with an empty
+  registry and the earlier calendar's URL is not retained. No cleanup was needed; re-run:
   ```
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A failed attempt withdraws a calendar offered by an earlier attempt"
   1 scenario (1 passed), 8 steps (8 passed)   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A failed attempt withdraws a calendar offered by an earlier attempt`; Hash: `<record the revision identifier here>`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+  `Scenario: A failed attempt withdraws a calendar offered by an earlier attempt`; Hash: `<recorded in the change's follow-up commit>`
 
 ### 7. A calendar that cannot be offered is not reported as ready
 

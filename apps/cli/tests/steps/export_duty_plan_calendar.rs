@@ -2874,8 +2874,14 @@ async fn the_executable_has_published_the_calendar(w: &mut DutyWorld) {
 #[when(
     regex = r#"^the crew member supplies the supported duty plan "([^"]+)" through the file picker$"#
 )]
-async fn supplies_the_supported_plan(_w: &mut DutyWorld, _name: String) {
-    unimplemented!("the crew member supplies the supported duty plan through the file picker")
+async fn supplies_the_supported_plan(w: &mut DutyWorld, name: String) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[(DATE_X, "2026-06-08"), (ACTIVITY_X, "U")],
+    ));
+    named_source(w, &name, support::build_pdf(&items));
+    supply_through_picker(w);
 }
 
 #[when("the crew member supplies that plan through the file picker")]
@@ -3076,8 +3082,35 @@ async fn the_page_offers_no_calendar(w: &mut DutyWorld) {
 }
 
 #[then(regex = r#"^the page offers no calendar and no longer offers "([^"]+)"$"#)]
-async fn the_page_withdraws_the_calendar(_w: &mut DutyWorld, _name: String) {
-    unimplemented!("the page offers no calendar and no longer offers the earlier one")
+async fn the_page_withdraws_the_calendar(w: &mut DutyWorld, name: String) {
+    let state = page_state(w);
+    assert_eq!(
+        state["state"].as_str(),
+        Some("failure"),
+        "the second attempt did not fail visibly: {state}"
+    );
+    let offers = state["offers"]
+        .as_array()
+        .expect("read_state returns offers");
+    assert!(
+        offers
+            .iter()
+            .all(|offer| offer["kind"].as_str() != Some("calendar")),
+        "the page still offers a calendar: {state}"
+    );
+    assert!(
+        offers
+            .iter()
+            .all(|offer| offer["name"].as_str() != Some(name.as_str())),
+        "the page still offers the earlier calendar {name:?}: {state}"
+    );
+    let text = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        !text.contains("Calendar ready"),
+        "the ready heading survives the failed attempt: {text}"
+    );
 }
 
 #[then("the page offers no file picker")]

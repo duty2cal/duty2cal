@@ -61,7 +61,7 @@ Feature: Export a duty-plan calendar
     And the diagnostic text identifies "2026-06.pdf" and the reason
     And the page offers a way to choose another plan
 
-  @givn.added @wip
+  @givn.added
   Scenario: A failed attempt withdraws a calendar offered by an earlier attempt
     Given the converter page served from the built Site output
     When the crew member supplies the supported duty plan "2026-06.pdf" through the file picker
