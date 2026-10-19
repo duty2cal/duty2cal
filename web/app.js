@@ -12,6 +12,10 @@ const MAX_BYTES = 20 * 1024 * 1024;
 /** Live object URLs, revoked when an attempt is replaced. */
 let offers = [];
 
+/** The current WASM instance's usability; a trap forces a fresh instance. */
+let instanceReady = false;
+let needsReinit = false;
+
 const status = document.getElementById('status');
 const choose = document.getElementById('choose');
 const picker = document.getElementById('plan');
@@ -76,6 +80,15 @@ function setControlsDisabled(disabled) {
   dropZone.setAttribute('aria-disabled', String(disabled));
 }
 
+/** Instantiate the module again after a trap, or on first use. */
+async function ensureInstance() {
+  if (!instanceReady || needsReinit) {
+    await init(decodeBase64(wasmBase64));
+    instanceReady = true;
+    needsReinit = false;
+  }
+}
+
 /** Add one in-memory download offer to a container. */
 function addOffer(container, name, content, type) {
   const url = URL.createObjectURL(new Blob([content], { type }));
@@ -88,15 +101,20 @@ function addOffer(container, name, content, type) {
   container.append(link);
 }
 
+/** Make the complete calendar available for saving. */
+function offerCalendar(name, calendar) {
+  addOffer(
+    offerArea,
+    `${stemOf(name)}.ics`,
+    calendar,
+    'text/calendar;charset=utf-8',
+  );
+}
+
 /** Show the ready state for a complete calendar. */
 function showReady(name, calendar) {
   try {
-    addOffer(
-      offerArea,
-      `${stemOf(name)}.ics`,
-      calendar,
-      'text/calendar;charset=utf-8',
-    );
+    offerCalendar(name, calendar);
   } catch {
     // Success is never reported without an offer: this is a failure.
     const reason = 'the calendar could not be offered for saving';
@@ -151,13 +169,25 @@ async function acceptFile(file) {
   status.textContent = 'Converting…';
   setControlsDisabled(true);
 
+  try {
+    await ensureInstance();
+  } catch {
+    needsReinit = true;
+    const reason = 'the converter could not be restarted in this browser';
+    showFailure(name, reason, safeDiagnostic(name, reason));
+    setControlsDisabled(false);
+    return;
+  }
+
   let result;
   try {
     const buffer = await file.arrayBuffer();
     result = convert(name, new Uint8Array(buffer));
   } catch {
-    // A trap or any other non-structured exception: no partial calendar is
-    // offered, and the diagnostic keeps the shared two-line spelling.
+    // A trap or any other non-structured exception: discard the instance so
+    // the next attempt starts fresh, offer no partial calendar, and keep the
+    // shared two-line diagnostic spelling.
+    needsReinit = true;
     const reason = 'the plan could not be processed in this browser';
     showFailure(name, reason, safeDiagnostic(name, reason));
     setControlsDisabled(false);
@@ -222,7 +252,7 @@ async function start() {
     return;
   }
   try {
-    await init(decodeBase64(wasmBase64));
+    await ensureInstance();
   } catch {
     showStartupFailure();
     return;

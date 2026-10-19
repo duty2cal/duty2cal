@@ -9,8 +9,9 @@ direction.
 - Scope: the single converter screen served from the built Site output.
 - Interface: web (one page, no separate routes).
 - Viewports: mobile 360x780; desktop 1920x1080.
-- States: empty, ready, failure. "Converting" is a transient status, not a
-  declared screen state.
+- States: empty, ready, failure, and the separate `cannot-run` startup state
+  (WebAssembly/ES-module/module-instantiation failure, before the picker).
+  "Converting" is a transient status, not a declared screen state.
 - Approval: the operator approved this direction on 2026-10-19 (design review);
   the same decision created the change's `docs/design/design-system.md`.
 - Reference: [`reference/converter-reference.html`](reference/converter-reference.html)

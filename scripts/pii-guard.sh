@@ -40,13 +40,15 @@ strip_calendar() {
 # not committed material, so it is not a place a leak would be published.
 # `terraform.tfstate*` is state ciphertext by ADR-0006; the identifier pattern
 # is a false positive on base64 ciphertext, not evidence of a staff identifier.
+# This guard's own file holds the patterns by construction and is excluded by
+# name only; every other shell script is scanned.
 excludes=(
   --exclude-dir=.git
   --exclude-dir=target
   --exclude-dir=private
   --exclude-dir=node_modules
   --exclude='terraform.tfstate*'
-  --exclude='*.sh'
+  --exclude='pii-guard.sh'
 )
 
 tree_identifier="$(grep -rIEn "$pattern" . "${excludes[@]}" 2>/dev/null \

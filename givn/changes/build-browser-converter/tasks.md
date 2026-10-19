@@ -444,10 +444,11 @@ Use-case constraint: main-flow step 1 refuses a browser-supplied plan larger tha
   2 steps (1 passed, 1 failed)
   RED_EXIT=101
   ```
-- [x] GREEN — real assertions and minimum production code; production files modified:
-  - `web/app.js` — `MAX_BYTES`, the pre-read size guard (accept path), ready-state
-    rendering and the `Save 2026-06.ics` offer. (The page landed with scenario 1; this
-    scenario is what proves the exact-size boundary and the ready offer.)
+- [x] GREEN — real assertions; reuse of production code introduced by `4e0d466` (no new production file):
+  - **Reuse:** `web/app.js` — `MAX_BYTES`, the pre-read size guard (accept path),
+    ready-state rendering and the `Save 2026-06.ics` offer were introduced by the
+    equivalence scenario's commit `4e0d466`; this scenario's commit adds the exact-size
+    test support and steps.
   - Test support: `apps/cli/tests/steps/support.rs` — `build_pdf_at_size`, a
     content-stream comment-padding helper that produces exactly 20 MiB while keeping
     the trailing `%%EOF` readable; the builder-to-reader check asserts the CLI accepts
@@ -526,8 +527,10 @@ is offered; a diagnostic offer is attempted.
   2 steps (1 passed, 1 failed)
   RED_EXIT=101
   ```
-- [x] GREEN — real assertions and minimum production code; production files modified:
-  - `crates/duty2cal-core/src/application/mod.rs` — `pub fn diagnostic_text(...)`.
+- [x] GREEN — real assertions; reuse of production code introduced by `30008f0` and `4e0d466` (no new production file):
+  - **Reuse:** the shared `diagnostic_text` (setup `30008f0`), the failure object and
+    the page failure/diagnostic path (`4e0d466`) were already present; this scenario's
+    commit adds the 25 MiB fixture and the refusal/diagnostic steps.
   - `apps/cli/src/main.rs` — `report()` uses the shared function (no format change).
   - `ffi/wasm/src/lib.rs` — the `diagnostic_text` wasm export and the failure object's
     `diagnostic` field.
@@ -619,7 +622,8 @@ fails explicitly; no calendar is offered and a diagnostic is attempted.
   2 steps (1 passed, 1 failed)
   RED_EXIT=101
   ```
-- [x] GREEN — real assertions; production files:
+- [x] GREEN — real assertions; reuse of production code introduced by `4e0d466` (no new production file):
+  - **Reuse:** the family-recognition and failure/diagnostic path landed with `4e0d466`.
   - None created. Exercised unchanged: `crates/duty2cal-pdf/src/lib.rs`
     (`PdfRosterSource` recognition), `crates/duty2cal-core/src/application/mod.rs`
     (`SourceError::UnsupportedFamily`), `ffi/wasm/src/lib.rs` (error mapping), and the
@@ -705,7 +709,8 @@ failure is visible and a diagnostic is attempted.
   2 steps (1 passed, 1 failed)
   RED_EXIT=101
   ```
-- [x] GREEN — real assertions; production files:
+- [x] GREEN — real assertions; reuse of production code introduced by `4e0d466` (no new production file):
+  - **Reuse:** the unresolved-activity failure path landed with `4e0d466`.
   - None created or modified. Exercised unchanged: `crates/duty2cal-core/src/application/mod.rs`
     (`interpret`, `classify`, `ConvertError::UnresolvedRequiredActivity`),
     `ffi/wasm/src/lib.rs` (failure mapping), `web/app.js` (failure rendering).
@@ -780,7 +785,8 @@ offered.
   2 steps (1 passed, 1 failed)
   RED_EXIT=101
   ```
-- [x] GREEN — real assertions; production files:
+- [x] GREEN — real assertions; reuse of production code introduced by `4e0d466` (no new production file):
+  - **Reuse:** `acceptFile`/`clearAttempt`/`withdrawOffers` landed with `4e0d466`.
   - None modified. `web/app.js` already clears first in `acceptFile`: `clearAttempt`
     calls `withdrawOffers`, which revokes every tracked URL and empties both offer
     containers before the size guard or the read (implemented and committed with the
@@ -929,7 +935,8 @@ primary failure remains visible and the page states that no diagnostic was offer
   1 step (1 failed)
   RED_EXIT=101
   ```
-- [x] GREEN — real assertions; production files:
+- [x] GREEN — real assertions; reuse of production code introduced by `63974a1` (no new production file):
+  - **Reuse:** the diagnostic-offer try/catch and `#failure-note` landed with scenario 7's commit `63974a1`.
   - None modified in this scenario. The two production pieces this scenario exercises
     landed with scenario 7's shared offer path because both offers are created by the
     same `addOffer`: `web/app.js` catches a diagnostic-offer failure, keeps the primary
@@ -1074,7 +1081,8 @@ refused by name with no file picker and no calendar.
   1 step (1 failed)
   RED_EXIT=101
   ```
-- [x] GREEN — real assertions and minimum production code; production files:
+- [x] GREEN — real assertions; reuse of production code introduced by `30008f0` (no new production file):
+  - **Reuse:** the capability gate and ES-module branch landed with the setup commit `30008f0`.
   - `web/capability.js` — the ES-module branch and the `noModule` fallback already
     existed in the committed baseline; no change was needed.
   - `web/e2e/driver.mjs` — the `start` mode `no-modules`, whose init script replaces
@@ -1762,6 +1770,25 @@ has this single `@e2e` scenario.
   `43e916da75795fc754059f796aa3ffcdf4b5cc17` (9 files: the driver, both step files, the
   feature tag, this task list, and the four committed screenshots).
 
+## Reuse-scenario production record (review F7)
+
+The following checked scenarios reuse production behavior introduced by an
+earlier commit. Their own commits add the assertions, fixtures, driver actions
+or evidence; the production commit below is the implementation evidence. No
+checked task is a stub.
+
+| Scenario | Scenario commit | Production behavior commit | What the scenario commit adds |
+|---|---|---|---|
+| The browser offers the same calendar as the executable | `4e0d466` | `4e0d466` | Facade, page, driver, equivalence steps and reference fixture |
+| A plan at the supported size bound is accepted | `afd900b` | `4e0d466` | Exact-size test support and steps |
+| A plan larger than the supported size bound is refused by name | `8b33b34` | `30008f0`, `4e0d466` | 25 MiB fixture and refusal/diagnostic steps |
+| A source outside the supported family is rejected with a diagnostic offer | `b078df5` | `4e0d466` | Family fixture and steps |
+| An unresolved required activity is rejected with a diagnostic offer | `c6eab05` | `4e0d466` | Unresolved-activity fixture and steps |
+| A failed attempt withdraws a calendar offered by an earlier attempt | `66593de` | `4e0d466` | Stale-offer steps |
+| A diagnostic that cannot be offered does not hide the primary failure | `78ad4e4` | `63974a1` | Diagnostic-failure steps |
+| A browser without ES-module support shows the cannot-run message | `5a82432` | `30008f0` | ES-module branch steps and driver mode |
+| Crew member converts ... and saves the offered calendar (`@e2e`) | `43e916d` | `4e0d466`, `63974a1` | Driver actions, e2e steps and screenshots |
+
 ## Final verification (after every section is GREEN)
 
 - [x] `./run-tests.sh` — full suite exits 0. 166 scenarios (166 passed), 744 steps
@@ -1830,9 +1857,12 @@ has this single `@e2e` scenario.
   regenerated `THIRD-PARTY-NOTICES.md` → no diff. The previously recorded
   `pii-guard` blocker was resolved without rewriting history:
   `bash scripts/pii-guard.sh` → `pii-guard: clean`, exit 0. The guard keeps only
-  the documented targeted exclusions — `node_modules` and `terraform.tfstate*`
-  in the tree scan, and `terraform.tfstate*` plus the superseded revisions of
-  `apps/cli/tests/fixtures/expected/2026-06.ics` in the history scan. The
+  the documented targeted content exclusions — `node_modules` and
+  `terraform.tfstate*` in the tree scan, and `terraform.tfstate*` plus the
+  superseded revisions of `apps/cli/tests/fixtures/expected/2026-06.ics` in
+  the history scan. The guard's own file and the standard `.git`, `target` and
+  `private` directories are excluded by construction; every other path,
+  including shell scripts, is scanned. The
   committed reference fixture was regenerated from the equivalence plan with the
   fictional-year convention (2099 dates and footer; the scenario stems remain
   `2026-06.pdf`/`2026-06.ics`), and the browser download was byte-identical to
