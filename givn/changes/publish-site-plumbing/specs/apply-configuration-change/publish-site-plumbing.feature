@@ -100,7 +100,7 @@ Feature: Publish site plumbing
     And the applied state is marked stale
     And a new preview refuses and names the stale applied state
 
-  @givn.added @wip
+  @givn.added
   Scenario: An apply refused before the first live write leaves the state unchanged and writes no stale marker
     Given the applied state binds every object the earlier configuration changes declared
     And a previewed revision that adds the pages publishing key, its secret and the pages rule set

@@ -261,7 +261,7 @@ REFACTOR exit/output: exit 0; 1 scenario passed, 11 steps passed
 commit: PENDING
 ```
 
-### [ ] Scenario 6 — An apply refused before the first live write leaves the state unchanged and writes no stale marker
+### [x] Scenario 6 — An apply refused before the first live write leaves the state unchanged and writes no stale marker
 
 **Design constraints**
 
@@ -271,20 +271,20 @@ commit: PENDING
 
 **TDD evidence**
 
-- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "An apply refused before the first live write leaves the state unchanged and writes no stale marker"`. Paste the non-zero output.
-- [ ] GREEN: add the clean-refusal fault, the raw-apply priming and the step assertions; list production files. Run the same command; exit zero.
-- [ ] REFACTOR: clean up; rerun; exit zero.
-- [ ] COMMIT: `givn commit -m "feat(apply-configuration-change): keep the pages state unchanged on a refused create"`; record the hash.
+- [x] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "An apply refused before the first live write leaves the state unchanged and writes no stale marker"`. Paste the non-zero output.
+- [x] GREEN: add the clean-refusal fault, the raw-apply priming and the step assertions; list production files. Run the same command; exit zero.
+- [x] REFACTOR: clean up; rerun; exit zero.
+- [x] COMMIT: `givn commit -m "feat(apply-configuration-change): keep the pages state unchanged on a refused create"`; record the hash.
 
 ```text
-RED command:
-RED exit/output:
-GREEN production files:
-GREEN command:
-GREEN exit/output:
-REFACTOR command:
-REFACTOR exit/output:
-commit:
+RED command: ./run-tests.sh --name "An apply refused before the first live write leaves the state unchanged and writes no stale marker"
+RED exit/output: exit 101; "Step doesn't match any function" at "the owner's authority cannot create any live object the revision declares"
+GREEN production files: apps/cli/tests/steps/publish_site_plumbing.rs (the two exact 403 create faults, the off-routine raw apply that records a planned value, the clean-refusal assertions)
+GREEN command: same
+GREEN exit/output: exit 0; 1 scenario passed, 10 steps passed
+REFACTOR command: same
+REFACTOR exit/output: exit 0; 1 scenario passed, 10 steps passed
+commit: PENDING
 ```
 
 ### [ ] Scenario 7 — A green apply after a partial failure creates only the objects the state does not bind and completes the revision

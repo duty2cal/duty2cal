@@ -1124,6 +1124,62 @@ fn transcript_line<'a>(transcript: &'a str, prefix: &str) -> &'a str {
         .unwrap_or_else(|| panic!("the report carries a {prefix:?} line; output was:\n{transcript}"))
 }
 
+
+#[given("the owner's authority cannot create any live object the revision declares")]
+async fn the_owners_authority_cannot_create_any_live_object(w: &mut DutyWorld) {
+    assert!(
+        w.plan_path.is_some(),
+        "the scenario holds no previewed revision"
+    );
+    append_fault(
+        w,
+        "{\"path_regex\": \"^/repos/duty2cal/duty2cal\\\\.github\\\\.io/keys$\", \
+         \"method\": \"POST\", \"status\": 403, \
+         \"body\": {\"message\": \"Resource not accessible by integration\"}}",
+    );
+    append_fault(
+        w,
+        "{\"path_regex\": \"^/repos/duty2cal/duty2cal\\\\.github\\\\.io/rulesets$\", \
+         \"method\": \"POST\", \"status\": 403, \
+         \"body\": {\"message\": \"Resource not accessible by integration\"}}",
+    );
+}
+
+#[given("the failed apply records the planned deploy key in its state without creating it live")]
+async fn the_failed_apply_records_the_planned_deploy_key(w: &mut DutyWorld) {
+    let plan = w
+        .plan_path
+        .clone()
+        .expect("the scenario holds no previewed revision");
+    let apply = tofu(
+        w,
+        &[
+            "apply",
+            "-input=false",
+            "-no-color",
+            "-parallelism=1",
+            "plan.bin",
+        ],
+    );
+    assert!(
+        !apply.status.success(),
+        "the priming apply fails without creating a live object; output was:\n{}",
+        combined(&apply)
+    );
+    assert!(
+        plan.is_file(),
+        "the saved plan remains after the priming apply"
+    );
+    let (keys, _, _) = live_lists(w).expect("the live lists remain readable");
+    let keys = report(w, "primed-keys.json", &keys);
+    assert_eq!(
+        jq(w, ".[0] | length", &keys, false),
+        "0",
+        "the priming apply created no live deploy key"
+    );
+    w.applied_state_snapshot = Some(state_values(w));
+}
+
 #[given("a previewed revision that adds the pages publishing key, its secret and the pages rule set")]
 async fn a_previewed_pages_revision(w: &mut DutyWorld) {
     preview(w);
@@ -1515,4 +1571,50 @@ async fn the_applied_state_records_all_live_objects(w: &mut DutyWorld) {
             "the applied state records {address}; it was: {addresses:?}"
         );
     }
+}
+
+#[then("the apply fails and names the pages rule set")]
+async fn the_apply_fails_and_names_the_pages_rule_set(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the apply fails; output was:\n{}",
+        w.apply_transcript
+    );
+    assert!(
+        w.apply_transcript
+            .contains("github_repository_ruleset.pages_publish"),
+        "the apply names the pages rule set; output was:\n{}",
+        w.apply_transcript
+    );
+}
+
+#[then("the failure report names the pages deploy key and the pages rule set as not created")]
+async fn the_failure_report_names_the_refused_objects(w: &mut DutyWorld) {
+    let line = transcript_line(&w.apply_transcript, "failed:");
+    for expected in [
+        "github_repository_deploy_key.pages_publish",
+        "github_repository_ruleset.pages_publish",
+    ] {
+        assert!(
+            line.contains(expected),
+            "the failed report names {expected}; output was:\n{}",
+            w.apply_transcript
+        );
+    }
+}
+
+#[then("no live object is created")]
+async fn no_live_object_is_created(w: &mut DutyWorld) {
+    let (keys, secrets, rulesets) = live_lists(w).expect("the live lists remain readable");
+    let keys = report(w, "refused-keys.json", &keys);
+    let secrets = report(w, "refused-secrets.json", &secrets);
+    let rulesets = report(w, "refused-rulesets.json", &rulesets);
+    assert_eq!(jq(w, ".[0] | length", &keys, false), "0", "no deploy key is live");
+    assert_eq!(jq(w, ".total_count", &secrets, false), "0", "no secret is live");
+    assert_eq!(
+        jq(w, ".[0] | length", &rulesets, false),
+        "0",
+        "no rule set is live"
+    );
 }
