@@ -97,7 +97,7 @@ fn jq_true(w: &DutyWorld, filter: &str, report: &std::path::Path) -> bool {
 }
 
 /// Write a response body to the scenario directory for `jq`.
-fn report(w: &DutyWorld, name: &str, body: &str) -> PathBuf {
+pub(crate) fn report(w: &DutyWorld, name: &str, body: &str) -> PathBuf {
     let path = scenario_dir_for(w).join(name);
     fs::write(&path, body).expect("write a fake API response for jq");
     path
@@ -197,7 +197,7 @@ pub(crate) fn prime_pages_state(w: &mut DutyWorld) {
 
 /// The fake's three live list bodies, wrapped the way `gh --slurp` returns
 /// the paginated lists so the design's own verdict filters apply unchanged.
-fn live_lists(w: &DutyWorld) -> Result<(String, String, String), String> {
+pub(crate) fn live_lists(w: &DutyWorld) -> Result<(String, String, String), String> {
     let (status, keys) =
         fake_request(w, "GET", "/repos/duty2cal/duty2cal.github.io/keys", &[], None);
     if status != 200 {

@@ -10,6 +10,8 @@
 use std::fs;
 use std::path::PathBuf;
 
+use cucumber::{given, then};
+
 use crate::steps::adopt_existing_configuration::{repository_root, BILLING_EMAIL, PASSPHRASE, TOKEN};
 use crate::DutyWorld;
 
@@ -83,4 +85,140 @@ fn commit_transcript(w: &DutyWorld, slug: &str) {
         evidence.push_str(&format!("exit status: {status}\n"));
     }
     fs::write(&path, evidence).expect("write the transcript");
+}
+
+/// The four declared addresses, in the design's order.
+const DECLARED: [&str; 4] = [
+    "github_repository_deploy_key.pages_publish",
+    "github_actions_secret.pages_publish",
+    "github_repository_ruleset.pages_publish",
+    "tls_private_key.pages_publish",
+];
+
+/// The creates in the saved plan, sorted.
+const CREATES: &str = r#"
+[ .resource_changes[]?
+  | select((.change.actions // []) == ["create"])
+  | .address ]
+| sort
+| join(" ")
+"#;
+
+/// Every non-no-op change in the saved plan, as `address action`.
+const CHANGES: &str = r#"
+[ .resource_changes[]?
+  | select((.change.actions // []) != ["no-op"])
+  | "\(.address) \(.change.actions | join(","))" ]
+| sort
+| join(" ")
+"#;
+
+/// The saved plan's JSON report.
+fn plan_report(w: &DutyWorld) -> PathBuf {
+    let report = crate::steps::enable_repository_security::scenario_dir_for(w).join("preview.json");
+    assert!(
+        report.is_file(),
+        "the preview wrote no plan report at {}",
+        report.display()
+    );
+    report
+}
+
+#[given("the pages repository has no deploy key and no rule set")]
+async fn the_pages_repository_has_no_deploy_key_and_no_rule_set(w: &mut DutyWorld) {
+    mark_evidence(
+        w,
+        "organization-owner-previews-the-pages-plumbing-and-only-the-three-live-creations-are-named",
+    );
+    let (keys, _, rulesets) =
+        crate::steps::publish_site_plumbing::live_lists(w).expect("the live lists are readable");
+    let keys = crate::steps::publish_site_plumbing::report(w, "e2e-empty-keys.json", &keys);
+    let rulesets =
+        crate::steps::publish_site_plumbing::report(w, "e2e-empty-rulesets.json", &rulesets);
+    assert_eq!(
+        crate::steps::enable_repository_security::jq(w, ".[0] | length", &keys, false),
+        "0",
+        "the pages repository has no deploy key"
+    );
+    assert_eq!(
+        crate::steps::enable_repository_security::jq(w, ".[0] | length", &rulesets, false),
+        "0",
+        "the pages repository has no rule set"
+    );
+}
+
+#[given(regex = r#"^the monorepo has no "([^"]+)" secret$"#)]
+async fn the_monorepo_has_no_secret(w: &mut DutyWorld, name: String) {
+    let (_, secrets, _) =
+        crate::steps::publish_site_plumbing::live_lists(w).expect("the live lists are readable");
+    let secrets = crate::steps::publish_site_plumbing::report(w, "e2e-empty-secrets.json", &secrets);
+    assert_eq!(
+        crate::steps::enable_repository_security::jq(
+            w,
+            &format!("[.secrets[]? | select(.name == {name:?})] | length"),
+            &secrets,
+            false
+        ),
+        "0",
+        "the monorepo has no {name} secret"
+    );
+}
+
+/// Assert one address is in the saved plan's create set.
+fn assert_create(w: &DutyWorld, address: &str) {
+    let report = plan_report(w);
+    let creates = crate::steps::enable_repository_security::jq(w, CREATES, &report, false);
+    assert!(
+        creates.split_whitespace().any(|created| created == address),
+        "the preview names {address} as an object to create; report was:\n{}",
+        fs::read_to_string(&report).unwrap_or_default()
+    );
+}
+
+#[then("the preview names the pages deploy key as an object to create")]
+async fn the_preview_names_the_deploy_key_as_a_create(w: &mut DutyWorld) {
+    assert_create(w, "github_repository_deploy_key.pages_publish");
+}
+
+#[then(regex = r#"^the preview names the "([^"]+)" secret as an object to create$"#)]
+async fn the_preview_names_the_secret_as_a_create(w: &mut DutyWorld, name: String) {
+    assert!(
+        plan_report(w).is_file(),
+        "the preview wrote a plan report"
+    );
+    assert_eq!(name, "PAGES_DEPLOY_KEY", "the step names the declared secret");
+    assert_create(w, "github_actions_secret.pages_publish");
+}
+
+#[then("the preview names the pages rule set as an object to create")]
+async fn the_preview_names_the_rule_set_as_a_create(w: &mut DutyWorld) {
+    assert_create(w, "github_repository_ruleset.pages_publish");
+}
+
+#[then("the preview names the generated pages publishing key material as an object to create")]
+async fn the_preview_names_the_generated_key_as_a_create(w: &mut DutyWorld) {
+    assert_create(w, "tls_private_key.pages_publish");
+}
+
+#[then("the preview names no other live object to create or change")]
+async fn the_preview_names_no_other_change(w: &mut DutyWorld) {
+    let report = plan_report(w);
+    let mut expected: Vec<String> = DECLARED
+        .iter()
+        .map(|address| format!("{address} create"))
+        .collect();
+    expected.sort();
+    assert_eq!(
+        crate::steps::enable_repository_security::jq(w, CHANGES, &report, false),
+        expected.join(" "),
+        "the preview names exactly the four creations; report was:\n{}",
+        fs::read_to_string(&report).unwrap_or_default()
+    );
+    let mut declared: Vec<String> = DECLARED.iter().map(|address| (*address).to_string()).collect();
+    declared.sort();
+    assert_eq!(
+        crate::steps::enable_repository_security::jq(w, CREATES, &report, false),
+        declared.join(" "),
+        "the preview's create set is the four declared addresses"
+    );
 }

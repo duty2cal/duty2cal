@@ -363,7 +363,7 @@ e2e command: ./run-tests.sh --e2e
 e2e scenario count: 13 scenarios (8 passed, 5 failed); strictly smaller than the full 194
 strict probe command/exit: ./run-tests.sh --e2e -> exit 101; .fail_on_skipped() is present in apps/cli/tests/features_runner.rs and the pages e2e steps report "Step doesn't match any function"
 fake smoke result: scripts/fake-github/serve.py --writes on an ephemeral 127.0.0.1 port: GET keys -> 200 [], GET actions/secrets -> 200 {"total_count":0,"secrets":[]}, GET actions/secrets/public-key -> 200 key_id 568250167242205012, GET rulesets -> 200 []
-commit: PENDING
+commit: fffa813785ce2f1474fcc1406fa1640e3dd22f59
 ```
 
 - [x] COMMIT: `givn commit -m "chore(apply-configuration-change): prove the e2e filter and scaffold the pages plumbing e2e steps"`; record the hash.
@@ -372,7 +372,7 @@ commit: PENDING
 
 ## `@e2e` scenarios (last)
 
-### [ ] Scenario 9 — Organization owner previews the pages plumbing and only the three live creations are named
+### [x] Scenario 9 — Organization owner previews the pages plumbing and only the three live creations are named
 
 **Design constraints**
 
@@ -382,21 +382,21 @@ commit: PENDING
 
 **TDD evidence**
 
-- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --e2e --name "Organization owner previews the pages plumbing and only the three live creations are named"`. Paste the non-zero output.
-- [ ] GREEN: implement the E2E preview steps, the transcript capture and the assertions; list production files. Run the same command; exit zero.
-- [ ] REFACTOR: clean up; rerun; exit zero.
-- [ ] COMMIT: `givn commit -m "test(e2e): preview the pages plumbing through the real tofu CLI"`; record the hash.
+- [x] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --e2e --name "Organization owner previews the pages plumbing and only the three live creations are named"`. Paste the non-zero output.
+- [x] GREEN: implement the E2E preview steps, the transcript capture and the assertions; list production files. Run the same command; exit zero.
+- [x] REFACTOR: clean up; rerun; exit zero.
+- [x] COMMIT: `givn commit -m "test(e2e): preview the pages plumbing through the real tofu CLI"`; record the hash.
 
 ```text
-RED command:
-RED exit/output:
-GREEN production files:
-GREEN command:
-GREEN exit/output:
-REFACTOR command:
-REFACTOR exit/output:
-transcript path:
-commit:
+RED command: ./run-tests.sh --e2e --name "Organization owner previews the pages plumbing and only the three live creations are named"
+RED exit/output: exit 101; "Step doesn't match any function" at "the pages repository has no deploy key and no rule set" (the first attempt exited 2 because cucumber-rs rejects `--tags` with `--name`; run-tests.sh now drops the incompatible tag filter for a named run, the counts run keeps it)
+GREEN production files: apps/cli/tests/steps/e2e/publish_site_plumbing.rs (S9 steps, evidence marker, scrubbed transcript); apps/cli/tests/steps/publish_site_plumbing.rs (`live_lists`/`report` visibility); apps/cli/tests/steps/enable_repository_security.rs + apps/cli/tests/steps/publish_site_plumbing.rs (terminal transcript hooks); run-tests.sh (named `--e2e` run)
+GREEN command: same
+GREEN exit/output: exit 0; 1 scenario passed, 12 steps passed
+REFACTOR command: same
+REFACTOR exit/output: exit 0; 1 scenario passed, 12 steps passed
+transcript path: givn/changes/publish-site-plumbing/evidence/visual/organization-owner-previews-the-pages-plumbing-and-only-the-three-live-creations-are-named/transcript.txt
+commit: PENDING
 ```
 
 ### [ ] Scenario 10 — Organization owner applies the previewed revision and the pages publishing credential is created

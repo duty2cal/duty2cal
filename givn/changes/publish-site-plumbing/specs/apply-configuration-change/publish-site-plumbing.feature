@@ -2,7 +2,7 @@
 
 Feature: Publish site plumbing
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Organization owner previews the pages plumbing and only the three live creations are named
     Given the applied state binds every object the earlier configuration changes declared
     And the pages repository has no deploy key and no rule set
