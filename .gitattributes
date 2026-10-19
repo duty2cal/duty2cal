@@ -1,0 +1,3 @@
+# RFC 5545 calendars use CRLF. Keep the checked-out references CRLF so the
+# executable/browser comparisons see the same bytes the converter emits.
+*.ics text eol=crlf
