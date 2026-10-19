@@ -326,23 +326,26 @@ equivalence holds only when the source supplies its revision timestamp.
 - The WASM bytes are inlined as base64 and passed to `init(bytes)`; the CSP
   `connect-src 'none'` is never weakened and no `.wasm` request is made.
 
-- [ ] RED — remove `@wip` from this scenario only; add `unimplemented!()` stubs for its
+- [x] RED — remove `@wip` from this scenario only; add `unimplemented!()` stubs for its
   five steps in `apps/cli/tests/steps/export_duty_plan_calendar.rs` (helper hooks in
   `apps/cli/tests/steps/browser.rs`); run the single-scenario command; paste the
-  non-zero output (expected shape):
+  non-zero output:
   ```
-  $ ./run-tests.sh --name "The browser offers the same calendar the executable produces for the same plan"
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "The browser offers the same calendar the executable produces for the same plan"
   Feature: Export a duty-plan calendar
     Scenario: The browser offers the same calendar the executable produces for the same plan
      ✘  Given the supported duty plan "2026-06.pdf" whose Created footer supplies its revision timestamp
-        Step panicked. Captured output: not implemented: build the Created-footer equivalence fixture
+        Step failed:
+        Defined: tmp/tmp.c5EPz58Lms/f0006.feature:21:5
+        Matched: apps/cli/tests/steps/export_duty_plan_calendar.rs:2728:1
+        Step panicked. Captured output: not implemented: the supported duty plan "2026-06.pdf" whose Created footer supplies its revision timestamp
   [Summary]
   1 feature
   1 scenario (1 failed)
   1 step (1 failed)
   RED_EXIT=101
   ```
-- [ ] GREEN — replace the stubs with real assertions; minimum production code. Production
+- [x] GREEN — replace the stubs with real assertions; minimum production code. Production
   files created/modified:
   - `ffi/wasm/src/lib.rs` — `convert` mapping, `BrowserClock`, native `NativeClock`,
     structured success/failure.
@@ -357,9 +360,16 @@ equivalence holds only when the source supplies its revision timestamp.
   `Created <stamp>` footer row), and `apps/cli/tests/fixtures/expected/2026-06.ics`
   (generated from the CLI output after the byte-identity assertion passes;
   generated/anonymized values only).
-  Run the single-scenario command; paste the zero-exit output (expected shape):
+  One build detail: the conversion code emits saturating float-to-int operations, so
+  `ffi/wasm/Cargo.toml` now also passes `--enable-nontrapping-float-to-int` to the
+  pinned binaryen (the CSP and the inline-bytes path are unchanged).
   ```
-  $ ./run-tests.sh --name "The browser offers the same calendar the executable produces for the same plan"
+  $ scripts/build-web.sh
+  [INFO]: ✨   Done in 19.40s
+  BUILD_EXIT=0
+  $ cargo fmt --all --check -> FMT OK
+  $ cargo clippy --workspace --all-targets -- -D warnings -> clean (CLIPPY_EXIT=0)
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "The browser offers the same calendar the executable produces for the same plan"
   Feature: Export a duty-plan calendar
     Scenario: The browser offers the same calendar the executable produces for the same plan
      ✔  Given the supported duty plan "2026-06.pdf" whose Created footer supplies its revision timestamp
@@ -373,14 +383,27 @@ equivalence holds only when the source supplies its revision timestamp.
   5 steps (5 passed)
   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — review the page/facade for dead weight (no framework, no bundler, no
+- [x] REFACTOR — review the page/facade for dead weight (no framework, no bundler, no
   third-party runtime asset), keep the facade free of filesystem/network access, and
-  re-run the single-scenario command; paste the zero-exit output:
+  re-run the single-scenario command. The committed `2026-06.ics` fixture is now also
+  asserted against the executable's output, so the generated reference is exercised
+  rather than merely stored:
   ```
   cargo fmt --all --check -> FMT OK
-  cargo clippy --workspace --all-targets -- -D warnings -> clean
-  $ ./run-tests.sh --name "The browser offers the same calendar the executable produces for the same plan"
-  1 scenario (1 passed), 5 steps (5 passed)   REFACTOR_EXIT=0
+  cargo clippy --workspace --all-targets -- -D warnings -> clean (CLIPPY_EXIT=0)
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "The browser offers the same calendar the executable produces for the same plan"
+  Feature: Export a duty-plan calendar
+    Scenario: The browser offers the same calendar the executable produces for the same plan
+     ✔  Given the supported duty plan "2026-06.pdf" whose Created footer supplies its revision timestamp
+     ✔  And the converter page served from the built Site output
+     ✔  And the executable has published the calendar for that plan
+     ✔  When the crew member supplies that plan through the file picker
+     ✔  Then the offered calendar is byte-identical to the executable's calendar
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  5 steps (5 passed)
+  REFACTOR_EXIT=0
   ```
 - [ ] COMMIT: one commit for RED+GREEN+REFACTOR; subject is the release note above
   (`feat(export-duty-plan-calendar): …`), body contains

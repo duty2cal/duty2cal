@@ -50,12 +50,41 @@ impl Clock for BrowserClock {
 
 /// Convert one supplied plan and return the page's structured result.
 ///
-/// The conversion wiring lands with the scenarios; the export exists so the
-/// wasm bundle and the inline-bytes CSP path are proved at setup time.
+/// Success is `{ status: "ok", calendar }`; failure is
+/// `{ status: "failure", reason, diagnostic }`. The facade chooses neither a
+/// path nor a save location, and performs no I/O of its own.
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub fn convert(_filename: &str, _bytes: &[u8]) -> JsValue {
-    unimplemented!("convert")
+pub fn convert(filename: &str, bytes: &[u8]) -> JsValue {
+    use duty2cal_core::adapters::ics::IcsSink;
+    use duty2cal_core::application::ConvertRoster;
+    use duty2cal_pdf::PdfRosterSource;
+
+    let result = js_sys::Object::new();
+    match ConvertRoster::new(PdfRosterSource, IcsSink, BrowserClock).execute(bytes) {
+        Ok(outcome) => {
+            set_property(&result, "status", "ok");
+            set_property(&result, "calendar", &outcome.calendar);
+        }
+        Err(error) => {
+            let reason = error.to_string();
+            set_property(&result, "status", "failure");
+            set_property(&result, "reason", &reason);
+            set_property(
+                &result,
+                "diagnostic",
+                &core_diagnostic_text(filename, &reason),
+            );
+        }
+    }
+    result.into()
+}
+
+/// Set one string property on the plain result object.
+#[cfg(target_arch = "wasm32")]
+fn set_property(object: &js_sys::Object, key: &str, value: &str) {
+    js_sys::Reflect::set(object, &JsValue::from_str(key), &JsValue::from_str(value))
+        .expect("the result object accepts a string property");
 }
 
 /// The two-line diagnostic report for a failure the page detects itself.

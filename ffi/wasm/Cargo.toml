@@ -10,10 +10,15 @@ license.workspace = true
 # lint the crate without a wasm target.
 crate-type = ["cdylib", "rlib"]
 
-# Rust 1.99 emits bulk-memory operations; the binaryen bundled with wasm-pack
-# 0.15.0 rejects them unless the feature is enabled explicitly.
+# Rust 1.99 emits bulk-memory and saturating float-to-int operations; the
+# binaryen bundled with wasm-pack 0.15.0 rejects them unless the features are
+# enabled explicitly.
 [package.metadata.wasm-pack.profile.release]
-wasm-opt = ["-O", "--enable-bulk-memory"]
+wasm-opt = [
+    "-O",
+    "--enable-bulk-memory",
+    "--enable-nontrapping-float-to-int",
+]
 
 [dependencies]
 duty2cal-core = { path = "../../crates/duty2cal-core" }
