@@ -10,7 +10,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
-use cucumber::{given, then, when};
+use cucumber::{given, then};
 
 use crate::steps::adopt_existing_configuration::{
     adopt, adoption_output, copy_declaration, copy_tree, declaration_dir, fixtures_dir,
@@ -1835,5 +1835,136 @@ async fn a_later_targeted_preview_reports_no_differences(w: &mut DutyWorld) {
             .contains("the revision is already applied; nothing to create"),
         "the follow-up preview reports no differences; output was:\n{}",
         w.preview_transcript
+    );
+}
+
+/// The fake's Pages configuration for the pages repository, with the stock
+/// site's source asserted.
+fn stock_site(w: &DutyWorld) -> String {
+    let (status, body) = fake_request(
+        w,
+        "GET",
+        "/repos/duty2cal/duty2cal.github.io/pages",
+        &[],
+        None,
+    );
+    assert_eq!(status, 200, "the pages configuration is readable: {body}");
+    let report = report(w, "stock-site.json", &body);
+    assert_eq!(
+        jq(w, ".source.branch", &report, false),
+        "main",
+        "the stock site is served from main"
+    );
+    assert_eq!(
+        jq(w, ".source.path", &report, false),
+        "/",
+        "the stock site is served from the repository root"
+    );
+    assert_eq!(
+        jq(w, ".build_type", &report, false),
+        "legacy",
+        "the stock site uses the legacy builder"
+    );
+    body
+}
+
+/// The applied writes the journal records after the scenario's offset.
+fn journal_writes(w: &DutyWorld, offset: usize) -> Vec<String> {
+    let lines = journal_lines(w);
+    let tail = lines.iter().skip(offset).cloned().collect::<Vec<_>>().join("\n");
+    let path = scenario_dir_for(w).join("journal-after.jsonl");
+    fs::write(&path, tail).expect("write the journal tail");
+    let writes = jq(
+        w,
+        "[.[] | select(.applied_write == true) | .path] | sort | join(\" \")",
+        &path,
+        true,
+    );
+    if writes.is_empty() {
+        Vec::new()
+    } else {
+        writes.split_whitespace().map(str::to_owned).collect()
+    }
+}
+
+#[given(regex = r#"^the pages repository serves the stock site from "([^"]+)" at "([^"]+)"$"#)]
+async fn the_pages_repository_serves_the_stock_site(
+    w: &mut DutyWorld,
+    branch: String,
+    path: String,
+) {
+    assert_eq!(branch, "main", "the step names the stock site's branch");
+    assert_eq!(path, "/", "the step names the stock site's path");
+    let site = stock_site(w);
+    let dir = scenario_dir_for(w);
+    fs::write(dir.join("stock-site-before.json"), &site).expect("record the stock site");
+
+    let (status, pages_repository) =
+        fake_request(w, "GET", "/repos/duty2cal/duty2cal.github.io", &[], None);
+    assert_eq!(status, 200, "the pages repository is readable: {pages_repository}");
+    fs::write(dir.join("pages-repository-before.json"), &pages_repository)
+        .expect("record the pages repository");
+
+    let (status, monorepo) = fake_request(w, "GET", "/repos/duty2cal/duty2cal", &[], None);
+    assert_eq!(status, 200, "the monorepo is readable: {monorepo}");
+    fs::write(dir.join("monorepo-before.json"), &monorepo).expect("record the monorepo");
+}
+
+#[then(regex = r#"^the pages repository still serves the stock site from "([^"]+)" at "([^"]+)"$"#)]
+async fn the_pages_repository_still_serves_the_stock_site(
+    w: &mut DutyWorld,
+    branch: String,
+    path: String,
+) {
+    assert_eq!(branch, "main", "the step names the stock site's branch");
+    assert_eq!(path, "/", "the step names the stock site's path");
+    let site = stock_site(w);
+    let before = fs::read_to_string(scenario_dir_for(w).join("stock-site-before.json"))
+        .expect("read the recorded stock site");
+    assert_eq!(site, before, "the Pages configuration is unchanged by the apply");
+}
+
+#[then("the apply wrote no site file, no Pages configuration and no repository setting")]
+async fn the_apply_wrote_no_site_configuration(w: &mut DutyWorld) {
+    let dir = scenario_dir_for(w);
+    for (name, before_name) in [
+        ("pages-repository-after.json", "pages-repository-before.json"),
+        ("monorepo-after.json", "monorepo-before.json"),
+    ] {
+        let request = if name.starts_with("pages") {
+            "/repos/duty2cal/duty2cal.github.io"
+        } else {
+            "/repos/duty2cal/duty2cal"
+        };
+        let (status, body) = fake_request(w, "GET", request, &[], None);
+        assert_eq!(status, 200, "{request} remains readable: {body}");
+        fs::write(dir.join(name), &body).expect("record the live repository body");
+        let before = fs::read_to_string(dir.join(before_name))
+            .expect("read the recorded repository body");
+        assert_eq!(body, before, "{request}'s settings are unchanged by the apply");
+    }
+
+    let writes = journal_writes(w, w.journal_offset);
+    for path in &writes {
+        assert!(
+            !path.contains("/contents/") && !path.ends_with("/pages"),
+            "the apply wrote no site file or Pages configuration; it wrote {path}"
+        );
+    }
+}
+
+#[then("the journal records no applied write other than the deploy key, the secret and the rule set")]
+async fn the_journal_records_only_the_credential_writes(w: &mut DutyWorld) {
+    let mut writes = journal_writes(w, w.journal_offset);
+    writes.sort();
+    let mut expected = vec![
+        "/repos/duty2cal/duty2cal.github.io/keys".to_string(),
+        "/repos/duty2cal/duty2cal.github.io/rulesets".to_string(),
+        "/repos/duty2cal/duty2cal/actions/secrets/PAGES_DEPLOY_KEY".to_string(),
+    ];
+    expected.sort();
+    assert_eq!(
+        writes, expected,
+        "the journal records exactly the deploy-key, secret and rule-set writes"
     );
 }

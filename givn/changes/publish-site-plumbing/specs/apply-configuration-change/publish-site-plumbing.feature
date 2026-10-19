@@ -127,7 +127,7 @@ Feature: Publish site plumbing
     And the applied state is no longer marked stale
     And a later targeted preview of the pages plumbing reports no differences
 
-  @givn.added @wip
+  @givn.added
   Scenario: Applying the pages plumbing leaves the published site and its source untouched
     Given the applied state binds every object the earlier configuration changes declared
     And the pages repository serves the stock site from "main" at "/"

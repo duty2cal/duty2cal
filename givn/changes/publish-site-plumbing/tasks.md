@@ -313,7 +313,7 @@ REFACTOR exit/output: exit 0; 1 scenario passed, 11 steps passed
 commit: PENDING
 ```
 
-### [ ] Scenario 8 — Applying the pages plumbing leaves the published site and its source untouched
+### [x] Scenario 8 — Applying the pages plumbing leaves the published site and its source untouched
 
 **Design constraints**
 
@@ -323,20 +323,20 @@ commit: PENDING
 
 **TDD evidence**
 
-- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "Applying the pages plumbing leaves the published site and its source untouched"`. Paste the non-zero output.
-- [ ] GREEN: add the stock-site fixture and the journal assertions; list production files. Run the same command; exit zero.
-- [ ] REFACTOR: clean up; rerun; exit zero.
-- [ ] COMMIT: `givn commit -m "feat(apply-configuration-change): leave the stock pages site untouched by the credential apply"`; record the hash.
+- [x] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "Applying the pages plumbing leaves the published site and its source untouched"`. Paste the non-zero output.
+- [x] GREEN: add the stock-site fixture and the journal assertions; list production files. Run the same command; exit zero.
+- [x] REFACTOR: clean up; rerun; exit zero.
+- [x] COMMIT: `givn commit -m "feat(apply-configuration-change): leave the stock pages site untouched by the credential apply"`; record the hash.
 
 ```text
-RED command:
-RED exit/output:
-GREEN production files:
-GREEN command:
-GREEN exit/output:
-REFACTOR command:
-REFACTOR exit/output:
-commit:
+RED command: ./run-tests.sh --name "Applying the pages plumbing leaves the published site and its source untouched"
+RED exit/output: exit 101; "Step doesn't match any function" at "the pages repository serves the stock site from \"main\" at \"/\""
+GREEN production files: apps/cli/tests/steps/publish_site_plumbing.rs (the stock-site and repository snapshots, the applied-write journal filter and the S8 assertions)
+GREEN command: same
+GREEN exit/output: exit 0; 1 scenario passed, 7 steps passed
+REFACTOR command: same
+REFACTOR exit/output: exit 0; 1 scenario passed, 7 steps passed (the unused `when` import was removed)
+commit: PENDING
 ```
 
 ---
