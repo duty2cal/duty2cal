@@ -97,7 +97,7 @@ Feature: Export a duty-plan calendar
     And the page offers no file picker
     And the page offers no calendar
 
-  @givn.added @wip
+  @givn.added
   Scenario: A browser without ES-module support shows the cannot-run message
     Given the converter page served from the built Site output in a browser without ES-module support
     Then the page shows a cannot-run heading and states that ES modules are required
