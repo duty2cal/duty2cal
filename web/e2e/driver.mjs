@@ -462,7 +462,20 @@ const actions = {
   },
 
   async dismiss_save() {
-    throw new Error('dismiss_save is not implemented yet');
+    if (!page) {
+      throw new Error('the page is not started');
+    }
+    const link = page.locator(offerSelector('calendar'));
+    if ((await link.count()) === 0) {
+      throw new Error('no calendar offer is present to dismiss');
+    }
+    const suggestedFilename = await link.getAttribute('download');
+    const [download] = await Promise.all([
+      page.waitForEvent('download', { timeout: 30000 }),
+      link.click(),
+    ]);
+    await download.cancel();
+    return { dismissed: true, suggestedFilename };
   },
 
   async stop() {

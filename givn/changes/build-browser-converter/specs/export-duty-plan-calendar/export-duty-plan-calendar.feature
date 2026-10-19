@@ -119,7 +119,7 @@ Feature: Export a duty-plan calendar
     Then the page shows that the drop was accepted and the calendar is ready
     And the page offers the file "2026-06.ics"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A cancelled save is not reported as a save
     Given the converter page served from the built Site output
     When the crew member supplies the supported duty plan "2026-06.pdf" through the file picker

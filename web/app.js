@@ -107,6 +107,10 @@ function showReady(name, calendar) {
   const heading = document.createElement('h2');
   heading.textContent = 'Calendar ready';
   offerArea.prepend(heading);
+  const note = document.createElement('p');
+  note.className = 'offer-note';
+  note.textContent = 'Your browser chooses where to save it.';
+  offerArea.append(note);
   offerArea.hidden = false;
 }
 

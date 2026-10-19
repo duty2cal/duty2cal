@@ -3002,8 +3002,18 @@ async fn drops_the_supported_plan(w: &mut DutyWorld, name: String) {
 }
 
 #[when("the crew member dismisses the save of the offered calendar")]
-async fn dismisses_the_save(_w: &mut DutyWorld) {
-    unimplemented!("the crew member dismisses the save of the offered calendar")
+async fn dismisses_the_save(w: &mut DutyWorld) {
+    let result = driver(w).send("dismiss_save", Map::new());
+    assert_eq!(
+        result["dismissed"].as_bool(),
+        Some(true),
+        "the offered calendar was not dismissed: {result}"
+    );
+    assert_eq!(
+        result["suggestedFilename"].as_str(),
+        Some("2026-06.ics"),
+        "the dismissed download did not name the offered calendar: {result}"
+    );
 }
 
 #[when("the crew member reloads the page")]
@@ -3377,6 +3387,18 @@ async fn the_page_sent_no_request_to_another_origin(w: &mut DutyWorld) {
     );
 }
 
+#[then("the page has not reported that it saved a file")]
+async fn the_page_did_not_report_a_save(w: &mut DutyWorld) {
+    let state = page_state(w);
+    let text = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        !text.to_lowercase().contains("saved"),
+        "the page claims it saved a file: {text}"
+    );
+}
+
 #[then("the page has stored nothing in persistent browser storage")]
 async fn the_page_stored_nothing(_w: &mut DutyWorld) {
     unimplemented!("the page has stored nothing in persistent browser storage")
@@ -3388,8 +3410,29 @@ async fn the_page_address_is_unchanged(_w: &mut DutyWorld) {
 }
 
 #[then("the page still offers the calendar")]
-async fn the_page_still_offers_the_calendar(_w: &mut DutyWorld) {
-    unimplemented!("the page still offers the calendar")
+async fn the_page_still_offers_the_calendar(w: &mut DutyWorld) {
+    let state = page_state(w);
+    assert_eq!(
+        state["state"].as_str(),
+        Some("ready"),
+        "dismissing the save changed the page state: {state}"
+    );
+    let offered = state["offers"]
+        .as_array()
+        .expect("read_state returns offers")
+        .iter()
+        .any(|offer| offer["kind"].as_str() == Some("calendar"));
+    assert!(
+        offered,
+        "the dismissed calendar is no longer offered: {state}"
+    );
+    let text = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        text.contains("Your browser chooses where to save it."),
+        "the offer does not say the browser chooses the save location: {text}"
+    );
 }
 
 #[then("the offered calendar is byte-identical to the executable's calendar")]
