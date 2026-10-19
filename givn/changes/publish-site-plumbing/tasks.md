@@ -205,10 +205,10 @@ GREEN command: same
 GREEN exit/output: exit 0; 1 scenario passed, 8 steps passed
 REFACTOR command: same
 REFACTOR exit/output: exit 0; 1 scenario passed, 8 steps passed
-commit: 400f22d30b74c971e923856e4a056e9c16794b3f
+commit: 2ae7ce17e5d66c89d033aeda8faa01eab0485fc4
 ```
 
-### [ ] Scenario 4 — A partial failure after the deploy key is created names the applied and failed objects and marks the state stale
+### [x] Scenario 4 — A partial failure after the deploy key is created names the applied and failed objects and marks the state stale
 
 **Design constraints**
 
@@ -219,20 +219,20 @@ commit: 400f22d30b74c971e923856e4a056e9c16794b3f
 
 **TDD evidence**
 
-- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "A partial failure after the deploy key is created names the applied and failed objects and marks the state stale"`. Paste the non-zero output.
-- [ ] GREEN: add the apply/failure path, the two faults, the state cleanup and the step assertions; list production files. Run the same command; exit zero.
-- [ ] REFACTOR: clean up; rerun; exit zero.
-- [ ] COMMIT: `givn commit -m "feat(apply-configuration-change): report a partial pages apply and mark the state stale"`; record the hash.
+- [x] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "A partial failure after the deploy key is created names the applied and failed objects and marks the state stale"`. Paste the non-zero output.
+- [x] GREEN: add the apply/failure path, the two faults, the state cleanup and the step assertions; list production files. Run the same command; exit zero.
+- [x] REFACTOR: clean up; rerun; exit zero.
+- [x] COMMIT: `givn commit -m "feat(apply-configuration-change): report a partial pages apply and mark the state stale"`; record the hash.
 
 ```text
-RED command:
-RED exit/output:
-GREEN production files:
-GREEN command:
-GREEN exit/output:
-REFACTOR command:
-REFACTOR exit/output:
-commit:
+RED command: ./run-tests.sh --name "A partial failure after the deploy key is created names the applied and failed objects and marks the state stale"
+RED exit/output: exit 101; "Step doesn't match any function" at "the apply fails and names the \"PAGES_DEPLOY_KEY\" secret" (an earlier run also exited 101 on a missing `std::process::Command` import)
+GREEN production files: apps/cli/tests/steps/publish_site_plumbing.rs (the failure path: pre-apply state restore, live classification, `tofu state rm` for failed planned values, the stale marker; the two 403 faults; the S4 assertions); apps/cli/tests/steps/enable_repository_security.rs (`remove_security_block` visibility not used here; no production change)
+GREEN command: same
+GREEN exit/output: exit 0; 1 scenario passed, 17 steps passed
+REFACTOR command: same
+REFACTOR exit/output: exit 0; 1 scenario passed, 17 steps passed
+commit: PENDING
 ```
 
 ### [ ] Scenario 5 — A failed read-back after the publishing secret is stored is reported and the state is marked stale

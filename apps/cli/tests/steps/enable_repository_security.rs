@@ -281,7 +281,7 @@ pub(crate) fn state_values(w: &DutyWorld) -> Vec<u8> {
 }
 
 /// Remove the `security_and_analysis` block from the base declaration.
-fn remove_security_block(text: &str) -> String {
+pub(crate) fn remove_security_block(text: &str) -> String {
     let mut result = String::new();
     let mut depth = 0usize;
     for line in text.lines() {

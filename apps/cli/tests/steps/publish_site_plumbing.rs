@@ -8,6 +8,7 @@
 
 use std::fs;
 use std::path::PathBuf;
+use std::process::Command;
 
 use cucumber::{given, then, when};
 
@@ -152,6 +153,9 @@ pub(crate) fn prime_pages_state(w: &mut DutyWorld) {
         );
     }
 
+    // The pages declaration is this change's addition; the inherited
+    // declaration's real apply establishes the rest of the live state
+    // (design.md "Step definitions").
     let pages_declaration = declaration.join("pages_publish.tf");
     fs::remove_file(&pages_declaration)
         .expect("remove the pages declaration for the inherited base apply");
@@ -624,9 +628,194 @@ pub(crate) fn apply_previewed(w: &mut DutyWorld) {
         let _ = fs::remove_file(dir.join("preview.json"));
         let _ = fs::remove_file(&preflight_report);
         let _ = fs::remove_file(&state_before);
+        w.apply_transcript = transcript.clone();
+        w.scenario_transcript.push_str(&transcript);
+        return;
     }
+
+    // The failure path (design.md "The failure path"). The failed state is not
+    // evidence that a write landed: restore the pre-apply state and ask live.
+    let failed_state = dir.join("state-failed.tfstate");
+    fs::copy(state_path(w), &failed_state).expect("record the failed apply's state");
+    let failed_list = tofu(w, &["state", "list"]);
+    let live_now = live_addresses(w);
+    fs::copy(&state_before, state_path(w)).expect("restore the pre-apply state");
+
+    let (failed_bound, live_now) = match (failed_list.status.success(), live_now) {
+        (true, Ok(live)) => {
+            let failed_bound = String::from_utf8_lossy(&failed_list.stdout)
+                .lines()
+                .map(str::trim)
+                .filter(|line| !line.is_empty())
+                .map(str::to_owned)
+                .collect::<Vec<_>>();
+            (failed_bound, live)
+        }
+        _ => {
+            fs::copy(&failed_state, state_path(w)).expect("keep the failed apply's state");
+            transcript.push_str(
+                "failed: the failed state or live could not be read; inspect the state and the \
+                 live objects before any retry\n",
+            );
+            write_marker(w, &["unverified".to_string()]);
+            let _ = fs::remove_file(&plan);
+            let _ = fs::remove_file(&failed_state);
+            let _ = fs::remove_file(&state_before);
+            w.apply_transcript = transcript.clone();
+            w.scenario_transcript.push_str(&transcript);
+            w.exit_status = Some(1);
+            return;
+        }
+    };
+
+    let mut landed = Vec::new();
+    let mut failed = Vec::new();
+    let mut gaps = Vec::new();
+    for address in LIVE_DECLARED {
+        let in_pre = bound.iter().any(|recorded| recorded == address);
+        let in_failed = failed_bound.iter().any(|recorded| recorded == address);
+        let in_live = live_now.iter().any(|recorded| recorded == address);
+        if !in_pre && in_live {
+            landed.push(address.to_string());
+            if !in_failed {
+                gaps.push(address.to_string());
+            }
+        }
+        if !in_pre && !in_live {
+            failed.push(address.to_string());
+        }
+    }
+
+    let reason = failure_reason(&combined(&apply));
+    if landed.is_empty() {
+        transcript.push_str(
+            "refused: no live object was created; the applied state is unchanged\n",
+        );
+        transcript.push_str(&format!(
+            "failed: these live objects were not created: {}\n",
+            described(&failed)
+        ));
+        transcript.push_str(&format!("reason: {reason}\n"));
+        let _ = fs::remove_file(&plan);
+        let _ = fs::remove_file(&failed_state);
+        let _ = fs::remove_file(&state_before);
+        w.apply_transcript = transcript.clone();
+        w.scenario_transcript.push_str(&transcript);
+        w.exit_status = Some(1);
+        return;
+    }
+
+    fs::copy(&failed_state, state_path(w)).expect("reinstall the failed apply's state");
+    let mut cleanup_failed = None;
+    for address in &failed {
+        if failed_bound.iter().any(|recorded| recorded == address) {
+            let cleanup = tofu(w, &["state", "rm", address]);
+            if !cleanup.status.success() {
+                cleanup_failed = Some((
+                    address.clone(),
+                    String::from_utf8_lossy(&cleanup.stderr).trim().to_string(),
+                ));
+                break;
+            }
+        }
+    }
+
+    let mut marker = landed.clone();
+    if let Some((address, error)) = &cleanup_failed {
+        marker.push(format!("{address} unverified: cleanup failed"));
+        write_marker(w, &marker);
+        transcript.push_str(&format!(
+            "partial: these live objects were created: {}\n",
+            described(&landed)
+        ));
+        transcript.push_str(&format!(
+            "failed: these live objects were not created: {}\n",
+            described(&failed)
+        ));
+        transcript.push_str(&format!("reason: {reason}\n"));
+        if !gaps.is_empty() {
+            transcript.push_str(&format!(
+                "unverified: these landed objects are not recorded by the failed state: {}\n",
+                gaps.join(" ")
+            ));
+        }
+        transcript.push_str(&format!(
+            "unverified: {address} could not be removed from the applied state ({error}); \
+             inspect it before any retry\n"
+        ));
+    } else {
+        write_marker(w, &marker);
+        transcript.push_str(&format!(
+            "partial: these live objects were created: {}\n",
+            described(&landed)
+        ));
+        transcript.push_str(&format!(
+            "failed: these live objects were not created: {}\n",
+            described(&failed)
+        ));
+        transcript.push_str(&format!("reason: {reason}\n"));
+        if !gaps.is_empty() {
+            transcript.push_str(&format!(
+                "unverified: these landed objects are not recorded by the failed state: {}\n",
+                gaps.join(" ")
+            ));
+        }
+        transcript.push_str(
+            "the stale marker refuses a blind retry; read the report and remove it deliberately \
+             to recover\n",
+        );
+    }
+
+    let _ = fs::remove_file(&plan);
+    let _ = fs::remove_file(&failed_state);
+    let _ = fs::remove_file(&state_before);
+    let _ = fs::remove_file(dir.join("preview.json"));
+    let _ = fs::remove_file(&preflight_report);
     w.apply_transcript = transcript.clone();
     w.scenario_transcript.push_str(&transcript);
+    w.exit_status = Some(1);
+}
+
+/// The addresses with their human names, for the report lines.
+fn described(addresses: &[String]) -> String {
+    addresses
+        .iter()
+        .map(|address| {
+            let description = live_description(address);
+            if description.is_empty() {
+                address.clone()
+            } else {
+                format!("{address} ({description})")
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// The first line of the apply's error that names the refusal's status.
+fn failure_reason(output: &str) -> String {
+    for line in output.lines() {
+        let trimmed = line.trim();
+        if trimmed.contains("403") || trimmed.contains("Forbidden") {
+            return trimmed.to_string();
+        }
+    }
+    "see the apply error above".to_string()
+}
+
+/// Write `terraform.tfstate.stale` with a timestamp and the given lines.
+fn write_marker(w: &DutyWorld, lines: &[String]) {
+    let stamp = Command::new("date")
+        .args(["-u", "+%FT%TZ"])
+        .output()
+        .expect("read the current UTC time");
+    let stamp = String::from_utf8_lossy(&stamp.stdout).trim().to_string();
+    let mut text = format!("{stamp}\n");
+    for line in lines {
+        text.push_str(line);
+        text.push('\n');
+    }
+    fs::write(stale_path(w), text).expect("write the stale marker");
 }
 
 #[given("the applied state binds every object the earlier configuration changes declared")]
@@ -727,6 +916,96 @@ async fn the_declaration_adds_the_pages_objects(w: &mut DutyWorld) {
             "the declaration states {value}; it was:\n{text}"
         );
     }
+}
+
+/// Append one fault entry to the fake's `faults.json` and restart it so the
+/// entry is loaded. The restart starts a fresh journal.
+fn append_fault(w: &mut DutyWorld, entry: &str) {
+    let fixtures = fixtures_dir(w);
+    let path = fixtures.join("faults.json");
+    let existing = fs::read_to_string(&path).unwrap_or_else(|_| "[]".to_string());
+    let existing = existing.trim();
+    let merged = if existing.is_empty() || existing == "[]" {
+        format!("[{entry}]\n")
+    } else {
+        format!(
+            "{},{}]\n",
+            existing.trim_end_matches(']').trim_end_matches(','),
+            entry
+        )
+    };
+    fs::write(&path, merged).expect("write the injected fault");
+    restart_fake_with(w, true);
+    restore_inherited_live(w);
+    w.journal_offset = journal_lines(w).len();
+}
+
+/// A fresh fake starts from the fixture tree, so the inherited declaration's
+/// real apply is run again for its one live-setting write (the mono scanning
+/// block). The state already records the setting; the apply restores the live
+/// value the restart dropped, with the declaration's own command.
+fn restore_inherited_live(w: &mut DutyWorld) {
+    let plan = tofu(
+        w,
+        &[
+            "plan",
+            "-input=false",
+            "-no-color",
+            "-target=github_repository.mono",
+            "-out=reprime.bin",
+        ],
+    );
+    assert!(
+        plan.status.success(),
+        "the inherited live state re-plans:\n{}",
+        combined(&plan)
+    );
+    let apply = tofu(
+        w,
+        &["apply", "-input=false", "-no-color", "reprime.bin"],
+    );
+    assert!(
+        apply.status.success(),
+        "the inherited live state is re-applied:\n{}",
+        combined(&apply)
+    );
+    let _ = fs::remove_file(declaration_dir(w).join("reprime.bin"));
+}
+
+#[given("the owner's authority cannot store the monorepo's \"PAGES_DEPLOY_KEY\" secret")]
+async fn the_owners_authority_cannot_store_the_secret(w: &mut DutyWorld) {
+    assert!(
+        w.plan_path.is_some(),
+        "the scenario holds no previewed revision"
+    );
+    append_fault(
+        w,
+        "{\"path_regex\": \"^/repos/duty2cal/duty2cal/actions/secrets/PAGES_DEPLOY_KEY$\", \
+         \"method\": \"PUT\", \"status\": 403, \
+         \"body\": {\"message\": \"Resource not accessible by integration\"}}",
+    );
+}
+
+#[given("the owner's authority cannot create the pages rule set")]
+async fn the_owners_authority_cannot_create_the_pages_rule_set(w: &mut DutyWorld) {
+    assert!(
+        w.plan_path.is_some(),
+        "the scenario holds no previewed revision"
+    );
+    append_fault(
+        w,
+        "{\"path_regex\": \"^/repos/duty2cal/duty2cal\\\\.github\\\\.io/rulesets$\", \
+         \"method\": \"POST\", \"status\": 403, \
+         \"body\": {\"message\": \"Resource not accessible by integration\"}}",
+    );
+}
+
+/// One line of the apply transcript that starts with `prefix`.
+fn transcript_line<'a>(transcript: &'a str, prefix: &str) -> &'a str {
+    transcript
+        .lines()
+        .find(|line| line.starts_with(prefix))
+        .unwrap_or_else(|| panic!("the report carries a {prefix:?} line; output was:\n{transcript}"))
 }
 
 #[given("a previewed revision that adds the pages publishing key, its secret and the pages rule set")]
@@ -895,5 +1174,169 @@ async fn the_preview_names_the_pages_rule_set(w: &mut DutyWorld) {
         w.preview_transcript.contains(RULESET_NAME),
         "the preview names {RULESET_NAME}; output was:\n{}",
         w.preview_transcript
+    );
+}
+
+#[then("the failure report names the deploy key as created")]
+async fn the_failure_report_names_the_deploy_key_as_created(w: &mut DutyWorld) {
+    let line = transcript_line(&w.apply_transcript, "partial:");
+    assert!(
+        line.contains("github_repository_deploy_key.pages_publish"),
+        "the partial report names the deploy key as created; output was:\n{}",
+        w.apply_transcript
+    );
+}
+
+#[then(
+    regex = r#"^the failure report names the "([^"]+)" secret and the pages rule set as not created$"#
+)]
+async fn the_failure_report_names_the_failed_objects(w: &mut DutyWorld, name: String) {
+    assert_eq!(name, SECRET_NAME, "the step names the declared secret");
+    let line = transcript_line(&w.apply_transcript, "failed:");
+    for expected in [
+        "github_actions_secret.pages_publish",
+        SECRET_NAME,
+        "github_repository_ruleset.pages_publish",
+    ] {
+        assert!(
+            line.contains(expected),
+            "the failed report names {expected}; output was:\n{}",
+            w.apply_transcript
+        );
+    }
+}
+
+#[then("the failure report states a 403 status")]
+async fn the_failure_report_states_a_403(w: &mut DutyWorld) {
+    assert!(
+        w.apply_transcript.contains("403"),
+        "the report states the 403 status; output was:\n{}",
+        w.apply_transcript
+    );
+}
+
+#[then("the pages repository carries the write-enabled deploy key")]
+async fn the_pages_repository_carries_the_write_enabled_deploy_key(w: &mut DutyWorld) {
+    let (keys, _, _) = live_lists(w).expect("the live lists remain readable");
+    let keys = report(w, "carried-keys.json", &keys);
+    assert_eq!(
+        jq(
+            w,
+            &format!(
+                "[.[][]? | select(.title == {DEPLOY_KEY_TITLE:?})] | length"
+            ),
+            &keys,
+            false
+        ),
+        "1",
+        "the pages repository carries the deploy key"
+    );
+    assert_eq!(
+        jq(
+            w,
+            &format!(
+                "[.[][]? | select(.title == {DEPLOY_KEY_TITLE:?}) | .read_only] | .[0]"
+            ),
+            &keys,
+            false
+        ),
+        "false",
+        "the deploy key is write-enabled"
+    );
+}
+
+#[then(regex = r#"^the monorepo does not store "([^"]+)"$"#)]
+async fn the_monorepo_does_not_store(w: &mut DutyWorld, name: String) {
+    let (_, secrets, _) = live_lists(w).expect("the live lists remain readable");
+    let secrets = report(w, "absent-secret.json", &secrets);
+    assert_eq!(
+        jq(
+            w,
+            &format!("[.secrets[]? | select(.name == {name:?})] | length"),
+            &secrets,
+            false
+        ),
+        "0",
+        "the monorepo stores no {name}"
+    );
+}
+
+#[then("the pages repository does not carry the pages rule set")]
+async fn the_pages_repository_does_not_carry_the_rule_set(w: &mut DutyWorld) {
+    let (_, _, rulesets) = live_lists(w).expect("the live lists remain readable");
+    let rulesets = report(w, "absent-ruleset.json", &rulesets);
+    assert_eq!(
+        jq(w, ".[0] | length", &rulesets, false),
+        "0",
+        "the pages repository carries no rule set"
+    );
+}
+
+#[then("the applied state records the deploy key and not the secret")]
+async fn the_applied_state_records_the_deploy_key_not_the_secret(w: &mut DutyWorld) {
+    let addresses = state_addresses(w);
+    assert!(
+        addresses
+            .iter()
+            .any(|recorded| recorded == "github_repository_deploy_key.pages_publish"),
+        "the applied state records the deploy key; it was: {addresses:?}"
+    );
+    assert!(
+        !addresses
+            .iter()
+            .any(|recorded| recorded == "github_actions_secret.pages_publish"),
+        "the applied state records no failed secret; it was: {addresses:?}"
+    );
+}
+
+#[then("the applied state does not record the pages rule set")]
+async fn the_applied_state_does_not_record_the_rule_set(w: &mut DutyWorld) {
+    let addresses = state_addresses(w);
+    assert!(
+        !addresses
+            .iter()
+            .any(|recorded| recorded == "github_repository_ruleset.pages_publish"),
+        "the applied state records no failed rule set; it was: {addresses:?}"
+    );
+}
+
+#[then("the stale marker names the deploy key and no other object")]
+async fn the_stale_marker_names_the_deploy_key_only(w: &mut DutyWorld) {
+    let text = fs::read_to_string(stale_path(w)).expect("read the stale marker");
+    let mut lines = text.lines();
+    assert!(
+        lines.next().map(|stamp| !stamp.is_empty()).unwrap_or(false),
+        "the stale marker records when it was written"
+    );
+    let names = lines
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        names,
+        vec!["github_repository_deploy_key.pages_publish"],
+        "the stale marker names the deploy key and no other object"
+    );
+}
+
+#[then(regex = r#"^the apply fails and names the "([^"]+)" secret$"#)]
+async fn the_apply_fails_and_names_the_secret(w: &mut DutyWorld, name: String) {
+    assert_eq!(name, SECRET_NAME, "the step names the declared secret");
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the apply fails; output was:\n{}",
+        w.apply_transcript
+    );
+    assert!(
+        w.apply_transcript.contains(SECRET_NAME),
+        "the apply names {SECRET_NAME}; output was:\n{}",
+        w.apply_transcript
+    );
+    assert!(
+        w.apply_transcript
+            .contains("github_actions_secret.pages_publish"),
+        "the apply names the pages secret; output was:\n{}",
+        w.apply_transcript
     );
 }

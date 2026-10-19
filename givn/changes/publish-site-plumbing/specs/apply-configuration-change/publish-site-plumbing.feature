@@ -66,7 +66,7 @@ Feature: Publish site plumbing
     And the applied state is unchanged
     And the applied state is not marked stale
 
-  @givn.added @wip
+  @givn.added
   Scenario: A partial failure after the deploy key is created names the applied and failed objects and marks the state stale
     Given the applied state binds every object the earlier configuration changes declared
     And a previewed revision that adds the pages publishing key, its secret and the pages rule set
