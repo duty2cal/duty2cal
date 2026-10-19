@@ -17,7 +17,7 @@ Feature: Publish site plumbing
     And the live configuration is unchanged
     And the applied state is unchanged
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Organization owner applies the previewed revision and the pages publishing credential is created
     Given the applied state binds every object the earlier configuration changes declared
     And a previewed revision that adds the pages publishing key, its secret and the pages rule set

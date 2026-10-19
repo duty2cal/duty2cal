@@ -396,10 +396,10 @@ GREEN exit/output: exit 0; 1 scenario passed, 12 steps passed
 REFACTOR command: same
 REFACTOR exit/output: exit 0; 1 scenario passed, 12 steps passed
 transcript path: givn/changes/publish-site-plumbing/evidence/visual/organization-owner-previews-the-pages-plumbing-and-only-the-three-live-creations-are-named/transcript.txt
-commit: PENDING
+commit: bf36589ab6d931ee9cf270a40aeb3fdb44074a57
 ```
 
-### [ ] Scenario 10 — Organization owner applies the previewed revision and the pages publishing credential is created
+### [x] Scenario 10 — Organization owner applies the previewed revision and the pages publishing credential is created
 
 **Design constraints**
 
@@ -409,21 +409,21 @@ commit: PENDING
 
 **TDD evidence**
 
-- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --e2e --name "Organization owner applies the previewed revision and the pages publishing credential is created"`. Paste the non-zero output.
-- [ ] GREEN: implement the E2E apply/read-back steps and the transcript; list production files. Run the same command; exit zero.
-- [ ] REFACTOR: clean up; rerun; exit zero.
-- [ ] COMMIT: `givn commit -m "test(e2e): apply the pages publishing credential through the real tofu CLI"`; record the hash.
+- [x] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --e2e --name "Organization owner applies the previewed revision and the pages publishing credential is created"`. Paste the non-zero output.
+- [x] GREEN: implement the E2E apply/read-back steps and the transcript; list production files. Run the same command; exit zero.
+- [x] REFACTOR: clean up; rerun; exit zero.
+- [x] COMMIT: `givn commit -m "test(e2e): apply the pages publishing credential through the real tofu CLI"`; record the hash.
 
 ```text
-RED command:
-RED exit/output:
-GREEN production files:
-GREEN command:
-GREEN exit/output:
-REFACTOR command:
-REFACTOR exit/output:
-transcript path:
-commit:
+RED command: ./run-tests.sh --e2e --name "Organization owner applies the previewed revision and the pages publishing credential is created"
+RED exit/output: exit 101; "Step doesn't match any function" at "the apply reports the deploy key, the secret and the rule set as created"
+GREEN production files: apps/cli/tests/steps/e2e/publish_site_plumbing.rs (the apply/read-back assertions, the journal's sealed-secret fields, the rule-set bypass and rules, the state's generated key material, and the scrub of private keys and sealed values from the transcript)
+GREEN command: same
+GREEN exit/output: exit 0; 1 scenario passed, 11 steps passed
+REFACTOR command: same
+REFACTOR exit/output: exit 0; 1 scenario passed, 11 steps passed
+transcript path: givn/changes/publish-site-plumbing/evidence/visual/organization-owner-applies-the-previewed-revision-and-the-pages-publishing-credential-is-created/transcript.txt
+commit: PENDING
 ```
 
 ---
