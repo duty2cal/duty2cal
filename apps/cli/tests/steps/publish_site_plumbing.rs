@@ -13,7 +13,7 @@ use cucumber::{given, then, when};
 
 use crate::steps::adopt_existing_configuration::{
     adopt, adoption_output, copy_declaration, copy_tree, declaration_dir, fixtures_dir,
-    journal_lines, repository_root, scenario_dir, start_fake_with,
+    journal_lines, repository_root, restart_fake_with, scenario_dir, start_fake_with,
 };
 use crate::steps::enable_repository_security::{
     combined, fake_request, jq, scenario_dir_for, stale_path, state_addresses, state_values, tofu,
@@ -554,6 +554,25 @@ async fn the_pages_repository_already_has_a_rule_set(w: &mut DutyWorld, name: St
          \"source_type\": \"Repository\", \"source\": \"duty2cal/duty2cal.github.io\", \
          \"enforcement\": \"active\"}]\n",
     );
+}
+
+#[given("the owner's authority cannot read the pages repository")]
+async fn the_owners_authority_cannot_read_the_pages_repository(w: &mut DutyWorld) {
+    assert!(
+        w.declaration.is_some(),
+        "the scenario primed no applied state"
+    );
+    let fixtures = fixtures_dir(w);
+    fs::write(
+        fixtures.join("faults.json"),
+        "[{\"path_regex\": \"^/repos/duty2cal/duty2cal\\\\.github\\\\.io$\", \
+         \"method\": \"GET\", \"status\": 403, \
+         \"body\": {\"message\": \"Resource not accessible by integration\"}}]\n",
+    )
+    .expect("write the unreadable-pages-repository fault");
+    restart_fake_with(w, true);
+    // The restart starts a fresh journal; the guard's reads are not writes.
+    w.journal_offset = 0;
 }
 
 #[given("the declaration adds the pages publishing key, its secret and the pages rule set")]

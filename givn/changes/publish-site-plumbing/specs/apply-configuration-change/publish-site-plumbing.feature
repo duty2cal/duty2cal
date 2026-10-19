@@ -45,7 +45,7 @@ Feature: Publish site plumbing
     And the live configuration is unchanged
     And the applied state is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unreadable pages repository refuses the preview and names it
     Given the applied state binds every object the earlier configuration changes declared
     And the owner's authority cannot read the pages repository

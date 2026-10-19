@@ -153,10 +153,10 @@ GREEN command: same
 GREEN exit/output: exit 0; 1 scenario passed, 11 steps passed
 REFACTOR command: same
 REFACTOR exit/output: exit 0; 1 scenario passed, 11 steps passed
-commit: see git log for the scenario revision (recorded after the commit)
+commit: c48a3817d800e69b935e498f8caed949ac053c03
 ```
 
-### [ ] Scenario 2 — An unreadable pages repository refuses the preview and names it
+### [x] Scenario 2 — An unreadable pages repository refuses the preview and names it
 
 **Design constraints**
 
@@ -166,20 +166,20 @@ commit: see git log for the scenario revision (recorded after the commit)
 
 **TDD evidence**
 
-- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "An unreadable pages repository refuses the preview and names it"`. Paste the non-zero output.
-- [ ] GREEN: add the fault and the step assertions; list production files. Run the same command; exit zero.
-- [ ] REFACTOR: clean up; rerun; exit zero.
-- [ ] COMMIT: `givn commit -m "feat(apply-configuration-change): fail a pages preview whose repository cannot be read"`; record the hash.
+- [x] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "An unreadable pages repository refuses the preview and names it"`. Paste the non-zero output.
+- [x] GREEN: add the fault and the step assertions; list production files. Run the same command; exit zero.
+- [x] REFACTOR: clean up; rerun; exit zero.
+- [x] COMMIT: `givn commit -m "feat(apply-configuration-change): fail a pages preview whose repository cannot be read"`; record the hash.
 
 ```text
-RED command:
-RED exit/output:
-GREEN production files:
-GREEN command:
-GREEN exit/output:
-REFACTOR command:
-REFACTOR exit/output:
-commit:
+RED command: ./run-tests.sh --name "An unreadable pages repository refuses the preview and names it"
+RED exit/output: exit 101; "Step doesn't match any function" at "the owner's authority cannot read the pages repository"
+GREEN production files: apps/cli/tests/steps/publish_site_plumbing.rs (the 403 fault for the exact repository path, the restart, the plan-failure transcript)
+GREEN command: same
+GREEN exit/output: exit 0; 1 scenario passed, 7 steps passed
+REFACTOR command: same
+REFACTOR exit/output: exit 0; 1 scenario passed, 7 steps passed
+commit: PENDING
 ```
 
 ### [ ] Scenario 3 — A live object created after the preview refuses the apply and names it
