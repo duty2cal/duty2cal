@@ -287,7 +287,7 @@ REFACTOR exit/output: exit 0; 1 scenario passed, 10 steps passed
 commit: PENDING
 ```
 
-### [ ] Scenario 7 — A green apply after a partial failure creates only the objects the state does not bind and completes the revision
+### [x] Scenario 7 — A green apply after a partial failure creates only the objects the state does not bind and completes the revision
 
 **Design constraints**
 
@@ -297,20 +297,20 @@ commit: PENDING
 
 **TDD evidence**
 
-- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "A green apply after a partial failure creates only the objects the state does not bind and completes the revision"`. Paste the non-zero output.
-- [ ] GREEN: add the recovery priming, the marker removal and the step assertions; list production files. Run the same command; exit zero.
-- [ ] REFACTOR: clean up; rerun; exit zero.
-- [ ] COMMIT: `givn commit -m "feat(apply-configuration-change): complete a pages revision after a partial failure"`; record the hash.
+- [x] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "A green apply after a partial failure creates only the objects the state does not bind and completes the revision"`. Paste the non-zero output.
+- [x] GREEN: add the recovery priming, the marker removal and the step assertions; list production files. Run the same command; exit zero.
+- [x] REFACTOR: clean up; rerun; exit zero.
+- [x] COMMIT: `givn commit -m "feat(apply-configuration-change): complete a pages revision after a partial failure"`; record the hash.
 
 ```text
-RED command:
-RED exit/output:
-GREEN production files:
-GREEN command:
-GREEN exit/output:
-REFACTOR command:
-REFACTOR exit/output:
-commit:
+RED command: ./run-tests.sh --name "A green apply after a partial failure creates only the objects the state does not bind and completes the revision"
+RED exit/output: exit 101; "Step doesn't match any function" at the first Given, "the applied state binds the pages deploy key and not the publishing secret"
+GREEN production files: apps/cli/tests/steps/publish_site_plumbing.rs (the partial apply through the routine with one-shot 403s, the state and marker checks, the operator's marker removal, the recovery preview/apply, the preserved preview report and the S7 assertions)
+GREEN command: same
+GREEN exit/output: exit 0; 1 scenario passed, 11 steps passed
+REFACTOR command: same
+REFACTOR exit/output: exit 0; 1 scenario passed, 11 steps passed
+commit: PENDING
 ```
 
 ### [ ] Scenario 8 — Applying the pages plumbing leaves the published site and its source untouched

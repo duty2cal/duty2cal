@@ -113,7 +113,7 @@ Feature: Publish site plumbing
     And the applied state is unchanged
     And the applied state is not marked stale
 
-  @givn.added @wip
+  @givn.added
   Scenario: A green apply after a partial failure creates only the objects the state does not bind and completes the revision
     Given the applied state binds the pages deploy key and not the publishing secret
     And the applied state does not record the pages rule set

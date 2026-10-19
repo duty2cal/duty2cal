@@ -646,8 +646,12 @@ pub(crate) fn apply_previewed(w: &mut DutyWorld) {
             w.exit_status = Some(1);
             return;
         }
+        let preview_report = dir.join("preview.json");
+        if preview_report.is_file() {
+            let _ = fs::copy(&preview_report, dir.join("preview-applied.json"));
+        }
         let _ = fs::remove_file(&plan);
-        let _ = fs::remove_file(dir.join("preview.json"));
+        let _ = fs::remove_file(&preview_report);
         let _ = fs::remove_file(&preflight_report);
         let _ = fs::remove_file(&state_before);
         w.apply_transcript = transcript.clone();
@@ -1180,6 +1184,111 @@ async fn the_failed_apply_records_the_planned_deploy_key(w: &mut DutyWorld) {
     w.applied_state_snapshot = Some(state_values(w));
 }
 
+
+#[given("the applied state binds the pages deploy key and not the publishing secret")]
+async fn the_applied_state_binds_the_deploy_key_only(w: &mut DutyWorld) {
+    prime_pages_state(w);
+    preview(w);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the pages revision previews; output was:\n{}",
+        w.preview_transcript
+    );
+
+    // Produce the Given by running the partial failure through the real
+    // routine: the deploy key lands, the secret and the rule set fail, and
+    // the routine removes their planned values from the state.
+    append_fault(
+        w,
+        "{\"path_regex\": \"^/repos/duty2cal/duty2cal/actions/secrets/PAGES_DEPLOY_KEY$\", \
+         \"method\": \"PUT\", \"status\": 403, \
+         \"body\": {\"message\": \"Resource not accessible by integration\"}, \"once\": true}",
+    );
+    append_fault(
+        w,
+        "{\"path_regex\": \"^/repos/duty2cal/duty2cal\\\\.github\\\\.io/rulesets$\", \
+         \"method\": \"POST\", \"status\": 403, \
+         \"body\": {\"message\": \"Resource not accessible by integration\"}, \"once\": true}",
+    );
+    apply_previewed(w);
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the partial apply fails; output was:\n{}",
+        w.apply_transcript
+    );
+
+    let addresses = state_addresses(w);
+    for bound in [
+        "github_repository_deploy_key.pages_publish",
+        "tls_private_key.pages_publish",
+    ] {
+        assert!(
+            addresses.iter().any(|recorded| recorded == bound),
+            "the applied state binds {bound}; it was: {addresses:?}"
+        );
+    }
+    assert!(
+        !addresses
+            .iter()
+            .any(|recorded| recorded == "github_actions_secret.pages_publish"),
+        "the applied state does not bind the failed secret; it was: {addresses:?}"
+    );
+
+    let (status, keys) =
+        fake_request(w, "GET", "/repos/duty2cal/duty2cal.github.io/keys", &[], None);
+    assert_eq!(status, 200, "the deploy key is readable: {keys}");
+    fs::write(scenario_dir_for(w).join("bound-deploy-key.json"), &keys)
+        .expect("record the bound deploy key before the recovery");
+
+    let marker = fs::read_to_string(stale_path(w)).expect("read the partial report's marker");
+    assert!(
+        marker.contains("github_repository_deploy_key.pages_publish"),
+        "the stale marker names the deploy key; it was:\n{marker}"
+    );
+}
+
+
+#[given("the applied state does not record the pages rule set")]
+async fn the_applied_state_records_no_pages_rule_set(w: &mut DutyWorld) {
+    let addresses = state_addresses(w);
+    assert!(
+        !addresses
+            .iter()
+            .any(|recorded| recorded == "github_repository_ruleset.pages_publish"),
+        "the applied state records no rule set; it was: {addresses:?}"
+    );
+}
+
+
+#[given("the applied state is marked stale")]
+async fn the_applied_state_is_marked_stale_before_recovery(w: &mut DutyWorld) {
+    let stale = stale_path(w);
+    assert!(
+        stale.is_file(),
+        "the partial failure wrote the stale marker at {}",
+        stale.display()
+    );
+    let report = fs::read_to_string(&stale).expect("read the stale marker");
+    assert!(
+        report.contains("github_repository_deploy_key.pages_publish"),
+        "the stale marker names the landed deploy key; it was:\n{report}"
+    );
+}
+
+#[given("the owner clears the stale marker after reading the partial report")]
+async fn the_owner_clears_the_stale_marker(w: &mut DutyWorld) {
+    let stale = stale_path(w);
+    let report = fs::read_to_string(&stale).expect("read the partial report's marker");
+    assert!(
+        report.contains("github_repository_deploy_key.pages_publish"),
+        "the operator reads the partial report before removing the marker; it was:\n{report}"
+    );
+    fs::remove_file(&stale).expect("remove the stale marker as the operator would");
+    assert!(!stale.exists(), "the stale marker is cleared");
+}
+
 #[given("a previewed revision that adds the pages publishing key, its secret and the pages rule set")]
 async fn a_previewed_pages_revision(w: &mut DutyWorld) {
     preview(w);
@@ -1616,5 +1725,115 @@ async fn no_live_object_is_created(w: &mut DutyWorld) {
         jq(w, ".[0] | length", &rulesets, false),
         "0",
         "no rule set is live"
+    );
+}
+
+#[then("the preview names every declared object the applied state does not bind")]
+async fn the_preview_names_the_missing_objects(w: &mut DutyWorld) {
+    let expected = transcript_line(&w.preview_transcript, "expected:");
+    for address in [
+        "github_actions_secret.pages_publish",
+        "github_repository_ruleset.pages_publish",
+    ] {
+        assert!(
+            expected.contains(address),
+            "the recovery preview names {address}; output was:\n{}",
+            w.preview_transcript
+        );
+    }
+}
+
+#[then("the preview does not name the pages deploy key as an object to create")]
+async fn the_preview_does_not_name_the_deploy_key_as_created(w: &mut DutyWorld) {
+    let expected = transcript_line(&w.preview_transcript, "expected:");
+    assert!(
+        !expected.contains("github_repository_deploy_key.pages_publish"),
+        "the recovery preview expects no deploy key; output was:\n{}",
+        w.preview_transcript
+    );
+    let dir = scenario_dir_for(w);
+    let preserved = dir.join("preview-applied.json");
+    let report = if preserved.is_file() {
+        preserved
+    } else {
+        dir.join("preview.json")
+    };
+    let creates = jq(
+        w,
+        "[.resource_changes[]? | select((.change.actions // []) == [\"create\"]) | .address] \
+         | sort | join(\" \")",
+        &report,
+        false,
+    );
+    assert_eq!(
+        creates,
+        "github_actions_secret.pages_publish github_repository_ruleset.pages_publish",
+        "the recovery plan creates only the missing secret and rule set"
+    );
+}
+
+#[then("the apply creates the missing objects and leaves the bound deploy key unchanged")]
+async fn the_apply_creates_only_the_missing_objects(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the recovery apply succeeds; output was:\n{}",
+        w.apply_transcript
+    );
+    let before = fs::read_to_string(scenario_dir_for(w).join("bound-deploy-key.json"))
+        .expect("read the recorded deploy key");
+    let (status, after) =
+        fake_request(w, "GET", "/repos/duty2cal/duty2cal.github.io/keys", &[], None);
+    assert_eq!(status, 200, "the deploy key is readable: {after}");
+    assert_eq!(after, before, "the bound deploy key is unchanged");
+
+    let (_, secrets, rulesets) = live_lists(w).expect("the live lists remain readable");
+    let secrets = report(w, "recovered-secrets.json", &secrets);
+    let rulesets = report(w, "recovered-rulesets.json", &rulesets);
+    assert_eq!(
+        jq(
+            w,
+            &format!("[.secrets[]? | select(.name == {SECRET_NAME:?})] | length"),
+            &secrets,
+            false
+        ),
+        "1",
+        "the recovery apply stores the secret"
+    );
+    assert_eq!(
+        jq(
+            w,
+            &format!("[.[][]? | select(.name == {RULESET_NAME:?})] | length"),
+            &rulesets,
+            false
+        ),
+        "1",
+        "the recovery apply creates the rule set"
+    );
+}
+
+#[then("the applied state is no longer marked stale")]
+async fn the_applied_state_is_no_longer_stale(w: &mut DutyWorld) {
+    assert!(
+        !stale_path(w).exists(),
+        "the recovery leaves no stale marker at {}",
+        stale_path(w).display()
+    );
+}
+
+#[then("a later targeted preview of the pages plumbing reports no differences")]
+async fn a_later_targeted_preview_reports_no_differences(w: &mut DutyWorld) {
+    preview(w);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the follow-up preview succeeds; output was:\n{}",
+        w.preview_transcript
+    );
+    assert!(
+        w.preview_transcript
+            .contains("the revision is already applied; nothing to create"),
+        "the follow-up preview reports no differences; output was:\n{}",
+        w.preview_transcript
     );
 }
