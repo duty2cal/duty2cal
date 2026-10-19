@@ -987,30 +987,39 @@ initializes; a missing capability is refused by name with no file picker and no 
   design.md's `set_file` init-script mode specifies.
 - There is no server or upload fallback and no calendar offer.
 
-- [ ] RED — remove `@wip` from this scenario only; add its new step bodies as
-  `unimplemented!()` stubs (previously implemented shared steps stay implemented); run:
+- [x] RED — remove `@wip` from this scenario only; the Given step body stayed the
+  committed `unimplemented!()` stub; run:
   ```
-  $ ./run-tests.sh --name "A browser without WebAssembly shows the cannot-run message"
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A browser without WebAssembly shows the cannot-run message"
   Feature: Export a duty-plan calendar
     Scenario: A browser without WebAssembly shows the cannot-run message
      ✘  Given the converter page served from the built Site output in a browser without WebAssembly
-        Step panicked. Captured output: not implemented: start Chromium with WebAssembly removed
+        Step failed:
+        Defined: tmp/tmp.FmpxjII9M1/f0006.feature:95:5
+        Matched: apps/cli/tests/steps/export_duty_plan_calendar.rs:2818:1
+        Step panicked. Captured output: not implemented: the converter page served from the built Site output in a browser without WebAssembly
   [Summary]
   1 feature
   1 scenario (1 failed)
   1 step (1 failed)
   RED_EXIT=101
   ```
-- [ ] GREEN — real assertions and minimum production code; production files modified:
-  - `web/capability.js` — the classic capability gate and cannot-run rendering.
-  - `web/index.html` — the classic deferred script, the hidden picker/drop zone and the
-    cannot-run region.
-  - `web/styles.css` — the cannot-run panel.
-  - `web/e2e/driver.mjs` — the init-script mode removing `window.WebAssembly`.
-  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the no-WebAssembly steps.
+- [x] GREEN — real assertions and minimum production code; production files:
+  - `web/capability.js` / `web/index.html` / `web/styles.css` — the classic deferred
+    gate, the hidden picker/drop zone, the cannot-run region and its panel already
+    carried this behavior in the committed baseline; no change was needed here.
+  - `web/e2e/driver.mjs` — the `start` mode `no-webassembly`, which installs an
+    init script that deletes or shadows `window.WebAssembly` before navigation, and
+    the post-navigation wait for the visible cannot-run region on gated modes. The
+    `picker` observation now also requires the button to be visible, so a hidden
+    control can never read as an offered picker.
+  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the no-WebAssembly Given,
+    the shared cannot-run assertion and the no-picker assertion.
   Run:
   ```
-  $ ./run-tests.sh --name "A browser without WebAssembly shows the cannot-run message"
+  $ cargo fmt --all --check -> FMT_EXIT=0
+  $ cargo clippy --workspace --all-targets -- -D warnings -> CLIPPY_EXIT=0
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A browser without WebAssembly shows the cannot-run message"
   Feature: Export a duty-plan calendar
     Scenario: A browser without WebAssembly shows the cannot-run message
      ✔  Given the converter page served from the built Site output in a browser without WebAssembly
@@ -1023,12 +1032,16 @@ initializes; a missing capability is refused by name with no file picker and no 
   4 steps (4 passed)
   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — confirm the picker is never briefly visible on a failed gate, re-run:
+- [x] REFACTOR — the page never reveals `#plan-actions` because `app.js` returns before
+  wiring when the dataset flag is absent; the no-picker assertion reads the visible
+  button, so a briefly hidden control cannot pass it. No cleanup was needed; re-run:
   ```
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A browser without WebAssembly shows the cannot-run message"
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A browser without WebAssembly shows the cannot-run message`; Hash: `<record the revision identifier here>`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+  `Scenario: A browser without WebAssembly shows the cannot-run message`; Hash: recorded
+  in the scenario-commit record commit
 
 ### 10. A browser without ES-module support shows the cannot-run message
 

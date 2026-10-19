@@ -2816,10 +2816,13 @@ async fn the_converter_page_without_modules(_w: &mut DutyWorld) {
 }
 
 #[given("the converter page served from the built Site output in a browser without WebAssembly")]
-async fn the_converter_page_without_webassembly(_w: &mut DutyWorld) {
-    unimplemented!(
-        "the converter page served from the built Site output in a browser without WebAssembly"
-    )
+async fn the_converter_page_without_webassembly(w: &mut DutyWorld) {
+    let mut params = Map::new();
+    params.insert(
+        "mode".to_string(),
+        Value::String("no-webassembly".to_string()),
+    );
+    driver(w).send("start", params);
 }
 
 #[given("the converter page served from the built Site output that cannot create a download offer for the calendar")]
@@ -3098,9 +3101,34 @@ async fn the_failure_keeps_the_primary_reason(w: &mut DutyWorld, name: String) {
     );
 }
 
+/// Assert the cannot-run treatment names the missing capability in `needle`.
+fn assert_cannot_run(w: &mut DutyWorld, needle: &str) {
+    let state = page_state(w);
+    assert_eq!(
+        state["state"].as_str(),
+        Some("cannot-run"),
+        "the page did not take the cannot-run state: {state}"
+    );
+    let text = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        text.contains("This browser cannot run the converter"),
+        "the cannot-run heading is not visible: {text}"
+    );
+    assert!(
+        text.contains(needle),
+        "the cannot-run message does not name {needle:?}: {text}"
+    );
+    assert!(
+        !text.contains("Calendar ready"),
+        "the page reports a calendar although it cannot run: {text}"
+    );
+}
+
 #[then("the page shows a cannot-run heading and states that WebAssembly is required")]
-async fn the_cannot_run_message_names_webassembly(_w: &mut DutyWorld) {
-    unimplemented!("the page shows a cannot-run heading and states that WebAssembly is required")
+async fn the_cannot_run_message_names_webassembly(w: &mut DutyWorld) {
+    assert_cannot_run(w, "WebAssembly");
 }
 
 #[then("the page shows a cannot-run heading and states that ES modules are required")]
@@ -3170,8 +3198,20 @@ async fn the_page_withdraws_the_calendar(w: &mut DutyWorld, name: String) {
 }
 
 #[then("the page offers no file picker")]
-async fn the_page_offers_no_file_picker(_w: &mut DutyWorld) {
-    unimplemented!("the page offers no file picker")
+async fn the_page_offers_no_file_picker(w: &mut DutyWorld) {
+    let state = page_state(w);
+    assert_eq!(
+        state["controls"]["picker"].as_bool(),
+        Some(false),
+        "the page still offers a usable picker: {state}"
+    );
+    let text = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        !text.contains("Choose a duty plan") && !text.contains("Drop one duty plan"),
+        "the supply controls are visible in the cannot-run state: {text}"
+    );
 }
 
 #[then(regex = r#"^the page offers the diagnostic text "([^"]+)"$"#)]

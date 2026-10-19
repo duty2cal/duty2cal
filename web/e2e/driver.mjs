@@ -33,6 +33,7 @@ let context;
 let page;
 let baseUrl;
 let requestLog = [];
+let initialAddress;
 
 /** Write one protocol result line. */
 function answer(result) {
@@ -178,6 +179,8 @@ async function readState() {
     }
 
     const resetButton = document.getElementById('reset');
+    const chooseButton = document.getElementById('choose');
+    const pickerInput = document.getElementById('plan');
     return {
       state,
       status: statusText,
@@ -190,8 +193,10 @@ async function readState() {
       address: { url: location.href, historyLength: history.length },
       controls: {
         picker:
-          document.getElementById('choose')?.disabled === false &&
-          document.getElementById('plan')?.disabled === false,
+          chooseButton != null &&
+          chooseButton.offsetParent !== null &&
+          chooseButton.disabled === false &&
+          pickerInput?.disabled === false,
         chooseAnother:
           resetButton != null && resetButton.offsetParent !== null,
       },
@@ -224,16 +229,17 @@ const actions = {
       colorScheme: 'light',
       reducedMotion: 'reduce',
     });
-    if (params.mode) {
-      const blockedType =
-        params.mode === 'calendar-offer-failure'
-          ? 'text/calendar'
-          : params.mode === 'diagnostic-offer-failure'
-            ? 'text/plain'
-            : undefined;
-      if (!blockedType) {
-        throw new Error(`unknown start mode: ${params.mode}`);
-      }
+    const mode = params.mode;
+    const blockedType =
+      mode === 'calendar-offer-failure'
+        ? 'text/calendar'
+        : mode === 'diagnostic-offer-failure'
+          ? 'text/plain'
+          : undefined;
+    if (mode && !blockedType && !['no-webassembly', 'no-modules', 'broken-module'].includes(mode)) {
+      throw new Error(`unknown start mode: ${mode}`);
+    }
+    if (blockedType) {
       await context.addInitScript((type) => {
         const create = URL.createObjectURL.bind(URL);
         URL.createObjectURL = (blob) => {
@@ -243,6 +249,55 @@ const actions = {
           return create(blob);
         };
       }, blockedType);
+    }
+    if (mode === 'no-webassembly') {
+      await context.addInitScript(() => {
+        try {
+          delete window.WebAssembly;
+        } catch {
+          // A non-configurable binding is replaced through its descriptor.
+        }
+        if (typeof window.WebAssembly !== 'undefined') {
+          Object.defineProperty(window, 'WebAssembly', {
+            configurable: true,
+            get: () => undefined,
+          });
+        }
+      });
+    }
+    if (mode === 'no-modules') {
+      await context.addInitScript(() => {
+        const unsupported = () => false;
+        try {
+          Object.defineProperty(HTMLScriptElement, 'supports', {
+            configurable: true,
+            value: unsupported,
+          });
+        } catch {
+          HTMLScriptElement.supports = unsupported;
+        }
+      });
+    }
+    if (mode === 'broken-module') {
+      await context.addInitScript(() => {
+        const reject = () =>
+          Promise.reject(new Error('the driver refuses to instantiate the module'));
+        try {
+          WebAssembly.instantiate = reject;
+          if (typeof WebAssembly.instantiateStreaming === 'function') {
+            WebAssembly.instantiateStreaming = reject;
+          }
+        } catch {
+          Object.defineProperty(WebAssembly, 'instantiate', {
+            configurable: true,
+            value: reject,
+          });
+          Object.defineProperty(WebAssembly, 'instantiateStreaming', {
+            configurable: true,
+            value: reject,
+          });
+        }
+      });
     }
     page = await context.newPage();
     requestLog = [];
@@ -262,7 +317,19 @@ const actions = {
       });
     });
     await page.goto(`${baseUrl}/index.html`, { waitUntil: 'load' });
-    await waitUntilUsable();
+    if (['no-webassembly', 'no-modules', 'broken-module'].includes(mode)) {
+      await page.waitForFunction(
+        () => document.getElementById('cannot-run')?.hidden === false,
+        null,
+        { timeout: 60000 },
+      );
+    } else {
+      await waitUntilUsable();
+    }
+    initialAddress = {
+      url: page.url(),
+      historyLength: await page.evaluate(() => history.length),
+    };
     return { url: page.url(), origin: baseUrl };
   },
 
@@ -282,7 +349,7 @@ const actions = {
     if (!page) {
       throw new Error('the page is not started');
     }
-    return { ...(await readState()), requestLog };
+    return { ...(await readState()), requestLog, initialAddress };
   },
 
   async save_offer(params) {
