@@ -232,7 +232,7 @@ GREEN command: same
 GREEN exit/output: exit 0; 1 scenario passed, 17 steps passed
 REFACTOR command: same
 REFACTOR exit/output: exit 0; 1 scenario passed, 17 steps passed
-commit: 72667c96eacd86645f64f1f1ba7d97f7d65a96d0
+commit: db20d8670601c2852eadc710b255f505aed8f905
 ```
 
 ### [x] Scenario 5 — A failed read-back after the publishing secret is stored is reported and the state is marked stale
@@ -258,7 +258,7 @@ GREEN command: same
 GREEN exit/output: exit 0; 1 scenario passed, 11 steps passed
 REFACTOR command: same
 REFACTOR exit/output: exit 0; 1 scenario passed, 11 steps passed
-commit: 72667c96eacd86645f64f1f1ba7d97f7d65a96d0
+commit: 653562e7982c398c6088267db27052741ca0bc17
 ```
 
 ### [x] Scenario 6 — An apply refused before the first live write leaves the state unchanged and writes no stale marker
@@ -284,7 +284,7 @@ GREEN command: same
 GREEN exit/output: exit 0; 1 scenario passed, 10 steps passed
 REFACTOR command: same
 REFACTOR exit/output: exit 0; 1 scenario passed, 10 steps passed
-commit: 72667c96eacd86645f64f1f1ba7d97f7d65a96d0
+commit: 224fca66ef9d75165eee313860c000ec80b2b7b8
 ```
 
 ### [x] Scenario 7 — A green apply after a partial failure creates only the objects the state does not bind and completes the revision
@@ -310,7 +310,7 @@ GREEN command: same
 GREEN exit/output: exit 0; 1 scenario passed, 11 steps passed
 REFACTOR command: same
 REFACTOR exit/output: exit 0; 1 scenario passed, 11 steps passed
-commit: 72667c96eacd86645f64f1f1ba7d97f7d65a96d0
+commit: 42ab71f3b8ec10c4fae7a035ac40b80dc495f43c
 ```
 
 ### [x] Scenario 8 — Applying the pages plumbing leaves the published site and its source untouched
