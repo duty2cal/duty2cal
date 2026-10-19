@@ -1,0 +1,472 @@
+# Tasks: publish-site-plumbing
+
+- **Change:** `publish-site-plumbing`
+- **Capability:** `publish-site-plumbing`, routed to the use case `apply-configuration-change`
+- **Owning use case:** `givn/changes/publish-site-plumbing/specs/apply-configuration-change/usecase.md`
+- **Design:** `givn/changes/publish-site-plumbing/design.md` (design-review `DESIGN-REVIEW: PASS`)
+- **Interaction inventory:** 6 entries in the delta use case; 6 rows in the design's Interaction Coverage Matrix; the two new entries map to the two `@e2e` scenarios below.
+- **Runner:** `./run-tests.sh` → `cargo test -p duty2cal --test features_runner` over the assembled feature root.
+- **E2E runner:** `./run-tests.sh --e2e` → the same runner with `--tags @e2e`; distinct from `verify.command`.
+- **Single scenario:** `./run-tests.sh --name "<scenario title>"`; E2E: `./run-tests.sh --e2e --name "<scenario title>"`.
+- **Commit scope:** `apply-configuration-change` for the feature commits; E2E commits use `test(e2e):`.
+- **Strict mode:** `apps/cli/tests/features_runner.rs` calls `.fail_on_skipped()`. Undefined, pending or skipped steps fail. Empty step bodies are banned; use `todo!()` while RED.
+- **Task order:** setup, 8 non-`@e2e` scenarios in feature order, E2E setup, 2 `@e2e` scenarios, operator apply, archive-time obligation.
+
+## Pre-flight evidence
+
+- `givn status --change publish-site-plumbing`: design-review complete; tasks pending.
+- Inventory: 6 rows (security preview/apply, profile preview/apply, pages preview/apply).
+- Matrix: 6 rows; the two pages rows point to the two `@e2e` scenarios.
+- Delta feature: 10 scenarios, exactly 2 `@e2e` (the first two). 8 non-`@e2e`.
+- `verify.command` = `./run-tests.sh`; `verify.e2e_command` = `./run-tests.sh --e2e`; not identical.
+- `givn lint --change publish-site-plumbing`: exit 2; 10 `@wip` findings, one shape advisory, one long-scenario advisory; no `@e2e` mapping error. Exit 2 is expected while the scenarios are `@wip`.
+- No `@e2e` tag may be removed at any point.
+
+## Shared design constraints
+
+These are copied from `design.md` and apply to every scenario below.
+
+### Declaration
+
+- `infra/pages_publish.tf` is new and declares exactly four resources:
+  - `tls_private_key.pages_publish` — `algorithm = "ED25519"`, no passphrase.
+  - `github_repository_deploy_key.pages_publish` — `repository = github_repository.pages.name`, `title = "duty2cal.github.io publish"`, `key = trimspace(tls_private_key.pages_publish.public_key_openssh)`, `read_only = false`.
+  - `github_actions_secret.pages_publish` — `repository = github_repository.mono.name`, `secret_name = "PAGES_DEPLOY_KEY"`, `value = tls_private_key.pages_publish.private_key_openssh`, `depends_on = [github_repository_deploy_key.pages_publish]`.
+  - `github_repository_ruleset.pages_publish` — `repository = github_repository.pages.name`, `name = "pages protection"`, `target = "branch"`, `enforcement = "active"`, condition `include = ["~DEFAULT_BRANCH"]` and `exclude = []`, rules `deletion = true`, `non_fast_forward = true`, `required_linear_history = true`, bypass actor `actor_type = "DeployKey"`, `bypass_mode = "always"`, no `actor_id`.
+- `infra/versions.tf` gains `tls = { source = "hashicorp/tls", version = "~> 4.0" }`.
+- `infra/.terraform.lock.hcl` records `hashicorp/tls` 4.4.1 beside the unchanged GitHub provider 6.13.0.
+- `scripts/setup-infra-tests.sh` mirrors both providers and writes a `terraformrc` whose `include` list names `registry.opentofu.org/integrations/github` and `registry.opentofu.org/hashicorp/tls`; the setup proof workspaces remove `pages_publish.tf` so the inherited declaration is unchanged.
+- The key pair exists only in the passphrase-encrypted state; the private key appears twice (the generated key and the secret's value). The plan is encrypted, git-ignored and deleted after the apply. Do not add a repository secret for the passphrase, and do not print private material.
+- The stock Jekyll site, its source, the Pages configuration and every other declared object stay unchanged. The revision creates only; it updates, deletes and replaces nothing.
+
+### Preview, guard and apply
+
+- Step 0: `terraform.tfstate.stale` present → refuse the preview and the apply, naming the stale state.
+- `tofu init -input=false`; `bound=$(tofu state list)`.
+- The creation guard reads exactly:
+  - `gh api --paginate --slurp repos/duty2cal/duty2cal.github.io/keys`, `jq` `any(.[][]?; .title == "duty2cal.github.io publish")`.
+  - `gh api repos/duty2cal/duty2cal/actions/secrets`, `jq` `any(.secrets[]?; .name == "PAGES_DEPLOY_KEY")`.
+  - `gh api --paginate --slurp repos/duty2cal/duty2cal.github.io/rulesets`, `jq` `any(.[][]?; .name == "pages protection")`.
+- A live object is a finding only when the applied state does not bind its address. A bound object never refuses its own preview. An unreadable guard read fails closed and names what could not be read.
+- `expected` is the four declared addresses (`github_repository_deploy_key.pages_publish`, `github_actions_secret.pages_publish`, `github_repository_ruleset.pages_publish`, `tls_private_key.pages_publish`) minus the state-bound addresses.
+- The preview is a targeted saved plan: `tofu plan -input=false -no-color -target=github_repository_deploy_key.pages_publish -target=github_actions_secret.pages_publish -target=github_repository_ruleset.pages_publish -out=plan.bin`, then `tofu show -json`.
+- Only `create`, `no-op` and `read` actions are allowed; the create set must equal `expected` after sorting. An empty `expected` means “already applied”; remove the plan and exit 0.
+- The preflight is `tofu plan -refresh-only -detailed-exitcode -json -input=false` over the three targets. Capture the exit status (`0`, `2` or other) but let the JSON decide: `change_summary` absent → `incomplete` and refuse; any `planned_change`/`resource_drift` non-`no-op` → refuse and name the address. The JSON, not the exit status, is the verdict.
+- The guard runs again immediately before `tofu apply -input=false plan.bin`.
+- The failure path saves the failed state, restores the pre-apply state, re-reads live, and:
+  - unreadable state or live → keep the failed state, write `terraform.tfstate.stale` with `unverified`, name what must be inspected, exit 1;
+  - no live object landed → keep the pre-apply state, print `refused: no live object was created`, `failed: ...`, `reason: ...`, write no marker, exit 1;
+  - a live object landed → reinstall the failed state, remove every `failed` address that the failed state records with `tofu state rm <address>` (no live effect), write the marker with the landed addresses only, print `partial:`, `failed:` and `reason:` (including the 403), exit 1. A `state rm` failure keeps the state, writes the address as `unverified` in the marker, prints `unverified: ... could not be removed`, and exits 1.
+- The post-apply read-back after a green `tofu apply` reads the applied state, the deploy-key list, `GET repos/duty2cal/duty2cal/actions/secrets/PAGES_DEPLOY_KEY`, the rule-set list and the state-bound addresses. A failed read keeps the applied state, writes the marker with the three live addresses, prints `applied: ...` and `failed read-back: <object> <reason>`, and exits 1.
+- The recovery is explicit: the operator reads the partial report, removes `terraform.tfstate.stale`, previews the missing set and applies. A green apply does not remove the marker.
+- No write occurs before the guard passes; the preview writes only the local plan file.
+
+### Fake GitHub API
+
+- `scripts/fake-github/serve.py` gains the deploy-key, Actions-secret and rule-set endpoints and their fixtures:
+  - `GET /repos/{owner}/{repo}/keys`; `POST` under `--writes`; `GET /keys/{id}`.
+  - `GET /repos/{owner}/{repo}/actions/secrets`; `GET .../actions/secrets/public-key` with the fixed key id `568250167242205012`; `PUT .../actions/secrets/{name}` under `--writes`; `GET .../actions/secrets/{name}`.
+  - `GET /repos/{owner}/{repo}/rulesets`; `POST` under `--writes`; `GET /rulesets/{id}`.
+- `fixtures/security-applied/` gains `keys.json` (`[]`), `actions/secrets.json` (`{"total_count":0,"secrets":[]}`), `actions/secrets/public-key.json`, and the pages `rulesets.json` (`[]`).
+- The write overlay stores created objects; reads consult the overlay before the fixture. The journal records `title`, `read_only`, `key_type`; the secret `key_id`, `ciphertext_bytes`, `contains_pem_header` (must be false); the rule-set name, bypass actors and rules.
+- `--writes` accepts exactly the three new write shapes; every other write is 405 and journaled. Unknown paths return 599 and are journaled.
+- `faults.json` gains `after_requests: N` and `once: true`. The fault table:
+  - unreadable pages repository: 403 for `GET repos/duty2cal/duty2cal.github.io` only; the guard's subpath reads succeed and the plan names the repository.
+  - existing unbound objects: seeded list fixtures, no fault.
+  - clean refusal: 403 for `POST .../keys` and `POST .../rulesets`.
+  - partial failure: 403 for `PUT .../actions/secrets/PAGES_DEPLOY_KEY` and `POST .../rulesets`.
+  - read-back failure: 403 for `GET .../actions/secrets/PAGES_DEPLOY_KEY`, `after_requests: 1`, `once: true` (the create's timestamp read is request one; the routine's read-back is request two).
+- A 500 is not usable for the read-back because the provider retries 5xx; use 403.
+
+### Steps, runner and evidence
+
+- Non-`@e2e` steps: `apps/cli/tests/steps/publish_site_plumbing.rs`; E2E steps: `apps/cli/tests/steps/e2e/publish_site_plumbing.rs`. Declare both in `apps/cli/tests/steps/mod.rs` and `apps/cli/tests/steps/e2e/mod.rs`. Reuse the profile and security helpers (`pub(crate)` or `support.rs`); never use one shared file for both layers.
+- The priming is real: copy `org/` beside a temporary declaration copy (the inherited declaration minus `pages_publish.tf`), adopt both existing batches, apply the inherited declaration against a copy of `fixtures/security-applied` in `--writes` mode, restore `pages_publish.tf`, take the journal offset and seed the guard's list fixtures. No fabricated state.
+- The guard and post-apply reads in tests target the fake's REST paths directly because `gh api` cannot reach loopback; the production routine uses `gh`. The artifact under test is the response shape and the verdict.
+- Every scenario's RED removes `@wip` from that scenario only and runs the single-scenario command; it MUST exit non-zero. A zero exit means strict mode or an empty step is wrong; hard stop.
+- GREEN replaces the stubs with real assertions and minimum production code. List every production file. Compile before running. The targeted run MUST exit zero.
+- REFACTOR changes no behaviour and re-runs the same targeted scenario; it MUST still exit zero.
+- COMMIT is one `givn commit` for RED+GREEN+REFACTOR. Feature commits: `feat(apply-configuration-change): <release note>`. E2E commits: `test(e2e): <release note>`. Put the scenario title in the body. Record the revision identifier.
+- Check each box immediately after its evidence is filled in. Never batch-check.
+- E2E transcripts: one per `@e2e` scenario at `givn/changes/publish-site-plumbing/evidence/visual/<scenario-slug>/transcript.txt`, captured after the final assertion, with the temporary directory, fake port, token and passphrase replaced by placeholders. The transcript carries the guard's verdict or the plan/apply summary and the changed object names; no secret, token, passphrase, private key, temporary path or plaintext credential.
+
+---
+
+## Setup task
+
+### [ ] Setup — prove strict mode, scaffold the step modules, and verify the interaction matrix
+
+**Design constraints**
+
+- Configure `verify.command` = `./run-tests.sh` and `verify.e2e_command` = `./run-tests.sh --e2e`; they must not be identical. `run-tests.sh` maps `--e2e` to `--tags @e2e` and forwards `--name`.
+- `.fail_on_skipped()` is already present; confirm it in `apps/cli/tests/features_runner.rs`. Do not weaken it.
+- Create the two step module files and their `mod.rs` declarations. Leave them without step definitions so the real scenarios are undefined and red. No empty step bodies.
+- Add the `hashicorp/tls` provider to `infra/versions.tf`, the provider mirror in `scripts/setup-infra-tests.sh`, and the lock file. Do this before the first declaration scenario so `tofu init` is offline.
+- Strict-mode proof: create a throwaway copy of the feature (or a throwaway probe feature under the change's specs) with one step renamed/undefined; run the single scenario; paste the non-zero exit and the “undefined step” report; remove the probe and restore the real feature byte-for-byte. The real scenarios stay `@wip` and undefined; the suite is red for them by design. The permanent corpus and prior changes must remain green.
+- Do not remove any `@e2e` tag.
+
+**RED/GREEN/REFACTOR/COMMIT**
+
+- [ ] RED: run the throwaway probe; record the non-zero result.
+- [ ] GREEN: restore the feature; confirm the two commands are configured and the step modules compile.
+- [ ] REFACTOR: rerun the probe-free baseline check; record the expected `@wip` red state.
+- [ ] COMMIT: `givn commit -m "chore(apply-configuration-change): prove the features runner and scaffold the pages plumbing steps"`; record the hash.
+
+**Evidence**
+
+```text
+strict probe command:
+strict probe exit:
+undefined-step output:
+restored feature diff:
+verify.command:
+verify.e2e_command:
+baseline result:
+commit:
+```
+
+---
+
+## Non-`@e2e` scenarios
+
+### [ ] Scenario 1 — The preview refuses each live object the revision would create and names it
+
+**Design constraints**
+
+- Shared constraints apply. This is the first production scenario: create `infra/pages_publish.tf`, the fake endpoints and the four base fixture files, and the guard/preview half of the non-e2e steps.
+- The Given primes the inherited state with both adoption batches and the inherited declaration's real apply; then seeds a live deploy key titled `duty2cal.github.io publish`, a live `PAGES_DEPLOY_KEY` secret and a live rule set named `pages protection` in the fake's list fixtures.
+- The preview must refuse before the targeted plan: the state does not bind the three live addresses. The report names the deploy key, the secret and the rule set. Live and the applied state are unchanged. No write is issued.
+- Do not call the plan when the guard refuses.
+
+**TDD evidence**
+
+- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "The preview refuses each live object the revision would create and names it"`. Paste the non-zero output.
+- [ ] GREEN: add the declaration, fake endpoints/fixtures and step definitions; list every production file. Run the same command; exit zero.
+- [ ] REFACTOR: clean up; rerun the same command; exit zero.
+- [ ] COMMIT: `givn commit -m "feat(apply-configuration-change): refuse a preview that would create a live unbound pages object"`; record the hash.
+
+```text
+RED command:
+RED exit/output:
+GREEN production files:
+GREEN command:
+GREEN exit/output:
+REFACTOR command:
+REFACTOR exit/output:
+commit:
+```
+
+### [ ] Scenario 2 — An unreadable pages repository refuses the preview and names it
+
+**Design constraints**
+
+- Shared constraints apply. Add the fake fault: 403 for `GET repos/duty2cal/duty2cal.github.io` only; the guard's keys/secrets/rulesets subpath reads still succeed.
+- The plan's repository read fails and names `duty2cal/duty2cal.github.io`. The preview fails; live and the applied state are unchanged. No write.
+- Do not substitute a guard-list failure for the repository read; the scenario asserts the repository name.
+
+**TDD evidence**
+
+- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "An unreadable pages repository refuses the preview and names it"`. Paste the non-zero output.
+- [ ] GREEN: add the fault and the step assertions; list production files. Run the same command; exit zero.
+- [ ] REFACTOR: clean up; rerun; exit zero.
+- [ ] COMMIT: `givn commit -m "feat(apply-configuration-change): fail a pages preview whose repository cannot be read"`; record the hash.
+
+```text
+RED command:
+RED exit/output:
+GREEN production files:
+GREEN command:
+GREEN exit/output:
+REFACTOR command:
+REFACTOR exit/output:
+commit:
+```
+
+### [ ] Scenario 3 — A live object created after the preview refuses the apply and names it
+
+**Design constraints**
+
+- Shared constraints apply. The scenario creates the saved preview, then writes a deploy key titled `duty2cal.github.io publish` into the fake's overlay before the apply.
+- The second creation guard runs immediately before the write. It refuses and names the deploy key. No declared object is created; the applied state is unchanged and not stale.
+- The step must assert the journal has no applied write; the seeded key exists before the apply and is not an apply write.
+
+**TDD evidence**
+
+- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "A live object created after the preview refuses the apply and names it"`. Paste the non-zero output.
+- [ ] GREEN: add the second guard, the overlay seeding and the step assertions; list production files. Run the same command; exit zero.
+- [ ] REFACTOR: clean up; rerun; exit zero.
+- [ ] COMMIT: `givn commit -m "feat(apply-configuration-change): refuse an apply when a live pages object appears after the preview"`; record the hash.
+
+```text
+RED command:
+RED exit/output:
+GREEN production files:
+GREEN command:
+GREEN exit/output:
+REFACTOR command:
+REFACTOR exit/output:
+commit:
+```
+
+### [ ] Scenario 4 — A partial failure after the deploy key is created names the applied and failed objects and marks the state stale
+
+**Design constraints**
+
+- Shared constraints apply. Fault both `PUT .../actions/secrets/PAGES_DEPLOY_KEY` and `POST .../rulesets` with 403 so only the deploy key lands and the report is deterministic.
+- The failure path restores the pre-apply state, reads live, reinstalls the failed state, removes the failed secret and rule set with `tofu state rm`, and writes the marker with the deploy key only. The report prints the deploy key as created, the secret and rule set as not created, and the 403 reason.
+- The applied state records the deploy key and neither the secret nor the rule set. The stale marker names the deploy key and no other object. A new preview refuses and names the stale state.
+- If cleanup cannot remove a failed address, the marker says `unverified`; do not mark the task done in that case.
+
+**TDD evidence**
+
+- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "A partial failure after the deploy key is created names the applied and failed objects and marks the state stale"`. Paste the non-zero output.
+- [ ] GREEN: add the apply/failure path, the two faults, the state cleanup and the step assertions; list production files. Run the same command; exit zero.
+- [ ] REFACTOR: clean up; rerun; exit zero.
+- [ ] COMMIT: `givn commit -m "feat(apply-configuration-change): report a partial pages apply and mark the state stale"`; record the hash.
+
+```text
+RED command:
+RED exit/output:
+GREEN production files:
+GREEN command:
+GREEN exit/output:
+REFACTOR command:
+REFACTOR exit/output:
+commit:
+```
+
+### [ ] Scenario 5 — A failed read-back after the publishing secret is stored is reported and the state is marked stale
+
+**Design constraints**
+
+- Shared constraints apply. Fault `GET .../actions/secrets/PAGES_DEPLOY_KEY` with 403, `after_requests: 1`, `once: true`: the provider's create timestamp read is request one; the routine's post-apply read is request two.
+- The apply succeeds and all three objects are stored. The read-back fails, keeps the applied state, writes the marker, prints `applied: ...` and `failed read-back: <object> <reason>`, and exits non-zero. The report names the secret and the 403. A new preview refuses and names the stale state.
+- Do not rely on the provider's create read to fail; it ignores its timestamp-read error.
+
+**TDD evidence**
+
+- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "A failed read-back after the publishing secret is stored is reported and the state is marked stale"`. Paste the non-zero output.
+- [ ] GREEN: add the post-apply read-back and the fault; list production files. Run the same command; exit zero.
+- [ ] REFACTOR: clean up; rerun; exit zero.
+- [ ] COMMIT: `givn commit -m "feat(apply-configuration-change): report a failed pages read-back after a green apply"`; record the hash.
+
+```text
+RED command:
+RED exit/output:
+GREEN production files:
+GREEN command:
+GREEN exit/output:
+REFACTOR command:
+REFACTOR exit/output:
+commit:
+```
+
+### [ ] Scenario 6 — An apply refused before the first live write leaves the state unchanged and writes no stale marker
+
+**Design constraints**
+
+- Shared constraints apply. Fault `POST .../keys` and `POST .../rulesets` with 403 so no live object is created. The secret depends on the key and is not attempted.
+- Prime the Given “the failed apply records the planned deploy key in its state without creating it live” with a raw apply outside the routine; the routine itself restores the pre-apply state on a clean refusal.
+- The failure path sees no landed live object, keeps the pre-apply state, writes no marker, and prints the deploy key and rule set as not created with the 403 reason. The report names the rule set. Live and the applied state are unchanged.
+
+**TDD evidence**
+
+- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "An apply refused before the first live write leaves the state unchanged and writes no stale marker"`. Paste the non-zero output.
+- [ ] GREEN: add the clean-refusal fault, the raw-apply priming and the step assertions; list production files. Run the same command; exit zero.
+- [ ] REFACTOR: clean up; rerun; exit zero.
+- [ ] COMMIT: `givn commit -m "feat(apply-configuration-change): keep the pages state unchanged on a refused create"`; record the hash.
+
+```text
+RED command:
+RED exit/output:
+GREEN production files:
+GREEN command:
+GREEN exit/output:
+REFACTOR command:
+REFACTOR exit/output:
+commit:
+```
+
+### [ ] Scenario 7 — A green apply after a partial failure creates only the objects the state does not bind and completes the revision
+
+**Design constraints**
+
+- Shared constraints apply. Produce the Given by running the partial scenario's faulted apply through the real routine (deploy key lands, secret and rule set fail, marker written, failed planned values removed by `tofu state rm`). Read the marker and remove it as the operator would.
+- The preview names every declared address the state does not bind and not the bound deploy key. The apply creates the missing secret and rule set and leaves the deploy key unchanged. The applied state records all three; the marker is gone after the operator's removal; a later targeted preview reports no differences.
+- Do not fabricate the state; do not leave the rule set recorded after the failed apply.
+
+**TDD evidence**
+
+- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "A green apply after a partial failure creates only the objects the state does not bind and completes the revision"`. Paste the non-zero output.
+- [ ] GREEN: add the recovery priming, the marker removal and the step assertions; list production files. Run the same command; exit zero.
+- [ ] REFACTOR: clean up; rerun; exit zero.
+- [ ] COMMIT: `givn commit -m "feat(apply-configuration-change): complete a pages revision after a partial failure"`; record the hash.
+
+```text
+RED command:
+RED exit/output:
+GREEN production files:
+GREEN command:
+GREEN exit/output:
+REFACTOR command:
+REFACTOR exit/output:
+commit:
+```
+
+### [ ] Scenario 8 — Applying the pages plumbing leaves the published site and its source untouched
+
+**Design constraints**
+
+- Shared constraints apply. The fake serves the stock site from `main` at `/`; the apply creates only the deploy key, the secret and the rule set.
+- Assert the stock site source, Pages configuration and repository settings are unchanged. The journal contains no applied write other than the deploy key, the secret and the rule set. The deploy key is write-enabled (`read_only = false`).
+- Do not assert the site content is served by GitHub; the fake proves the API shapes and the journal, not the live site.
+
+**TDD evidence**
+
+- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "Applying the pages plumbing leaves the published site and its source untouched"`. Paste the non-zero output.
+- [ ] GREEN: add the stock-site fixture and the journal assertions; list production files. Run the same command; exit zero.
+- [ ] REFACTOR: clean up; rerun; exit zero.
+- [ ] COMMIT: `givn commit -m "feat(apply-configuration-change): leave the stock pages site untouched by the credential apply"`; record the hash.
+
+```text
+RED command:
+RED exit/output:
+GREEN production files:
+GREEN command:
+GREEN exit/output:
+REFACTOR command:
+REFACTOR exit/output:
+commit:
+```
+
+---
+
+## E2E setup task (after every non-`@e2e` scenario is GREEN)
+
+### [ ] E2E setup — local environment, strict proof, transcript capture, and scoped-count proof
+
+**Design constraints**
+
+- Bring up the design's local environment: the fake server in `--writes` mode on an ephemeral loopback port, the provider mirror with both providers, a temporary declaration copy primed by the real adoption command and the inherited declaration's real apply, the `security-applied` fixture tree, and a fixed 16-plus-character test passphrase and dummy billing email. The scenarios start the fake; no service is left running.
+- E2E steps live in `apps/cli/tests/steps/e2e/publish_site_plumbing.rs`, separate from the non-`@e2e` file. They drive the real `tofu` binary as subprocesses (`init`, targeted `plan -out`, `show -json`, refresh-only report, `apply <plan>`) and the fake's REST paths for the guard/read-back, with `GITHUB_TOKEN=test-token`, `GITHUB_BASE_URL=http://127.0.0.1:<port>`, `TF_VAR_state_passphrase` and `TF_VAR_billing_email`.
+- Strict mode: the same `.fail_on_skipped()`; a `todo!()` or undefined step fails.
+- `verify.e2e_command` is `./run-tests.sh --e2e`, never equal to `verify.command`. Prove the filter: run `./run-tests.sh` and `./run-tests.sh --e2e`; paste both scenario counts. The E2E count must be strictly smaller than the full count (the delta alone has 10 scenarios; exactly 2 are `@e2e`). If the full suite is red for `@wip`, the runner still prints the discovered scenario counts; paste those.
+- Confirm the fake is reachable on the ephemeral port before the scenario steps. The transcript capture writes one scrubbed transcript per `@e2e` scenario to `givn/changes/publish-site-plumbing/evidence/visual/<scenario-slug>/transcript.txt` after the final assertion.
+- Do not remove any `@e2e` tag.
+
+**Evidence**
+
+```text
+full command:
+full scenario count:
+e2e command:
+e2e scenario count:
+strict probe command/exit:
+fake smoke result:
+commit:
+```
+
+- [ ] COMMIT: `givn commit -m "chore(apply-configuration-change): prove the e2e filter and scaffold the pages plumbing e2e steps"`; record the hash.
+
+---
+
+## `@e2e` scenarios (last)
+
+### [ ] Scenario 9 — Organization owner previews the pages plumbing and only the three live creations are named
+
+**Design constraints**
+
+- Shared constraints apply. Drive the real `tofu` binary: `tofu init -input=false`, `tofu state list`, the guard's live reads, the three-target `tofu plan -input=false -no-color -out=<tmp>/plan.bin`, `tofu show -json`, and the refresh-only report.
+- Assert the preview names the deploy key, the `PAGES_DEPLOY_KEY` secret, the rule set and the generated `tls_private_key.pages_publish` material; no other live object is created or changed; the live configuration and the applied state are unchanged. The first preview's changed set is the four declared addresses.
+- Commit the scrubbed transcript under the evidence path. The transcript shows the guard's verdict or the plan's summary and the changed object names, with no secret/token/passphrase/temp path.
+
+**TDD evidence**
+
+- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --e2e --name "Organization owner previews the pages plumbing and only the three live creations are named"`. Paste the non-zero output.
+- [ ] GREEN: implement the E2E preview steps, the transcript capture and the assertions; list production files. Run the same command; exit zero.
+- [ ] REFACTOR: clean up; rerun; exit zero.
+- [ ] COMMIT: `givn commit -m "test(e2e): preview the pages plumbing through the real tofu CLI"`; record the hash.
+
+```text
+RED command:
+RED exit/output:
+GREEN production files:
+GREEN command:
+GREEN exit/output:
+REFACTOR command:
+REFACTOR exit/output:
+transcript path:
+commit:
+```
+
+### [ ] Scenario 10 — Organization owner applies the previewed revision and the pages publishing credential is created
+
+**Design constraints**
+
+- Shared constraints apply. Drive the guard again, `tofu apply -input=false <tmp>/plan.bin`, the post-apply read-back, and a targeted follow-up plan.
+- Assert the apply reports the deploy key, secret and rule set as created; the deploy key is write-enabled and titled `duty2cal.github.io publish`; the secret journal carries `key_id` `568250167242205012`, a ciphertext longer than the 48-byte sealed-box overhead and no PEM header; the rule set is active with `DeployKey`/`always` and the three rules; the state records the four addresses (the three bindings and the generated key); the follow-up plan reports no differences.
+- Assert the real interface output and the live reads; repository state is secondary, never the only assertion. Commit the scrubbed transcript.
+
+**TDD evidence**
+
+- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --e2e --name "Organization owner applies the previewed revision and the pages publishing credential is created"`. Paste the non-zero output.
+- [ ] GREEN: implement the E2E apply/read-back steps and the transcript; list production files. Run the same command; exit zero.
+- [ ] REFACTOR: clean up; rerun; exit zero.
+- [ ] COMMIT: `givn commit -m "test(e2e): apply the pages publishing credential through the real tofu CLI"`; record the hash.
+
+```text
+RED command:
+RED exit/output:
+GREEN production files:
+GREEN command:
+GREEN exit/output:
+REFACTOR command:
+REFACTOR exit/output:
+transcript path:
+commit:
+```
+
+---
+
+## Required operator apply (post-GREEN)
+
+### [ ] Operator apply — create the live credential from the real declaration
+
+This task is operator-owned; the agent records the evidence and the commit. Do not mark it done on the fake alone.
+
+- [ ] Run `tofu init -input=false` and `tofu state list` with the real passphrase; run the guard with the real token; only an address the state does not bind is named.
+- [ ] Run the targeted preview; require `Plan: 4 to add, 0 to change, 0 to destroy.` with exactly the four addresses. A recovery preview carries only the state-missing set.
+- [ ] Run the refresh-only report; require a completed report with no non-`no-op` change; run the guard again immediately before the apply.
+- [ ] Apply the saved plan. On success, run the targeted follow-up plan; require no changes and no `terraform.tfstate.stale`.
+- [ ] Record the scrubbed transcript at `givn/changes/publish-site-plumbing/evidence/real-apply/transcript.txt`.
+- [ ] Commit the declaration, the lock file and the encrypted `infra/terraform.tfstate` plus its backup in one revision, scoped `apply-configuration-change`; remove `plan.bin`.
+- [ ] Check `https://duty2cal.github.io/` once: it still serves the stock page.
+
+A refusal is reported before anything is called done. A partial failure is reported with the applied and failed objects named, the marker written, the partial state not committed, and the change not done.
+
+```text
+init/state output:
+guard output:
+preview output:
+refresh-only output:
+apply output:
+follow-up plan output:
+transcript path:
+commit:
+stock site check:
+```
+
+---
+
+## Archive-time obligation (after review, not a review gate)
+
+- [ ] After the archive merge, verify `cliff.toml`'s marked capability allow-list still names `apply-configuration-change`. No edit is owed. TD-021 (the per-type parser rows omit the use-case id) remains for the change that owns the change log.
+
+## Done criteria
+
+- Every scenario box is checked with pasted evidence and a recorded revision.
+- Every non-`@e2e` scenario and both `@e2e` scenarios exit zero in their targeted runs.
+- `./run-tests.sh` and `./run-tests.sh --e2e` both exit zero on the full suite; the E2E setup task's counts prove the filter is scoped.
+- No `@wip` tags remain; no `@e2e` tag was removed; no empty/`todo!()` step remains.
+- The operator apply is recorded and the real state committed.
+- The archive-time allow-list check is carried into the archive.

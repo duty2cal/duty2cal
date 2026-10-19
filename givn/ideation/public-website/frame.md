@@ -58,8 +58,10 @@ Inside:
 - The browser build and the publish workflow from the monorepo into the Pages
   repository, consuming the deploy key and `PAGES_DEPLOY_KEY` secret created
   by the prior topic's `publish-site-plumbing` seed. Creating, rotating or
-  adopting that credential stays with that seed; its open pages-ruleset
-  bypass question is a prerequisite (Q2 of the prior topic, not this one).
+  adopting that credential stays with that seed; its ruleset bypass is closed
+  by that change's proposal D1 (the `DeployKey` actor type bypasses with
+  `always`), and the credential must be applied before the publish path can
+  use it (Q2 of the prior topic, not this one).
 - The technical no-network statement: a Content-Security-Policy served or
   declared with the page that forbids network requests, and no third-party
   asset.
@@ -96,9 +98,10 @@ Outside:
 ## Prerequisites owned elsewhere
 
 - The prior topic's `publish-site-plumbing` seed creates the Pages deploy key
-  and the `PAGES_DEPLOY_KEY` secret. It is `ready`, not implemented, and its
-  open pages-ruleset bypass question must close before the publish path can
-  use the key. This topic consumes the credential; it does not create it.
+  and the `PAGES_DEPLOY_KEY` secret. It is now the `publish-site-plumbing`
+  change; its proposal D1 closes the ruleset bypass, and its credential must
+  be applied before the publish path can use the key. This topic consumes the
+  credential; it does not create it.
 - The declared configuration's Pages source stays `main` at `/`; the site
   publish path replaces the target's content and does not change the Pages
   build type.
@@ -113,7 +116,7 @@ Actors. Personas are proposed only after the Frame is confirmed.
 | Stakeholder type | Interest | Concrete example |
 |---|---|---|
 | Crew member converting their own plan | A usable calendar on any browser without installing anything, with the same completeness and failure behaviour as the executable, and no plan data leaving the machine. | On a macOS laptop, the crew member converts their plan and gets the same calendar the Windows executable would produce. |
-| Project maintainer / release owner | One site source, one build, one publish path; the page's claims are true and the version it shows is traceable to a revision. | A push to `main` publishes a site whose footer names the commit it was built from. |
+| Project maintainer / release owner | One site source, one build, one publish path; the page's claims are true and the version it shows is traceable to a revision. | A push to `main` or a release tag publishes a site whose footer names the commit or tag it was built from. |
 | Contributor reviewer | Can review the page, the WASM facade and the publish workflow in the same history as the converter; can check the no-network claim and the licence headers. | A pull request that adds a font from a third-party host is refused because it breaks the CSP and the privacy statement. |
 | Visitor who does not convert | Understands what the project does, reaches the source and the Windows release, and is not asked to upload anything. | A colleague opens the URL, reads the privacy statement and follows the release link. |
 
@@ -181,10 +184,10 @@ direction unless the user revises it:
 | `web/` and `ffi/wasm/` exist in the monorepo. | They do not; both are new. |
 | The site can promise "no network request". | Technically reachable with a self-only CSP and no third-party asset; the browser test must prove it. The draft's `wasm-unsafe-eval` requirement is supplied, not verified. |
 | `LICENSES/GPL-3.0-or-later.txt` must be removed. | Stale: the file does not exist. `LICENSES/` holds `MPL-2.0.txt`, `CC0-1.0.txt` and `Unicode-3.0.txt`. |
-| The site's version comes from a tag plus commit. | The site publishes on `main` pushes, where no release tag necessarily exists; the version rule is resolved as `git describe` plus a commit link (Q5). |
+| The site's version comes from a tag plus commit. | The site publishes on path-filtered `main` pushes and on release tags. A tag build's footer shows the tag; a pre-tag main build shows `git describe` plus the commit (Q5). The release workflow gates the archive on the tag's site deploy. |
 | A project-site redirect is recommended. | It would need a second Pages site on the monorepo, which the declaration does not enable; out of scope (Q6). |
 | The browser converter's publication guarantees are the executable's. | The permanent use case promises a file "beside the source" under an unused numbered name and a numbered diagnostic file. A browser download has neither a source directory nor a filesystem write; the variant offers the file and the browser saves it (Q4). |
-| The deploy key and secret can be created by the site change. | They belong to the prior topic's `publish-site-plumbing` seed; this topic consumes them. The seed is `ready`, not implemented, and its pages-ruleset bypass question is open. |
+| The deploy key and secret can be created by the site change. | They belong to the prior topic's `publish-site-plumbing` seed; this topic consumes them. The seed is now the `publish-site-plumbing` change; its proposal D1 closed the ruleset bypass, and the credential is not yet applied. |
 | The browser route leaves the release platform statement untouched. | The release use case currently says nothing else is supported, tested, distributed or offered for download. The browser is not an archive platform; the wording must distinguish the browser and executable routes without changing the Windows archive contract. |
 | A compile check proves browser support. | It proves only that the Rust crates compile for `wasm32-unknown-unknown` with `getrandom/wasm_js`. Linking, `wasm-pack` output, a real-browser run, and the no-network claim remain unverified. |
 
@@ -196,4 +199,4 @@ No open question remains. Q1–Q8 are closed: the Frame (Q1), the Persona lenses
 (Q2), capability-based browser support and 20 MiB plans (Q3), browser-owned
 save and diagnostic text (Q4), `git describe` versioning (Q5), redirect and
 custom domain out of scope (Q6), one change seed for the site and its public
-copy (Q7), and path-filtered `main` (Q8).
+copy (Q7), and path-filtered `main` plus release tag (Q8, amended 2026-10-19).

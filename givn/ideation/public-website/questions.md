@@ -389,6 +389,15 @@
   shape. Rejected: **Every push** because it republishes on documentation-only
   changes; **Release tag only** because a page fix would wait for a release and
   the site would not reflect the source the footer names.
+- Amendment 2026-10-19 (user): **Path-filtered `main` plus every release tag**
+  because the user requires every release to deploy the site. A main-only
+  build cannot stamp a tag created after it, and it leaves the release
+  independent of the site; a tag-only build would restore the page-fix delay
+  the original resolution rejected. The release workflow calls the Site
+  publication and publishes the archive only after the site deploy succeeds.
+  Rejected: **Release tag only** because page fixes would wait for a release;
+  **main plus a release gate without a tag deploy** because the release would
+  not deploy the site and the footer would not name the tag.
 
 ## Q9 — Should the Handoff records be published and promoted?
 

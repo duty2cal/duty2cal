@@ -64,7 +64,7 @@ committed in the repository.
 ```mermaid
 flowchart LR
   owner["Organization owner"] -->|"edits infra/ and runs the adoption"| adm["Adoption command and OpenTofu"]
-  adm -->|"read-only import of the existing objects"| gh["GitHub (organization, both repositories, rule set, Pages source, repository security settings)"]
+  adm -->|"read-only import of the existing objects"| gh["GitHub (organization, both repositories, both protection rule sets, Pages source, repository security settings, the pages deploy key and its secret)"]
   adm -->|"writes the encrypted applied state"| state["infra/terraform.tfstate (ciphertext, committed)"]
   owner -->|"later: preview, apply and local drift check"| adm
   adm -->|"a previewed change, written once by the apply"| gh
@@ -74,7 +74,8 @@ flowchart LR
 | Partner | Input to the project | Output from the project |
 |---|---|---|
 | GitHub | The live configuration of the declared objects, read (adoption, preview, drift check) | The declared changes of one previewed revision, written by an apply; nothing during adoption or a preview |
-| Organization owner | The declaration, the selected batches, the passphrase and the token | One adopted/bound line per object, a preview naming every difference, one reported change per applied object, or a refusal naming the object |
+| Organization owner | The declaration, the selected batches, the passphrase and the token | One adopted/bound line per object, a preview naming every difference, one reported change per applied object, or a refusal naming the object; a create guard naming an object that already exists live |
+| Publishing workflow (the website topic, not yet built) | The registered write-enabled deploy key and the monorepo's `PAGES_DEPLOY_KEY` secret | A push to the pages repository's default branch that the pages rule set admits; this change creates the credential but no consumer |
 | Repository reader | The declaration, the batches and the encrypted state | The reviewable intended configuration; ciphertext they cannot open |
 | Organization profile reader | The reviewed `org/` text and the default security policy, published by an apply | A public overview page and a default security policy that state the current release truthfully and request no third-party resource |
 | Contributor without a repository policy | Nothing; GitHub resolves the organization default | The organization's default `SECURITY.md` with the private reporting route |
@@ -117,7 +118,7 @@ flowchart LR
 | Offered diagnostic (browser) | In-memory Blob and `<a download>`; the browser performs the save | Out |
 | Construction clock | Operating-system clock (UTC) in the executable; `js_sys::Date` in the browser | In |
 | Browser runtime | Chromium, Firefox or Safari with WebAssembly and ES modules; no other-origin request after load | In |
-| Public-home adoption, preview and configuration change | GitHub REST API over HTTPS: object reads for adoption, preview and the drift check; writes only the declared changes of a previewed revision, from the maintainer's workstation | In (reads) and out (an apply only), never the converter |
+| Public-home adoption, preview and configuration change | GitHub REST API over HTTPS: object reads for adoption, preview, the creation guard and the drift check; writes only the declared changes of a previewed revision (including the pages deploy key, its secret and the pages rule set), from the maintainer's workstation | In (reads) and out (an apply only), never the converter |
 | Organization profile publication | The same GitHub REST API: the profile repository is created and its two files are written by a previewed apply; GitHub renders the page and serves the default security policy | Out (an apply only), never the converter |
 | Pinned repositories and private vulnerability reporting | The organization's and repository's web settings, changed once by the organization owner; no API or declaration path | Out (manual only), never the converter |
 

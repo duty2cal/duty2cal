@@ -362,6 +362,14 @@ pub(crate) fn ensure_base_adoption(w: &mut DutyWorld) {
         fs::remove_file(&profile_declaration)
             .expect("remove the profile declaration for the base apply");
     }
+    // The pages publishing declaration arrived after this change; the base
+    // apply stays the declaration this change was written against.
+    let pages_declaration = declaration.join("pages_publish.tf");
+    let had_pages = pages_declaration.is_file();
+    if had_pages {
+        fs::remove_file(&pages_declaration)
+            .expect("remove the pages declaration for the base apply");
+    }
 
     let init = tofu(w, &["init", "-input=false", "-no-color"]);
     assert!(
@@ -436,6 +444,13 @@ pub(crate) fn ensure_base_adoption(w: &mut DutyWorld) {
             profile_declaration,
         )
         .expect("restore this change's profile declaration");
+    }
+    if had_pages {
+        fs::copy(
+            repository_root().join("infra/pages_publish.tf"),
+            pages_declaration,
+        )
+        .expect("restore this change's pages declaration");
     }
 }
 

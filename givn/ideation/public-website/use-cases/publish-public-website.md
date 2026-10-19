@@ -1,6 +1,6 @@
 # Use case: publish-public-website
 
-Status: revised 2026-10-19 after the Use Case Elaboration boundary review.
+Status: revised 2026-10-19 after the Use Case Elaboration boundary review and the release-coupling decision.
 This is a topic-local contract, not a change, proposal or implementation
 authorization.
 
@@ -23,21 +23,25 @@ built from a named Built revision.
 
 ## Trigger
 
-A source revision reaches the default branch.
+A source revision reaches the default branch, or a release tag is pushed.
 
 ## Preconditions
 
 - The hosting target exists; the deploy key and secret from the prior topic's
   `publish-site-plumbing` seed are in place, and its Pages source is `main` at
-  `/`. That seed is ready but not implemented; its pages-ruleset decision is
-  an open external prerequisite.
+  `/`. That seed is now the `publish-site-plumbing` change; its proposal D1
+  closes the ruleset bypass, and applying the credential is the remaining
+  external prerequisite.
 - The revision contains the Public website's source and the browser
   conversion capability.
 
 ## Main flow
 
-1. Actor lands a source revision; System receives it and checks whether it
-   changes the site's inputs. If it does not, no Site publication starts.
+1. Actor lands a source revision or pushes a release tag; System receives it.
+   For a default-branch revision it checks whether the revision changes the
+   site's inputs; a revision that changes none starts no Site publication.
+   A release tag always starts a Site publication from the tagged revision,
+   because the footer's tag and the release's site must match.
 2. Actor expects the page to be built only from the repository; System builds
    the Site output — the page, the script and the WASM bundle — with the
    footer naming the Built revision, and produces the licence file.
@@ -53,8 +57,12 @@ A source revision reaches the default branch.
 
 ## Extensions
 
-- 1: the revision changes none of the site's inputs → no Site publication; the
-  current Public website stays; protects the current-site minimal guarantee.
+- 1: a default-branch revision changes none of the site's inputs → no Site
+  publication; the current Public website stays; protects the current-site
+  minimal guarantee.
+- 1: a release tag is pushed → the Site publication starts from the tagged
+  revision even when that revision changes no site input, because the footer's
+  tag changes; protects the release-site consistency rule.
 - 2: the build fails → no publication; the previous Public website stays; the
   failed step is named; protects the minimal guarantee.
 - 2: the Built revision cannot be resolved → refuse; name it; the previous
@@ -101,7 +109,15 @@ A source revision reaches the default branch.
 - The Site publication starts on a push to the default branch that changes
   `crates/**`, `ffi/wasm/**`, `web/**`, `Cargo.toml`, `Cargo.lock`,
   `rust-toolchain.toml`, `LICENSES/MPL-2.0.txt` or
-  `.github/workflows/web.yml` (Q8).
+  `.github/workflows/web.yml`, or on a push of a release tag `v*` (Q8,
+  amended 2026-10-19). The path filter applies only to default-branch pushes;
+  a release tag always builds from the tagged revision.
+- The release workflow calls this Site publication and publishes the Windows
+  release archive only after the site deploy succeeds; a site failure leaves
+  the previous site and blocks the release.
+- The release tag is authoritative: a tag publication builds from the tagged
+  revision even when `main` is newer, so the maintainer tags the revision whose
+  site should be released.
 - The hosting target's Pages source stays `main` at `/`; the deploy key and
   secret are prerequisites, not this use case's output.
 - The Windows x86_64 archive contract is unchanged. The platform wording in
@@ -132,6 +148,8 @@ A source revision reaches the default branch.
 | Hand edit | Someone adds a file to the hosting target. | The next whole-content publication removes it. |
 | Serving failure | The content replacement succeeds; serving fails. | The target holds the new complete page; the serving failure is named. |
 | Page fix after a release | `web/` changes after `v0.5.0`. | The site rebuilds and the footer names the new Built revision. |
+| Release tag with no site-input change | `v0.5.0` tags a revision whose site inputs did not change since the previous site build. | The site republishes from the tag and the footer shows `v0.5.0`. |
+| Release site deploy fails | `v0.5.0` is tagged and the site build fails. | The previous site stays; the release workflow names the failure and does not publish the archive. |
 | Profile apply fails | The site is live; the profile apply fails. | The site is live; the change seed is not complete; the failed apply is named by the profile change. |
 
 ## Minimal guarantee
@@ -141,6 +159,7 @@ replaced leaves the previous Public website in place and names the failure;
 after the replacement the target holds the complete built content; a serving
 failure is named and never reported as a mixed page; the published page's
 source is never hand-edited; no release artifact or hosting setting changes.
+A release-tag failure also blocks the release, and the previous site stays.
 
 ## Success guarantee
 
@@ -196,8 +215,9 @@ This is a changing use case: it publishes a new Public website.
   the root README correction (a source revision).
 - The durable claims that still say no browser application; the change seed
   revises them in the same change.
-- Publishing the Windows release (`publish-public-release`); only its platform
-  wording is adjusted by the same change seed.
+- Publishing the Windows release (`publish-public-release`); the release
+  workflow calls this use case and gates the release on it, but the archive
+  remains that use case's success.
 - Changing the conversion rules or the supported PDF family.
 - A custom domain and the project-site redirect (Q6).
 - A hosted conversion, upload, account or analytics service.

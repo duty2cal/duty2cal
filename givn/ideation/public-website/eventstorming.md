@@ -17,7 +17,7 @@ Every element in the table and the canvases carries one of these IDs.
 | Aggregate | G1 Duty-plan calendar (confirmed in the glossary) |
 | Commands | C1 Export duty plan; C2 Complete duty-plan calendar; C3 Publish calendar export; C4 Record conversion failure; C5 Push source revision; C6 Build site; C7 Evaluate site evidence; C8 Publish site; C9 Open site |
 | Events | E1–E7 conversion; E8–E16 site |
-| Policies | P3 Build on site-input change (path-filtered `main`; Q8 closed); P5 Evidence gates publication |
+| Policies | P3 Build on site-input change or release tag (path-filtered `main` plus tag; Q8 amended); P5 Evidence gates publication |
 | Constraints | K1 Generated output only; K2 No hand edits; K3 Resolvable version (`git describe`; Q5 closed); K4 Explain before asking; K5 No network after load |
 | Read models | R1 Selected duty plan; R2 Conversion status; R3 Failure reason; R4 Source revision; R5 Site output; R6 Site version; R7 Site evidence; R8 Page content; R9 Published site; R10 Publication failure |
 | External systems | X1 Public home (GitHub source repository); X2 Pages repository (write target); X3 GitHub Pages (serving service) |
@@ -69,7 +69,7 @@ command they govern, never as producers of events.
 
 | ID | Kind | Statement | Governs |
 |---|---|---|---|
-| P3 | Policy | A revision that changes the site's inputs requests a build; a revision that changes none of them does not. Path-filtered `main` (Q8 closed). | C6 Build site |
+| P3 | Policy | A default-branch revision that changes the site's inputs requests a build; a revision that changes none of them does not. A release tag always requests a build from the tagged revision. Path-filtered `main` plus release tag (Q8 amended 2026-10-19). | C6 Build site |
 | P5 | Policy | Publication happens only after the conversion test, the browser check and the licensing/REUSE check pass; a failed check is named and the previous site stays in place. | C7 Evaluate site evidence; C8 Publish site |
 | K1 | Constraint | The build produces the Site output (page, script and WASM bundle) and the licence file from the monorepo; the Pages repository receives only built files. | C8 Publish site |
 | K2 | Constraint | The Pages repository is never edited by hand; the next build replaces its content. | C8 Publish site |
@@ -143,7 +143,7 @@ flowchart LR
   e13["E13 Event: Site evidence refused"]
   e14["E14 Event: Site published"]
   e15["E15 Event: Site publication failed"]
-  p3{{"P3 Policy: build on site-input change (Q8 closed)"}}
+  p3{{"P3 Policy: build on site-input change or release tag (Q8 amended)"}}
   p5{{"P5 Policy: evidence gates publication"}}
   k1{{"K1 Constraint: generated output only"}}
   k2{{"K2 Constraint: no hand edits"}}
@@ -208,7 +208,7 @@ flowchart LR
 
 - To publish a site (E14), the evidence must have been accepted (E12), which
   requires a built site (E10) and a source revision (E8) that changed the
-  site's inputs (P3, Q8). The build is bounded by the version rule (K3, Q5),
+  site's inputs, or a release tag (P3, Q8). The build is bounded by the version rule (K3, Q5),
   the page's public statements (K4), and the no-network rule (K5).
 - To serve a page (E16), a site must have been published (E14) into the Pages
   repository (X2), which GitHub Pages (X3) serves. The prior topic's
@@ -256,4 +256,4 @@ flowchart LR
 - Q6 — redirect and custom domain out of scope (outside these canvases).
 - Q7 — one change seed; the profile copy follows the live site; the README is
   a source revision (K4).
-- Q8 — path-filtered `main` (P3, E9).
+- Q8 — path-filtered `main` plus release tag (P3, E9; amended 2026-10-19).

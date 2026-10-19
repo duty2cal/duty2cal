@@ -103,30 +103,30 @@ never from CI. The declaration lives in the repository; the binding between the
 declaration and GitHub's objects is an encrypted state file that is committed
 with it; the passphrase that opens it, and the token that authorizes the
 operation, exist only in the maintainer's environment. The declaration covers
-the organization settings, the monorepo, the Pages repository, the protection
-rule, the repository security settings, and the public organization profile
-repository with its two reviewed files. The last three of those are created by
-an apply when live lacks them; the others were adopted before their first
-change.
+the organization settings, the monorepo, the Pages repository, both protection
+rule sets, the repository security settings, the pages publishing credential,
+and the public organization profile repository with its two reviewed files. The
+last of those and the credential's three objects are created by an apply when
+live lacks them; the others were adopted before their first change.
 
 ```mermaid
 flowchart TB
   ws["Maintainer's workstation"]
-  decl["infra/ — declaration, adoption batch, terraform.tfstate (ciphertext), .terraform.lock.hcl"]
+  decl["infra/ — declaration, adoption batch, terraform.tfstate (ciphertext, holding the publishing key), two provider lock entries"]
   env["Environment only: TF_VAR_state_passphrase, GITHUB_TOKEN, TF_VAR_billing_email"]
-  tool["tofu + integrations/github provider (offline mirror in tests)"]
+  tool["tofu + integrations/github and hashicorp/tls providers (offline mirror in tests)"]
   gh{{"GitHub REST API"}}
   ws --> env --> tool
   ws --> decl --> tool
-  tool -->|"read-only import / refresh; one previewed apply"| gh
+  tool -->|"read-only guard, import / refresh; one previewed apply"| gh
   tool -->|"writes the encrypted state"| decl
 ```
 
 | Node / Environment | Description |
 |---|---|
-| Maintainer's workstation | Runs the adoption and later the preview, apply and local drift check; holds the passphrase and the token. |
-| `infra/` | The declaration, the batch, the provider lock file and the encrypted state; committed, reviewed and public — but the state is ciphertext. |
-| GitHub | The only owner of the live settings; receives a write only from a later, separately reviewed apply. |
+| Maintainer's workstation | Runs the guard, the adoption and later the preview, apply and local drift check; holds the passphrase and the token, and is now the only place the publishing private key can be recovered. |
+| `infra/` | The declaration, the batch, the provider lock entries and the encrypted state; committed, reviewed and public — but the state is ciphertext. |
+| GitHub | The only owner of the live settings; receives a write only from a later, separately reviewed apply, and holds the deploy key's public half and the sealed secret. |
 | CI | Runs the same suite against a local fake API; holds no GitHub token and no passphrase, so it can neither apply nor report drift. |
 
 ### The organization profile repository
@@ -151,6 +151,26 @@ The profile page is a public presentation surface, not a system UI: GitHub
 renders it, and the project neither serves nor scripts that rendering. The
 page's truthfulness is a property of the reviewed `org/` text; its links are
 absolute and it embeds no third-party image or widget.
+
+### The pages publishing credential and rule set
+
+| Property | Value |
+|---|---|
+| Pages repository | `duty2cal/duty2cal.github.io`, public, already serving the stock Jekyll site |
+| Deploy key | `duty2cal.github.io publish`, write-enabled (`read_only = false`), public half generated from the declaration's Ed25519 key pair |
+| Secret | `PAGES_DEPLOY_KEY` on `duty2cal/duty2cal`, carrying the private half in the OpenSSH format; the provider seals it with the repository's public key before sending it |
+| Private material | Exists only in `infra/terraform.tfstate` (twice: the generated key and the secret's value) and in the encrypted plan file, which is deleted after the apply; GitHub never returns it |
+| Rule set | `pages protection` on the pages repository: deletion, non-fast-forward, linear history; bypass actor `DeployKey` with `always` and no actor id |
+| Consumer | None yet. The website topic's publish workflow is the first reader; this change claims no publish |
+| Publication mechanism | `infra/pages_publish.tf`, applied from the maintainer's workstation behind the creation guard |
+| Adoption | none; none of the three objects exists live, so the preview names their creation and the guard refuses a live unbound object |
+
+The stock site is untouched: the apply writes no file into the pages
+repository, changes no Pages configuration and rebuilds nothing. The credential
+has no consumer until the website topic, and losing the passphrase loses the
+material behind the live deploy key; the state cannot be rebuilt from GitHub,
+so recovery is a credential rotation — a separate decision (Q11), recorded as
+a chapter-11 risk.
 
 ### Manual operator prerequisite: private vulnerability reporting
 
@@ -200,8 +220,10 @@ repeating the step. Chapter 11 records the limitation.
 - Windows GNU was kept over the brief's MSVC target: the Linux cross-build stays available and static linking preserves the single-executable requirement; the GNU runtime imports, the cross-build, and the Windows smoke start are release-evidence gates, not assumptions.
 - Linux is the cross-build, CI and local test host, not a published platform; it does not appear on the release page.
 - Already-published Linux and macOS archives stay as they were: releases are immutable, so this narrowing applies to future releases only.
-- The applied state is deployed as a committed ciphertext: `infra/terraform.tfstate` and its backup are in the repository, protected by the passphrase and by OpenTofu's `enforced = true` encryption. Losing the passphrase loses the state; re-adopting rebuilds it without changing anything live.
+- The applied state is deployed as a committed ciphertext: `infra/terraform.tfstate` and its backup are in the repository, protected by the passphrase and by OpenTofu's `enforced = true` encryption. Losing the passphrase loses the state; re-adopting rebuilds the bindings without changing anything live, except for the pages publishing key, whose private material cannot be read back from GitHub — that one is replaced, which is a credential rotation (Q11).
 - The security change from this workstation, after the earlier configuration change, enables secret scanning and push protection on the monorepo. The two Dependabot settings are adopted read-only first, so the apply carries one live change; a read-only refresh-only preflight refuses a live edit made since the preview before `tofu apply` runs. The state that records the change is committed only after the apply is green; a partial apply's state is marked stale beside itself and is not committed.
+- The pages publishing change creates three objects and one generated key: the write-enabled deploy key on the pages repository, the `PAGES_DEPLOY_KEY` secret on the monorepo, and the `pages protection` rule set. The private half exists only in the encrypted state and the deleted plan file, so the repository holds a live credential's only recoverable copy; a lost passphrase means replacing the credential, not rebuilding the state from GitHub. The stock site, its source and its Pages configuration are untouched, and no workflow consumes the credential yet.
+- The creation guard runs before the preview and again immediately before the write: an object that already exists live and the state does not bind refuses, naming the address. A failure after the deploy key is created restores the pre-apply state, reads live again, marks the state stale when a write landed, and refuses a blind retry.
 - The apply that publishes the profile creates `duty2cal/.github` and writes its two reviewed files. The repository is not adopted: it does not exist live, so the preview names the three creations and the apply records them. The profile and security-policy text stays in `org/` under CC0-1.0; the profile repository is output and is never edited by hand.
 - Before that apply, the owner enables private vulnerability reporting on `duty2cal/duty2cal` by hand, because the pinned provider cannot declare it and the published policy names its route. The setting is not in the declaration, the applied state or the drift check.
 - The declaration resolves its reviewed source through `variable "org_source_dir"`; the default is `../org` beside `infra/`. The adoption command stages the declaration without `org_profile.tf`, and the setup proof and security base workspaces omit it, so no non-profile workspace evaluates the profile files.

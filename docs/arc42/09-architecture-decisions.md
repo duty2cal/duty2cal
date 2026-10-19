@@ -13,7 +13,7 @@ Markdown file under `docs/arc42/adr/ADR-NNNN-short-slug.md`.
 | ADR-0003 | Publish downloadable releases for Windows x86_64 from one public repository | accepted | 2026-10-13 (amended 2026-10-17) | [ADR-0003-release-channel-and-platforms.md](adr/ADR-0003-release-channel-and-platforms.md) |
 | ADR-0004 | Publish releases immutably from an inspected draft | accepted | 2026-10-13 | [ADR-0004-immutable-draft-first-publication.md](adr/ADR-0004-immutable-draft-first-publication.md) |
 | ADR-0005 | Declare the public home's GitHub configuration with OpenTofu and the GitHub provider | accepted | 2026-10-17 | [ADR-0005-declare-the-public-home-with-opentofu.md](adr/ADR-0005-declare-the-public-home-with-opentofu.md) |
-| ADR-0006 | Keep the applied state local, passphrase-encrypted and committed, and check configuration drift locally | accepted | 2026-10-17 | [ADR-0006-encrypted-local-applied-state.md](adr/ADR-0006-encrypted-local-applied-state.md) |
+| ADR-0006 | Keep the applied state local, passphrase-encrypted and committed, and check configuration drift locally | accepted | 2026-10-17 (amended 2026-10-19) | [ADR-0006-encrypted-local-applied-state.md](adr/ADR-0006-encrypted-local-applied-state.md) |
 | ADR-0007 | Run the conversion in the browser through a WASM facade over the unchanged application | accepted | 2026-10-19 | [ADR-0007-browser-local-conversion-facade.md](adr/ADR-0007-browser-local-conversion-facade.md) |
 
 ADR-0001 and ADR-0002 were minted by the change to export released roster
@@ -36,6 +36,18 @@ driver is test tooling routed to `design.md`. Every other design choice in
 those changes is a supplied constraint (chapter 2), a local mechanism
 (`design.md`), or product behaviour owned by the capability specification and
 the glossary, and did not pass the qualification gate.
+
+ADR-0006 was **amended on 2026-10-19** by the change to create the pages
+publishing plumbing (publish-site-plumbing): the state it protects now holds
+the only copy of a live credential — the pages deploy key's private half, which
+GitHub never returns — and losing the passphrase therefore means replacing the
+credential rather than re-adopting. It was amended in place, not superseded.
+That change's other candidates did not qualify: the pages rule set's
+`DeployKey` bypass is protection policy and workflow behaviour owned by the
+capability specification and `design.md` (the bypass is by actor type, not a
+component or deployment boundary), and the choice to generate the key pair with
+`tls_private_key` inside the declaration is a local mechanism owned by
+`design.md` once ADR-0006 fixes that the state holds it.
 
 ## Individual ADR contract
 

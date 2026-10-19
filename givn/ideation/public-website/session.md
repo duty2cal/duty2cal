@@ -5,7 +5,7 @@
   `private/website-idea.md`; the user confirmed the topic and its Handoff
   through Q9 without a separate naming decision.
 - Phase: Handoff complete — published 2026-10-19 with the user's confirmation (Q9). The readable document, two ready seeds, five glossary terms and two Persona promotions are published.
-- Next separate workflow: `build-browser-converter` is implemented and archived. The next seed is the prior topic's `publish-site-plumbing` (deploy key and secret), then `publish-public-website`; the pages-ruleset decision in the plumbing seed is still open.
+- Next separate workflow: `build-browser-converter` is implemented and archived. The next seed is the prior topic's `publish-site-plumbing` (deploy key and secret), now an active change whose proposal D1 closes the ruleset bypass; the credential is not yet applied. Then `publish-public-website` owns both the path-filtered `main` and release-tag Site publication; the release workflow gates the archive on the tag's site deploy.
 - This completed ideation authorizes no change start, no `web/` or `ffi/wasm/` file, no workflow, no `infra/` edit, no GitHub write and no Handoff beyond the records published here.
 - Completed authority: topic state, the readable topic record, the two change
   seeds, five glossary terms and two Persona promotions only. No change
@@ -19,6 +19,11 @@
   the same completeness and explicit-failure guarantees as the executable;
   Windows x86_64 remains available; public copy states both. Rejected: a
   best-effort convenience and a landing page only.
+- Q8 amended 2026-10-19: path-filtered `main` plus every release tag. The
+  release workflow calls the Site publication and publishes the archive only
+  after the site deploy succeeds. Rejected: release tag only (page fixes wait);
+  a main deploy plus a release gate without a tag deploy (the release would not
+  deploy the site and the footer would not name the tag).
 - The supplied draft is user work, not confirmed direction.
 - `private/website-idea.md` supplies the direction: a static site published
   from the monorepo into `duty2cal/duty2cal.github.io`; browser-local
@@ -138,6 +143,7 @@ because Mermaid's parser rejects `var(--accent)` in a class definition.
   were corrected. The definition now records the prerequisite seed's status
   and the Pages source.
 - Use Case Elaboration review, 2026-10-19: nine blocking/advisory findings applied. K4 is gated by a content check; whole-content replacement and failure outcomes are consistent; the Site output term and the separate licence file are aligned; the trigger includes the licence source and names `.github/workflows/web.yml`; the browser offer names and diagnostic content are explicit; extensions name guarantees; Q7's seed-vs-use-case boundary is reconciled; durable claims are owned by the seed; K5 covers every third-party request; ephemeral offer URLs are distinguished from persistent storage; the trigger/precondition and mechanism-vocabulary issues were corrected.
+- Release-coupling decision, 2026-10-19: the user chose both the path-filtered `main` deploy and a deploy on every release tag. One reusable site build-and-deploy workflow serves both callers; the release workflow publishes the archive only after the site deploy succeeds; main and tag deploys are serialized. Q8 is amended; the seed's trigger and release-gate decisions and the use case's trigger, rule, examples and minimal guarantee are updated.
 
 ## Open questions
 
@@ -149,6 +155,6 @@ because Mermaid's parser rejects `var(--accent)` in a class definition.
 - Q5 — closed: `git describe` revision, linked to the commit.
 - Q6 — closed: redirect and custom domain out of scope.
 - Q7 — closed: one seed with the site; site publish before the profile apply.
-- Q8 — closed: path-filtered `main`.
+- Q8 — closed: path-filtered `main` plus release tag (amended 2026-10-19).
 - Q9 — Handoff confirmation (closed 2026-10-19: confirm all; five terms and
   two Personas promoted, two seeds ready).

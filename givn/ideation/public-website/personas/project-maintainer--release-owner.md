@@ -7,8 +7,12 @@ Reuse: `project-maintainer--release-owner`, base 2026-10-12; this file adds reco
 - 2026-10-19 — Reused for public website. The release owner's interest here is
   one site source, one build and one publish path; the page's public
   statements must match what it ships; the Windows release channel must not
-  regress. The site publishes from `main`, where no release tag necessarily
-  exists (Q5).
+  regress. The site publishes from path-filtered `main` (where no release tag
+  necessarily exists) and from release tags (Q5, Q8 amended 2026-10-19).
+- 2026-10-19 — Release-coupling stance: every release tag deploys the site
+  from the tagged revision before the release workflow publishes the Windows
+  archive. The archive contract itself is unchanged; a site failure leaves the
+  previous site and blocks the release.
 - 2026-10-19 — Topic stance: a site claim about the version it was built from
   is release evidence, not page copy; the footer must name a revision the
   repository can resolve.

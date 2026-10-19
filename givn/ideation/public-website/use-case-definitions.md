@@ -68,12 +68,14 @@ the publish use case's content guarantee.
 ### Publish the public website
 
 - **Trigger:** a source revision that changes the site's inputs reaches the
-  default branch. The Release maintainer owns the site's value and answers for
-  the published page; the path-filtered push is the observable start (Q8).
+  default branch, or a release tag is pushed. The Release maintainer owns the
+  site's value and answers for the published page; the path-filtered push or
+  the release tag is the observable start (Q8, amended 2026-10-19).
 - **Preconditions:** the hosting target exists with the deploy key and secret
   from the prior topic's `publish-site-plumbing` seed, and its Pages source is
-  `main` at `/`. That seed is ready but not implemented; its pages-ruleset
-  decision is an open external prerequisite, not a reopened question here.
+  `main` at `/`. That seed is now the `publish-site-plumbing` change; its
+  proposal D1 closes the ruleset bypass, and applying the credential is the
+  remaining external prerequisite, not a reopened question here.
 - **Success guarantee:** the Public website at `https://duty2cal.github.io/`
   serves the Site output built from the named Built revision; the footer names
   and links that revision; the evidence gate passed; and, before it asks for a
@@ -87,8 +89,9 @@ the publish use case's content guarantee.
 - **Closure test:** after the Site publication the maintainer can stop; the
   served page is the built one and the previous page is either replaced as a
   whole or untouched.
-- **Open:** no open question blocks this definition. The prior seed's
-  pages-ruleset decision is an external prerequisite.
+- **Open:** no open question blocks this definition. The prior change's
+  proposal D1 closes the pages-ruleset bypass; applying the credential is the
+  remaining external prerequisite.
 
 ## Stakeholder tags
 

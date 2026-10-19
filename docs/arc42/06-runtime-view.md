@@ -393,8 +393,8 @@ flowchart TB
    settings; the failed read is reported as a failure of the repository and the
    state does not claim the statuses.
 5. The encrypted state records the enabled statuses; a second plan targeted to
-   the security scope reports no differences, the plan file and the stale
-   marker are removed, and the declaration and state are committed together.
+   the security scope reports no differences, the plan file is removed, and the
+   declaration and state are committed together.
    The full preview still names the pre-existing organization billing drift, a
    separate issue outside this change; the full configuration is not clean.
 
@@ -404,6 +404,87 @@ acceptance of push protection is proven only by the operator's real apply,
 which is a required step after GREEN. A partial failure is reported by resource
 address, writes the stale marker beside the state, and the state is
 deliberately not committed.
+
+## Scenario: The pages publishing plumbing is previewed and created
+
+**Trigger:** The maintainer has declared the pages deploy key, the
+`PAGES_DEPLOY_KEY` secret and the pages protection rule set, and asks for a
+preview, then applies the previewed revision.
+
+```mermaid
+flowchart TB
+  owner["Organization owner"] --> stale{"terraform.tfstate.stale present?"}
+  stale -->|"yes"| stopstale["refuse; name the stale applied state"]
+  stale -->|"no"| guard["creation guard: read the deploy keys, the Actions secrets and the rule sets"]
+  guard -->|"an object exists live and is unbound"| stopguard["refuse; name the address; nothing written"]
+  guard -->|"none exists"| plan["targeted tofu plan -out=plan.bin; tofu show -json"]
+  plan -->|"not exactly the three creations and the generated key"| stopguard2["refuse; name the deviation; nothing written"]
+  plan --> read["the preview names the three live objects to create"]
+  read --> report["read-only refresh-only report"]
+  report -->|"incomplete or unreadable"| stopguard2
+  report --> guard2["the creation guard again, immediately before the write"]
+  guard2 -->|"a live object appeared"| stopguard
+  guard2 --> apply["tofu apply plan.bin"]
+  apply --> key["POST keys: the write-enabled deploy key"]
+  key --> secret["PUT the secret: the sealed private half"]
+  key --> ruleset["POST rulesets: pages protection"]
+  ruleset --> state["the encrypted state records the key, the secret and the rule set"]
+  secret --> state
+  state --> readback["read the applied state and the three live objects back"]
+  readback -->|"a read fails"| stopread["keep the applied state; write terraform.tfstate.stale; exit non-zero"]
+  readback --> again["targeted follow-up plan: no differences"]
+  again --> commit["commit the declaration, the lock file and the state in one revision"]
+```
+
+**Steps:**
+
+1. A `terraform.tfstate.stale` marker refuses the run before anything is read;
+   the operator removes it after reading the report, and the next green apply
+   completes the revision.
+2. The creation guard reads the pages repository's deploy keys, the monorepo's
+   Actions secrets and the pages repository's rule sets. A deploy key with the
+   declared title, a `PAGES_DEPLOY_KEY` secret, or a rule set with the declared
+   name that the applied state does not bind refuses the run and names the
+   address. Nothing is planned and nothing is written.
+3. The targeted preview reads the applied state, the declaration and live. On
+   this declaration it names exactly three live objects to create — the deploy
+   key, the secret and the rule set — plus the generated key pair, which has no
+   live counterpart. A plan that is not exactly that set is refused.
+4. A read-only refresh-only report over the previewed addresses proves the
+   state decrypts and the provider configures; for a create-only revision it
+   cannot name a live edit, so the guard is what detects a live change.
+5. The guard runs again immediately before the write. Only then does
+   `tofu apply plan.bin` create the key (`POST /repos/duty2cal/duty2cal.github.io/keys`),
+   the secret (the provider fetches the repository public key, seals the
+   private half with a NaCl box, and `PUT`s `key_id` and the ciphertext) and
+   the rule set (`POST /repos/duty2cal/duty2cal.github.io/rulesets`, carrying
+   the `DeployKey` bypass actor and the three rules).
+6. The provider reads the deploy key and the rule set back; the secret create
+   makes one timestamp read and ignores that read's failure, and the provider
+   framework performs no second read after create. The routine therefore reads
+   the applied state and the three live objects back before it reports success;
+   a failed read keeps the applied state, prints `failed read-back: <object>
+   <reason>`, writes `terraform.tfstate.stale` and exits non-zero. On success
+   the encrypted state records the generated private key, the three bindings and
+   the secret's sealed value; a targeted follow-up plan reports no differences;
+   the declaration, the lock file and the state are committed in one revision.
+   The stock site, its source and its Pages configuration are untouched, and
+   nothing reads the credential until the website topic.
+
+**Notes:** The suite drives steps 2–6 against the fake in `--writes` mode and
+asserts the guard's verdicts, the changed set (the four declared addresses on
+the first preview; only the missing ones on a recovery preview), the apply's
+outcome, the journal's single secret write (the sealed ciphertext and the key
+id), the created rule set's bypass actor and rules, and the state's four
+addresses. A failure after the first write saves the failed state, restores the
+pre-apply state, compares the two with live per address, and marks the state
+stale only for a create that landed; the operator then reads the report and
+deliberately removes the marker, and the next run creates only the missing
+objects and completes the revision. A post-apply read-back failure after every
+write keeps the applied state, writes the same marker and names the unreadable
+object and the reason; the fault in the suite targets that routine read, not
+the provider's create. GitHub's acceptance of the key, the secret and the
+bypass actor is proven only by the operator's real apply after GREEN.
 
 ## Scenario: The organization profile is previewed, applied and published
 

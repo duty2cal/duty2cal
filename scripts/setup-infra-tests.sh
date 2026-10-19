@@ -57,31 +57,40 @@ mirror="$cache/terraform-provider-mirror"
 terraformrc="$cache/terraformrc"
 mkdir -p "$cache"
 
-provider_version="$(
-  sed -n 's/^[[:space:]]*version[[:space:]]*=[[:space:]]*"\([0-9][0-9.]*\)"/\1/p' \
-    infra/.terraform.lock.hcl | head -1
+github_version="$(
+  awk '/provider "registry.opentofu.org\/integrations\/github"/ { found = 1; next }
+       found && /version[[:space:]]*=/ { gsub(/[^0-9.]/, ""); print; exit }' \
+    infra/.terraform.lock.hcl
 )"
-[ -n "$provider_version" ] || fail "infra/.terraform.lock.hcl names no provider version"
+tls_version="$(
+  awk '/provider "registry.opentofu.org\/hashicorp\/tls"/ { found = 1; next }
+       found && /version[[:space:]]*=/ { gsub(/[^0-9.]/, ""); print; exit }' \
+    infra/.terraform.lock.hcl
+)"
+[ -n "$github_version" ] || fail "infra/.terraform.lock.hcl names no integrations/github version"
+[ -n "$tls_version" ] || fail "infra/.terraform.lock.hcl names no hashicorp/tls version"
 
-marker="$mirror/registry.opentofu.org/integrations/github/${provider_version}.json"
-if [ ! -f "$marker" ]; then
+github_marker="$mirror/registry.opentofu.org/integrations/github/${github_version}.json"
+tls_marker="$mirror/registry.opentofu.org/hashicorp/tls/${tls_version}.json"
+if [ ! -f "$github_marker" ] || [ ! -f "$tls_marker" ]; then
   (
     cd infra
     tofu providers mirror -platform="$platform" "$mirror"
   )
 fi
-[ -f "$marker" ] || fail "the provider mirror does not hold integrations/github $provider_version"
+[ -f "$github_marker" ] || fail "the provider mirror does not hold integrations/github $github_version"
+[ -f "$tls_marker" ] || fail "the provider mirror does not hold hashicorp/tls $tls_version"
 
 cat > "$terraformrc" <<EOF
 # Written by scripts/setup-infra-tests.sh. The suite resolves the locked
-# GitHub provider from the local mirror and never from the registry.
+# providers from the local mirror and never from the registry.
 provider_installation {
   filesystem_mirror {
     path    = "$mirror"
-    include = ["registry.opentofu.org/integrations/github"]
+    include = ["registry.opentofu.org/integrations/github", "registry.opentofu.org/hashicorp/tls"]
   }
   direct {
-    exclude = ["registry.opentofu.org/integrations/github"]
+    exclude = ["registry.opentofu.org/integrations/github", "registry.opentofu.org/hashicorp/tls"]
   }
 }
 EOF
@@ -89,7 +98,8 @@ EOF
 printf 'tofu %s (%s)\n' "$installed_version" "$tofu_bin"
 printf '%s\n' "$python_version"
 printf '%s\n' "$jq_version"
-printf 'provider integrations/github %s for %s\n' "$provider_version" "$platform"
+printf 'provider integrations/github %s for %s\n' "$github_version" "$platform"
+printf 'provider hashicorp/tls %s for %s\n' "$tls_version" "$platform"
 printf 'mirror %s\n' "$mirror"
 printf 'terraformrc %s\n' "$terraformrc"
 printf 'export TF_CLI_CONFIG_FILE=%s\n' "$terraformrc"
@@ -161,6 +171,7 @@ prove_each_import() { # <fixtures> <batch> <label>
     # The profile repository is never adopted; this proof covers only the
     # existing objects (design.md "Workspace shapes").
     rm -f "$workspace/org_profile.tf"
+    rm -f "$workspace/pages_publish.tf"
     (
       cd "$workspace"
       tofu init -backend=false -input=false -no-color >/dev/null 2>&1 ||
@@ -208,6 +219,7 @@ workspace="$proof/adopt-all-workspace"
 mkdir -p "$workspace"
 cp infra/*.tf infra/.terraform.lock.hcl "$workspace/"
 rm -f "$workspace/org_profile.tf"
+rm -f "$workspace/pages_publish.tf"
 (
   cd "$workspace"
   tofu init -backend=false -input=false -no-color >/dev/null 2>&1 ||
@@ -241,6 +253,7 @@ workspace="$proof/security-applied-workspace"
 mkdir -p "$workspace"
 cp infra/*.tf infra/.terraform.lock.hcl "$workspace/"
 rm -f "$workspace/org_profile.tf"
+rm -f "$workspace/pages_publish.tf"
 rm "$workspace/security.tf"
 # Strip the scanning block, leaving the base declaration this change inherits.
 awk '

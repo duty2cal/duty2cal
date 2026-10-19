@@ -74,6 +74,12 @@ class FakeState:
         self.created: set[str] = set()
         self.files: dict[tuple[str, str], dict] = {}
         self.commits: dict[tuple[str, str], dict] = {}
+        # Pages publishing plumbing: created deploy keys, Actions secrets and
+        # rule sets. Reads consult these overlays before the fixture tree.
+        self.keys: dict[str, list[dict]] = {}
+        self.secrets: dict[str, dict[str, dict]] = {}
+        self.rulesets: dict[str, list[dict]] = {}
+        self.fault_counts: dict[str, int] = {}
         self.applied_writes = 0
         self.fired_faults: set[int] = set()
         self.faults = self._load_json("faults.json") or []
@@ -105,6 +111,12 @@ class FakeState:
             self.counts[key] = self.counts.get(key, 0) + 1
             return self.counts[key]
 
+    def fault_count(self, key: str) -> int:
+        """Count requests per method and path for ``after_requests`` faults."""
+        with self.lock:
+            self.fault_counts[key] = self.fault_counts.get(key, 0) + 1
+            return self.fault_counts[key]
+
     def fixture(self, relative: str):
         """The JSON body at ``relative`` (without ``.json``), or ``None``."""
         candidate = os.path.normpath(relative).lstrip(os.sep)
@@ -127,6 +139,36 @@ class FakeState:
         if path == repository:
             return self.repos.get(repository)
         suffix = path[len(repository) :]
+        if suffix == "/keys":
+            if repository in self.keys:
+                return self.keys[repository]
+        key_read = re.match(r"^/keys/(\d+)$", suffix)
+        if key_read:
+            for key_body in self.keys.get(repository, []):
+                if str(key_body.get("id")) == key_read.group(1):
+                    return key_body
+        if suffix == "/actions/secrets":
+            if repository in self.secrets:
+                records = [
+                    {
+                        "name": name,
+                        "created_at": record["created_at"],
+                        "updated_at": record["updated_at"],
+                    }
+                    for name, record in self.secrets[repository].items()
+                ]
+                return {"total_count": len(records), "secrets": records}
+        secret_read = re.match(r"^/actions/secrets/([^/]+)$", suffix)
+        if secret_read and secret_read.group(1) != "public-key":
+            return self.secrets.get(repository, {}).get(secret_read.group(1))
+        if suffix == "/rulesets":
+            if repository in self.rulesets:
+                return self.rulesets[repository]
+        ruleset_read = re.match(r"^/rulesets/(\d+)$", suffix)
+        if ruleset_read:
+            for ruleset_body in self.rulesets.get(repository, []):
+                if str(ruleset_body.get("id")) == ruleset_read.group(1):
+                    return ruleset_body
         if suffix == "/vulnerability-alerts":
             if repository in self.alerts:
                 if self.alerts[repository]:
@@ -196,6 +238,77 @@ class FakeState:
                     }
                     repository["security_and_analysis"] = security
             self.applied_writes += 1
+
+    # -- pages publishing plumbing sandbox -------------------------------
+
+    def create_deploy_key(self, repository: str, payload: dict) -> tuple[int, dict, dict]:
+        """Create a deploy key in the overlay (``POST /repos/o/r/keys``)."""
+        with self.lock:
+            keys = self.keys.get(repository)
+            if keys is None:
+                keys = list(self.fixture(repository + "/keys") or [])
+            key_value = payload.get("key", "")
+            if any(entry.get("key") == key_value for entry in keys):
+                return 422, {"message": "key already exists"}, {}
+            entry = {
+                "id": 100000 + len(keys),
+                "key": key_value,
+                "title": payload.get("title", ""),
+                "read_only": bool(payload.get("read_only", True)),
+                "verified": True,
+                "created_at": "2026-10-19T00:00:00Z",
+            }
+            keys.append(entry)
+            self.keys[repository] = keys
+            self.applied_writes += 1
+            fields = {
+                "title": entry["title"],
+                "read_only": entry["read_only"],
+                "key_type": "ed25519" if key_value.startswith("ssh-ed25519") else "unknown",
+            }
+            return 201, entry, fields
+
+    def put_secret(self, repository: str, name: str, payload: dict) -> tuple[int, dict]:
+        """Store an Actions secret's sealed value in the overlay."""
+        with self.lock:
+            encrypted = payload.get("encrypted_value", "")
+            try:
+                ciphertext = base64.b64decode(encrypted, validate=True)
+            except (ValueError, TypeError):
+                ciphertext = b""
+            self.secrets.setdefault(repository, {})[name] = {
+                "name": name,
+                "created_at": "2026-10-19T00:00:00Z",
+                "updated_at": "2026-10-19T00:00:00Z",
+            }
+            self.applied_writes += 1
+            fields = {
+                "secret_name": name,
+                "key_id": payload.get("key_id", ""),
+                "ciphertext_bytes": len(ciphertext),
+                "contains_pem_header": b"-----BEGIN" in ciphertext,
+            }
+            return 204, fields
+
+    def create_ruleset(self, repository: str, payload: dict) -> tuple[int, dict, dict]:
+        """Create a rule set in the overlay (``POST /repos/o/r/rulesets``)."""
+        with self.lock:
+            rulesets = self.rulesets.get(repository)
+            if rulesets is None:
+                rulesets = list(self.fixture(repository + "/rulesets") or [])
+            body = dict(payload)
+            body["id"] = 200000 + len(rulesets)
+            body.setdefault("source_type", "Repository")
+            body.setdefault("source", repository.removeprefix("/repos/"))
+            rulesets.append(body)
+            self.rulesets[repository] = rulesets
+            self.applied_writes += 1
+            fields = {
+                "ruleset_name": body.get("name", ""),
+                "bypass_actors": body.get("bypass_actors", []),
+                "rules": body.get("rules", []),
+            }
+            return 201, body, fields
 
     # -- profile repository sandbox --------------------------------------
 
@@ -518,6 +631,11 @@ class Handler(BaseHTTPRequestHandler):
                 after = entry.get("after_applied_writes")
                 if isinstance(after, int) and self.state.applied_writes < after:
                     continue
+                after_requests = entry.get("after_requests")
+                if isinstance(after_requests, int):
+                    count = self.state.fault_count(f"{self.command} {path}")
+                    if count <= after_requests:
+                        continue
                 if entry.get("once") and index in self.state.fired_faults:
                     continue
                 try:
@@ -613,6 +731,33 @@ class Handler(BaseHTTPRequestHandler):
             )
             return
 
+        key_post = re.match(r"^/repos/([^/]+)/([^/]+)/keys$", path)
+        ruleset_post = re.match(r"^/repos/([^/]+)/([^/]+)/rulesets$", path)
+        if key_post is not None or ruleset_post is not None:
+            if not self.state.writes:
+                self.refused_method()
+                return
+            fault = self.fault_for(path)
+            if fault is not None:
+                status = int(fault.get("status", 500))
+                self.respond(status, fault.get("body", {"message": "injected fault"}))
+                self.journal(status)
+                return
+            if key_post is not None:
+                repository = f"/repos/{key_post.group(1)}/{key_post.group(2)}"
+                status, body, fields = self.state.create_deploy_key(repository, payload)
+            else:
+                repository = f"/repos/{ruleset_post.group(1)}/{ruleset_post.group(2)}"
+                status, body, fields = self.state.create_ruleset(repository, payload)
+            self.respond(status, body)
+            self.journal(
+                status,
+                applied_write=status in (201, 204),
+                body=payload if status == 201 else None,
+                fields=fields,
+            )
+            return
+
         if path != "/graphql":
             self.respond(405, {"message": f"refused write: {self.command} {path}"})
             self.journal(405, refused_write=True)
@@ -681,6 +826,20 @@ class Handler(BaseHTTPRequestHandler):
             self.journal(status)
             return
         body = self.read_body()
+        secret_put = re.match(
+            r"^/repos/([^/]+)/([^/]+)/actions/secrets/([^/]+)$", path
+        )
+        if secret_put is not None and secret_put.group(3) != "public-key":
+            if not self.state.writes:
+                self.refused_method()
+                return
+            repository = f"/repos/{secret_put.group(1)}/{secret_put.group(2)}"
+            status, fields = self.state.put_secret(
+                repository, secret_put.group(3), body or {}
+            )
+            self.respond(status, None)
+            self.journal(status, applied_write=status == 204, fields=fields)
+            return
         contents = contents_path(path)
         if contents is not None:
             if not self.state.writes:

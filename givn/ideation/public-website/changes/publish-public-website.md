@@ -3,7 +3,8 @@
 Status: ready
 
 - Use-case IDs: `publish-public-website`, `apply-configuration-change`
-  (profile copy), `publish-public-release` (platform wording)
+  (profile copy), `publish-public-release` (platform wording and the
+  release-workflow site gate)
 - Topic: `public-website`
 - Personas: `project-maintainer--release-owner`,
   `contributor--web-reviewer`, `visitor--project-reader`,
@@ -44,8 +45,9 @@ Status: ready
 ### Consume the prior deploy key and secret
 
 - Context: the prior topic's `publish-site-plumbing` seed creates the deploy
-  key and `PAGES_DEPLOY_KEY` secret. That seed is `ready`, not implemented; its
-  pages-ruleset bypass question is open.
+  key and `PAGES_DEPLOY_KEY` secret. That seed is now the
+  `publish-site-plumbing` change; its proposal D1 closes the ruleset bypass,
+  and the credential is not yet applied.
 - Options:
   1. **Consume the prior seed's credential** — this change only uses it.
      Gain: one owner for the credential; no duplicate creation.
@@ -60,8 +62,9 @@ Status: ready
 
 ### `git describe` version stamp
 
-- Context: the site publishes from `main`, where no release tag necessarily
-  exists; the footer must name a resolvable revision.
+- Context: the site publishes from path-filtered `main`, where no release tag
+  necessarily exists, and from release tags; the footer must name a resolvable
+  revision in both cases.
 - Options:
   1. **`git describe`** — `v0.5.0` on a tagged revision,
      `v0.5.0-3-gabc1234` otherwise, linked to the commit.
@@ -78,25 +81,72 @@ Status: ready
   tag. Rejected: **Latest tag** because it can misstate the build; **SHA only**
   because it loses the release relationship.
 
-### Path-filtered `main` build trigger
+### Path-filtered `main` plus release-tag build trigger
 
-- Context: building on every push publishes on documentation-only changes;
-  building only on tags leaves page fixes unreleased.
+- Context: the site publishes from `main`, where no release tag necessarily
+  exists. The user's decision of 2026-10-19 requires every release to deploy
+  the site as well. A main-only publish leaves the release independent of the
+  site and cannot stamp a tag created after the main build; a tag-only publish
+  would delay page fixes. The two triggers serve different purposes and both
+  are required.
 - Options:
-  1. **Path-filtered `main`** — `crates/**`, `ffi/wasm/**`, `web/**`,
-     `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`,
-     `LICENSES/MPL-2.0.txt`, `.github/workflows/web.yml`.
-     Gain: the site is current without needless publishes.
-     Cost: a maintained path list; a missed path leaves the site stale.
-  2. **Every push** — no path list.
-     Gain: simplicity.
-     Cost: publishes on docs-only changes.
-  3. **Release tag only** — the site matches a release.
-     Gain: release relationship.
-     Cost: page fixes wait for a release.
-- Chosen: **Path-filtered `main`** because it matches the supplied workflow
-  and keeps the site current. Rejected: **Every push** because of needless
-  publishes; **Release tag only** because of the delay.
+  1. **Both path-filtered `main` and release tag** — the site builds on a
+     default-branch push that changes the site's inputs for freshness, and on
+     every `v*` tag from the tagged revision for the release stamp and release
+     consistency. One reusable build-and-deploy workflow serves both callers;
+     the release workflow publishes the archive only after the site deploy
+     succeeds; a concurrency group serializes site deploys.
+     In practice: a `web/` fix on `main` publishes immediately; tagging
+     `v0.5.0` republishes the site from the tag, the footer shows `v0.5.0`,
+     and the release is published only after the site is live.
+     Gain: the site is current between releases, every release lands with a
+     tag-stamped site, and a site failure blocks the release instead of
+     leaving the two out of step.
+     Cost: one extra site build and deploy per release; a tag on an older
+     revision republishes that revision's site, so the maintainer tags the
+     intended site; main and tag deploys must be serialized.
+  2. **Release tag only** — the site builds only when a version is tagged.
+     In practice: a page fix stays unpublished until the next tag.
+     Gain: one deploy per release; the site always matches a release.
+     Cost: page fixes wait; the site is stale between releases; this reverses
+     the accepted main-deploy decision.
+  3. **Path-filtered `main` plus a release gate, no tag deploy** — the site
+     builds on `main`; the release workflow refuses to publish when the live
+     site is not current for the tag.
+     In practice: a tag with a stale site blocks the release until someone
+     redeploys the site.
+     Gain: no duplicate deploy.
+     Cost: the release does not deploy the site; a pre-tag main build cannot
+     show the tag in the footer; a site outage blocks the release.
+- Chosen: **Both path-filtered `main` and release tag** because the user
+  requires every release to deploy the site without giving up page-fix
+  freshness. Rejected: **Release tag only** because page fixes would wait for
+  a release; **main plus a release gate** because the release would not deploy
+  the site and the footer would not name the tag.
+
+### The release workflow gates on the site deploy
+
+- Context: the user requires every release to deploy the website. The release
+  workflow already publishes the Windows executable after its evidence gate;
+  the site publication is a separate use case.
+- Options:
+  1. **Release gates on the site publication** — the release workflow calls
+     the reusable site build-and-deploy workflow and publishes the executable
+     only after it succeeds.
+     In practice: a failed site build or deploy leaves the previous site in
+     place and stops the release; no archive is published.
+     Gain: the release and the site land together; a site failure cannot hide
+     behind a published release.
+     Cost: a site failure blocks the release; the release critical path grows
+     by the site build and evidence gate.
+  2. **Release proceeds independently** — the release publishes the archive;
+     the site deploy runs separately and may fail.
+     Gain: a site failure does not block the release.
+     Cost: the release can land while the site is stale or shows the wrong
+     revision, which is the state the user asked to remove.
+- Chosen: **Release gates on the site publication** because the user wants
+  every release to deploy the site. Rejected: **Release proceeds
+  independently** because it leaves the release and the site out of step.
 
 ### Evidence gate and whole-content replacement
 
@@ -186,8 +236,11 @@ Status: ready
 
 ### May the pages ruleset bypass its publish deploy key? (prior topic's Q2)
 
-The prior `publish-site-plumbing` seed carries this open decision. The site
-publish cannot use the deploy key until it closes. It is not reopened here.
+Closed by the `publish-site-plumbing` change's proposal D1 on 2026-10-19: the
+pages rule set carries deletion, non-fast-forward and linear-history rules and
+names the `DeployKey` actor type as an `always` bypass. The site publish
+consumes the credential once that change is applied; the ruleset decision is
+not reopened here.
 
 ### Does review gate the configuration apply? (prior topic's Q10)
 

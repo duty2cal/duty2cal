@@ -134,6 +134,13 @@ pub(crate) fn prime_base_state(w: &mut DutyWorld) {
     let profile_declaration = declaration.join("org_profile.tf");
     fs::remove_file(&profile_declaration)
         .expect("remove the profile declaration for the base apply");
+    // The pages publishing declaration arrived after this change; the base
+    // apply stays the declaration this change was written against.
+    let pages_declaration = declaration.join("pages_publish.tf");
+    if pages_declaration.is_file() {
+        fs::remove_file(&pages_declaration)
+            .expect("remove the pages declaration for the base apply");
+    }
 
     let init = tofu(w, &["init", "-input=false", "-no-color"]);
     assert!(
@@ -163,6 +170,11 @@ pub(crate) fn prime_base_state(w: &mut DutyWorld) {
         &profile_declaration,
     )
     .expect("restore the profile declaration after the base apply");
+    fs::copy(
+        repository_root().join("infra/pages_publish.tf"),
+        &pages_declaration,
+    )
+    .expect("restore the pages declaration after the base apply");
 
     w.journal_offset = journal_lines(w).len();
     w.exit_status = None;

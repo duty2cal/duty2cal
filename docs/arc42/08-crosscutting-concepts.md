@@ -150,9 +150,12 @@ OpenTofu's `encryption` block derives an AES-GCM key from the passphrase
 from `TF_VAR_state_passphrase`, has no default and is never a repository secret;
 the state file and its backup are committed as ciphertext. Two consequences are
 accepted and recorded: losing the passphrase loses the state (re-adoption
-rebuilds it), and no automated service can read the state — which is exactly
-why the configuration drift check runs locally and the future publishing key is
-not exposed to a workflow.
+rebuilds the bindings, but the pages publishing key's private material cannot
+be read back from GitHub and is replaced instead), and no automated service can
+read the state — which is exactly why the configuration drift check runs
+locally and the publishing key is not exposed to a workflow. The state now
+holds that live credential's only copy, which is the reason both rules are
+load-bearing rather than hygiene.
 
 ## Declared security settings on the public repository
 
@@ -167,6 +170,37 @@ check can name. Settings the provider cannot supply for a public repository —
 advanced security — are never declared, and settings the provider cannot express
 at all, such as private vulnerability reporting, stay manual and are recorded as
 a gap.
+
+## The pages publishing credential and its rule set
+
+The pages repository's only writer is a write-enabled deploy key, so the
+credential and the protection that admits it are one declared unit: the deploy
+key's public half, the monorepo's `PAGES_DEPLOY_KEY` secret holding its private
+half, and the `pages protection` rule set that forbids deletion, force pushes
+and merge commits while naming the deploy-key actor type as an always-bypass
+actor.
+
+The key pair is generated inside the declaration (`tls_private_key`, Ed25519),
+not by hand and not supplied as a variable, so the create is part of the
+reviewed plan. The provider seals the private half for the repository's public
+key with a NaCl box before it leaves the workstation; the API and the fake never
+see plaintext. The private material therefore exists twice inside the encrypted
+state — the generated key and the secret's `value` — and nowhere else: GitHub
+never returns it, so the state is the only copy and the passphrase is the only
+key to it.
+
+The bypass actor is `DeployKey` without an id: the pinned provider's schema
+says not to set one for that actor type, and GitHub ignores it. That makes the
+bypass a property of the repository's write-enabled deploy keys, not of this
+key's identity: a second key would bypass the rules too. The declaration keeps
+exactly one, and the creation guard refuses an unbound second key carrying the
+declared title. The key's own
+pushes are unreviewed, which is the accepted cost of the user's decision
+(proposal D1).
+
+The credential has no consumer until the website topic. No workflow holds it,
+no scenario publishes with it, and the stock site's source, content and Pages
+configuration are untouched by this change.
 
 ## Public organization copy
 
@@ -249,6 +283,15 @@ refuses a plan that would create a setting which already exists live and is
 unbound, naming it. A live edit made during the preflight is the residual
 window (R-031).
 
+A create-only revision needs one more rule, because a `create` resource is
+never read during plan and a refresh-only report over an address that is not in
+the state has nothing to compare: the routine reads the live deploy-key,
+Actions-secret and rule-set lists with `gh api` before the preview and again
+immediately before the write, and refuses when a live object carries the
+declared title, name or secret name while the state does not bind it. The
+second read is the create-time preflight; the window between it and the write
+is measured in seconds (R-054).
+
 A failure is reported the way the declaration's other operations report one. A
 refusal before the first write — an unreadable setting, a wrong passphrase, an
 authority that cannot perform the change — leaves the live configuration and the
@@ -256,15 +299,48 @@ state unchanged and names the object. A failure after an earlier resource was
 applied stops the run, names the applied resources and the failed address, and
 leaves the state recording only what succeeded; the routine writes
 `terraform.tfstate.stale` beside that state and does not commit it. While the
-marker exists the preview and the apply refuse and name the stale state, and a
-green apply removes it, so the revision is recorded only when every change
+marker exists the preview and the apply refuse and name the stale state. The
+operator removes the marker after reading the report, and the next green apply
+completes the revision, so the revision is recorded only when every change
 succeeded.
+
+After a green `tofu apply` the routine also reads the applied state and the
+three live objects back before reporting success. A failed read keeps the
+applied state, prints `failed read-back: <object> <reason>`, writes the same
+stale marker and exits non-zero; the operator reads the report and removes the
+marker, and the next apply completes the revision.
+
+For a create-only revision the live read is the evidence, not the failed
+state: SDKv2 persists planned values for a failed create, so the routine saves
+the failed state, restores the pre-apply state and reads live again. An address
+that the pre-apply state did not bind and that exists live is a write that
+landed; anything the failed state records without a live object is a create
+that never happened. With no landed address the outcome is a clean refusal:
+the pre-apply state stays, no marker is written, and the live configuration is
+unchanged. With a landed address the failed state is reinstalled and the marker
+carries only the landed addresses; where the failed state does not record one
+of them, the report adds `unverified` and names the gap. A live object without
+a state record is reported as unbound by the guard, so no blind retry adopts
+it.
+
+The marker refuses a blind retry, but it is the operator who starts recovery:
+after reading the partial report and confirming the created objects are the
+intended ones, the operator removes `terraform.tfstate.stale` deliberately.
+The state-aware guard then sees the created objects live and bound and clears;
+the expected set is the declared addresses minus the bound ones, so the plan
+carries only the missing creates; the apply completes the revision and the
+marker is gone. Chapter 11 records the residual cases (R-054).
 
 The profile scenario's test tree is the inherited pre-security base tree:
 priming adopts both existing batches and runs the base declaration's real
 apply, which performs the security change's scanning write. The scenario takes
 its journal offset after that apply, so only the three profile creations are
 asserted, and the base workspaces omit `org_profile.tf`.
+
+The plumbing scenario primes the same inherited state and then restores
+`pages_publish.tf`; its journal offset is taken after the base apply, so only
+the three plumbing creates are asserted. The base workspaces also omit
+`pages_publish.tf`, because those objects are created here, never inherited.
 
 ## Adoption is read-only against the live organization
 
