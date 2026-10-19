@@ -202,7 +202,18 @@ pub(crate) fn run_command(w: &mut DutyWorld, command: &mut Command) {
     w.scenario_transcript.push_str("$ ");
     w.scenario_transcript.push_str(&command_line(command));
     w.scenario_transcript.push('\n');
-    let output = command.output().expect("run the command");
+    let output = command
+        // `cargo llvm-cov` exports these to the test process. A nested
+        // `cargo build` (the measurement fixture, the lever baseline) must not
+        // inherit the coverage instrumentation: `instrument-coverage` cannot
+        // be combined with `panic = "abort"`, and the coverage target
+        // directory is not the fixture's own.
+        .env_remove("RUSTFLAGS")
+        .env_remove("CARGO_ENCODED_RUSTFLAGS")
+        .env_remove("CARGO_TARGET_DIR")
+        .env_remove("LLVM_PROFILE_FILE")
+        .output()
+        .expect("run the command");
     w.exit_status = output.status.code();
     let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
     let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
