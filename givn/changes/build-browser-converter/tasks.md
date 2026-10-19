@@ -912,29 +912,38 @@ primary failure remains visible and the page states that no diagnostic was offer
 - The failure heading and the primary reason naming `notes.pdf` stay visible; there is
   no calendar offer and `Choose another plan` remains.
 
-- [ ] RED — remove `@wip` from this scenario only; add its new step bodies as
-  `unimplemented!()` stubs (previously implemented shared steps stay implemented); run:
+- [x] RED — remove `@wip` from this scenario only; its three new step bodies stayed the
+  committed `unimplemented!()` stubs; run:
   ```
-  $ ./run-tests.sh --name "A diagnostic that cannot be offered does not hide the primary failure"
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A diagnostic that cannot be offered does not hide the primary failure"
   Feature: Export a duty-plan calendar
     Scenario: A diagnostic that cannot be offered does not hide the primary failure
      ✘  Given the converter page served from the built Site output that cannot create a download offer for the diagnostic
-        Step panicked. Captured output: not implemented: start the page with the diagnostic-offer failure injection
+        Step failed:
+        Defined: tmp/tmp.ODayKvkfNz/f0006.feature:86:5
+        Matched: apps/cli/tests/steps/export_duty_plan_calendar.rs:2835:1
+        Step panicked. Captured output: not implemented: the converter page served from the built Site output that cannot create a download offer for the diagnostic
   [Summary]
   1 feature
   1 scenario (1 failed)
   1 step (1 failed)
   RED_EXIT=101
   ```
-- [ ] GREEN — real assertions and minimum production code; production files modified:
-  - `web/app.js` — diagnostic-offer `try/catch`, `No diagnostic was offered.` copy, primary
-    failure retention.
-  - `web/e2e/driver.mjs` — the init-script mode that throws for `text/plain` object URLs.
-  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the diagnostic-unavailable
-    steps.
+- [x] GREEN — real assertions; production files:
+  - None modified in this scenario. The two production pieces this scenario exercises
+    landed with scenario 7's shared offer path because both offers are created by the
+    same `addOffer`: `web/app.js` catches a diagnostic-offer failure, keeps the primary
+    `failureReason`, and shows `No diagnostic was offered.` in `#failure-note`;
+    `web/e2e/driver.mjs`'s `diagnostic-offer-failure` mode refuses `text/plain` object
+    URLs. `web/index.html` carries the hidden note paragraph.
+  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the mode's Given step, the
+    primary-reason assertion (the family reason survives and no offer error replaces it),
+    and the no-diagnostic assertion (visible copy plus the absence of a diagnostic offer).
   Run:
   ```
-  $ ./run-tests.sh --name "A diagnostic that cannot be offered does not hide the primary failure"
+  $ cargo fmt --all --check -> FMT OK
+  $ cargo clippy --workspace --all-targets -- -D warnings -> clean (CLIPPY_EXIT=0)
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A diagnostic that cannot be offered does not hide the primary failure"
   Feature: Export a duty-plan calendar
     Scenario: A diagnostic that cannot be offered does not hide the primary failure
      ✔  Given the converter page served from the built Site output that cannot create a download offer for the diagnostic
@@ -949,13 +958,15 @@ primary failure remains visible and the page states that no diagnostic was offer
   6 steps (6 passed)
   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — confirm the visible reason is the primary one (not the offer error),
-  re-run:
+- [x] REFACTOR — confirm the visible reason is the primary one: the assertion requires
+  the family reason and rejects `could not be offered`, so the diagnostic-offer error can
+  never replace it; re-run:
   ```
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A diagnostic that cannot be offered does not hide the primary failure"
   1 scenario (1 passed), 6 steps (6 passed)   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A diagnostic that cannot be offered does not hide the primary failure`; Hash: `<record the revision identifier here>`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+  `Scenario: A diagnostic that cannot be offered does not hide the primary failure`; Hash: `<recorded in the change's follow-up commit>`
 
 ### 9. A browser without WebAssembly shows the cannot-run message
 

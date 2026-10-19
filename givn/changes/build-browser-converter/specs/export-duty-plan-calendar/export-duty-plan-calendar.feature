@@ -81,7 +81,7 @@ Feature: Export a duty-plan calendar
     And the page offers the diagnostic text "2026-06.parse-error.txt"
     And the page offers a way to choose another plan
 
-  @givn.added @wip
+  @givn.added
   Scenario: A diagnostic that cannot be offered does not hide the primary failure
     Given the converter page served from the built Site output that cannot create a download offer for the diagnostic
     When the crew member supplies the file "notes.pdf" that is not a supported duty plan
