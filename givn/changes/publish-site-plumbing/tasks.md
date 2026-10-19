@@ -343,7 +343,7 @@ commit: 72667c96eacd86645f64f1f1ba7d97f7d65a96d0
 
 ## E2E setup task (after every non-`@e2e` scenario is GREEN)
 
-### [ ] E2E setup — local environment, strict proof, transcript capture, and scoped-count proof
+### [x] E2E setup — local environment, strict proof, transcript capture, and scoped-count proof
 
 **Design constraints**
 
@@ -357,16 +357,16 @@ commit: 72667c96eacd86645f64f1f1ba7d97f7d65a96d0
 **Evidence**
 
 ```text
-full command:
-full scenario count:
-e2e command:
-e2e scenario count:
-strict probe command/exit:
-fake smoke result:
-commit:
+full command: ./run-tests.sh
+full scenario count: 194 scenarios (163 passed, 31 failed); the failures include the two still-@wip pages e2e scenarios and pre-existing @wip corpus scenarios
+e2e command: ./run-tests.sh --e2e
+e2e scenario count: 13 scenarios (8 passed, 5 failed); strictly smaller than the full 194
+strict probe command/exit: ./run-tests.sh --e2e -> exit 101; .fail_on_skipped() is present in apps/cli/tests/features_runner.rs and the pages e2e steps report "Step doesn't match any function"
+fake smoke result: scripts/fake-github/serve.py --writes on an ephemeral 127.0.0.1 port: GET keys -> 200 [], GET actions/secrets -> 200 {"total_count":0,"secrets":[]}, GET actions/secrets/public-key -> 200 key_id 568250167242205012, GET rulesets -> 200 []
+commit: PENDING
 ```
 
-- [ ] COMMIT: `givn commit -m "chore(apply-configuration-change): prove the e2e filter and scaffold the pages plumbing e2e steps"`; record the hash.
+- [x] COMMIT: `givn commit -m "chore(apply-configuration-change): prove the e2e filter and scaffold the pages plumbing e2e steps"`; record the hash.
 
 ---
 

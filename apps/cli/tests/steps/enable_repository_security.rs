@@ -866,6 +866,9 @@ async fn the_applied_state_is_unchanged(w: &mut DutyWorld) {
             state_path(w).display()
         );
     }
+    // The e2e preview scenario ends here; the non-e2e scenarios mark no
+    // evidence and the call is inert.
+    crate::steps::e2e::publish_site_plumbing::commit_if_marked(w);
 }
 
 #[then(regex = r#"^the apply fails and names "([^"]+)"$"#)]

@@ -1836,6 +1836,9 @@ async fn a_later_targeted_preview_reports_no_differences(w: &mut DutyWorld) {
         "the follow-up preview reports no differences; output was:\n{}",
         w.preview_transcript
     );
+    // The e2e apply scenario ends here; the non-e2e recovery scenario marks no
+    // evidence and the call is inert.
+    crate::steps::e2e::publish_site_plumbing::commit_if_marked(w);
 }
 
 /// The fake's Pages configuration for the pages repository, with the stock
