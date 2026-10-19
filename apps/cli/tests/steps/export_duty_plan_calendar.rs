@@ -2686,12 +2686,12 @@ async fn a_plan_with_an_unusable_footer_stamp(w: &mut DutyWorld) {
 // ---------------------------------------------------------------------------
 
 /// The driver for the current scenario, started on first use.
-fn driver(w: &mut DutyWorld) -> &mut BrowserDriver {
+pub(crate) fn driver(w: &mut DutyWorld) -> &mut BrowserDriver {
     w.browser.get_or_insert_with(BrowserDriver::start)
 }
 
 /// The page's current observation object.
-fn page_state(w: &mut DutyWorld) -> Value {
+pub(crate) fn page_state(w: &mut DutyWorld) -> Value {
     driver(w).send("read_state", Map::new())
 }
 
@@ -2887,12 +2887,9 @@ async fn the_executable_has_published_the_calendar(w: &mut DutyWorld) {
     regex = r#"^the crew member supplies the supported duty plan "([^"]+)" through the file picker$"#
 )]
 async fn supplies_the_supported_plan(w: &mut DutyWorld, name: String) {
-    let mut items = support::detail_header_row(600.0);
-    items.extend(support::at(
-        585.0,
-        &[(DATE_X, "2026-06-08"), (ACTIVITY_X, "U")],
-    ));
-    named_source(w, &name, support::build_pdf(&items));
+    // The canonical `2026-06` plan is the one the committed reference calendar
+    // describes; the `@e2e` scenario compares its captured download with it.
+    named_source(w, &name, support::build_pdf(&equivalence_plan()));
     supply_through_picker(w);
 }
 

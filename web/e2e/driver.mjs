@@ -119,9 +119,15 @@ async function waitUntilSettled() {
   );
 }
 
-/** Read the visible state and the observations the steps assert on. */
-async function readState() {
-  return page.evaluate(async () => {
+/**
+ * Read the visible state and the observations the steps assert on. With
+ * `withBaseline`, also collect the rendered-state facts the visual baseline
+ * asserts (labels, language, keyboard focus, reduced motion and the elements
+ * that would ask for an account). This is observation only: it asserts
+ * nothing and restores focus afterwards.
+ */
+async function readState(withBaseline = false) {
+  return page.evaluate(async (baseline) => {
     const statusText =
       document.getElementById('status')?.textContent?.trim() || '';
     const failure = document.getElementById('failure');
@@ -181,7 +187,7 @@ async function readState() {
     const resetButton = document.getElementById('reset');
     const chooseButton = document.getElementById('choose');
     const pickerInput = document.getElementById('plan');
-    return {
+    const observation = {
       state,
       status: statusText,
       visibleText: document.body.innerText,
@@ -201,7 +207,98 @@ async function readState() {
           resetButton != null && resetButton.offsetParent !== null,
       },
     };
-  });
+    if (baseline) {
+      const visible = (element) => {
+        if (!element || element.hidden) {
+          return false;
+        }
+        const style = getComputedStyle(element);
+        if (style.display === 'none' || style.visibility !== 'visible') {
+          return false;
+        }
+        const rect = element.getBoundingClientRect();
+        return rect.width > 1 && rect.height > 1;
+      };
+      const text = (value) => (value || '').replace(/\s+/g, ' ').trim();
+      const controls = [
+        ...document.querySelectorAll(
+          'button, a[href], input:not([type="hidden"])',
+        ),
+      ]
+        .filter(visible)
+        .map((element) => {
+          const labels = element.labels
+            ? [...element.labels].map((label) => label.textContent).join(' ')
+            : '';
+          const label = text(
+            labels || element.getAttribute('aria-label') || element.textContent,
+          );
+          let focusVisible = false;
+          try {
+            element.focus({ focusVisible: true });
+            const style = getComputedStyle(element);
+            focusVisible =
+              style.outlineStyle !== 'none' &&
+              Number.parseFloat(style.outlineWidth) > 0;
+          } catch {
+            focusVisible = false;
+          }
+          return {
+            tag: element.tagName.toLowerCase(),
+            type: element.getAttribute('type') || '',
+            label,
+            focusVisible,
+          };
+        });
+      // Observation only: leave no control focused for the committed capture.
+      document.activeElement?.blur?.();
+      const blocks = [
+        ...document.querySelectorAll('h1, h2, p, a, button, label, li'),
+      ]
+        .filter(visible)
+        .map((element) => text(element.textContent))
+        .filter(Boolean);
+      const duplicates = [
+        ...new Set(
+          blocks.filter((block, index) => blocks.indexOf(block) !== index),
+        ),
+      ];
+      const h1 = document.querySelector('h1');
+      observation.baseline = {
+        lang: document.documentElement.lang,
+        title: document.title,
+        h1: text(h1?.textContent),
+        h1Count: document.querySelectorAll('h1').length,
+        h1Visible: visible(h1),
+        controls,
+        blocks,
+        duplicates,
+        reducedMotion: getComputedStyle(document.documentElement)
+          .getPropertyValue('--motion-duration')
+          .trim(),
+        forms: document.forms.length,
+        emailInputs: document.querySelectorAll(
+          'input[type="email"], input[type="password"], input[type="tel"]',
+        ).length,
+        submitControls: document.querySelectorAll(
+          'button[type="submit"], input[type="submit"]',
+        ).length,
+        accountHints: [
+          ...document.querySelectorAll('[placeholder], [aria-label], [name]'),
+        ].filter((element) =>
+          /account|e-?mail|sign ?in|log ?in|register|upload/i.test(
+            `${element.getAttribute('placeholder') || ''} ${
+              element.getAttribute('aria-label') || ''
+            } ${element.getAttribute('name') || ''}`,
+          ),
+        ).length,
+        fileInputsInForms: [
+          ...document.querySelectorAll('input[type="file"]'),
+        ].filter((input) => input.form !== null).length,
+      };
+    }
+    return observation;
+  }, withBaseline);
 }
 
 /** The offer link matching one kind. */
@@ -345,11 +442,15 @@ const actions = {
     return {};
   },
 
-  async read_state() {
+  async read_state(params) {
     if (!page) {
       throw new Error('the page is not started');
     }
-    return { ...(await readState()), requestLog, initialAddress };
+    return {
+      ...(await readState(Boolean(params && params.baseline))),
+      requestLog,
+      initialAddress,
+    };
   },
 
   async save_offer(params) {
