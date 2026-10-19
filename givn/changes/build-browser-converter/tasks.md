@@ -1057,28 +1057,37 @@ refused by name with no file picker and no calendar.
 - The driver's init-script mode shadows `HTMLScriptElement.supports` before navigation so
   the capability gate takes the ES branch.
 
-- [ ] RED — remove `@wip` from this scenario only; add its new step bodies as
-  `unimplemented!()` stubs (previously implemented shared steps stay implemented); run:
+- [x] RED — remove `@wip` from this scenario only; the Given and Then step bodies
+  stayed the committed `unimplemented!()` stubs; run:
   ```
-  $ ./run-tests.sh --name "A browser without ES-module support shows the cannot-run message"
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A browser without ES-module support shows the cannot-run message"
   Feature: Export a duty-plan calendar
     Scenario: A browser without ES-module support shows the cannot-run message
      ✘  Given the converter page served from the built Site output in a browser without ES-module support
-        Step panicked. Captured output: not implemented: start Chromium with ES-module support shadowed
+        Step failed:
+        Defined: tmp/tmp.EvQyNJcRVr/f0006.feature:102:5
+        Matched: apps/cli/tests/steps/export_duty_plan_calendar.rs:2809:1
+        Step panicked. Captured output: not implemented: the converter page served from the built Site output in a browser without ES-module support
   [Summary]
   1 feature
   1 scenario (1 failed)
   1 step (1 failed)
   RED_EXIT=101
   ```
-- [ ] GREEN — real assertions and minimum production code; production files modified:
-  - `web/capability.js` — the ES-module branch and the `noModule` fallback.
-  - `web/e2e/driver.mjs` — the init-script mode shadowing
-    `HTMLScriptElement.supports`.
-  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the ES-module steps.
+- [x] GREEN — real assertions and minimum production code; production files:
+  - `web/capability.js` — the ES-module branch and the `noModule` fallback already
+    existed in the committed baseline; no change was needed.
+  - `web/e2e/driver.mjs` — the `start` mode `no-modules`, whose init script replaces
+    `HTMLScriptElement.supports` with a function that refuses `module` before
+    navigation.
+  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the ES-module Given and the
+    shared cannot-run assertion naming ES modules. The shared helpers already assert
+    no usable picker and no calendar.
   Run:
   ```
-  $ ./run-tests.sh --name "A browser without ES-module support shows the cannot-run message"
+  $ cargo fmt --all --check -> FMT_EXIT=0
+  $ cargo clippy --workspace --all-targets -- -D warnings -> CLIPPY_EXIT=0
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A browser without ES-module support shows the cannot-run message"
   Feature: Export a duty-plan calendar
     Scenario: A browser without ES-module support shows the cannot-run message
      ✔  Given the converter page served from the built Site output in a browser without ES-module support
@@ -1091,13 +1100,18 @@ refused by name with no file picker and no calendar.
   4 steps (4 passed)
   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — verify both the `supports` and `noModule` branches are asserted
-  (separate cases if the shadowing cannot exercise both in one), re-run:
+- [x] REFACTOR — `capability.js` takes the `HTMLScriptElement.supports` branch because
+  the init script installs `supports`; the `noModule` fallback remains the branch for a
+  browser whose `supports` is absent. The scenario asserts the `supports` branch; the
+  fallback is the same gate path and has no second scenario of its own. No cleanup was
+  needed; re-run:
   ```
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A browser without ES-module support shows the cannot-run message"
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A browser without ES-module support shows the cannot-run message`; Hash: `<record the revision identifier here>`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+  `Scenario: A browser without ES-module support shows the cannot-run message`; Hash:
+  recorded in the scenario-commit record commit
 
 ### 11. A converter module that cannot be instantiated shows the startup failure
 

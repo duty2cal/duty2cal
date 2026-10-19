@@ -2809,10 +2809,10 @@ async fn the_converter_page(w: &mut DutyWorld) {
 #[given(
     "the converter page served from the built Site output in a browser without ES-module support"
 )]
-async fn the_converter_page_without_modules(_w: &mut DutyWorld) {
-    unimplemented!(
-        "the converter page served from the built Site output in a browser without ES-module support"
-    )
+async fn the_converter_page_without_modules(w: &mut DutyWorld) {
+    let mut params = Map::new();
+    params.insert("mode".to_string(), Value::String("no-modules".to_string()));
+    driver(w).send("start", params);
 }
 
 #[given("the converter page served from the built Site output in a browser without WebAssembly")]
@@ -3132,8 +3132,8 @@ async fn the_cannot_run_message_names_webassembly(w: &mut DutyWorld) {
 }
 
 #[then("the page shows a cannot-run heading and states that ES modules are required")]
-async fn the_cannot_run_message_names_es_modules(_w: &mut DutyWorld) {
-    unimplemented!("the page shows a cannot-run heading and states that ES modules are required")
+async fn the_cannot_run_message_names_es_modules(w: &mut DutyWorld) {
+    assert_cannot_run(w, "ES modules");
 }
 
 #[then("the page shows a cannot-run heading and states that the converter could not start")]
