@@ -2675,3 +2675,251 @@ async fn a_plan_with_an_unusable_footer_stamp(w: &mut DutyWorld) {
         "2099-06-10T00:00:00Z".to_string(),
     )];
 }
+
+// ---------------------------------------------------------------------------
+// Browser variants of the capability (design.md "Step definition locations").
+//
+// The bodies are the RED stubs: each panics with its own step name, so no
+// browser scenario can pass before its step is implemented.
+// ---------------------------------------------------------------------------
+
+#[given("the converter page served from the built Site output")]
+async fn the_converter_page(_w: &mut DutyWorld) {
+    unimplemented!("the converter page served from the built Site output")
+}
+
+#[given(
+    "the converter page served from the built Site output in a browser without ES-module support"
+)]
+async fn the_converter_page_without_modules(_w: &mut DutyWorld) {
+    unimplemented!(
+        "the converter page served from the built Site output in a browser without ES-module support"
+    )
+}
+
+#[given("the converter page served from the built Site output in a browser without WebAssembly")]
+async fn the_converter_page_without_webassembly(_w: &mut DutyWorld) {
+    unimplemented!(
+        "the converter page served from the built Site output in a browser without WebAssembly"
+    )
+}
+
+#[given("the converter page served from the built Site output that cannot create a download offer for the calendar")]
+async fn the_converter_page_without_calendar_offer(_w: &mut DutyWorld) {
+    unimplemented!(
+        "the converter page served from the built Site output that cannot create a download offer for the calendar"
+    )
+}
+
+#[given("the converter page served from the built Site output that cannot create a download offer for the diagnostic")]
+async fn the_converter_page_without_diagnostic_offer(_w: &mut DutyWorld) {
+    unimplemented!(
+        "the converter page served from the built Site output that cannot create a download offer for the diagnostic"
+    )
+}
+
+#[given("the converter page served from the built Site output whose converter module cannot be instantiated")]
+async fn the_converter_page_with_a_broken_module(_w: &mut DutyWorld) {
+    unimplemented!(
+        "the converter page served from the built Site output whose converter module cannot be instantiated"
+    )
+}
+
+#[given(
+    regex = r#"^the supported duty plan "([^"]+)" whose Created footer supplies its revision timestamp$"#
+)]
+async fn the_plan_with_a_created_footer(_w: &mut DutyWorld, _name: String) {
+    unimplemented!(
+        "the supported duty plan \"{}\" whose Created footer supplies its revision timestamp",
+        _name
+    )
+}
+
+#[given("the executable has published the calendar for that plan")]
+async fn the_executable_has_published_the_calendar(_w: &mut DutyWorld) {
+    unimplemented!("the executable has published the calendar for that plan")
+}
+
+#[when(
+    regex = r#"^the crew member supplies the supported duty plan "([^"]+)" through the file picker$"#
+)]
+async fn supplies_the_supported_plan(_w: &mut DutyWorld, _name: String) {
+    unimplemented!("the crew member supplies the supported duty plan through the file picker")
+}
+
+#[when("the crew member supplies that plan through the file picker")]
+async fn supplies_that_plan(_w: &mut DutyWorld) {
+    unimplemented!("the crew member supplies that plan through the file picker")
+}
+
+#[when(
+    regex = r#"^the crew member supplies the file "([^"]+)" that is not a supported duty plan$"#
+)]
+async fn supplies_an_unsupported_file(_w: &mut DutyWorld, _name: String) {
+    unimplemented!("the crew member supplies the file that is not a supported duty plan")
+}
+
+#[when(regex = r#"^the crew member supplies the plan "([^"]+)" of (\d+) MiB$"#)]
+async fn supplies_an_oversized_plan(_w: &mut DutyWorld, _name: String, _size: String) {
+    unimplemented!("the crew member supplies a plan larger than the supported size bound")
+}
+
+#[when(
+    regex = r#"^the crew member supplies the supported duty plan "([^"]+)" containing a required activity the converter cannot resolve$"#
+)]
+async fn supplies_an_unresolvable_plan(_w: &mut DutyWorld, _name: String) {
+    unimplemented!(
+        "the crew member supplies a plan containing a required activity the converter cannot resolve"
+    )
+}
+
+#[when(
+    regex = r#"^the crew member supplies the supported duty plan "([^"]+)" of exactly (\d+) MiB$"#
+)]
+async fn supplies_a_plan_at_the_size_bound(_w: &mut DutyWorld, _name: String, _size: String) {
+    unimplemented!("the crew member supplies a plan at the supported size bound")
+}
+
+#[when(regex = r#"^the crew member drops the supported duty plan "([^"]+)" onto the drop zone$"#)]
+async fn drops_the_supported_plan(_w: &mut DutyWorld, _name: String) {
+    unimplemented!("the crew member drops the supported duty plan onto the drop zone")
+}
+
+#[when("the crew member dismisses the save of the offered calendar")]
+async fn dismisses_the_save(_w: &mut DutyWorld) {
+    unimplemented!("the crew member dismisses the save of the offered calendar")
+}
+
+#[when("the crew member reloads the page")]
+async fn reloads_the_page(_w: &mut DutyWorld) {
+    unimplemented!("the crew member reloads the page")
+}
+
+#[then("the page shows that the calendar is ready")]
+async fn the_calendar_is_ready(_w: &mut DutyWorld) {
+    unimplemented!("the page shows that the calendar is ready")
+}
+
+#[then("the page shows that the drop was accepted and the calendar is ready")]
+async fn the_drop_was_accepted(_w: &mut DutyWorld) {
+    unimplemented!("the page shows that the drop was accepted and the calendar is ready")
+}
+
+#[then("the page shows a failure heading and a failure naming the 20 MiB bound")]
+async fn the_failure_names_the_size_bound(_w: &mut DutyWorld) {
+    unimplemented!("the page shows a failure heading and a failure naming the 20 MiB bound")
+}
+
+#[then(regex = r#"^the page shows a failure heading and a failure naming "([^"]+)"$"#)]
+async fn the_failure_names_the_file(_w: &mut DutyWorld, _name: String) {
+    unimplemented!("the page shows a failure heading and a failure naming the file")
+}
+
+#[then("the page shows a failure heading and the reason")]
+async fn the_failure_shows_the_reason(_w: &mut DutyWorld) {
+    unimplemented!("the page shows a failure heading and the reason")
+}
+
+#[then("the page shows a failure heading and states that the calendar could not be offered")]
+async fn the_failure_states_the_calendar_could_not_be_offered(_w: &mut DutyWorld) {
+    unimplemented!(
+        "the page shows a failure heading and states that the calendar could not be offered"
+    )
+}
+
+#[then(regex = r#"^the page shows a failure heading and the primary failure naming "([^"]+)"$"#)]
+async fn the_failure_keeps_the_primary_reason(_w: &mut DutyWorld, _name: String) {
+    unimplemented!("the page shows a failure heading and the primary failure naming the file")
+}
+
+#[then("the page shows a cannot-run heading and states that WebAssembly is required")]
+async fn the_cannot_run_message_names_webassembly(_w: &mut DutyWorld) {
+    unimplemented!("the page shows a cannot-run heading and states that WebAssembly is required")
+}
+
+#[then("the page shows a cannot-run heading and states that ES modules are required")]
+async fn the_cannot_run_message_names_es_modules(_w: &mut DutyWorld) {
+    unimplemented!("the page shows a cannot-run heading and states that ES modules are required")
+}
+
+#[then("the page shows a cannot-run heading and states that the converter could not start")]
+async fn the_cannot_run_message_names_startup(_w: &mut DutyWorld) {
+    unimplemented!(
+        "the page shows a cannot-run heading and states that the converter could not start"
+    )
+}
+
+#[then(regex = r#"^the page offers the file "([^"]+)"$"#)]
+async fn the_page_offers_the_file(_w: &mut DutyWorld, _name: String) {
+    unimplemented!("the page offers the file")
+}
+
+#[then("the page offers no calendar")]
+async fn the_page_offers_no_calendar(_w: &mut DutyWorld) {
+    unimplemented!("the page offers no calendar")
+}
+
+#[then(regex = r#"^the page offers no calendar and no longer offers "([^"]+)"$"#)]
+async fn the_page_withdraws_the_calendar(_w: &mut DutyWorld, _name: String) {
+    unimplemented!("the page offers no calendar and no longer offers the earlier one")
+}
+
+#[then("the page offers no file picker")]
+async fn the_page_offers_no_file_picker(_w: &mut DutyWorld) {
+    unimplemented!("the page offers no file picker")
+}
+
+#[then(regex = r#"^the page offers the diagnostic text "([^"]+)"$"#)]
+async fn the_page_offers_the_diagnostic(_w: &mut DutyWorld, _name: String) {
+    unimplemented!("the page offers the diagnostic text")
+}
+
+#[then(r#"the diagnostic text identifies "2026-06.pdf" and the size failure"#)]
+async fn the_diagnostic_names_the_size_failure(_w: &mut DutyWorld) {
+    unimplemented!("the diagnostic text identifies the plan and the size failure")
+}
+
+#[then(regex = r#"^the diagnostic text identifies "([^"]+)" and the unsupported-family reason$"#)]
+async fn the_diagnostic_names_the_unsupported_family(_w: &mut DutyWorld, _name: String) {
+    unimplemented!("the diagnostic text identifies the file and the unsupported-family reason")
+}
+
+#[then(regex = r#"^the diagnostic text identifies "([^"]+)" and the reason$"#)]
+async fn the_diagnostic_names_the_reason(_w: &mut DutyWorld, _name: String) {
+    unimplemented!("the diagnostic text identifies the file and the reason")
+}
+
+#[then("the page offers a way to choose another plan")]
+async fn the_page_offers_a_way_back(_w: &mut DutyWorld) {
+    unimplemented!("the page offers a way to choose another plan")
+}
+
+#[then("the page states that no diagnostic was offered")]
+async fn the_page_states_no_diagnostic_was_offered(_w: &mut DutyWorld) {
+    unimplemented!("the page states that no diagnostic was offered")
+}
+
+#[then("the page has sent no request to another origin since it loaded")]
+async fn the_page_sent_no_request_to_another_origin(_w: &mut DutyWorld) {
+    unimplemented!("the page has sent no request to another origin since it loaded")
+}
+
+#[then("the page has stored nothing in persistent browser storage")]
+async fn the_page_stored_nothing(_w: &mut DutyWorld) {
+    unimplemented!("the page has stored nothing in persistent browser storage")
+}
+
+#[then("the page's address is unchanged and the browser history has no new entry")]
+async fn the_page_address_is_unchanged(_w: &mut DutyWorld) {
+    unimplemented!("the page's address is unchanged and the browser history has no new entry")
+}
+
+#[then("the page still offers the calendar")]
+async fn the_page_still_offers_the_calendar(_w: &mut DutyWorld) {
+    unimplemented!("the page still offers the calendar")
+}
+
+#[then("the offered calendar is byte-identical to the executable's calendar")]
+async fn the_offered_calendar_is_byte_identical(_w: &mut DutyWorld) {
+    unimplemented!("the offered calendar is byte-identical to the executable's calendar")
+}

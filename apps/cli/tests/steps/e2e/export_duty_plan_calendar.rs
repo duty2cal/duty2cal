@@ -6,7 +6,7 @@
 
 use std::path::PathBuf;
 
-use cucumber::{given, then};
+use cucumber::{given, then, when};
 
 use crate::steps::export_duty_plan_calendar::{calendar, plan_with_row, transcript};
 use crate::steps::support::{ACTIVITY_X, DATE_X, END_X, FROM_X, START_X, TO_X};
@@ -81,4 +81,45 @@ async fn success_exit_status(w: &mut DutyWorld) {
         transcript(w).replace(&w.working_dir().display().to_string(), "<scenario-dir>");
     evidence.push_str(&format!("exit status: {}\n", w.exit_status.unwrap_or(-1)));
     std::fs::write(&path, evidence).expect("write the transcript");
+}
+
+// ---------------------------------------------------------------------------
+// Browser `@e2e` steps (design.md "Step definition locations"). The shared
+// steps live in the regular capability file; these are the observations only
+// the end-to-end run makes. Every body is the RED stub.
+// ---------------------------------------------------------------------------
+
+#[when("the crew member saves the offered calendar")]
+async fn the_crew_member_saves_the_offered_calendar(_w: &mut DutyWorld) {
+    unimplemented!("the crew member saves the offered calendar")
+}
+
+#[then("the page shows the empty state and offers no calendar")]
+async fn the_page_shows_the_empty_state(_w: &mut DutyWorld) {
+    unimplemented!("the page shows the empty state and offers no calendar")
+}
+
+#[then("the browser has saved a complete RFC 5545 calendar")]
+async fn the_browser_saved_a_complete_calendar(_w: &mut DutyWorld) {
+    unimplemented!("the browser has saved a complete RFC 5545 calendar")
+}
+
+#[then(regex = r#"^the saved calendar matches the reference calendar for "([^"]+)"$"#)]
+async fn the_saved_calendar_matches_the_reference(_w: &mut DutyWorld, _name: String) {
+    unimplemented!("the saved calendar matches the reference calendar")
+}
+
+#[then("the page has not reported that it saved a file")]
+async fn the_page_claims_no_save(_w: &mut DutyWorld) {
+    unimplemented!("the page has not reported that it saved a file")
+}
+
+#[then("the page asks for no account, email, or upload")]
+async fn the_page_asks_for_no_account(_w: &mut DutyWorld) {
+    unimplemented!("the page asks for no account, email, or upload")
+}
+
+#[then("the page meets the visual baseline at every displayed state")]
+async fn the_page_meets_the_visual_baseline(_w: &mut DutyWorld) {
+    unimplemented!("the page meets the visual baseline at every displayed state")
 }

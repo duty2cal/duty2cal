@@ -49,6 +49,19 @@ jobs:
           # reason.
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          # `scripts/build-web.sh` builds the browser bundle for both suite
+          # modes.
+          targets: wasm32-unknown-unknown
+      # The browser scenarios drive the real page with the pinned Playwright
+      # and Chromium (web/e2e/.nvmrc is the reviewed Node version).
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: web/e2e/.nvmrc
+          cache: npm
+          cache-dependency-path: web/e2e/package-lock.json
+      - run: npm ci --prefix web/e2e
+      - run: npx --prefix web/e2e playwright install --with-deps chromium
       # The suite's change-log scenarios drive scripts/render-changelog.sh as a
       # real subprocess, so the pinned generator must be on PATH — the same
       # version the committed CHANGELOG.md was produced with.
@@ -158,6 +171,16 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: llvm-tools-preview
+          targets: wasm32-unknown-unknown
+      # `measure-coverage.sh` builds the browser bundle and runs the browser
+      # scenarios, so the coverage job needs the same Node and Chromium setup.
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: web/e2e/.nvmrc
+          cache: npm
+          cache-dependency-path: web/e2e/package-lock.json
+      - run: npm ci --prefix web/e2e
+      - run: npx --prefix web/e2e playwright install --with-deps chromium
       - run: cargo install cargo-llvm-cov --locked
       - run: ./measure-coverage.sh
       - run: ./merge-coverages.sh

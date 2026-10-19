@@ -86,9 +86,9 @@ fn reject(source: &Path, reason: &str) -> ExitCode {
 
 fn report(source: &Path, reason: &str) {
     let message = format!("conversion failed for {}: {reason}", source.display());
-    let body = format!(
-        "Source PDF: {}\nReason: {reason}\n",
-        source.file_name().unwrap_or_default().to_string_lossy()
+    let body = duty2cal_core::application::diagnostic_text(
+        &source.file_name().unwrap_or_default().to_string_lossy(),
+        reason,
     );
     match fs::publish(source, fs::Kind::Diagnostic, &body) {
         Ok(Some(path)) => println!("{message}\nDiagnostic: {}", path.display()),

@@ -10,6 +10,15 @@ private
 __pycache__/
 *.pyc
 
+# Browser bundle and test-only Node artifacts (design.md "Architecture impact")
+/web/pkg/
+# Build output: scripts/build-web.sh copies LICENSES/MPL-2.0.txt here so the
+# served Site carries its licence.
+/web/LICENSE.txt
+web/e2e/node_modules/
+web/e2e/test-results/
+reports/visual/
+
 # OpenTofu: the declaration's machine-local cache and the adoption's staging
 # workspace. The applied state files under infra/ are intentionally tracked:
 # they are encrypted at rest (ADR-0006), so no *.tfstate rule exists here.

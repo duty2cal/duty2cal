@@ -1,0 +1,69 @@
+// SPDX-License-Identifier: MPL-2.0
+//! Browser adapter for the `export-duty-plan-calendar` capability.
+//!
+//! The facade is a thin driving adapter: the page supplies the file's name and
+//! bytes, and receives calendar text or a structured failure. It performs no
+//! I/O of its own; the only wasm-only dependency is the browser clock the
+//! existing `Clock` port needs as the revision fallback.
+//!
+//! The `wasm_bindgen` exports and `BrowserClock` are compiled only for
+//! `wasm32`; the native build exists so `cargo fmt`, `cargo clippy` and the
+//! Windows GNU workspace build lint the crate on the host.
+
+use duty2cal_core::application::Clock;
+use time::OffsetDateTime;
+
+#[cfg(target_arch = "wasm32")]
+use duty2cal_core::application::diagnostic_text as core_diagnostic_text;
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
+
+/// The host clock, used by the native build.
+///
+/// The browser never uses this clock; it exists so the crate compiles and
+/// lints without a `wasm32` target.
+pub struct NativeClock;
+
+impl Clock for NativeClock {
+    fn now_utc(&self) -> OffsetDateTime {
+        OffsetDateTime::now_utc()
+    }
+}
+
+/// The browser clock: the existing `Clock` port over `Date.now()`.
+///
+/// Only the revision-timestamp fallback reads it; a source that states its own
+/// revision keeps that stamp.
+#[cfg(target_arch = "wasm32")]
+pub struct BrowserClock;
+
+#[cfg(target_arch = "wasm32")]
+impl Clock for BrowserClock {
+    fn now_utc(&self) -> OffsetDateTime {
+        let millis = js_sys::Date::now();
+        // `Date.now()` is integral milliseconds since the Unix epoch.
+        let nanos = (millis as i128) * 1_000_000;
+        OffsetDateTime::from_unix_timestamp_nanos(nanos)
+            .expect("the browser clock is representable as a UTC instant")
+    }
+}
+
+/// Convert one supplied plan and return the page's structured result.
+///
+/// The conversion wiring lands with the scenarios; the export exists so the
+/// wasm bundle and the inline-bytes CSP path are proved at setup time.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub fn convert(_filename: &str, _bytes: &[u8]) -> JsValue {
+    unimplemented!("convert")
+}
+
+/// The two-line diagnostic report for a failure the page detects itself.
+///
+/// The format lives once in `duty2cal_core::application` and is shared with the
+/// executable's report path.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub fn diagnostic_text(filename: &str, reason: &str) -> String {
+    core_diagnostic_text(filename, reason)
+}

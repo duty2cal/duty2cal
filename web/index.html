@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- connect-src 'none' forbids every fetch; the WASM bytes are inlined by
+       scripts/build-web.sh and passed to init(bytes). Never weaken this. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Duty plan to calendar</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./capability.js" defer></script>
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <header class="page-header">
+    <h1>Duty plan to calendar</h1>
+    <p class="lede">Turn one supported duty plan into a calendar file. The plan stays in this tab.</p>
+  </header>
+
+  <main>
+    <section id="cannot-run" class="panel panel--failure" hidden>
+      <h2>This browser cannot run the converter</h2>
+      <p id="cannot-run-reason"></p>
+    </section>
+
+    <section id="plan-actions" class="panel" hidden>
+      <p id="status" role="status" aria-live="polite">No plan selected.</p>
+      <div class="controls">
+        <button id="choose" type="button" class="button">Choose a duty plan</button>
+        <label class="visually-hidden" for="plan">Choose a duty plan</label>
+        <input id="plan" type="file" accept="application/pdf,.pdf" hidden>
+      </div>
+      <div id="drop-zone" class="drop-zone">Drop one duty plan here.</div>
+      <div id="offer" class="offer" hidden></div>
+      <section id="failure" class="panel panel--failure" role="alert" hidden>
+        <h2>Conversion failed</h2>
+        <p id="failure-reason"></p>
+        <div id="failure-offer"></div>
+        <button id="reset" type="button" class="button">Choose another plan</button>
+      </section>
+    </section>
+  </main>
+
+  <footer class="page-footer">
+    <p>Processing happens in your browser. No account, email, or upload is used.</p>
+  </footer>
+</body>
+</html>

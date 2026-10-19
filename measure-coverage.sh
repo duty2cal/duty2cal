@@ -11,6 +11,15 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# The browser scenarios need the built bundle; the build itself is not
+# instrumented (design D3).
+scripts/build-web.sh
+
+# Coverage excludes `duty2cal-wasm`: the wasm target has no file-based LLVM
+# profile writer here, and the facade's behavior is browser-evidenced
+# (design D3).
+packages=(--package duty2cal-core --package duty2cal-pdf --package duty2cal)
+
 non_e2e="${GIVN_COVERAGE_NON_E2E_PATH:-coverage/non-e2e-cobertura.xml}"
 e2e="${GIVN_COVERAGE_E2E_PATH:-coverage/e2e-cobertura.xml}"
 mkdir -p "$(dirname "$non_e2e")" "$(dirname "$e2e")"
@@ -20,11 +29,11 @@ trap 'rm -rf "$root"' EXIT
 export GIVN_FEATURES="$root"
 
 echo "== non-e2e profile =="
-cargo llvm-cov --workspace --test features_runner \
+cargo llvm-cov "${packages[@]}" --test features_runner \
   --cobertura --output-path "$non_e2e" --ignore-run-fail -- --tags "not @e2e"
 
 echo "== e2e profile =="
-cargo llvm-cov --workspace --test features_runner \
+cargo llvm-cov "${packages[@]}" --test features_runner \
   --cobertura --output-path "$e2e" --ignore-run-fail -- --tags "@e2e"
 
 echo "wrote $non_e2e and $e2e"
