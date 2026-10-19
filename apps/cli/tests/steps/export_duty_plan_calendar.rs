@@ -2886,8 +2886,15 @@ async fn supplies_that_plan(w: &mut DutyWorld) {
 #[when(
     regex = r#"^the crew member supplies the file "([^"]+)" that is not a supported duty plan$"#
 )]
-async fn supplies_an_unsupported_file(_w: &mut DutyWorld, _name: String) {
-    unimplemented!("the crew member supplies the file that is not a supported duty plan")
+async fn supplies_an_unsupported_file(w: &mut DutyWorld, name: String) {
+    // A readable PDF without the supported detail-table header: the family
+    // check rejects it, not the page's size guard and not a read error.
+    let items = support::at(
+        700.0,
+        &[(DATE_X, "Notes"), (FROM_X, "This page is not a duty plan.")],
+    );
+    named_source(w, &name, support::build_pdf(&items));
+    supply_through_picker(w);
 }
 
 #[when(regex = r#"^the crew member supplies the plan "([^"]+)" of (\d+) MiB$"#)]
@@ -2996,8 +3003,8 @@ async fn the_failure_names_the_size_bound(w: &mut DutyWorld) {
 }
 
 #[then(regex = r#"^the page shows a failure heading and a failure naming "([^"]+)"$"#)]
-async fn the_failure_names_the_file(_w: &mut DutyWorld, _name: String) {
-    unimplemented!("the page shows a failure heading and a failure naming the file")
+async fn the_failure_names_the_file(w: &mut DutyWorld, name: String) {
+    assert_failure_containing(w, &name);
 }
 
 #[then("the page shows a failure heading and the reason")]
@@ -3097,8 +3104,17 @@ async fn the_diagnostic_names_the_size_failure(w: &mut DutyWorld) {
 }
 
 #[then(regex = r#"^the diagnostic text identifies "([^"]+)" and the unsupported-family reason$"#)]
-async fn the_diagnostic_names_the_unsupported_family(_w: &mut DutyWorld, _name: String) {
-    unimplemented!("the diagnostic text identifies the file and the unsupported-family reason")
+async fn the_diagnostic_names_the_unsupported_family(w: &mut DutyWorld, name: String) {
+    let text = captured_diagnostic(w);
+    assert!(
+        text.starts_with(&format!("Source PDF: {name}\nReason: ")),
+        "the diagnostic does not identify the file: {text:?}"
+    );
+    assert!(
+        text.contains("not a supported Released Roster detail-table export")
+            && text.ends_with('\n'),
+        "the diagnostic does not state the unsupported-family reason: {text:?}"
+    );
 }
 
 #[then(regex = r#"^the diagnostic text identifies "([^"]+)" and the reason$"#)]
