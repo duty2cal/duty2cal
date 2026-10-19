@@ -112,7 +112,7 @@ Feature: Export a duty-plan calendar
     And the page offers no calendar
     And the page has sent no request to another origin since it loaded
 
-  @givn.added @wip
+  @givn.added
   Scenario: A supported plan dropped onto the drop zone is converted
     Given the converter page served from the built Site output
     When the crew member drops the supported duty plan "2026-06.pdf" onto the drop zone

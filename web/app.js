@@ -182,6 +182,18 @@ function wireControls() {
       acceptFile(file);
     }
   });
+  for (const type of ['dragenter', 'dragover']) {
+    dropZone.addEventListener(type, (event) => {
+      event.preventDefault();
+    });
+  }
+  dropZone.addEventListener('drop', (event) => {
+    event.preventDefault();
+    const file = event.dataTransfer && event.dataTransfer.files[0];
+    if (file) {
+      acceptFile(file);
+    }
+  });
   reset.addEventListener('click', () => {
     picker.value = '';
     clearAttempt();

@@ -6,10 +6,10 @@
 // unperformed action as success.
 
 import { createReadStream } from 'node:fs';
-import { mkdir, stat } from 'node:fs/promises';
+import { mkdir, readFile, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { createInterface } from 'node:readline';
-import { dirname, extname, resolve, sep } from 'node:path';
+import { basename, dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import AxeBuilder from '@axe-core/playwright';
@@ -418,8 +418,47 @@ const actions = {
     return { violations: analysis.violations };
   },
 
-  async drop_file() {
-    throw new Error('drop_file is not implemented yet');
+  async drop_file(params) {
+    if (!page) {
+      throw new Error('the page is not started');
+    }
+    if (!params.path) {
+      throw new Error('drop_file needs a path');
+    }
+    const bytes = await readFile(params.path);
+    const name = basename(params.path);
+    const defaultPrevented = await page.evaluate(
+      ({ filename, base64 }) => {
+        const binary = atob(base64);
+        const data = new Uint8Array(binary.length);
+        for (let index = 0; index < binary.length; index += 1) {
+          data[index] = binary.charCodeAt(index);
+        }
+        const file = new File([data], filename, {
+          type: 'application/pdf',
+        });
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+        const zone = document.getElementById('drop-zone');
+        if (!zone) {
+          throw new Error('the page has no drop zone');
+        }
+        let prevented = false;
+        for (const type of ['dragenter', 'dragover', 'drop']) {
+          const event = new DragEvent(type, {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: transfer,
+          });
+          zone.dispatchEvent(event);
+          prevented = prevented || event.defaultPrevented;
+        }
+        return prevented;
+      },
+      { filename: name, base64: bytes.toString('base64') },
+    );
+    await waitUntilSettled();
+    return { defaultPrevented };
   },
 
   async dismiss_save() {

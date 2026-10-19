@@ -2980,8 +2980,25 @@ async fn supplies_a_plan_at_the_size_bound(w: &mut DutyWorld, name: String, size
 }
 
 #[when(regex = r#"^the crew member drops the supported duty plan "([^"]+)" onto the drop zone$"#)]
-async fn drops_the_supported_plan(_w: &mut DutyWorld, _name: String) {
-    unimplemented!("the crew member drops the supported duty plan onto the drop zone")
+async fn drops_the_supported_plan(w: &mut DutyWorld, name: String) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[(DATE_X, "2026-06-08"), (ACTIVITY_X, "U")],
+    ));
+    named_source(w, &name, support::build_pdf(&items));
+    let path = w.source_path();
+    let mut params = Map::new();
+    params.insert(
+        "path".to_string(),
+        Value::String(path.display().to_string()),
+    );
+    let result = driver(w).send("drop_file", params);
+    assert_eq!(
+        result["defaultPrevented"].as_bool(),
+        Some(true),
+        "the drop did not prevent the browser's default navigation: {result}"
+    );
 }
 
 #[when("the crew member dismisses the save of the offered calendar")]
@@ -3017,8 +3034,24 @@ async fn the_calendar_is_ready(w: &mut DutyWorld) {
 }
 
 #[then("the page shows that the drop was accepted and the calendar is ready")]
-async fn the_drop_was_accepted(_w: &mut DutyWorld) {
-    unimplemented!("the page shows that the drop was accepted and the calendar is ready")
+async fn the_drop_was_accepted(w: &mut DutyWorld) {
+    let state = page_state(w);
+    assert_eq!(
+        state["state"].as_str(),
+        Some("ready"),
+        "the dropped plan did not reach the ready state: {state}"
+    );
+    let text = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        text.contains("Calendar ready"),
+        "the ready heading is not visible after a drop: {text}"
+    );
+    assert!(
+        text.contains("Drop one duty plan here."),
+        "the drop zone is not visible in the ready state: {text}"
+    );
 }
 
 #[then("the page shows a failure heading and a failure naming the 20 MiB bound")]

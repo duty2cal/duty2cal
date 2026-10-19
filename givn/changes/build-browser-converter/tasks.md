@@ -1204,30 +1204,40 @@ plan and produces the same offer.
 - The ready state and the `Save 2026-06.ics` offer are identical to the picker path.
 - The driver's `drop_file` action drives the real drag-and-drop path.
 
-- [ ] RED — remove `@wip` from this scenario only; add its new step bodies as
-  `unimplemented!()` stubs (previously implemented shared steps stay implemented); run:
+- [x] RED — remove `@wip` from this scenario only; the When and Then step bodies
+  stayed the committed `unimplemented!()` stubs; run:
   ```
-  $ ./run-tests.sh --name "A supported plan dropped onto the drop zone is converted"
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A supported plan dropped onto the drop zone is converted"
   Feature: Export a duty-plan calendar
     Scenario: A supported plan dropped onto the drop zone is converted
      ✔  Given the converter page served from the built Site output
      ✘  When the crew member drops the supported duty plan "2026-06.pdf" onto the drop zone
-        Step panicked. Captured output: not implemented: drive the real drop action
+        Step failed:
+        Defined: tmp/tmp.NiKgEvfk9H/f0006.feature:118:5
+        Matched: apps/cli/tests/steps/export_duty_plan_calendar.rs:2982:1
+        Step panicked. Captured output: not implemented: the crew member drops the supported duty plan onto the drop zone
   [Summary]
   1 feature
   1 scenario (1 failed)
   2 steps (1 passed, 1 failed)
   RED_EXIT=101
   ```
-- [ ] GREEN — real assertions and minimum production code; production files modified:
-  - `web/index.html` — the drop-zone markup and its visible label.
-  - `web/app.js` — the `drop` handler, default-navigation prevention, and the shared
-    `acceptFile(file)` call.
-  - `web/e2e/driver.mjs` — the `drop_file` action.
-  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the drop steps.
+- [x] GREEN — real assertions and minimum production code; production files:
+  - `web/index.html` — the drop-zone markup and its visible label already existed in
+    the committed baseline; no change was needed.
+  - `web/app.js` — the `dragenter`/`dragover` default prevention, the `drop` handler
+    that prevents default navigation, and the shared `acceptFile(file)` call (the drop
+    path adds no second conversion implementation).
+  - `web/e2e/driver.mjs` — the `drop_file` action, which reads the fixture, builds a
+    real `File` in a `DataTransfer` and dispatches `dragenter`/`dragover`/`drop` on the
+    drop zone, returning whether the default was prevented.
+  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the drop Given/When (which
+    asserts `defaultPrevented`) and the ready-state assertion.
   Run:
   ```
-  $ ./run-tests.sh --name "A supported plan dropped onto the drop zone is converted"
+  $ cargo fmt --all --check -> FMT_EXIT=0
+  $ cargo clippy --workspace --all-targets -- -D warnings -> CLIPPY_EXIT=0
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A supported plan dropped onto the drop zone is converted"
   Feature: Export a duty-plan calendar
     Scenario: A supported plan dropped onto the drop zone is converted
      ✔  Given the converter page served from the built Site output
@@ -1240,12 +1250,16 @@ plan and produces the same offer.
   4 steps (4 passed)
   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — confirm the drop path adds no second conversion implementation, re-run:
+- [x] REFACTOR — the handler only forwards the first dropped file to `acceptFile`, the
+  same function the picker calls; the offer is created once in `showReady`. No cleanup
+  was needed; re-run:
   ```
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A supported plan dropped onto the drop zone is converted"
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A supported plan dropped onto the drop zone is converted`; Hash: `<record the revision identifier here>`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+  `Scenario: A supported plan dropped onto the drop zone is converted`; Hash: recorded
+  in the scenario-commit record commit
 
 ### 13. A cancelled save is not reported as a save
 
