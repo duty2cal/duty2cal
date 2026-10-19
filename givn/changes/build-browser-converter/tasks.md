@@ -1755,28 +1755,83 @@ has this single `@e2e` scenario.
   $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "Crew member converts a supported duty plan in the browser and saves the offered calendar"
   1 scenario (1 passed), 12 steps (12 passed)   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: one commit for RED+GREEN+REFACTOR; subject
+- [x] COMMIT: one commit for RED+GREEN+REFACTOR; subject
   `test(e2e): A crew member can convert one supported duty plan to a complete calendar in a current browser from the built Site output, with the plan never leaving the tab, or receive an explicit failure with an offered diagnostic.`
   (the release note above prefixed with `test(e2e):`); body contains
-  `Scenario: Crew member converts a supported duty plan in the browser and saves the offered calendar`; Hash: `<record the revision identifier here>`
+  `Scenario: Crew member converts a supported duty plan in the browser and saves the offered calendar`; Hash:
+  `43e916da75795fc754059f796aa3ffcdf4b5cc17` (9 files: the driver, both step files, the
+  feature tag, this task list, and the four committed screenshots).
 
 ## Final verification (after every section is GREEN)
 
-- [ ] `./run-tests.sh` — full suite exits 0; record the scenario count.
-- [ ] `./run-tests.sh --e2e` — e2e suite exits 0; record the scenario count (it is a
-  strict subset of the full run).
-- [ ] `./measure-coverage.sh && ./merge-coverages.sh` — two distinct Cobertura reports
-  from distinct instrumentation runs, merged; `duty2cal-wasm` is outside the native
-  denominator per the approved D3 decision, and the shared core remains covered by the
-  CLI rows.
-- [ ] `givn lint --change build-browser-converter` — exit 0 with no `@wip` findings and
-  no shape/subset advisories.
-- [ ] `givn check tasks --change build-browser-converter` — exit 0.
-- [ ] `grep -c '@wip' givn/changes/build-browser-converter/specs/export-duty-plan-calendar/export-duty-plan-calendar.feature`
-  → `0`; the `@e2e` tag is still on
-  `Crew member converts a supported duty plan in the browser and saves the offered calendar`;
-  `grep -rn 'unimplemented!' apps/cli/tests/steps/` → no output.
-- [ ] Non-scenario checks (design changed-files table): `cargo fmt --all --check`,
-  `cargo clippy --workspace --all-targets -- -D warnings`, `cargo deny check`,
-  `reuse lint`, `bash scripts/license-headers.sh`, `bash scripts/pii-guard.sh`, and the
-  regenerated `THIRD-PARTY-NOTICES.md` diff.
+- [x] `./run-tests.sh` — full suite exits 0. 166 scenarios (166 passed), 744 steps
+  (744 passed):
+  ```
+  [Summary]
+  6 features
+  166 scenarios (166 passed)
+  744 steps (744 passed)
+  FULL_EXIT=0
+  ```
+- [x] `./run-tests.sh --e2e` — e2e suite exits 0. 9 scenarios (9 passed), 71 steps
+  (71 passed); strictly less than 166:
+  ```
+  [Summary]
+  6 features
+  9 scenarios (9 passed)
+  71 steps (71 passed)
+  E2E_EXIT=0
+  ```
+- [x] `./measure-coverage.sh && ./merge-coverages.sh` — both reports came from distinct
+  instrumentation runs and were merged; `duty2cal-wasm` is absent from the report and
+  the shared core/CLI rows carry the coverage:
+  ```
+  non-e2e: line-rate 0.984340 (880/894), md5 9ca7744e5bc507ff3423db21dd324aee
+  e2e:     line-rate 0.686801 (614/894), md5 1bcb9e49c82a04ea62bbe83afb277b3a
+  merged:  line-rate 0.984340 (880/894), 7 files
+  wrote coverage/non-e2e-cobertura.xml and coverage/e2e-cobertura.xml
+  merged 7 files, 894 lines (880 covered) -> coverage/cobertura-coverage.xml
+  COVERAGE_EXIT=0
+  ```
+  (The first attempt failed only because the rustup `llvm-profdata` cannot execute on
+  NixOS; the rerun used an explicit loader wrapper through `LLVM_PROFDATA`/`LLVM_COV`.
+  The measured suites themselves were 157/157 non-e2e and 9/9 e2e.)
+- [x] `givn lint --change build-browser-converter` — exit 0 with no `@wip` findings and
+  no shape/subset advisories:
+  ```
+  givn lint: 1 file(s) checked — clean
+  LINT_EXIT=0
+  ```
+- [x] `givn check tasks --change build-browser-converter` — exit 0. It ran the mandatory
+  `./run-tests.sh` check again (using the already-built bundle) and reported the suite
+  GREEN:
+  ```
+  [Summary]
+  6 features
+  166 scenarios (166 passed)
+  744 steps (744 passed)
+  ✓ verify passed
+  CHECK_TASKS_EXIT=0
+  ```
+- [x] `grep -c '@wip' .../export-duty-plan-calendar.feature` → `0`; the `@e2e` tag is
+  still on `Crew member converts a supported duty plan in the browser and saves the
+  offered calendar`; `grep -rn 'unimplemented!' apps/cli/tests/steps/` → no output:
+  ```
+  @wip count: 0
+  4:  @givn.added @e2e
+  unimplemented: none
+  ```
+- [ ] Non-scenario checks (design changed-files table): `cargo fmt --all --check` →
+  0, `cargo clippy --workspace --all-targets -- -D warnings` → 0, `cargo deny check` →
+  0 (advisories/bans/licenses/sources ok), `reuse lint` → 0 (the generated SPDX string
+  in `scripts/build-web.sh` was wrapped in `REUSE-IgnoreStart`/`REUSE-IgnoreEnd`, and
+  `reuse` then reported "compliant with version 3.3"), `bash scripts/license-headers.sh`
+  → clean, regenerated `THIRD-PARTY-NOTICES.md` → no diff. **`bash scripts/pii-guard.sh`
+  fails on pre-existing content this task cannot rewrite:** the published history holds
+  `infra/terraform.tfstate.backup` in five revisions (including before this scenario),
+  the committed reference fixture `apps/cli/tests/fixtures/expected/2026-06.ics` uses
+  2026 calendar properties in revision `4e0d466` (the guard's convention allows only
+  2098/2099), and the local `npm ci` tree adds `web/e2e/node_modules/**` false
+  positives. Fixing this needs a history rewrite of published revisions, which is
+  outside this task and forbidden. The unchecked box records the blocker, not a
+  passing gate.
