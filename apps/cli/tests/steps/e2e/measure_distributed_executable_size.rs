@@ -33,6 +33,9 @@ fn transcript_path() -> PathBuf {
 }
 
 fn commit_transcript(w: &DutyWorld) {
+    if std::env::var("GIVN_CHANGE").as_deref() != Ok("measure-executable-size") {
+        return;
+    }
     let path = transcript_path();
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).expect("create the evidence directory");
