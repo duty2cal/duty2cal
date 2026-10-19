@@ -2833,10 +2833,13 @@ async fn the_converter_page_without_calendar_offer(w: &mut DutyWorld) {
 }
 
 #[given("the converter page served from the built Site output that cannot create a download offer for the diagnostic")]
-async fn the_converter_page_without_diagnostic_offer(_w: &mut DutyWorld) {
-    unimplemented!(
-        "the converter page served from the built Site output that cannot create a download offer for the diagnostic"
-    )
+async fn the_converter_page_without_diagnostic_offer(w: &mut DutyWorld) {
+    let mut params = Map::new();
+    params.insert(
+        "mode".to_string(),
+        Value::String("diagnostic-offer-failure".to_string()),
+    );
+    driver(w).send("start", params);
 }
 
 #[given("the converter page served from the built Site output whose converter module cannot be instantiated")]
@@ -3081,8 +3084,18 @@ async fn the_failure_states_the_calendar_could_not_be_offered(w: &mut DutyWorld)
 }
 
 #[then(regex = r#"^the page shows a failure heading and the primary failure naming "([^"]+)"$"#)]
-async fn the_failure_keeps_the_primary_reason(_w: &mut DutyWorld, _name: String) {
-    unimplemented!("the page shows a failure heading and the primary failure naming the file")
+async fn the_failure_keeps_the_primary_reason(w: &mut DutyWorld, name: String) {
+    assert_failure_containing(w, &name);
+    let state = page_state(w);
+    let reason = state["failureReason"].as_str().unwrap_or_default();
+    assert!(
+        reason.contains("not a supported Released Roster detail-table export"),
+        "the visible reason is not the primary family failure: {reason:?}"
+    );
+    assert!(
+        !reason.contains("could not be offered"),
+        "the diagnostic offer failure replaced the primary reason: {reason:?}"
+    );
 }
 
 #[then("the page shows a cannot-run heading and states that WebAssembly is required")]
@@ -3247,8 +3260,24 @@ async fn the_page_offers_a_way_back(w: &mut DutyWorld) {
 }
 
 #[then("the page states that no diagnostic was offered")]
-async fn the_page_states_no_diagnostic_was_offered(_w: &mut DutyWorld) {
-    unimplemented!("the page states that no diagnostic was offered")
+async fn the_page_states_no_diagnostic_was_offered(w: &mut DutyWorld) {
+    let state = page_state(w);
+    let text = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        text.contains("No diagnostic was offered."),
+        "the page does not state that no diagnostic was offered: {text}"
+    );
+    let diagnostic = state["offers"]
+        .as_array()
+        .expect("read_state returns offers")
+        .iter()
+        .any(|offer| offer["kind"].as_str() == Some("diagnostic"));
+    assert!(
+        !diagnostic,
+        "the page offered a diagnostic although its creation failed: {state}"
+    );
 }
 
 #[then("the page has sent no request to another origin since it loaded")]
