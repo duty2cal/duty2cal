@@ -498,6 +498,15 @@ fn fingerprint(bytes: &[u8]) -> u64 {
     hash
 }
 
+/// The report a failed conversion offers beside the source.
+///
+/// The executable and the browser facade both call this function, so the two
+/// interfaces cannot drift into different spellings. The page owns the offered
+/// name; this function owns the two lines.
+pub fn diagnostic_text(source_name: &str, reason: &str) -> String {
+    format!("Source PDF: {source_name}\nReason: {reason}\n")
+}
+
 /// Driving port: convert one supplied duty plan.
 #[derive(Debug)]
 pub struct ConvertRoster<S: RosterSource, K: CalendarSink, C: Clock> {

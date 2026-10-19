@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MPL-2.0
+# The facade has no filesystem, network or environment access of its own: the
+# bytes arrive from the page and the text returns to it. Violations fail CI via
+# `cargo clippy --workspace --all-targets -- -D warnings`.
+disallowed-types = [
+    "std::fs::File",
+    "std::net::TcpStream",
+    "std::net::UdpSocket",
+    "std::time::SystemTime",
+    "std::time::Instant",
+]
+disallowed-methods = [
+    "std::fs::read",
+    "std::fs::write",
+    "std::fs::read_to_string",
+    "std::env::var",
+    "std::env::args",
+    "std::process::exit",
+]

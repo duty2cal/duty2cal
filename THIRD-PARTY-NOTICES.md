@@ -486,6 +486,11 @@ DEALINGS IN THE SOFTWARE.
 
 Used by:
 - cfg-if 1.0.5 — https://github.com/rust-lang/cfg-if
+- js-sys 0.3.106 — https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/js-sys
+- wasm-bindgen-macro-support 0.2.129 — https://github.com/wasm-bindgen/wasm-bindgen/tree/main/crates/macro-support
+- wasm-bindgen-macro 0.2.129 — https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/macro
+- wasm-bindgen-shared 0.2.129 — https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/shared
+- wasm-bindgen 0.2.129 — https://github.com/wasm-bindgen/wasm-bindgen
 
 ```
 Copyright (c) 2014 Alex Crichton
@@ -1735,6 +1740,40 @@ DEALINGS IN THE SOFTWARE.
 ## MIT License
 
 Used by:
+- bumpalo 3.20.3 — https://github.com/fitzgen/bumpalo
+
+```
+Copyright (c) 2019 Nick Fitzgerald
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+```
+
+## MIT License
+
+Used by:
 - chacha20 0.10.2 — https://github.com/RustCrypto/stream-ciphers
 
 ```
@@ -2797,6 +2836,7 @@ Used by:
 - inventory 0.3.25 — https://github.com/dtolnay/inventory
 - itoa 1.0.18 — https://github.com/dtolnay/itoa
 - linux-raw-sys 0.12.1 — https://github.com/sunfishcode/linux-raw-sys
+- once_cell 1.21.4 — https://github.com/matklad/once_cell
 - pin-project-internal 1.1.13 — https://github.com/taiki-e/pin-project
 - pin-project-lite 0.2.17 — https://github.com/taiki-e/pin-project-lite
 - pin-project 1.1.13 — https://github.com/taiki-e/pin-project
@@ -3212,6 +3252,7 @@ Used by:
 - duty2cal 0.1.0
 - duty2cal-core 0.1.0
 - duty2cal-pdf 0.1.0
+- duty2cal-wasm 0.1.0
 
 ```
 Mozilla Public License Version 2.0

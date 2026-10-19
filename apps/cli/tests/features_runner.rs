@@ -51,6 +51,8 @@ pub struct DutyWorld {
     pub batch: Option<PathBuf>,
     /// The applied state path the adoption command records.
     pub state: Option<PathBuf>,
+    /// The Playwright driver child; killed when the scenario ends.
+    pub browser: Option<steps::browser::BrowserDriver>,
     /// The local fake GitHub API child; killed when the scenario ends.
     pub fake: Option<std::process::Child>,
     /// The port the fake GitHub API bound on loopback.
@@ -91,6 +93,8 @@ pub struct DutyWorld {
 
 impl Drop for DutyWorld {
     fn drop(&mut self) {
+        // Dropping the driver kills and reaps its child.
+        let _ = self.browser.take();
         if let Some(mut child) = self.fake.take() {
             let _ = child.kill();
             let _ = child.wait();

@@ -22,6 +22,14 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# Both suite modes drive the rendered page, so the bundle is built before the
+# runner. `DUTY2CAL_SKIP_WEB_BUILD=1` is for a run that only re-executes already
+# built scenarios (design.md "Test runner, strict mode, and single-scenario
+# command").
+if [ "${DUTY2CAL_SKIP_WEB_BUILD:-0}" != "1" ]; then
+  scripts/build-web.sh
+fi
+
 filter=()
 args=()
 for a in "$@"; do

@@ -2,6 +2,7 @@
 //! Step definitions, one module per capability, plus shared test support.
 
 pub mod adopt_existing_configuration;
+pub mod browser;
 pub mod e2e;
 pub mod enable_repository_security;
 pub mod export_duty_plan_calendar;
