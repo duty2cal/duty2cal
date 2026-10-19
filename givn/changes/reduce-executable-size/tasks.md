@@ -4,8 +4,8 @@ Release note (commit subject): The Windows executable is smaller: a panic
 aborts instead of unwinding.
 
 The production change is one atomic slice (`Cargo.toml`, the lever command, the
-step definitions and the report), shared revision `6b54806`; the scenario
-entries record that shared revision. The e2e transcript was regenerated after
+step definitions and the report) at revision `6b54806`; each scenario records
+its evidence revision, and the shared production slice is named beside them. The e2e transcript was regenerated after
 the landed commit. The full suite and e2e are run by the archive gate and the
 release workflow; the targeted runs below are the implementation evidence.
 
@@ -42,7 +42,7 @@ release workflow; the targeted runs below are the implementation evidence.
 - [x] REFACTOR: the transcript was hardened (report appended before
   substitution, canonical project path, both exit statuses, no build log);
   the e2e re-ran green.
-- [x] COMMIT: revision `6b54806` (shared production and scenario change).
+- [x] COMMIT: revision `c2ca1ce` (scenario evidence; production slice `6b54806`).
 
 ## Scenario 2 — A lever that measures larger is rejected
 
@@ -53,7 +53,7 @@ release workflow; the targeted runs below are the implementation evidence.
   `2,014,208`, `saved bytes` negative, `rejected`; the `Cargo.toml` still
   carries `panic = "abort"` and no `opt-level = "s"`.
 - [x] REFACTOR: re-ran the targeted scenario; green.
-- [x] COMMIT: revision `6b54806` (shared).
+- [x] COMMIT: revision `8822b43` (scenario evidence).
 
 ## Scenario 3 — A second lever is measured against the configuration carrying the first
 
@@ -62,7 +62,7 @@ release workflow; the targeted runs below are the implementation evidence.
 - [x] GREEN: the `panic=abort,opt-level=s` run has row 1 `applied` and row 2
   `rejected`, with row 2's baseline equal to row 1's lever bytes.
 - [x] REFACTOR: re-ran; green.
-- [x] COMMIT: revision `6b54806` (shared).
+- [x] COMMIT: revision `fa1221d` (scenario evidence).
 
 ## Scenario 4 — A nightly-only proposal is refused before a build
 
@@ -70,7 +70,7 @@ release workflow; the targeted runs below are the implementation evidence.
   names `stable-toolchain`, writes no report and no build runs; the scenario
   passes.
 - [x] REFACTOR: re-ran; green.
-- [x] COMMIT: revision `6b54806` (shared).
+- [x] COMMIT: revision `bba277c` (scenario evidence).
 
 ## Scenario 5 — A proposal outside the supported approach is refused before a build (`upx`, `dynamic-linking`)
 
@@ -79,14 +79,14 @@ release workflow; the targeted runs below are the implementation evidence.
 - [x] GREEN: `upx` names `single-file`, `dynamic-linking` names
   `static-linking`; no report and no build; both examples pass.
 - [x] REFACTOR: re-ran the outline; green.
-- [x] COMMIT: revision `6b54806` (shared).
+- [x] COMMIT: revision `faa2535` (scenario evidence).
 
 ## Scenario 6 — An unknown lever is refused before a build
 
 - [x] RED/GREEN: `turbo` is refused with `not a supported size lever`; no
   baseline and no report; the scenario passes.
 - [x] REFACTOR: re-ran; green.
-- [x] COMMIT: revision `6b54806` (shared).
+- [x] COMMIT: revision `9794d5e` (scenario evidence).
 
 ## Scenario 7 — A build that fails records no delta
 
@@ -94,7 +94,7 @@ release workflow; the targeted runs below are the implementation evidence.
   build fail; the report is `failed` with `## No measurement`, no cumulative
   rows and no saving; the command exits non-zero.
 - [x] REFACTOR: re-ran; green.
-- [x] COMMIT: revision `6b54806` (shared).
+- [x] COMMIT: revision `bc35bdf` (scenario evidence).
 
 ## Final checks
 
