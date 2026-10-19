@@ -24,7 +24,7 @@ Feature: Export a duty-plan calendar
     When the crew member supplies that plan through the file picker
     Then the offered calendar is byte-identical to the executable's calendar
 
-  @givn.added @wip
+  @givn.added
   Scenario: A plan at the supported size bound is accepted
     Given the converter page served from the built Site output
     When the crew member supplies the supported duty plan "2026-06.pdf" of exactly 20 MiB

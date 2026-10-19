@@ -405,9 +405,9 @@ equivalence holds only when the source supplies its revision timestamp.
   5 steps (5 passed)
   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: one commit for RED+GREEN+REFACTOR; subject is the release note above
+- [x] COMMIT: one commit for RED+GREEN+REFACTOR; subject is the release note above
   (`feat(export-duty-plan-calendar): …`), body contains
-  `Scenario: The browser offers the same calendar the executable produces for the same plan`; Hash: `<record the revision identifier here>`
+  `Scenario: The browser offers the same calendar the executable produces for the same plan`; Hash: `4e0d466d959447ad992b2cf7bc08804cea6a05bf`
 
 ### 2. A plan at the supported size bound is accepted
 
@@ -426,31 +426,37 @@ Use-case constraint: main-flow step 1 refuses a browser-supplied plan larger tha
   privacy note; the offer is an in-memory object URL plus `<a download="2026-06.ics">`.
 - No numbered name is promised; the browser owns the save location and collisions.
 
-- [ ] RED — remove `@wip` from this scenario only; add its new step bodies as
+- [x] RED — remove `@wip` from this scenario only; add its new step bodies as
   `unimplemented!()` stubs (the shared page Given stays implemented); run:
   ```
-  $ ./run-tests.sh --name "A plan at the supported size bound is accepted"
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A plan at the supported size bound is accepted"
   Feature: Export a duty-plan calendar
     Scenario: A plan at the supported size bound is accepted
      ✔  Given the converter page served from the built Site output
      ✘  When the crew member supplies the supported duty plan "2026-06.pdf" of exactly 20 MiB
-        Step panicked. Captured output: not implemented: build and supply the exactly-20-MiB fixture
+        Step failed:
+        Defined: tmp/tmp.O1S7VGpC5T/f0006.feature:30:5
+        Matched: apps/cli/tests/steps/export_duty_plan_calendar.rs:2919:1
+        Step panicked. Captured output: not implemented: the crew member supplies a plan at the supported size bound
   [Summary]
   1 feature
   1 scenario (1 failed)
   2 steps (1 passed, 1 failed)
   RED_EXIT=101
   ```
-- [ ] GREEN — real assertions and minimum production code; production files modified:
+- [x] GREEN — real assertions and minimum production code; production files modified:
   - `web/app.js` — `MAX_BYTES`, the pre-read size guard (accept path), ready-state
-    rendering and the `Save 2026-06.ics` offer.
-  - Test support: `apps/cli/tests/steps/support.rs` — a `pad_to`/comment-padding helper
-    that produces exactly 20 MiB; the builder-to-reader check asserts the CLI accepts the
-    padded fixture.
+    rendering and the `Save 2026-06.ics` offer. (The page landed with scenario 1; this
+    scenario is what proves the exact-size boundary and the ready offer.)
+  - Test support: `apps/cli/tests/steps/support.rs` — `build_pdf_at_size`, a
+    content-stream comment-padding helper that produces exactly 20 MiB while keeping
+    the trailing `%%EOF` readable; the builder-to-reader check asserts the CLI accepts
+    the padded fixture and publishes a calendar.
   - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the size-bound steps.
-  Run:
   ```
-  $ ./run-tests.sh --name "A plan at the supported size bound is accepted"
+  $ cargo fmt --all --check -> FMT OK
+  $ cargo clippy --workspace --all-targets -- -D warnings -> clean (CLIPPY_EXIT=0)
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A plan at the supported size bound is accepted"
   Feature: Export a duty-plan calendar
     Scenario: A plan at the supported size bound is accepted
      ✔  Given the converter page served from the built Site output
@@ -463,10 +469,21 @@ Use-case constraint: main-flow step 1 refuses a browser-supplied plan larger tha
   4 steps (4 passed)
   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — keep the fixture padding in test support (never a committed binary),
+- [x] REFACTOR — keep the fixture padding in test support (never a committed binary),
   re-run:
   ```
-  1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A plan at the supported size bound is accepted"
+  Feature: Export a duty-plan calendar
+    Scenario: A plan at the supported size bound is accepted
+     ✔  Given the converter page served from the built Site output
+     ✔  When the crew member supplies the supported duty plan "2026-06.pdf" of exactly 20 MiB
+     ✔  Then the page shows that the calendar is ready
+     ✔  And the page offers the file "2026-06.ics"
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  4 steps (4 passed)
+  REFACTOR_EXIT=0
   ```
 - [ ] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A plan at the supported size bound is accepted`; Hash: `<record the revision identifier here>`
