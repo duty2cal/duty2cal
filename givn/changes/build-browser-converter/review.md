@@ -280,6 +280,8 @@ the evidence convention
 | `project-maintainer--release-owner` | Goal reachable: the screen and its evidence are committed; the e2e scenario and pinned versions are reviewable. | None on the screen. |
 | `contributor--web-reviewer` | Goal reachable: the CSP/inline-WASM/no-network/fallback design is inspectable, and the empty/ready captures show no third-party asset. | None on the screen; the `cannot-run` state is declared. |
 
+VISUAL-REVIEW: PASS
+
 `VISUAL-## Archive-phase evidence path correction (2026-10-19)
 
 The archive gate moves the change before running the suite. The e2e step now
