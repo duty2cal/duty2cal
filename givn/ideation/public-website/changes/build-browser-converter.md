@@ -1,6 +1,6 @@
 # Change seed: build-browser-converter
 
-Status: proposed by build-browser-converter
+Status: implemented in build-browser-converter
 
 - Use-case IDs: `export-duty-plan-calendar` (browser capability)
 - Topic: `public-website`

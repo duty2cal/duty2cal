@@ -5,7 +5,7 @@
   `private/website-idea.md`; the user confirmed the topic and its Handoff
   through Q9 without a separate naming decision.
 - Phase: Handoff complete — published 2026-10-19 with the user's confirmation (Q9). The readable document, two ready seeds, five glossary terms and two Persona promotions are published.
-- Next separate workflow: the user invokes normal proposal planning per seed, starting with `build-browser-converter`. The prior `publish-site-plumbing` seed can run in parallel and must precede `publish-public-website`; its pages-ruleset decision is still open.
+- Next separate workflow: `build-browser-converter` is implemented and archived. The next seed is the prior topic's `publish-site-plumbing` (deploy key and secret), then `publish-public-website`; the pages-ruleset decision in the plumbing seed is still open.
 - This completed ideation authorizes no change start, no `web/` or `ffi/wasm/` file, no workflow, no `infra/` edit, no GitHub write and no Handoff beyond the records published here.
 - Completed authority: topic state, the readable topic record, the two change
   seeds, five glossary terms and two Persona promotions only. No change
