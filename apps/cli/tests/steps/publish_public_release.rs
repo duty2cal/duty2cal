@@ -395,6 +395,7 @@ pub(crate) fn build_history_with(
         "adopt-existing-configuration",
         "apply-configuration-change",
         "measure-distributed-executable-size",
+        "reduce-distributed-executable-size",
     ] {
         std::fs::create_dir_all(repo.join("givn/specs").join(capability))
             .expect("create a capability directory");
