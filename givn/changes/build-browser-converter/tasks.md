@@ -1357,30 +1357,40 @@ Use-case constraint: rule — the page offers `<source-stem>.ics` and
 - This scenario uses an unsupported source so the diagnostic name is asserted without a
   conversion; no calendar is offered.
 
-- [ ] RED — remove `@wip` from this scenario only. The page's stem rule for a dotted
-  filename is not implemented yet, so the scenario's name assertion is the failing test
-  (the shared Given/When steps already exist). Run the single-scenario command; paste the
-  non-zero output:
+- [x] RED — remove `@wip` from this scenario only. The committed baseline already
+  stripped the final extension (`lastIndexOf`), so the unwipped scenario passed on its
+  first run; that was not a RED. To exercise the failing name assertion the helper was
+  temporarily returned to the first-dot behavior named above, then the single-scenario
+  command was run:
   ```
-  $ ./run-tests.sh --name "The offered names use the source file's stem"
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "The offered names use the source file's stem"
   Feature: Export a duty-plan calendar
     Scenario: The offered names use the source file's stem
      ✔  Given the converter page served from the built Site output
      ✔  When the crew member supplies the file "roster.v2.pdf" that is not a supported duty plan
      ✘  Then the page offers the diagnostic text "roster.v2.parse-error.txt"
-        Step panicked. Captured output: the offered diagnostic name was "roster.parse-error.txt", expected "roster.v2.parse-error.txt"
+        Step failed:
+        Defined: tmp/tmp.QunNFZGrBQ/f0006.feature:134:5
+        Matched: apps/cli/tests/steps/export_duty_plan_calendar.rs:3261:1
+        Step panicked. Captured output: the page does not offer the diagnostic "roster.v2.parse-error.txt": {...,"offers":[{"kind":"diagnostic","name":"roster.parse-error.txt",...}]}
   [Summary]
   1 feature
   1 scenario (1 failed)
   3 steps (2 passed, 1 failed)
   RED_EXIT=101
   ```
-- [ ] GREEN — real assertions and minimum production code; production files modified:
-  - `web/app.js` — the stem rule and the two derived names.
-  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the stem steps.
+- [x] GREEN — real assertions and minimum production code; production files:
+  - `web/app.js` — the stem rule now uses `lastIndexOf('.')` with the `dot > 0` guard,
+    so `2026-06.pdf` → `2026-06` and `roster.v2.pdf` → `roster.v2`; both offered names
+    derive from it. The baseline already carried this rule; the only clean-up in this
+    scenario was its doc comment.
+  - No step changes were needed: the shared unsupported-file When and the shared
+    diagnostic/no-calendar Then steps already assert the scenario.
   Run:
   ```
-  $ ./run-tests.sh --name "The offered names use the source file's stem"
+  $ cargo fmt --all --check -> FMT_EXIT=0
+  $ cargo clippy --workspace --all-targets -- -D warnings -> CLIPPY_EXIT=0
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "The offered names use the source file's stem"
   Feature: Export a duty-plan calendar
     Scenario: The offered names use the source file's stem
      ✔  Given the converter page served from the built Site output
@@ -1393,13 +1403,16 @@ Use-case constraint: rule — the page offers `<source-stem>.ics` and
   4 steps (4 passed)
   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — cover the edge cases in the helper (`2026-06.pdf`, `roster.v2.pdf`,
-  a leading-dot name) without adding an unasserted path, re-run:
+- [x] REFACTOR — the helper's edge cases hold: `2026-06.pdf` and `roster.v2.pdf` strip
+  only the final dot, and a leading dot (`dot > 0` false) is not treated as an
+  extension. The comment now states the rule; no unasserted path was added. Re-run:
   ```
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "The offered names use the source file's stem"
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: The offered names use the source file's stem`; Hash: `<record the revision identifier here>`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+  `Scenario: The offered names use the source file's stem`; Hash: recorded in the
+  scenario-commit record commit
 
 ### 15. A browser conversion leaves no plan in persistent storage or a navigable address
 
