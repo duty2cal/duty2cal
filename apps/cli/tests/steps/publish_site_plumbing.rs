@@ -13,7 +13,7 @@ use cucumber::{given, then, when};
 
 use crate::steps::adopt_existing_configuration::{
     adopt, adoption_output, copy_declaration, copy_tree, declaration_dir, fixtures_dir,
-    journal_lines, repository_root, restart_fake_with, scenario_dir, start_fake_with,
+    journal_lines, repository_root, restart_fake_with, scenario_dir, start_fake_with, state_path,
 };
 use crate::steps::enable_repository_security::{
     combined, fake_request, jq, scenario_dir_for, stale_path, state_addresses, state_values, tofu,
@@ -507,6 +507,128 @@ pub(crate) fn preview(w: &mut DutyWorld) {
     w.scenario_transcript.push_str(&transcript);
 }
 
+/// The apply routine (design.md "The apply procedure"): stale check, the
+/// refresh-only verdict, the create-time guard immediately before the write,
+/// then the saved plan's application.
+pub(crate) fn apply_previewed(w: &mut DutyWorld) {
+    let declaration = declaration_dir(w);
+    let dir = scenario_dir_for(w);
+    let stale = stale_path(w);
+    let preflight_report = dir.join("preflight.json");
+    let state_before = dir.join("state-before.tfstate");
+    let mut transcript = String::from("$ apply (preflight; guard; tofu apply plan.bin)\n");
+
+    w.apply_transcript.clear();
+
+    if stale.exists() {
+        transcript.push_str(&format!(
+            "refused: the applied state is stale ({})\n",
+            stale.display()
+        ));
+        w.apply_transcript = transcript.clone();
+        w.scenario_transcript.push_str(&transcript);
+        w.exit_status = Some(2);
+        return;
+    }
+
+    let plan = w
+        .plan_path
+        .clone()
+        .unwrap_or_else(|| declaration.join("plan.bin"));
+    if !plan.is_file() {
+        preview(w);
+        transcript.push_str(&w.preview_transcript);
+        if w.exit_status != Some(0) {
+            w.apply_transcript = transcript.clone();
+            w.scenario_transcript.push_str(&transcript);
+            return;
+        }
+    }
+
+    let mut preflight_args = vec![
+        "plan",
+        "-refresh-only",
+        "-detailed-exitcode",
+        "-json",
+        "-input=false",
+    ];
+    preflight_args.extend(TARGETS.iter().copied());
+    let preflight = tofu(w, &preflight_args);
+    fs::write(&preflight_report, &preflight.stdout).expect("write the preflight's JSON report");
+    transcript.push_str(&format!(
+        "$ tofu plan -refresh-only -detailed-exitcode -json -input=false {}\n",
+        TARGETS.join(" ")
+    ));
+    if !preflight.stderr.is_empty() {
+        transcript.push_str(&String::from_utf8_lossy(&preflight.stderr));
+    }
+    let verdict = jq(w, PREFLIGHT_FILTER, &preflight_report, true);
+    if verdict != "ok" {
+        transcript.push_str(&format!(
+            "refused: live changed after the preview: {verdict} (plan exit {})\n",
+            preflight.status.code().unwrap_or(-1)
+        ));
+        w.apply_transcript = transcript.clone();
+        w.scenario_transcript.push_str(&transcript);
+        w.exit_status = Some(2);
+        return;
+    }
+
+    let list = tofu(w, &["state", "list"]);
+    assert!(
+        list.status.success(),
+        "the applied state must be readable before the apply:\n{}",
+        combined(&list)
+    );
+    let bound: Vec<String> = String::from_utf8_lossy(&list.stdout)
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_owned)
+        .collect();
+    let live = match live_addresses(w) {
+        Ok(live) => live,
+        Err(reason) => {
+            transcript.push_str(&format!(
+                "refused: the live objects could not be read: {reason}\n"
+            ));
+            w.apply_transcript = transcript.clone();
+            w.scenario_transcript.push_str(&transcript);
+            w.exit_status = Some(2);
+            return;
+        }
+    };
+    let unbound: Vec<String> = live
+        .iter()
+        .filter(|address| !bound.iter().any(|recorded| recorded == *address))
+        .cloned()
+        .collect();
+    if !unbound.is_empty() {
+        refuse_unbound(&mut transcript, &unbound);
+        w.apply_transcript = transcript.clone();
+        w.scenario_transcript.push_str(&transcript);
+        w.exit_status = Some(2);
+        return;
+    }
+
+    fs::copy(state_path(w), &state_before).expect("record the applied state before the apply");
+
+    let apply = tofu(w, &["apply", "-input=false", "plan.bin"]);
+    transcript.push_str("$ tofu apply -input=false plan.bin\n");
+    transcript.push_str(&combined(&apply));
+    w.stdout = String::from_utf8_lossy(&apply.stdout).into_owned();
+    w.stderr = String::from_utf8_lossy(&apply.stderr).into_owned();
+    w.exit_status = apply.status.code();
+    if apply.status.success() {
+        let _ = fs::remove_file(&plan);
+        let _ = fs::remove_file(dir.join("preview.json"));
+        let _ = fs::remove_file(&preflight_report);
+        let _ = fs::remove_file(&state_before);
+    }
+    w.apply_transcript = transcript.clone();
+    w.scenario_transcript.push_str(&transcript);
+}
+
 #[given("the applied state binds every object the earlier configuration changes declared")]
 async fn the_applied_state_binds_every_earlier_object(w: &mut DutyWorld) {
     prime_pages_state(w);
@@ -605,6 +727,118 @@ async fn the_declaration_adds_the_pages_objects(w: &mut DutyWorld) {
             "the declaration states {value}; it was:\n{text}"
         );
     }
+}
+
+#[given("a previewed revision that adds the pages publishing key, its secret and the pages rule set")]
+async fn a_previewed_pages_revision(w: &mut DutyWorld) {
+    preview(w);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the pages revision previews; output was:\n{}",
+        w.preview_transcript
+    );
+}
+
+#[given(regex = r#"^the pages repository gains a deploy key titled "([^"]+)" after the preview$"#)]
+async fn the_pages_repository_gains_a_deploy_key_after_the_preview(
+    w: &mut DutyWorld,
+    title: String,
+) {
+    assert_eq!(title, DEPLOY_KEY_TITLE, "the step names the declared key title");
+    assert!(
+        w.plan_path.is_some(),
+        "the scenario holds no previewed revision"
+    );
+    let body = format!(
+        "{{\"title\": \"{}\", \
+         \"key\": \"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAfterPreviewKeyDuty2cal later@example.test\", \
+         \"read_only\": false}}",
+        DEPLOY_KEY_TITLE
+    );
+    let (status, response) = fake_request(
+        w,
+        "POST",
+        "/repos/duty2cal/duty2cal.github.io/keys",
+        &[("Content-Type", "application/json")],
+        Some(&body),
+    );
+    assert_eq!(
+        status, 201,
+        "the deploy key appears live after the preview; response was: {response}"
+    );
+    fs::write(
+        scenario_dir_for(w).join("seed-journal-offset"),
+        journal_lines(w).len().to_string(),
+    )
+    .expect("record the journal offset after the live seed");
+}
+
+#[then("the apply is refused and names the pages deploy key")]
+async fn the_apply_is_refused_and_names_the_pages_deploy_key(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the apply is refused; output was:\n{}",
+        w.apply_transcript
+    );
+    assert!(
+        w.apply_transcript.contains("refused"),
+        "the apply reports the refusal; output was:\n{}",
+        w.apply_transcript
+    );
+    assert!(
+        w.apply_transcript
+            .contains("github_repository_deploy_key.pages_publish"),
+        "the apply names the pages deploy key; output was:\n{}",
+        w.apply_transcript
+    );
+    assert!(
+        w.apply_transcript.contains(DEPLOY_KEY_TITLE),
+        "the apply names the key title; output was:\n{}",
+        w.apply_transcript
+    );
+}
+
+#[then("no live object the revision declares is created")]
+async fn no_live_object_the_revision_declares_is_created(w: &mut DutyWorld) {
+    let offset: usize = fs::read_to_string(scenario_dir_for(w).join("seed-journal-offset"))
+        .expect("read the post-seed journal offset")
+        .trim()
+        .parse()
+        .expect("parse the post-seed journal offset");
+    let journal = journal_lines(w);
+    let writes = journal
+        .iter()
+        .skip(offset)
+        .filter(|line| {
+            line.contains("\"applied_write\": true") || line.contains("\"refused_write\": true")
+        })
+        .collect::<Vec<_>>();
+    assert!(
+        writes.is_empty(),
+        "the refused apply issued no write; journal was:\n{journal:#?}"
+    );
+
+    let (keys, secrets, rulesets) = live_lists(w).expect("the live lists remain readable");
+    let keys = report(w, "after-keys.json", &keys);
+    let secrets = report(w, "after-secrets.json", &secrets);
+    let rulesets = report(w, "after-rulesets.json", &rulesets);
+    assert_eq!(
+        jq(w, ".[0] | length", &keys, false),
+        "1",
+        "only the deploy key that appeared after the preview is live"
+    );
+    assert_eq!(
+        jq(w, ".total_count", &secrets, false),
+        "0",
+        "no secret was created"
+    );
+    assert_eq!(
+        jq(w, ".[0] | length", &rulesets, false),
+        "0",
+        "no rule set was created"
+    );
 }
 
 #[then("the preview is refused and names the pages deploy key")]

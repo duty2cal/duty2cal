@@ -179,10 +179,10 @@ GREEN command: same
 GREEN exit/output: exit 0; 1 scenario passed, 7 steps passed
 REFACTOR command: same
 REFACTOR exit/output: exit 0; 1 scenario passed, 7 steps passed
-commit: PENDING
+commit: 400f22d30b74c971e923856e4a056e9c16794b3f
 ```
 
-### [ ] Scenario 3 — A live object created after the preview refuses the apply and names it
+### [x] Scenario 3 — A live object created after the preview refuses the apply and names it
 
 **Design constraints**
 
@@ -192,20 +192,20 @@ commit: PENDING
 
 **TDD evidence**
 
-- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "A live object created after the preview refuses the apply and names it"`. Paste the non-zero output.
-- [ ] GREEN: add the second guard, the overlay seeding and the step assertions; list production files. Run the same command; exit zero.
-- [ ] REFACTOR: clean up; rerun; exit zero.
-- [ ] COMMIT: `givn commit -m "feat(apply-configuration-change): refuse an apply when a live pages object appears after the preview"`; record the hash.
+- [x] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "A live object created after the preview refuses the apply and names it"`. Paste the non-zero output.
+- [x] GREEN: add the second guard, the overlay seeding and the step assertions; list production files. Run the same command; exit zero.
+- [x] REFACTOR: clean up; rerun; exit zero.
+- [x] COMMIT: `givn commit -m "feat(apply-configuration-change): refuse an apply when a live pages object appears after the preview"`; record the hash.
 
 ```text
-RED command:
-RED exit/output:
-GREEN production files:
-GREEN command:
-GREEN exit/output:
-REFACTOR command:
-REFACTOR exit/output:
-commit:
+RED command: ./run-tests.sh --name "A live object created after the preview refuses the apply and names it"
+RED exit/output: exit 101; "Step doesn't match any function" at "a previewed revision that adds the pages publishing key, its secret and the pages rule set"
+GREEN production files: apps/cli/tests/steps/publish_site_plumbing.rs (the apply routine's preflight, second create-time guard and refusal; the overlay seed; the S3 assertions); apps/cli/tests/steps/enable_repository_security.rs (pages apply dispatch)
+GREEN command: same
+GREEN exit/output: exit 0; 1 scenario passed, 8 steps passed
+REFACTOR command: same
+REFACTOR exit/output: exit 0; 1 scenario passed, 8 steps passed
+commit: 400f22d30b74c971e923856e4a056e9c16794b3f
 ```
 
 ### [ ] Scenario 4 — A partial failure after the deploy key is created names the applied and failed objects and marks the state stale

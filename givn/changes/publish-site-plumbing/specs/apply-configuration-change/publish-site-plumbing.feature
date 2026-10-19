@@ -55,7 +55,7 @@ Feature: Publish site plumbing
     And the live configuration is unchanged
     And the applied state is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: A live object created after the preview refuses the apply and names it
     Given the applied state binds every object the earlier configuration changes declared
     And a previewed revision that adds the pages publishing key, its secret and the pages rule set

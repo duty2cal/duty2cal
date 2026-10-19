@@ -817,7 +817,9 @@ async fn the_organization_owner_previews_the_declaration(w: &mut DutyWorld) {
 
 #[when("the organization owner applies the previewed revision")]
 async fn the_organization_owner_applies_the_previewed_revision(w: &mut DutyWorld) {
-    if crate::steps::publish_organization_profile::is_profile_scenario(w) {
+    if crate::steps::publish_site_plumbing::is_pages_scenario(w) {
+        crate::steps::publish_site_plumbing::apply_previewed(w);
+    } else if crate::steps::publish_organization_profile::is_profile_scenario(w) {
         crate::steps::publish_organization_profile::apply_previewed(w);
     } else {
         apply_previewed(w);
