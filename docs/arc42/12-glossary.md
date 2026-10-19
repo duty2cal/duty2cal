@@ -19,7 +19,8 @@ the change to publish the organization profile
 (publish-organization-profile), plus four size terms added by the release
 executable size ideation Handoff (release-executable-size), plus one
 measurement-report term added by the change to measure the executable's size
-(measure-executable-size).
+(measure-executable-size), plus three reduction terms added by the change to
+reduce the executable's size (reduce-executable-size).
 Source: [Duty-plan calendar conversion](../ideation/duty-plan-calendar-conversion.md),
 [introduction/collision records](../../givn/ideation/duty-plan-calendar-conversion/domain-terms.md),
 [approved contract](../../givn/ideation/duty-plan-calendar-conversion/use-cases/export-duty-plan-calendar.md),
@@ -85,7 +86,10 @@ This is vocabulary/required behavior, not an implemented enforcement claim.
 | Single-day standby | Isolated/replacement SBX standby with its own UTC window. | Current SBX interval, not a former flight's times. | `DutyEntry::Availability`, `row_interval` (`application/mod.rs`) | Single-day is not all-day; no extra cancelled-flight/import-cancellation logic. |
 | Size attribution | The measurement that breaks down the code the distributed executable contains, by crate and by function, from a build that retains the names the measurement needs. | Produced for every pushed revision and on request for any named revision; names the requested revision, the resolved revision, the platform and the build's identity; the stripped artifact's file size is reported beside it, and the two are never substituted. | `scripts/measure_executable_size.py`; `cargo bloat --release --locked --target x86_64-pc-windows-gnu --crates` and the functions run (pinned `cargo-bloat` 0.12.1) | Not the archive's compressed size; not the stripped file's byte count; not a byte-exact file size (the generator's numbers are estimates of `.text`). |
 | Size attribution report | The pair of files a measurement writes — a machine-readable report and a human rendering of the same data — naming the requested revision, the resolved revision, the platform and the build's identity, with the crate and function split and the stripped executable's file size as separate fields. | Its status is `complete`, `incomplete` or `unreadable`: an incomplete report states that the file size is unavailable, an unreadable one states what could not be read, and neither infers a number. Produced for every pushed revision and requestable for any named revision. | `attribution.json`, `attribution.md`; the run's `size-attribution` artifact | Not the attribution itself; not the release archive; not the change log. |
-| Size lever | The build-configuration change whose effect on the distributed executable can be measured and accepted or rejected. | Accepted only with a cumulative measured delta against the configuration carrying the previously accepted levers, and with its failure-outcome evidence recorded before it lands. | planned change `reduce-executable-size`; `Cargo.toml` | Not a nightly-only compiler flag; not UPX or dynamic linking, refused before a build. |
+| Size lever | The build-configuration change whose effect on the distributed executable can be measured and accepted or rejected. | Applied `panic = "abort"`: 2,014,208 B against a 2,098,176 B rebuild of the unchanged configuration (saves 83,968 B on the release branch); `opt-level = "s"` was measured larger and rejected; the panic and conversion outcomes are recorded before landing. | `Cargo.toml` `[profile.release]` `panic = "abort"`; `scripts/measure_size_lever.py`; `size-lever.json`/`size-lever.md` | Not a nightly-only compiler flag; not UPX or dynamic linking, refused before a build; not a lever whose saving is not cumulative. |
+| Baseline | The same revision rebuilt with the unchanged build configuration (`panic = "unwind"`, `opt-level = "z"`) by `scripts/measure_size_lever.py`. | The saving is measured against it; the published binary's size is reported separately and never used as the baseline. | `--repo`/`--revision`; the baseline build in `size-lever.json`; the `- Baseline (rebuild, unchanged):` line | Not the published binary; not the previous release; not the lever build. |
+| Published binary | The executable inside the published release archive, built from the tagged revision and the shipped profile. | Its file size is reported separately from the rebuilt baseline; it is not the baseline and not the lever build. | the release archive's `duty2cal.exe`; `--published-size` in `scripts/measure_size_lever.py` | Not the rebuilt baseline; not the lever build; not the compressed archive. |
+| Saved bytes | The baseline file size minus the lever build's file size; a positive value means the lever build is smaller. | The cumulative table records it per lever; only a positive value is applied. | `saved_bytes` in `size-lever.json`; the cumulative table in `size-lever.md` | Not the file size; not the archive's compressed size; not a signed size change. |
 | Software bill of materials | The machine-readable list of what went into an archive's build. | Published with every archive alongside its build provenance. | `anchore/sbom-action@v0` (syft reads `Cargo.lock`) | Not the checksum; not the provenance attestation. |
 | Source revision timestamp | UTC snapshot revision metadata using the user-accepted Created footer convention for this family. | Preferred DTSTAMP; actual construction-time fallback. | `SourceDocument::revision`, `created_footer` (`crates/duty2cal-pdf/src/lib.rs`) | Not activity start, month-first constant, or universal Created/Last-Modified equivalence. |
 | Source snapshot | Fixed input PDF version scoping its component identities. | Identical snapshot is deterministic; revised snapshot has separate IDs. | `SnapshotId`, `fingerprint` (`application/mod.rs`) | Not numbered output copy, another aggregate, or calendar-data anonymization. |
@@ -201,7 +205,11 @@ and the built executable. The change to measure the executable's size
 cadence, the build identity and the command, and adds **Size attribution
 report** for the two files a measurement writes and their three statuses; it
 introduces no aggregate either, because the measurement observes a build and
-commits nothing. Raw
+commits nothing. The change to reduce the executable's size
+(reduce-executable-size) applies **Size lever** and adds **Baseline**,
+**Published binary** and **Saved bytes**; it introduces no aggregate either,
+because the reduction is a build-configuration decision observed by the
+measurement. Raw
 source-column labels
 (A/C, Blocktime, Timezone Difference, Tags) and the FREE/OFF day
 codes are used verbatim in the specification and are not confirmed domain terms.

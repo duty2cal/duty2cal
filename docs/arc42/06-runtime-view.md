@@ -200,6 +200,29 @@ flowchart TB
 
 **Notes:** A failed build or a build that keeps no names yields no attribution and names what could not be read; the report is still written, appended to the step summary and uploaded, and the job continues — the measurement is evidence, not a gate. A stripped executable whose file size cannot be read leaves the attribution explicitly incomplete and never presents the split's total as the file size. No number is inferred from the release archive or from a host build, and the shipped build configuration is unchanged. Scenario "A pushed change reaches the gated default branch" still decides whether the revision lands; the attribution does not refuse a revision or a release.
 
+## Scenario: A size lever is measured and landed
+
+**Trigger:** The release maintainer selects one stable lever the size attribution justifies.
+
+```mermaid
+flowchart TB
+  rev["Named revision"] --> wt["temporary worktree"]
+  wt --> base["baseline: panic = unwind, opt-level = z"]
+  wt --> lev["lever: panic = abort"]
+  base --> delta["delta = baseline - lever"]
+  lev --> delta
+  delta -->|"positive"| applied["applied: Cargo.toml panic = abort"]
+  delta -->|"zero or negative"| rejected["rejected: configuration unchanged"]
+  applied --> diag["host lever build: numbered diagnostic"]
+```
+
+**Steps:**
+
+1. The command refuses a nightly-only, UPX or dynamic-linking proposal before any build, naming the violated constraint.
+2. It resolves the revision into a worktree and rebuilds the unchanged configuration as the baseline; the published binary's size is reported separately and never used as the baseline.
+3. It builds each candidate lever cumulatively against the configuration carrying the previously accepted levers; a positive delta is applied, a zero or negative delta is rejected and the configuration stays.
+4. The landed `panic = "abort"` build is smaller by the recorded delta: 2,014,208 B against a 2,098,176 B rebuild on the release branch. A panic aborts with the standard Rust panic message; an unsupported source still writes a numbered diagnostic naming the source and reason.
+
 ## Scenario: The existing public home is adopted into the declared configuration
 
 **Trigger:** The maintainer asks to adopt the selected batch of objects that already exist on GitHub.

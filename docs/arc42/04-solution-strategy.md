@@ -23,6 +23,7 @@
 | Distribution | One self-contained Windows x86_64 executable (cross-built on Linux, started on Windows), published as an immutable release from the public repository; other platforms are unsupported and build from source | ADR-0003, ADR-0004; chapters 2 and 7. |
 | Change-log generation | `git-cliff` 2.14.2, pinned beside `cliff.toml` and rendered by `scripts/render-changelog.sh` | Chapter 2; `design.md`. |
 | Size attribution | `cargo-bloat` 0.12.1, pinned, run by `scripts/measure_executable_size.py`; the shipped artifact and a second build that retains the names the measurement needs are measured separately and their two numbers are never substituted | Chapter 2; `design.md`. |
+| Size lever | `panic = "abort"` in `[profile.release]`, measured by `scripts/measure_size_lever.py` against a rebuild of the unchanged configuration; 83,968 B smaller on the release branch | Chapter 2; `design.md`. |
 | Infrastructure declaration | OpenTofu `>= 1.7` (the project pins `1.13.1` in `infra/.opentofu-version`) with `integrations/github` `~> 6.0`; HCL under `infra/` | ADR-0005; chapter 2. |
 | Applied state and drift | Local, passphrase-encrypted state committed under `infra/`; the drift check runs on the maintainer's machine | ADR-0006; chapter 2. |
 

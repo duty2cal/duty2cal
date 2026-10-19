@@ -227,6 +227,18 @@ refusal that would need a write — creating a missing object, changing a value,
 removing a legacy object — is reported as belonging to a configuration change
 instead.
 
+## Panic behavior and the conversion diagnostic
+
+The release profile builds with `panic = "abort"`, so a bug-induced panic
+prints the standard Rust panic message on stderr and ends the process without
+unwinding or a backtrace. This does not change the promise for expected
+failures: a conversion that cannot be represented still returns the typed
+failure and attempts a numbered diagnostic naming the source PDF and the
+reason, and when no report can be saved the primary failure remains visible.
+The product uses no `unwrap()`/`expect()` outside test code. The host lever
+build is run on an unsupported source by the reduction scenario; the Windows
+executable is started by the release workflow's Windows smoke job.
+
 ## Measured size attribution
 
 The size attribution is evidence, not a promise, and it is built to make

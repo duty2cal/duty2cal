@@ -42,6 +42,10 @@ flowchart TB
 
 The archive holds `duty2cal.exe` and nothing else; a checksum file covering the archive sits beside it on the release. Packaging into the archive happens once, on `ubuntu-latest`; the release is published and then verified on `ubuntu-latest` as well. No other platform archive is built or attached.
 
+### The release profile
+
+The Windows executable is built from `[profile.release]` with `panic = "abort"`: the measured lever removes 83,968 B (2,014,208 B against a 2,098,176 B rebuild of the unchanged configuration on the release branch). A panic aborts with the standard Rust panic message; the conversion's typed failures still write the numbered diagnostic naming the source and reason. The build and Windows smoke jobs are otherwise unchanged.
+
 ### The change log among the release assets
 
 Beside the one Windows archive and its checksum (and the archive's provenance and bill of materials), a release carries the change log and its newest section: `CHANGELOG.md` is published as an asset, so a downloader reads what changed without visiting the repository, and the release page's text is that same file's newest section. Both come from one render of the released revision, so the page and the published file cannot state different things about what a version contains.

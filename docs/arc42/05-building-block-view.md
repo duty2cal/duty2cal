@@ -37,6 +37,9 @@ flowchart TB
   MEASURE["scripts/measure_executable_size.py — two builds, strip disabled for the attribution only"]
   REPORT["attribution.json + attribution.md — revision, platform, crate/function split, stripped file size"]
   STEPS9["apps/cli/tests/steps/measure_distributed_executable_size.rs + steps/e2e/..."]
+  REDUCE["scripts/measure_size_lever.py — baseline and cumulative lever builds"]
+  LEVER["size-lever.json + size-lever.md — baseline, cumulative delta, status"]
+  STEPS10["apps/cli/tests/steps/reduce_distributed_executable_size.rs + steps/e2e/..."]
   REL -->|invokes| PREP
   PREP -->|invokes| RENDER
   REL -->|publish job invokes| GATE
@@ -51,6 +54,9 @@ flowchart TB
   STEPS -->|real subprocess| GATE
   STEPS9 -->|real subprocess| MEASURE
   MEASURE -->|writes| REPORT
+  STEPS10 -->|real subprocess| REDUCE
+  REDUCE -->|writes| LEVER
+  REDUCE -->|"measures the release profile"| PRODUCT["Cargo.toml: panic = abort"]
 ```
 
 | Release block | Responsibility |
@@ -62,6 +68,9 @@ flowchart TB
 | `scripts/dco-check.sh` | Check DCO sign-off over a pull request's commit range; run by the `dco` CI job on pull requests only. |
 | `scripts/await-green-checks.sh` | The publication gate: resolve every release-workflow check suite on the tagged revision, wait (bounded) for the remaining check runs to conclude, and refuse a concluded non-success, no success, no check evidence, an unreadable source, or the bound, naming the checks. |
 | `scripts/measure_executable_size.py` | The measurement: resolve a named revision into a temporary worktree, build the shipped artifact with the committed configuration, build the same revision again with `strip` disabled for that build only in a separate target directory, attribute it by crate and by function with the pinned generator, read the stripped artifact's file size, digest and section sizes, and write one report naming the revision, the platform and the build's identity. A failed build or a build that keeps no names yields no attribution; an unreadable file size leaves the report incomplete; nothing is inferred from the archive or a host build. |
+| `scripts/measure_size_lever.py` | The reduction measurement: resolve the revision into a worktree, rebuild the unchanged release configuration (`panic = "unwind"`, `opt-level = "z"`) as the baseline, build each candidate lever cumulatively, measure the stripped executable's file size, record the delta and status, refuse a nightly/UPX/dynamic-linking proposal before a build, report the published binary's size separately, and preserve the accepted executable for the failure-path run. |
+| `size-lever.json` and `size-lever.md` | The reduction report: baseline, cumulative rows, applied/rejected statuses, the published binary's size and the recorded panic/conversion outcome. |
+| `apps/cli/tests/steps/reduce_distributed_executable_size.rs`, its e2e file and the `@e2e` transcript | The reduction scenarios drive the real command, assert the report, and run a host lever build on an unsupported source to prove the numbered diagnostic; the Windows executable is measured and started by the Windows smoke job. |
 | `.github/workflows/release.yml` | On a `v*` tag: cross-build the Windows x86_64 executable on Linux, smoke that executable on Windows, prepare the staged set over the one binary, wait for the tagged revision's checks to conclude green, publish the immutable release with provenance and a bill of materials, then verify the published release by reading it back. |
 | `.github/workflows/ci.yml` | The gate on landing; the publishing change added the `actionlint` and `dco` jobs, and the change to generate release notes adds the `changelog` job (the pinned generator plus the drift check) and puts the pinned generator on the `test` job's `PATH`, because the suite's change-log scenarios drive the renderer as a real subprocess. The size-attribution change adds the measurement step to the `windows-gnu-build` job and puts the Windows target, `mingw-w64` and the pinned generator on the `test` and `coverage` jobs so the suite's `@e2e` scenario drives the same command. |
 | `attribution.json` and `attribution.md` | The report a measurement writes, not a committed file: the machine-readable and human renderings of one dataset. They name the revision, the platform and the build's identity, keep the crate/function split and the stripped executable's file size as separate fields, and carry the status `complete`, `incomplete` or `unreadable`. The gate's Windows job uploads the pair beside the run for the revision it built; the release maintainer can request the same report for any named revision. |
