@@ -51,7 +51,7 @@ Feature: Export a duty-plan calendar
     And the diagnostic text identifies "notes.pdf" and the unsupported-family reason
     And the page offers a way to choose another plan
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unresolved required activity is rejected with a diagnostic offer
     Given the converter page served from the built Site output
     When the crew member supplies the supported duty plan "2026-06.pdf" containing a required activity the converter cannot resolve

@@ -2910,10 +2910,16 @@ async fn supplies_an_oversized_plan(w: &mut DutyWorld, name: String, size: Strin
 #[when(
     regex = r#"^the crew member supplies the supported duty plan "([^"]+)" containing a required activity the converter cannot resolve$"#
 )]
-async fn supplies_an_unresolvable_plan(_w: &mut DutyWorld, _name: String) {
-    unimplemented!(
-        "the crew member supplies a plan containing a required activity the converter cannot resolve"
-    )
+async fn supplies_an_unresolvable_plan(w: &mut DutyWorld, name: String) {
+    // A supported table with one dated row whose activity code the converter
+    // cannot classify: the conversion fails, it never drops the activity.
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[(DATE_X, "2026-06-08"), (ACTIVITY_X, "ZZ999")],
+    ));
+    named_source(w, &name, support::build_pdf(&items));
+    supply_through_picker(w);
 }
 
 /// Parse the MiB count in a step.
@@ -3008,8 +3014,14 @@ async fn the_failure_names_the_file(w: &mut DutyWorld, name: String) {
 }
 
 #[then("the page shows a failure heading and the reason")]
-async fn the_failure_shows_the_reason(_w: &mut DutyWorld) {
-    unimplemented!("the page shows a failure heading and the reason")
+async fn the_failure_shows_the_reason(w: &mut DutyWorld) {
+    assert_failure_containing(w, "a required activity could not be resolved");
+    let state = page_state(w);
+    let reason = state["failureReason"].as_str().unwrap_or_default();
+    assert!(
+        reason.contains("ZZ999"),
+        "the visible reason does not name the unresolved activity: {reason:?}"
+    );
 }
 
 #[then("the page shows a failure heading and states that the calendar could not be offered")]
@@ -3118,8 +3130,27 @@ async fn the_diagnostic_names_the_unsupported_family(w: &mut DutyWorld, name: St
 }
 
 #[then(regex = r#"^the diagnostic text identifies "([^"]+)" and the reason$"#)]
-async fn the_diagnostic_names_the_reason(_w: &mut DutyWorld, _name: String) {
-    unimplemented!("the diagnostic text identifies the file and the reason")
+async fn the_diagnostic_names_the_reason(w: &mut DutyWorld, name: String) {
+    let state = page_state(w);
+    let visible = state["failureReason"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    let reason = visible
+        .strip_prefix(&format!("{name}: "))
+        .unwrap_or_else(|| panic!("the visible reason does not name {name}: {visible:?}"))
+        .to_string();
+    assert!(
+        reason.contains("a required activity could not be resolved"),
+        "the visible reason is not the conversion failure: {reason:?}"
+    );
+
+    let text = captured_diagnostic(w);
+    assert_eq!(
+        text,
+        format!("Source PDF: {name}\nReason: {reason}\n"),
+        "the diagnostic does not carry the source and the visible reason"
+    );
 }
 
 #[then("the page offers a way to choose another plan")]
