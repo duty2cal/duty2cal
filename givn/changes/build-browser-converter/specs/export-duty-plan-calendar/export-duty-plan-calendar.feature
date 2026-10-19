@@ -127,7 +127,7 @@ Feature: Export a duty-plan calendar
     Then the page still offers the calendar
     And the page has not reported that it saved a file
 
-  @givn.added @wip
+  @givn.added
   Scenario: The offered names use the source file's stem
     Given the converter page served from the built Site output
     When the crew member supplies the file "roster.v2.pdf" that is not a supported duty plan

@@ -34,7 +34,7 @@ function decodeBase64(value) {
   return bytes;
 }
 
-/** The supplied name without its final extension. */
+/** The supplied name without its final extension; a leading dot is not one. */
 function stemOf(name) {
   const dot = name.lastIndexOf('.');
   return dot > 0 ? name.slice(0, dot) : name;
