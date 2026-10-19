@@ -358,9 +358,9 @@ commit: 72667c96eacd86645f64f1f1ba7d97f7d65a96d0
 
 ```text
 full command: ./run-tests.sh
-full scenario count: 194 scenarios (163 passed, 31 failed); the failures include the two still-@wip pages e2e scenarios and pre-existing @wip corpus scenarios
+full scenario count: 194 scenarios (163 passed, 31 failed); the pages e2e scenarios were still @wip/undefined at that point, and the corpus carries pre-existing failures (the later @e2e count run shows the reduce-size e2e lever among them)
 e2e command: ./run-tests.sh --e2e
-e2e scenario count: 13 scenarios (8 passed, 5 failed); strictly smaller than the full 194
+e2e scenario count: 13 scenarios (8 passed, 5 failed); strictly smaller than the full 194 (2 of the 5 failures were the then-undefined pages scenarios; 3 are pre-existing)
 strict probe command/exit: ./run-tests.sh --e2e -> exit 101; .fail_on_skipped() is present in apps/cli/tests/features_runner.rs and the pages e2e steps report "Step doesn't match any function"
 fake smoke result: scripts/fake-github/serve.py --writes on an ephemeral 127.0.0.1 port: GET keys -> 200 [], GET actions/secrets -> 200 {"total_count":0,"secrets":[]}, GET actions/secrets/public-key -> 200 key_id 568250167242205012, GET rulesets -> 200 []
 commit: fffa813785ce2f1474fcc1406fa1640e3dd22f59
