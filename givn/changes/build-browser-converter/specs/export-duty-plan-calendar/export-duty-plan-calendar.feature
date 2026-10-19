@@ -134,7 +134,7 @@ Feature: Export a duty-plan calendar
     Then the page offers the diagnostic text "roster.v2.parse-error.txt"
     And the page offers no calendar
 
-  @givn.added @wip
+  @givn.added
   Scenario: A browser conversion leaves no plan in persistent storage or a navigable address
     Given the converter page served from the built Site output
     When the crew member supplies the supported duty plan "2026-06.pdf" through the file picker

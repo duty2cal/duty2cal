@@ -233,4 +233,13 @@ async function start() {
   }
 }
 
+// The plan and its derived files never outlive the tab: every live object URL
+// is revoked when the page is unloaded.
+window.addEventListener('pagehide', () => {
+  for (const url of offers) {
+    URL.revokeObjectURL(url);
+  }
+  offers = [];
+});
+
 start();
