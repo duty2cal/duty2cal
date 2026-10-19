@@ -1435,10 +1435,10 @@ a navigable URL/history entry; an ephemeral object URL is allowed and revoked on
 - `read_state` returns the storage snapshot, address/history and request log; `reload`
   returns the page to the empty state.
 
-- [ ] RED — remove `@wip` from this scenario only; add its new step bodies as
-  `unimplemented!()` stubs (previously implemented shared steps stay implemented); run:
+- [x] RED — remove `@wip` from this scenario only; the When/Then step bodies stayed
+  the committed `unimplemented!()` stubs; run:
   ```
-  $ ./run-tests.sh --name "A browser conversion leaves no plan in persistent storage or a navigable address"
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A browser conversion leaves no plan in persistent storage or a navigable address"
   Feature: Export a duty-plan calendar
     Scenario: A browser conversion leaves no plan in persistent storage or a navigable address
      ✔  Given the converter page served from the built Site output
@@ -1446,24 +1446,38 @@ a navigable URL/history entry; an ephemeral object URL is allowed and revoked on
      ✔  Then the page shows that the calendar is ready
      ✔  And the page offers the file "2026-06.ics"
      ✘  And the page's address is unchanged and the browser history has no new entry
-        Step panicked. Captured output: not implemented: read the address/history snapshot
+        Step failed:
+        Defined: tmp/tmp.8hnclJBjNZ/f0006.feature:143:5
+        Matched: apps/cli/tests/steps/export_duty_plan_calendar.rs:3407:1
+        Step panicked. Captured output: not implemented: the page's address is unchanged and the browser history has no new entry
   [Summary]
   1 feature
   1 scenario (1 failed)
   5 steps (4 passed, 1 failed)
   RED_EXIT=101
   ```
-- [ ] GREEN — real assertions and minimum production code; production files modified:
-  - `web/index.html` — the exact CSP meta in the head before any resource, `lang="en"`,
-    the inline empty favicon.
-  - `web/app.js` — no storage/history APIs, object-URL revocation on `pagehide`, plan
-    bytes never persisted.
-  - `web/e2e/driver.mjs` — the `read_state` storage/address/history snapshot and
-    `reload`.
-  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the persistence steps.
+- [x] GREEN — real assertions and minimum production code; production files:
+  - `web/index.html` — the exact CSP meta before any resource, `lang="en"` and the
+    inline empty favicon already existed in the committed baseline; no change was
+    needed.
+  - `web/app.js` — no storage, history or form API is used; the plan bytes live in the
+    attempt's local `arrayBuffer`; a `pagehide` listener now revokes every live object
+    URL and clears the registry.
+  - `web/e2e/driver.mjs` — `read_state` already returned the storage snapshot, the
+    current address/history length and the request log, and `initialAddress` was added
+    with the gated start modes; `reload` already existed. No change was needed here.
+  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the reload action, the
+    empty-state assertion, the storage assertion (local, session, IndexedDB, cookies),
+    and the address/history assertion that also proves the log has no other-origin
+    request and no `.wasm` fetch.
+  - `apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs` — removed the duplicate
+    `the page shows the empty state and offers no calendar` stub; the shared regular
+    implementation serves both the regular and the `@e2e` scenario.
   Run:
   ```
-  $ ./run-tests.sh --name "A browser conversion leaves no plan in persistent storage or a navigable address"
+  $ cargo fmt --all --check -> FMT_EXIT=0
+  $ cargo clippy --workspace --all-targets -- -D warnings -> CLIPPY_EXIT=0
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A browser conversion leaves no plan in persistent storage or a navigable address"
   Feature: Export a duty-plan calendar
     Scenario: A browser conversion leaves no plan in persistent storage or a navigable address
      ✔  Given the converter page served from the built Site output
@@ -1480,13 +1494,16 @@ a navigable URL/history entry; an ephemeral object URL is allowed and revoked on
   8 steps (8 passed)
   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — confirm no `.wasm` request and no other-origin request in the log,
-  re-run:
+- [x] REFACTOR — the address assertion reads the same snapshot and rejects any request
+  outside the page origin and any `.wasm` fetch, so the inlined bytes and the lack of
+  navigation are both proven after a successful conversion. Re-run:
   ```
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A browser conversion leaves no plan in persistent storage or a navigable address"
   1 scenario (1 passed), 8 steps (8 passed)   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A browser conversion leaves no plan in persistent storage or a navigable address`; Hash: `<record the revision identifier here>`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+  `Scenario: A browser conversion leaves no plan in persistent storage or a navigable address`;
+  Hash: recorded in the scenario-commit record commit
 
 ## E2E setup task — local environment, browser driver, e2e skeleton, subset proof
 

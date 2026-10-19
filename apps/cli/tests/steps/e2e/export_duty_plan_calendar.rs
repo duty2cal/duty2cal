@@ -94,11 +94,6 @@ async fn the_crew_member_saves_the_offered_calendar(_w: &mut DutyWorld) {
     unimplemented!("the crew member saves the offered calendar")
 }
 
-#[then("the page shows the empty state and offers no calendar")]
-async fn the_page_shows_the_empty_state(_w: &mut DutyWorld) {
-    unimplemented!("the page shows the empty state and offers no calendar")
-}
-
 #[then("the browser has saved a complete RFC 5545 calendar")]
 async fn the_browser_saved_a_complete_calendar(_w: &mut DutyWorld) {
     unimplemented!("the browser has saved a complete RFC 5545 calendar")

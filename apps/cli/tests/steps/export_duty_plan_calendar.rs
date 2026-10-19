@@ -3017,8 +3017,8 @@ async fn dismisses_the_save(w: &mut DutyWorld) {
 }
 
 #[when("the crew member reloads the page")]
-async fn reloads_the_page(_w: &mut DutyWorld) {
-    unimplemented!("the crew member reloads the page")
+async fn reloads_the_page(w: &mut DutyWorld) {
+    driver(w).send("reload", Map::new());
 }
 
 #[then("the page shows that the calendar is ready")]
@@ -3400,13 +3400,90 @@ async fn the_page_did_not_report_a_save(w: &mut DutyWorld) {
 }
 
 #[then("the page has stored nothing in persistent browser storage")]
-async fn the_page_stored_nothing(_w: &mut DutyWorld) {
-    unimplemented!("the page has stored nothing in persistent browser storage")
+async fn the_page_stored_nothing(w: &mut DutyWorld) {
+    let state = page_state(w);
+    let storage = &state["storage"];
+    for kind in ["local", "session"] {
+        assert_eq!(
+            storage[kind].as_object().map(|entries| entries.len()),
+            Some(0),
+            "the page wrote to {kind} storage: {storage}"
+        );
+    }
+    assert_eq!(
+        storage["databases"]
+            .as_array()
+            .map(|databases| databases.len()),
+        Some(0),
+        "the page opened an IndexedDB database: {storage}"
+    );
+    assert_eq!(
+        storage["cookies"].as_str(),
+        Some(""),
+        "the page wrote a cookie: {storage}"
+    );
 }
 
 #[then("the page's address is unchanged and the browser history has no new entry")]
-async fn the_page_address_is_unchanged(_w: &mut DutyWorld) {
-    unimplemented!("the page's address is unchanged and the browser history has no new entry")
+async fn the_page_address_is_unchanged(w: &mut DutyWorld) {
+    let state = page_state(w);
+    let initial = &state["initialAddress"];
+    assert_eq!(
+        state["address"]["url"], initial["url"],
+        "the conversion navigated the page: {state}"
+    );
+    assert_eq!(
+        state["address"]["historyLength"], initial["historyLength"],
+        "the conversion added a history entry: {state}"
+    );
+
+    // The same snapshot proves the plan stayed local: no `.wasm` request (the
+    // bytes are inlined) and nothing outside the page origin.
+    let origin: String = initial["url"]
+        .as_str()
+        .expect("read_state returns the initial address")
+        .split('/')
+        .take(3)
+        .collect::<Vec<_>>()
+        .join("/");
+    for entry in state["requestLog"]
+        .as_array()
+        .expect("read_state returns the request log")
+    {
+        let url = entry["url"].as_str().unwrap_or_default();
+        assert!(
+            url.starts_with(&origin),
+            "the page requested another origin {url:?}: {state}"
+        );
+        assert!(
+            !url.ends_with(".wasm"),
+            "the page fetched the WASM bytes instead of using the inlined copy: {url:?}"
+        );
+    }
+}
+
+#[then("the page shows the empty state and offers no calendar")]
+async fn the_page_shows_the_empty_state(w: &mut DutyWorld) {
+    let state = page_state(w);
+    assert_eq!(
+        state["state"].as_str(),
+        Some("empty"),
+        "the page did not return to the empty state: {state}"
+    );
+    assert!(
+        state["status"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("No plan selected."),
+        "the empty status is not visible: {state}"
+    );
+    assert!(
+        state["offers"]
+            .as_array()
+            .expect("read_state returns offers")
+            .is_empty(),
+        "the page still offers a download after reload: {state}"
+    );
 }
 
 #[then("the page still offers the calendar")]
