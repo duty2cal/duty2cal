@@ -86,6 +86,88 @@ sequenceDiagram
 
 **Notes:** Completeness and publication are distinct: a completed composition that fails to publish is not a success.
 
+## Scenario: Browser conversion offers the calendar for a browser-owned save
+
+**Trigger:** A crew member supplies a supported plan through the converter page.
+
+```mermaid
+sequenceDiagram
+  participant Crew as Crew member
+  participant Page as web/ page
+  participant Wasm as ffi/wasm facade
+  participant App as ConvertRoster
+  participant Browser as Browser
+  Crew->>Page: select or drop one PDF
+  Page->>Page: clear prior offer/state
+  Page->>Page: refuse >20 MiB, or read bytes
+  Page->>Wasm: convert(filename, bytes)
+  Wasm->>App: execute(bytes) with BrowserClock
+  App-->>Wasm: complete calendar (or typed failure)
+  Wasm-->>Page: {status:"ok", calendar}
+  Page->>Browser: Blob + <a download="<stem>.ics">
+  Browser-->>Crew: offered download; the browser saves
+  Note over Page,Browser: the page writes nothing and claims no save
+```
+
+**Steps:**
+
+1. The page clears any offer and status from the previous attempt, then refuses a file larger than 20 MiB by name before reading it.
+2. The page reads the file in the tab and calls the facade with the filename and bytes. No request is made.
+3. The facade runs the unchanged use case with the browser clock and returns the calendar text or a structured failure.
+4. On success the page offers `<stem>.ics` through an object URL and an `<a download>`; the browser owns the save location and any collision, and the page never claims a save it did not observe.
+
+**Notes:** A failed attempt withdraws an earlier offer because the attempt clears it first. The page sends no request to another origin after load and stores nothing persistent.
+
+## Scenario: Browser failure offers the diagnostic
+
+**Trigger:** A supported plan cannot be converted, or the page cannot create the calendar offer.
+
+```mermaid
+sequenceDiagram
+  participant Crew as Crew member
+  participant Page as web/ page
+  participant Wasm as ffi/wasm facade
+  Crew->>Page: plan selected or dropped
+  Page->>Page: clear prior offer/state
+  Page->>Wasm: convert(filename, bytes)
+  Wasm-->>Page: failure reason (or a trap/abort is caught)
+  Page->>Page: failure panel: heading, reason, no calendar
+  Page->>Page: offer <stem>.parse-error.txt with the two-line diagnostic
+  alt diagnostic offer throws
+    Page->>Page: keep primary failure; state "No diagnostic was offered."
+  end
+  Page-->>Crew: visible reason and way to choose another plan
+```
+
+**Steps:**
+
+1. The attempt clears any earlier offer, so a previously offered calendar is not left visible.
+2. A conversion failure or a caught trap becomes a generic or specific failure; no partial calendar is offered.
+3. The page attempts the diagnostic offer. If that offer cannot be created, the primary failure remains visible and the page says no diagnostic was offered.
+4. The diagnostic content is read from the captured download, not fetched from the Blob under `connect-src 'none'`.
+
+## Scenario: Browser capability or startup failure
+
+**Trigger:** The page loads in a browser without WebAssembly or ES modules, or the module cannot initialize.
+
+```mermaid
+flowchart TB
+  load["Page loads from the built Site output"] --> gate{"WebAssembly and ES modules?"}
+  gate -->|"no"| cannot["cannot-run message; picker hidden; no calendar"]
+  gate -->|"yes"| init{"module import and instantiation succeed?"}
+  init -->|"no"| startup["startup failure; cannot-run treatment; picker hidden"]
+  init -->|"yes"| ready["picker revealed; conversion available"]
+  cannot --> nonet["no request to another origin; no server or upload fallback"]
+  startup --> nonet
+```
+
+**Steps:**
+
+1. The classic capability script checks WebAssembly, `WebAssembly.instantiate` and ES-module support before the ES module is used.
+2. A missing capability renders the cannot-run message and leaves the picker hidden.
+3. A module-load or instantiation failure renders the same treatment; the page never falls back to a server or an upload.
+4. The failed states make no request to another origin.
+
 ## Scenario: A version tag becomes a verified published release
 
 **Trigger:** The maintainer decides a version is ready and pushes its `v*` tag.

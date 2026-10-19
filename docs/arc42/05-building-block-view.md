@@ -5,18 +5,55 @@
 ```mermaid
 flowchart TB
   CLI["apps/cli — driving adapter (argv → use case → exit code); fs module publishes"]
+  WASM["ffi/wasm — wasm-bindgen driving adapter over the same use case"]
+  WEB["web/ — static page, ES modules, offers; no backend"]
   PDF["crates/duty2cal-pdf — pdfplumber → RosterSource"]
   CORE["crates/duty2cal-core — lib"]
   CLI --> CORE
   CLI --> PDF
+  WASM --> CORE
+  WASM --> PDF
+  WEB -->|"inline WASM bytes"| WASM
   PDF --> CORE
 ```
 
 | Building block | Responsibility |
 |---|---|
 | `apps/cli` (package `duty2cal`) | Parse the invocation, invoke the conversion, print the reported path or failure, set the exit status, and publish the calendar or the diagnostic (`fs` module). |
+| `ffi/wasm` (package `duty2cal-wasm`) | A thin `wasm-bindgen` driving adapter: accepts the filename and bytes, wires the unchanged `ConvertRoster` with a browser clock, and returns calendar text or a structured failure. Target-scoped to `wasm32-unknown-unknown`; performs no filesystem, network or environment I/O. |
+| `web/` | The converter page: capability gate, file picker and drop zone, 20 MiB bound, conversion call, status/failure panels, Blob offers, privacy copy and CSP. No backend, no upload, no persistent storage. |
 | `crates/duty2cal-pdf` | The only crate that depends on `pdfplumber`; produces the `RawRosterTable` anti-corruption input. |
 | `crates/duty2cal-core` | Pure domain, application ports + `ConvertRoster`, and the dependency-free ICS adapter. |
+
+## Browser build and evidence toolbox (outside the product crates)
+
+The browser route adds a build step and a real-browser test driver. They are
+test/build tooling; the product page and facade remain the blocks above.
+
+```mermaid
+flowchart TB
+  BUILD["scripts/build-web.sh — pinned wasm-pack, web/pkg, base64 inline module, licence copy"]
+  RUN["scripts/run-web.sh — loopback static server for manual use"]
+  DRIVER["web/e2e/driver.mjs — Playwright + Chromium, JSON-lines actions"]
+  STEPS["apps/cli/tests/steps/browser.rs — driver client"]
+  E2E["steps/e2e/export_duty_plan_calendar.rs — the one browser @e2e scenario"]
+  REG["steps/export_duty_plan_calendar.rs — regular browser variants"]
+  BUILD -->|"produces"| WEB["web/pkg"]
+  RUN -->|"serves"| WEB
+  E2E --> STEPS
+  REG --> STEPS
+  STEPS -->|"spawns"| DRIVER
+  DRIVER -->|"navigates, sets files, clicks, captures"| WEB
+```
+
+| Block | Responsibility |
+|---|---|
+| `scripts/build-web.sh` | Install the pinned `wasm-pack`, build `web/pkg`, generate the base64 `wasm-inline.js`, and copy the licence. |
+| `scripts/run-web.sh` | Build if needed and serve `web/` on loopback for manual use. |
+| `web/e2e/driver.mjs` | Start a loopback static server and Chromium, perform actions, read rendered state/request log/storage, capture downloads and screenshots, and fail closed on an unknown action. |
+| `apps/cli/tests/steps/browser.rs` | The Rust client for the driver protocol; shared by the `@e2e` and regular browser step files. |
+| `apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs` | The one browser `@e2e` scenario, alongside the existing CLI e2e steps. |
+| `apps/cli/tests/steps/export_duty_plan_calendar.rs` | The regular browser variants (size, family, stale offer, drop, capability, startup, offer failures, cancelled save, naming, persistence). |
 
 ## Release toolbox (outside the product crates)
 
@@ -132,6 +169,32 @@ flowchart TB
 | `main` | argv handling, wiring, exit status. |
 | `fs` | unused-path allocation for calendars and numbered diagnostics. |
 
+### `ffi/wasm`
+
+**Responsibility:** the browser driving adapter over the unchanged application.
+
+| Element | Responsibility |
+|---|---|
+| `convert(filename, bytes)` (wasm export) | Wire `ConvertRoster::new(PdfRosterSource, IcsSink, BrowserClock).execute(bytes)` and return `{ status: "ok", calendar }` or `{ status: "failure", reason, diagnostic }`. |
+| `diagnostic_text(filename, reason)` (wasm export) | Call the shared `duty2cal_core::application::diagnostic_text`, so the page's pre-conversion size failure uses the same two lines as the executable. |
+| `BrowserClock` / `NativeClock` | Implement the existing `Clock` port with `js_sys::Date` or `OffsetDateTime::now_utc`, so the crate lints natively and the source's Created footer stays preferred. |
+
+The crate is `cdylib` + `rlib`; `wasm-bindgen`, `js-sys` and `getrandom` are
+target-scoped, and the native `rlib` compiles for fmt, clippy and the Windows
+workspace build.
+
+### `web/`
+
+**Responsibility:** the rendered converter screen and its browser rules.
+
+| Element | Responsibility |
+|---|---|
+| `index.html` | Title, heading, drop zone and picker markup hidden until ready, status and failure panels, privacy note, meta CSP. |
+| `capability.js` | Classic deferred check for WebAssembly and ES modules; renders the cannot-run message and leaves the picker hidden. |
+| `app.js` | ES module: `init(bytes)` from the inline bundle, `acceptFile` (clear prior offer, size bound, read, convert), state machine, offer/object-URL lifecycle, failure/diagnostic fallback, no storage or network. |
+| `styles.css` | Design tokens, layout, breakpoints, states and reduced-motion rules. |
+| `pkg/` (generated, ignored) | `wasm-pack` output plus the base64 `wasm-inline.js`; never committed. |
+
 ### Deferred (roadmap)
 
-`ffi/wasm` (Phase 2), `ffi/uniffi` (Phase 2), native UIs (Phase 3) — driving adapters over the unchanged application; not created in this change.
+`ffi/uniffi` (Phase 2) and native UIs (Phase 3) — driving adapters over the unchanged application; not created by this change. `ffi/wasm` moved out of this list: the browser converter creates it.

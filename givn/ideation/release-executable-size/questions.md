@@ -215,7 +215,7 @@
 
 ## Q6 — Is the size attribution produced for every change or only for a release?
 
-- Status: open
+- Status: closed 2026-10-18 (user)
 - Blocks: the measurement use case's cadence, and whether its change seed adds
   a per-pull-request CI step or only a release-preparation step.
 - Context: The draft proposes a `cargo bloat` report on every pull request. The
@@ -247,7 +247,12 @@
      Gain: no automation to maintain.
      Cost: no reproducible evidence in the review, and the measurement depends
      on a workstation that can cross-build.
-- Resolution: _(open)_
+- Resolution: **Every change** because the reduction's review must consult a
+  delta that exists before the lever lands, and the gate already builds the
+  supported platform on every push. Rejected: **Every release** because the
+  attribution would arrive after landing and could only refuse, not inform;
+  **On request** because no reproducible evidence would exist in review and
+  this workstation cannot cross-build.
 
 ## Q7 — Do the two remaining durable stakeholder types join the Frame?
 

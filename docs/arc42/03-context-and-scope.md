@@ -13,7 +13,26 @@ flowchart LR
 
 | Partner / User | Input to system | Output from system |
 |---|---|---|
-| Crew member | One supported Released Roster duty-plan PDF (path or drag-and-drop) | A complete RFC 5545 calendar file beside the source; or an explicit failure with a numbered diagnostic report naming the source and reason |
+| Crew member running the executable | One supported Released Roster duty-plan PDF (path or drag-and-drop) | A complete RFC 5545 calendar file beside the source; or an explicit failure with a numbered diagnostic report naming the source and reason |
+| Crew member using the browser conversion page | One supported PDF selected or dropped in the tab, at most 20 MiB | The offered `<source-stem>.ics` download for the browser to save; or an explicit failure with an offered `<source-stem>.parse-error.txt` diagnostic; the page writes nothing |
+
+### The browser conversion route
+
+The page is served from the built Site output. It runs the same conversion
+inside the tab, offers the calendar or diagnostic, and never contacts another
+origin after it loads. The plan is never uploaded, and the page stores nothing
+in persistent storage or a navigable address. Publishing that page at the
+Public website is the separate Site publication; this change builds and serves
+the page on loopback for its evidence.
+
+```mermaid
+flowchart LR
+  crew["Crew member"] -->|"one supported PDF, at most 20 MiB, selected or dropped"| page["browser conversion page<br/>built Site output"]
+  page -->|"offers source-stem.ics"| browser["browser-owned save"]
+  page -->|"explicit failure + offered parse-error.txt"| crew
+  wasm["ffi/wasm facade<br/>no filesystem or network I/O"] --> page
+  page -.->|"no request to another origin after load"| none["no remote system"]
+```
 
 ### The public home and release channel
 
@@ -64,7 +83,21 @@ The release page's text is the newest section of the repository's change log —
 
 ## Technical context
 
-For the converter, all interfaces are the local filesystem. There is no network interface, no database, and no external service in the product. The public-home tooling adds one separate interface to the project's side: it reads GitHub's REST API during adoption, preview and the drift check, and writes only the declared changes of a previewed configuration change, from the maintainer's workstation.
+For the executable, all interfaces are the local filesystem. There is no
+network interface, no database, and no external service in the executable.
+
+The browser conversion route adds a browser boundary rather than a backend
+interface: the page reads the selected file in the tab, calls the in-tab WASM
+facade, and offers Blob downloads. It makes no request to another origin after
+it loads, has no server or database, and keeps no plan in persistent storage.
+Its only external systems are the browser and the static server that serves
+the built Site output (loopback for the evidence and manual run; the Pages
+repository after the separate Site publication).
+
+The public-home tooling adds one separate interface to the project's side: it
+reads GitHub's REST API during adoption, preview and the drift check, and
+writes only the declared changes of a previewed configuration change, from the
+maintainer's workstation.
 
 ```mermaid
 flowchart LR
@@ -76,16 +109,20 @@ flowchart LR
 
 | Interface | Technology / Protocol | Direction |
 |---|---|---|
-| Input duty plan | Local file read (PDF) | In |
-| Published calendar | Local file write (RFC 5545 text, CRLF, UTF-8) | Out |
-| Diagnostic report | Local file write (plain text, numbered) | Out |
-| Construction clock | Operating-system clock (UTC) | In |
+| Input duty plan (executable) | Local file read (PDF) | In |
+| Input duty plan (browser) | File API read inside the tab; never a request | In |
+| Published calendar (executable) | Local file write (RFC 5545 text, CRLF, UTF-8) | Out |
+| Diagnostic report (executable) | Local file write (plain text, numbered) | Out |
+| Offered calendar (browser) | In-memory Blob and `<a download>`; the browser performs the save | Out |
+| Offered diagnostic (browser) | In-memory Blob and `<a download>`; the browser performs the save | Out |
+| Construction clock | Operating-system clock (UTC) in the executable; `js_sys::Date` in the browser | In |
+| Browser runtime | Chromium, Firefox or Safari with WebAssembly and ES modules; no other-origin request after load | In |
 | Public-home adoption, preview and configuration change | GitHub REST API over HTTPS: object reads for adoption, preview and the drift check; writes only the declared changes of a previewed revision, from the maintainer's workstation | In (reads) and out (an apply only), never the converter |
 | Organization profile publication | The same GitHub REST API: the profile repository is created and its two files are written by a previewed apply; GitHub renders the page and serves the default security policy | Out (an apply only), never the converter |
 | Pinned repositories and private vulnerability reporting | The organization's and repository's web settings, changed once by the organization owner; no API or declaration path | Out (manual only), never the converter |
 
 ## Scope boundary
 
-Inside: reading one supported plan, resolving its activities and dates, composing one calendar, publishing it without clobbering, and reporting failures with diagnostics.
+Inside: reading one supported plan, resolving its activities and dates, composing one calendar, publishing it without clobbering (executable) or offering it for a browser-owned save (browser), and reporting failures with diagnostics. The browser route also owns the capability gate, the 20 MiB input bound, the no-network/no-storage page behavior and the inline WASM build.
 
-Outside: importing the calendar into a client, reconciling revised plans, editing the official schedule, entitlement/legality calculations, visa or booking actions, standby activation, and release approval. The public home and release channel — the repository, its automation, its release pages, the organization profile and the default security policy — belong to separate capabilities; the converter neither uses nor reaches them. See the use case's out-of-scope list for the full boundary.
+Outside: importing the calendar into a client, reconciling revised plans, editing the official schedule, entitlement/legality calculations, visa or booking actions, standby activation, and release approval. The public home and release channel — the repository, its automation, its release pages, the organization profile and the default security policy — belong to separate capabilities; the converter neither uses nor reaches them. Publishing the page at the Public website, the deploy key, the Pages workflow and the Built revision belong to the Site publication. See the use case's out-of-scope list for the full boundary.

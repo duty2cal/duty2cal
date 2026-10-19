@@ -6,8 +6,8 @@
 
 ## Actors
 
-- Crew member — primary Actor; supplies one published duty plan to obtain its personal-calendar representation.
-- Supporting: none. The conversion agent performs internal responsibilities for the Crew member, not an independently valuable actor goal.
+- Crew member — primary Actor; supplies one published duty plan to obtain its personal-calendar representation through the executable or a browser conversion page.
+- Supporting: none. The conversion agent and the browser page perform internal responsibilities for the Crew member, not an independently valuable actor goal.
 
 ## Goal
 
@@ -19,17 +19,17 @@ The Crew member supplies one duty-plan PDF for conversion.
 
 ## Preconditions
 
-- None beyond the Actor making the request. Source readability, supported format, date/activity completeness, and output availability are checked during the flow rather than assumed beforehand.
+- The browser conversion route requires a current browser with WebAssembly and ES modules, and a converter module that initializes. Source readability, supported format, the 20 MiB input bound, date/activity completeness, and output availability are checked during the flow rather than assumed beforehand.
 
 ## Main flow
 
-1. Actor supplies the duty plan they want represented; System receives the source and its filename without altering its contents.
+1. Actor supplies the duty plan they want represented; System receives the source and its filename without altering its contents and, in the browser realization, without sending a request. Before reading a browser-supplied plan, the page refuses a plan larger than 20 MiB by name.
 2. Actor expects their published activities to be recognized; System checks the supplied source against the supported Released Roster detail-table family and establishes its month/year and detailed activity content.
 3. Actor expects every required activity to be accounted for; System resolves the dated activities and travel fragments according to the timing/classification rules, rejecting an unresolved required activity rather than excluding it.
 4. Actor needs the relevant context of each activity; System retains confirmed distinctions, including DH in travel titles and known Trip ID within an unambiguous roster trip.
 5. Actor needs an importable representation; System prepares a complete RFC 5545 calendar with valid dates, text representation, source-snapshot-scoped identities, and preferred-source revision metadata with construction-time fallback.
-6. Actor needs a new file without losing existing outputs; System publishes the complete calendar beside the source under an unused name, adding an enumerated suffix when required and never overwriting an occupied calendar path.
-7. Actor can stop with the exported calendar; System reports successful publication and the actual new calendar path.
+6. Actor needs a new file without losing existing outputs; System publishes the complete calendar beside the source under an unused name when the executable performs the conversion, or offers it for saving as `<source-stem>.ics` when the browser realization performs it. The executable adds an enumerated suffix when required and never overwrites an occupied calendar path; the page writes nothing, and the browser owns the save location and name collisions. Each browser attempt clears the prior offer and state before reading the new plan, so a failed attempt withdraws the calendar an earlier attempt offered.
+7. Actor can stop with the exported calendar; the executable reports successful publication and the actual new calendar path, while the page shows the offered calendar and never claims a save it did not observe.
 
 ## Extensions
 
@@ -89,14 +89,22 @@ The Crew member supplies one duty-plan PDF for conversion.
 - The calendar must comply with RFC 5545. Timed events use UTC endpoints; all-day events use date values and a non-inclusive following-day end. Text escaping, CRLF, UTF-8, and octet-aware folding are part of the output contract; UTF-8 characters are not split across folds.
 - Component UIDs must be persistent and globally unique, scoped to the source snapshot and distinct represented activity. Identical-snapshot conversion is deterministic even when an output counter differs; a revised source snapshot has separate component identities, including activities unchanged from its predecessor. Output filename enumeration or DH title formatting is not component identity. No cross-revision activity matching, calendar-client import update, or duplicate-suppression guarantee is provided.
 - DTSTAMP uses UTC source revision metadata where available. For the selected family, the Created footer is source-snapshot revision evidence. When usable source metadata is unavailable, use the constructed representation's actual UTC revision/construction timestamp. Revision metadata never determines activity dates or scheduled instants.
-- Successful calendar files use an unused name beside the source. Occupied candidates are preserved; enumerated suffixes are illustrated as `roster.ics`, `roster-1.ics`, and `roster-2.ics`. A concurrent claimant is not permission to overwrite a candidate.
+- Successful executable calendar files use an unused name beside the source. Occupied candidates are preserved; enumerated suffixes are illustrated as `roster.ics`, `roster-1.ics`, and `roster-2.ics`. A concurrent claimant is not permission to overwrite a candidate. The browser realization offers `<source-stem>.ics` and writes nothing; the browser owns the save location and any name collision, and the page cannot promise an unused numbered name.
 - Existing calendar and report contents remain unchanged by this conversion.
-- Every conversion failure attempts a new numbered diagnostic identifying the source PDF filename and failure reason. The new report path is exposed only after an actual successful write; older reports are retained, not claimed as updated.
-- Failure to save the diagnostic does not hide the original failure or turn it into success. No guarantee of writable storage, power-loss recovery, automatic backup/cleanup, or calendar-client import reconciliation is invented.
+- Every executable conversion failure attempts a new numbered diagnostic identifying the source PDF filename and failure reason. The new report path is exposed only after an actual successful write; older reports are retained, not claimed as updated. The browser realization shows the reason and offers `<source-stem>.parse-error.txt`; if the offer cannot be created, the primary failure remains visible and the page states that no diagnostic was offered. The page writes nothing and never claims a diagnostic or calendar save it did not observe.
+- Failure to save or offer the diagnostic does not hide the original failure or turn it into success. No guarantee of writable storage, power-loss recovery, automatic backup/cleanup, or calendar-client import reconciliation is invented.
 - Private PDFs and real identifying values are never committed. Public examples, fixtures, and golden calendars contain generated or anonymized material.
 
-- **Delivery constraints, separate from the Actor goal**: retain the supplied Rust stable/edition-2021 application, exact pdfplumber pin, the single self-contained executable without companion-runtime installation, the Windows GNU cross-build on Linux/CI, no native C/C++ PDF extraction dependency, hand-written calendar writer, permitted licenses, and public-repository privacy requirements. The platforms a release offers are the concern of the use case to publish a public release; these remain implementation/release constraints, not extra use cases.
-- **Review lenses**: the confirmed accuracy and privacy lens is crew-member--personal-calendar-owner, and the confirmed release-evidence lens is project-maintainer--release-owner, who is the Actor of the use case to publish a public release rather than an Actor of this one.
+- **Browser realization**
+
+- The browser realization performs the same conversion inside the browser tab on a page served from the built Site output. It checks that the browser has WebAssembly and ES modules, that the converter module initializes, and that the plan is at most 20 MiB before reading it; a missing capability, a startup failure or an oversized plan is refused by name, and a startup failure never falls back to a server or an upload.
+- A supported plan is offered as `<source-stem>.ics`; the page writes nothing, never claims a save it did not observe, and the browser owns the save location and name collisions. A failed attempt withdraws any calendar an earlier attempt offered.
+- On failure the page shows the reason and offers a diagnostic text as `<source-stem>.parse-error.txt`, identifying the source filename and the failure reason. If the diagnostic offer cannot be created, the primary failure remains visible and the page says no diagnostic was offered.
+- A browser memory failure or trap is rejected, never reported as a partial success, and attempts the diagnostic offer. The browser realization's events are **Calendar export offered** and **Conversion diagnostic offered**; the executable's realization keeps **Calendar export published** and **Conversion diagnostic written**. The page offers; the browser saves or writes.
+- The page sends no request to another origin after it loads, loads no third-party asset, and stores no plan or derived data in persistent storage (localStorage, IndexedDB or a cookie) or in a navigable URL or history entry. An ephemeral in-memory object URL used to offer the download is allowed and is revoked when the page unloads.
+
+- **Delivery constraints, separate from the Actor goal**: retain the supplied Rust stable/edition-2021 application, exact pdfplumber pin, the single self-contained executable without companion-runtime installation, the Windows GNU cross-build on Linux/CI, no native C/C++ PDF extraction dependency, hand-written calendar writer, permitted licenses, and public-repository privacy requirements. The platforms a release offers are the concern of the use case to publish a public release; these remain implementation/release constraints, not extra use cases. **Supported platform** means a platform the project offers as a downloadable archive; the browser realization is a supported conversion route and offers no archive.
+- **Review lenses**: the confirmed accuracy and privacy lens is crew-member--personal-calendar-owner; the confirmed release-evidence lens is project-maintainer--release-owner, who is the Actor of the use case to publish a public release rather than an Actor of this one; and the browser realization's confirmed lens is contributor--web-reviewer for the CSP, the no-network proof, the browser fallback and the WASM bundle.
 
 ## Examples
 
@@ -129,14 +137,21 @@ The Crew member supplies one duty-plan PDF for conversion.
 - Previous-year UTC qualifier: local date 1 January 2099 with UTC cell (31) 23:10 → endpoint 31 December 2098 23:10 UTC.
 - Next-month UTC qualifier: local date 31 January 2099 with UTC cell (1) 00:20 → endpoint 1 February 2099 00:20 UTC.
 - Inconsistent explicit qualifier: an explicit day number matching none of the adjacent dates → explicit date-resolution failure.
+- Browser success: `2026-06.pdf`, within the size bound → the page offers `2026-06.ics`; the browser saves it; the page writes nothing and claims no save.
+- Browser oversized plan: a 25 MiB PDF → the page refuses by name and offers no calendar; a `2026-06.parse-error.txt` diagnostic offer is attempted.
+- Browser unsupported source: a file outside the supported family → no calendar; the page shows the reason and offers `notes.parse-error.txt` identifying the source and reason.
+- Browser unsupported capability: no WebAssembly → the page states that it cannot run; no file picker and no calendar.
+- Browser no network: a plan is converted while the browser's request log is observed → no request to another origin after load; the page stores nothing in persistent storage.
 
 ## Minimal guarantee
 
-The source contents and prior calendar/report contents remain unchanged. Unresolved activities and failed publication are never reported as successful complete conversion. Every conversion failure attempts a new diagnostic, while the original failure remains explicit if that diagnostic cannot be saved. No old report is represented as a new successful write.
+The source contents and prior calendar/report contents remain unchanged. Unresolved activities and failed publication are never reported as successful complete conversion. Every executable conversion failure attempts a new numbered diagnostic, while the original failure remains explicit if that diagnostic cannot be saved. No old report is represented as a new successful write.
+
+The browser realization writes nothing and never reports a save it did not observe; no existing file is touched by the page; a rejected browser conversion is never reported as success; a failed attempt withdraws the calendar an earlier attempt offered; on a browser failure the reason is visible and a diagnostic offer is attempted; a failed diagnostic offer does not hide the primary failure; no plan or derived data leaves the page.
 
 ## Success guarantee
 
-The Crew member obtains a complete RFC 5545 calendar file beside the supplied duty plan under an unused name, representing its required resolved activities with source-snapshot identities and the preferred-source/fallback revision timestamp.
+The Crew member obtains a complete RFC 5545 calendar file representing its required resolved activities with source-snapshot identities and the preferred-source/fallback revision timestamp. Realization: the executable publishes it beside the supplied duty plan under an unused name; the browser realization offers it for saving under a name derived from the source and writes nothing.
 
 This is a changing use case: it creates a new calendar export, not a read-only observation or an update to an imported calendar.
 
@@ -144,6 +159,7 @@ This is a changing use case: it creates a new calendar export, not a read-only o
 
 - crew-member--personal-calendar-owner
 - project-maintainer--release-owner
+- contributor--web-reviewer
 
 ## Capabilities
 
@@ -153,7 +169,14 @@ This is a changing use case: it creates a new calendar export, not a read-only o
 
 | Capability | Consumer action | E2E scenario |
 |---|---|---|
-| export-duty-plan-calendar | supply a duty plan for conversion | Crew member converts a supported duty plan and receives a calendar file |
+| export-duty-plan-calendar | supply a duty plan for conversion through the executable | Crew member converts a supported duty plan and receives a calendar file |
+| export-duty-plan-calendar | supply a duty plan through the converter page and save the offered calendar | Crew member converts a supported duty plan in the browser and saves the offered calendar |
+
+Dropping a plan onto the drop zone is the same supply action as the picker and
+adds no inventory entry. The inventory's two actions have exactly one `@e2e`
+scenario each; the size, family, unresolved-activity, stale-offer, drop,
+capability, startup, offer-failure, cancelled-save, naming and persistence
+scenarios are regular coverage of those actions.
 
 ## Includes
 
@@ -173,6 +196,8 @@ This is a changing use case: it creates a new calendar export, not a read-only o
 - Obtain a visa, book positioning travel, or contact external scheduling institutions.
 - Activate standby/reserve crew, calculate call-to-report notice, or perform check-in/reporting.
 - Publish/approve a converter release as a product command.
+- File System Access API writes, page-side directory access, saving on the Crew member's behalf, or a numbered diagnostic name the page cannot guarantee.
+- A hosted conversion, upload, account, analytics or telemetry service; a custom domain or project-site redirect; the Site publication, its Built revision and its public copy.
 
 ## Diagram
 
