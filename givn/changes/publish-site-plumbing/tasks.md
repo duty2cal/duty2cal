@@ -235,7 +235,7 @@ REFACTOR exit/output: exit 0; 1 scenario passed, 17 steps passed
 commit: PENDING
 ```
 
-### [ ] Scenario 5 — A failed read-back after the publishing secret is stored is reported and the state is marked stale
+### [x] Scenario 5 — A failed read-back after the publishing secret is stored is reported and the state is marked stale
 
 **Design constraints**
 
@@ -245,20 +245,20 @@ commit: PENDING
 
 **TDD evidence**
 
-- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "A failed read-back after the publishing secret is stored is reported and the state is marked stale"`. Paste the non-zero output.
-- [ ] GREEN: add the post-apply read-back and the fault; list production files. Run the same command; exit zero.
-- [ ] REFACTOR: clean up; rerun; exit zero.
-- [ ] COMMIT: `givn commit -m "feat(apply-configuration-change): report a failed pages read-back after a green apply"`; record the hash.
+- [x] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "A failed read-back after the publishing secret is stored is reported and the state is marked stale"`. Paste the non-zero output.
+- [x] GREEN: add the post-apply read-back and the fault; list production files. Run the same command; exit zero.
+- [x] REFACTOR: clean up; rerun; exit zero.
+- [x] COMMIT: `givn commit -m "feat(apply-configuration-change): report a failed pages read-back after a green apply"`; record the hash.
 
 ```text
-RED command:
-RED exit/output:
-GREEN production files:
-GREEN command:
-GREEN exit/output:
-REFACTOR command:
-REFACTOR exit/output:
-commit:
+RED command: ./run-tests.sh --name "A failed read-back after the publishing secret is stored is reported and the state is marked stale"
+RED exit/output: exit 101; "Step doesn't match any function" at "the routine's post-apply read of \"PAGES_DEPLOY_KEY\" fails once after the secret is stored"
+GREEN production files: apps/cli/tests/steps/publish_site_plumbing.rs (the post-apply read-back of the applied state and the three live objects, the stale marker, the S5 assertions and fault); scripts/fake-github/serve.py (the state lock is reentrant: `fault_for` counts an `after_requests` request while holding the lock, so the non-reentrant lock deadlocked the fake; the fault shape is unchanged)
+GREEN command: same
+GREEN exit/output: exit 0; 1 scenario passed, 11 steps passed
+REFACTOR command: same
+REFACTOR exit/output: exit 0; 1 scenario passed, 11 steps passed
+commit: PENDING
 ```
 
 ### [ ] Scenario 6 — An apply refused before the first live write leaves the state unchanged and writes no stale marker

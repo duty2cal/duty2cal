@@ -59,7 +59,9 @@ class FakeState:
     def __init__(self, fixtures: str, journal: str | None, writes: bool = False) -> None:
         self.fixtures = os.path.abspath(fixtures)
         self.journal = os.path.abspath(journal) if journal else None
-        self.lock = threading.Lock()
+        # Reentrant: `fault_for` counts an `after_requests` request while
+        # holding the state lock (`fault_count` re-enters it).
+        self.lock = threading.RLock()
         self.writes = writes
         self.counts: dict[str, int] = {}
         # The write sandbox's in-memory overlay: a merged repository body, the

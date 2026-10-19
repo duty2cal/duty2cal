@@ -624,6 +624,28 @@ pub(crate) fn apply_previewed(w: &mut DutyWorld) {
     w.stderr = String::from_utf8_lossy(&apply.stderr).into_owned();
     w.exit_status = apply.status.code();
     if apply.status.success() {
+        if let Some((object, reason)) = read_back(w) {
+            // The writes landed; keep the applied state and refuse a blind
+            // retry until the operator reads the report.
+            let marker = LIVE_DECLARED
+                .iter()
+                .map(|address| (*address).to_string())
+                .collect::<Vec<_>>();
+            write_marker(w, &marker);
+            transcript.push_str(&format!(
+                "applied: these live objects were created: {}\n",
+                described(&marker)
+            ));
+            transcript.push_str(&format!("failed read-back: {object} {reason}\n"));
+            let _ = fs::remove_file(&plan);
+            let _ = fs::remove_file(dir.join("preview.json"));
+            let _ = fs::remove_file(&preflight_report);
+            let _ = fs::remove_file(&state_before);
+            w.apply_transcript = transcript.clone();
+            w.scenario_transcript.push_str(&transcript);
+            w.exit_status = Some(1);
+            return;
+        }
         let _ = fs::remove_file(&plan);
         let _ = fs::remove_file(dir.join("preview.json"));
         let _ = fs::remove_file(&preflight_report);
@@ -774,6 +796,96 @@ pub(crate) fn apply_previewed(w: &mut DutyWorld) {
     w.apply_transcript = transcript.clone();
     w.scenario_transcript.push_str(&transcript);
     w.exit_status = Some(1);
+}
+
+/// The post-apply read-back: the applied state and the three live objects
+/// must be readable before the revision is reported applied. Returns the
+/// first unreadable object and the reason.
+fn read_back(w: &DutyWorld) -> Option<(String, String)> {
+    let list = tofu(w, &["state", "list"]);
+    if !list.status.success() {
+        let reason = String::from_utf8_lossy(&list.stderr)
+            .lines()
+            .next()
+            .unwrap_or("tofu state list failed")
+            .to_string();
+        return Some(("the applied state".to_string(), reason));
+    }
+    let bound: Vec<String> = String::from_utf8_lossy(&list.stdout)
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_owned)
+        .collect();
+
+    let (status, keys) =
+        fake_request(w, "GET", "/repos/duty2cal/duty2cal.github.io/keys", &[], None);
+    if status != 200 {
+        return Some((
+            "github_repository_deploy_key.pages_publish".to_string(),
+            format!("HTTP {status}"),
+        ));
+    }
+    let keys = report(w, "readback-keys.json", &format!("[{keys}]"));
+    if !jq_true(
+        w,
+        &format!("any(.[][]?; .title == {DEPLOY_KEY_TITLE:?})"),
+        &keys,
+    ) {
+        return Some((
+            "github_repository_deploy_key.pages_publish".to_string(),
+            "absent live after the apply".to_string(),
+        ));
+    }
+
+    let (status, _) = fake_request(
+        w,
+        "GET",
+        &format!("/repos/duty2cal/duty2cal/actions/secrets/{SECRET_NAME}"),
+        &[],
+        None,
+    );
+    if status != 200 {
+        return Some((
+            format!("github_actions_secret.pages_publish ({SECRET_NAME})"),
+            format!("HTTP {status}"),
+        ));
+    }
+
+    let (status, rulesets) = fake_request(
+        w,
+        "GET",
+        "/repos/duty2cal/duty2cal.github.io/rulesets",
+        &[],
+        None,
+    );
+    if status != 200 {
+        return Some((
+            "github_repository_ruleset.pages_publish".to_string(),
+            format!("HTTP {status}"),
+        ));
+    }
+    let rulesets = report(w, "readback-rulesets.json", &format!("[{rulesets}]"));
+    if !jq_true(
+        w,
+        &format!("any(.[][]?; .name == {RULESET_NAME:?})"),
+        &rulesets,
+    ) {
+        return Some((
+            "github_repository_ruleset.pages_publish".to_string(),
+            "absent live after the apply".to_string(),
+        ));
+    }
+
+    for address in LIVE_DECLARED {
+        if !bound.iter().any(|recorded| recorded == address) {
+            return Some((
+                address.to_string(),
+                "absent from the applied state".to_string(),
+            ));
+        }
+    }
+    None
 }
 
 /// The addresses with their human names, for the report lines.
@@ -1004,7 +1116,11 @@ async fn the_owners_authority_cannot_create_the_pages_rule_set(w: &mut DutyWorld
 fn transcript_line<'a>(transcript: &'a str, prefix: &str) -> &'a str {
     transcript
         .lines()
-        .find(|line| line.starts_with(prefix))
+        .find(|line| {
+            let line = line.trim_start();
+            // The saved plan's own output may prefix the line with indentation.
+            line.starts_with(prefix) || line.contains(prefix)
+        })
         .unwrap_or_else(|| panic!("the report carries a {prefix:?} line; output was:\n{transcript}"))
 }
 
@@ -1339,4 +1455,64 @@ async fn the_apply_fails_and_names_the_secret(w: &mut DutyWorld, name: String) {
         "the apply names the pages secret; output was:\n{}",
         w.apply_transcript
     );
+}
+
+#[given(
+    regex = r#"^the routine's post-apply read of "([^"]+)" fails once after the secret is stored$"#
+)]
+async fn the_post_apply_read_fails_once(w: &mut DutyWorld, name: String) {
+    assert_eq!(name, SECRET_NAME, "the step names the declared secret");
+    assert!(
+        w.plan_path.is_some(),
+        "the scenario holds no previewed revision"
+    );
+    // A 403 rather than 500: the provider retries 5xx, which would consume the
+    // fault. The create's own timestamp read is request one; the routine's
+    // post-apply read is request two (design.md "Fault injection").
+    append_fault(
+        w,
+        "{\"path_regex\": \"^/repos/duty2cal/duty2cal/actions/secrets/PAGES_DEPLOY_KEY$\", \
+         \"method\": \"GET\", \"status\": 403, \
+         \"body\": {\"message\": \"read-back failed\"}, \
+         \"after_requests\": 1, \"once\": true}",
+    );
+}
+
+#[then(regex = r#"^the monorepo stores "([^"]+)"$"#)]
+async fn the_monorepo_stores(w: &mut DutyWorld, name: String) {
+    let (_, secrets, _) = live_lists(w).expect("the live lists remain readable");
+    let secrets = report(w, "stored-secret.json", &secrets);
+    assert_eq!(
+        jq(
+            w,
+            &format!("[.secrets[]? | select(.name == {name:?})] | length"),
+            &secrets,
+            false
+        ),
+        "1",
+        "the monorepo stores {name}"
+    );
+}
+
+#[then("the failure report names the deploy key, the secret and the rule set as applied")]
+async fn the_failure_report_names_the_applied_objects(w: &mut DutyWorld) {
+    let line = transcript_line(&w.apply_transcript, "applied:");
+    for expected in LIVE_DECLARED {
+        assert!(
+            line.contains(expected),
+            "the applied report names {expected}; output was:\n{}",
+            w.apply_transcript
+        );
+    }
+}
+
+#[then("the applied state records the deploy key, the secret and the rule set")]
+async fn the_applied_state_records_all_live_objects(w: &mut DutyWorld) {
+    let addresses = state_addresses(w);
+    for address in LIVE_DECLARED {
+        assert!(
+            addresses.iter().any(|recorded| recorded == address),
+            "the applied state records {address}; it was: {addresses:?}"
+        );
+    }
 }

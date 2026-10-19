@@ -86,7 +86,7 @@ Feature: Publish site plumbing
     And the applied state is marked stale
     And a new preview refuses and names the stale applied state
 
-  @givn.added @wip
+  @givn.added
   Scenario: A failed read-back after the publishing secret is stored is reported and the state is marked stale
     Given the applied state binds every object the earlier configuration changes declared
     And a previewed revision that adds the pages publishing key, its secret and the pages rule set
