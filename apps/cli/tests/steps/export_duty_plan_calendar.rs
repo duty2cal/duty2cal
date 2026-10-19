@@ -2846,10 +2846,13 @@ async fn the_converter_page_without_diagnostic_offer(w: &mut DutyWorld) {
 }
 
 #[given("the converter page served from the built Site output whose converter module cannot be instantiated")]
-async fn the_converter_page_with_a_broken_module(_w: &mut DutyWorld) {
-    unimplemented!(
-        "the converter page served from the built Site output whose converter module cannot be instantiated"
-    )
+async fn the_converter_page_with_a_broken_module(w: &mut DutyWorld) {
+    let mut params = Map::new();
+    params.insert(
+        "mode".to_string(),
+        Value::String("broken-module".to_string()),
+    );
+    driver(w).send("start", params);
 }
 
 #[given(
@@ -3137,10 +3140,8 @@ async fn the_cannot_run_message_names_es_modules(w: &mut DutyWorld) {
 }
 
 #[then("the page shows a cannot-run heading and states that the converter could not start")]
-async fn the_cannot_run_message_names_startup(_w: &mut DutyWorld) {
-    unimplemented!(
-        "the page shows a cannot-run heading and states that the converter could not start"
-    )
+async fn the_cannot_run_message_names_startup(w: &mut DutyWorld) {
+    assert_cannot_run(w, "could not start");
 }
 
 #[then(regex = r#"^the page offers the file "([^"]+)"$"#)]
@@ -3321,8 +3322,26 @@ async fn the_page_states_no_diagnostic_was_offered(w: &mut DutyWorld) {
 }
 
 #[then("the page has sent no request to another origin since it loaded")]
-async fn the_page_sent_no_request_to_another_origin(_w: &mut DutyWorld) {
-    unimplemented!("the page has sent no request to another origin since it loaded")
+async fn the_page_sent_no_request_to_another_origin(w: &mut DutyWorld) {
+    let state = page_state(w);
+    let initial = state["initialAddress"]["url"]
+        .as_str()
+        .expect("read_state returns the initial address");
+    let origin: String = initial.split('/').take(3).collect::<Vec<_>>().join("/");
+    let log = state["requestLog"]
+        .as_array()
+        .expect("read_state returns the request log");
+    for entry in log {
+        let url = entry["url"].as_str().unwrap_or_default();
+        assert!(
+            url.starts_with(&origin),
+            "the page requested another origin {url:?} (page origin {origin}): {state}"
+        );
+    }
+    assert!(
+        !log.is_empty(),
+        "the request log proves nothing because the page requested nothing: {state}"
+    );
 }
 
 #[then("the page has stored nothing in persistent browser storage")]

@@ -1132,29 +1132,39 @@ never falls back to a server or an upload.
   function after the capability gate.
 - The request log shows no other-origin request.
 
-- [ ] RED — remove `@wip` from this scenario only; add its new step bodies as
-  `unimplemented!()` stubs (previously implemented shared steps stay implemented); run:
+- [x] RED — remove `@wip` from this scenario only; the Given and Then step bodies
+  stayed the committed `unimplemented!()` stubs; run:
   ```
-  $ ./run-tests.sh --name "A converter module that cannot be instantiated shows the startup failure"
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A converter module that cannot be instantiated shows the startup failure"
   Feature: Export a duty-plan calendar
     Scenario: A converter module that cannot be instantiated shows the startup failure
      ✘  Given the converter page served from the built Site output whose converter module cannot be instantiated
-        Step panicked. Captured output: not implemented: start the page with a rejecting module init
+        Step failed:
+        Defined: tmp/tmp.OUO9XcxcH4/f0006.feature:109:5
+        Matched: apps/cli/tests/steps/export_duty_plan_calendar.rs:2848:1
+        Step panicked. Captured output: not implemented: the converter page served from the built Site output whose converter module cannot be instantiated
   [Summary]
   1 feature
   1 scenario (1 failed)
   1 step (1 failed)
   RED_EXIT=101
   ```
-- [ ] GREEN — real assertions and minimum production code; production files modified:
-  - `web/app.js` — the import/`init(bytes)` `try/catch` and the startup-failure state.
-  - `web/e2e/driver.mjs` — the init-script mode replacing the module entry with a
-    rejecting function.
-  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the startup-failure steps and
-    the request-log assertion.
+- [x] GREEN — real assertions and minimum production code; production files:
+  - `web/app.js` — the `init(bytes)` `try/catch` and the startup-failure rendering
+    already existed in the committed baseline; no change was needed.
+  - `web/e2e/driver.mjs` — the `start` mode `broken-module`, whose init script replaces
+    `WebAssembly.instantiate` and `instantiateStreaming` with rejecting functions after
+    the classic capability gate would pass, and the post-navigation wait for the visible
+    cannot-run region.
+  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the startup Given, the
+    cannot-run assertion naming the startup failure, and the request-log assertion that
+    every recorded request shares the page origin. The shared helpers assert no picker
+    and no calendar.
   Run:
   ```
-  $ ./run-tests.sh --name "A converter module that cannot be instantiated shows the startup failure"
+  $ cargo fmt --all --check -> FMT_EXIT=0
+  $ cargo clippy --workspace --all-targets -- -D warnings -> CLIPPY_EXIT=0
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A converter module that cannot be instantiated shows the startup failure"
   Feature: Export a duty-plan calendar
     Scenario: A converter module that cannot be instantiated shows the startup failure
      ✔  Given the converter page served from the built Site output whose converter module cannot be instantiated
@@ -1168,13 +1178,17 @@ never falls back to a server or an upload.
   5 steps (5 passed)
   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — confirm the startup failure is the cannot-run treatment (not the generic
-  conversion failure), re-run:
+- [x] REFACTOR — the rejection happens inside `init`, so `app.js` takes the startup
+  branch and never reaches the generic conversion failure; the assertion requires the
+  cannot-run heading and has no `Conversion failed` path. The request log contains only
+  the loopback origin, with no server or upload fallback. No cleanup was needed; re-run:
   ```
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A converter module that cannot be instantiated shows the startup failure"
   1 scenario (1 passed), 5 steps (5 passed)   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A converter module that cannot be instantiated shows the startup failure`; Hash: `<record the revision identifier here>`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+  `Scenario: A converter module that cannot be instantiated shows the startup failure`;
+  Hash: recorded in the scenario-commit record commit
 
 ### 12. A supported plan dropped onto the drop zone is converted
 

@@ -104,7 +104,7 @@ Feature: Export a duty-plan calendar
     And the page offers no file picker
     And the page offers no calendar
 
-  @givn.added @wip
+  @givn.added
   Scenario: A converter module that cannot be instantiated shows the startup failure
     Given the converter page served from the built Site output whose converter module cannot be instantiated
     Then the page shows a cannot-run heading and states that the converter could not start
