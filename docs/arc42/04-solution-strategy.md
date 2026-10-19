@@ -22,6 +22,7 @@
 | Executable specification | Gherkin `.feature` files run by cucumber-rs (strict) | Chapter 2. |
 | Distribution | One self-contained Windows x86_64 executable (cross-built on Linux, started on Windows), published as an immutable release from the public repository; other platforms are unsupported and build from source | ADR-0003, ADR-0004; chapters 2 and 7. |
 | Change-log generation | `git-cliff` 2.14.2, pinned beside `cliff.toml` and rendered by `scripts/render-changelog.sh` | Chapter 2; `design.md`. |
+| Size attribution | `cargo-bloat` 0.12.1, pinned, run by `scripts/measure_executable_size.py`; the shipped artifact and a second build that retains the names the measurement needs are measured separately and their two numbers are never substituted | Chapter 2; `design.md`. |
 | Infrastructure declaration | OpenTofu `>= 1.7` (the project pins `1.13.1` in `infra/.opentofu-version`) with `integrations/github` `~> 6.0`; HCL under `infra/` | ADR-0005; chapter 2. |
 | Applied state and drift | Local, passphrase-encrypted state committed under `infra/`; the drift check runs on the maintainer's machine | ADR-0006; chapter 2. |
 
@@ -37,4 +38,4 @@ ADR-0001, ADR-0002, ADR-0003, ADR-0004, ADR-0005 and ADR-0006 are the project's 
 | Privacy | Generated/anonymised fixtures only; no private sources in the repository. |
 | Maintainability / portability | Hexagonal layout with mechanical layer enforcement; one self-contained Windows x86_64 executable; a core free of I/O, clock and environment. |
 | Reproducibility of the public home | One declaration under `infra/` reviewed with the code; a read-only adoption that binds the existing objects and changes nothing live; an encrypted committed state; a preview that names every difference; an apply of exactly the previewed revision whose state is committed only after success; a local drift check. |
-| Release integrity / verifiability | One Windows build on Linux plus a start on Windows; a single deterministic packaging step with one archive, its checksum and the release text; draft-first immutable publication with provenance and a bill of materials; a read-back verification job. |
+| Release integrity / verifiability | One Windows build on Linux plus a start on Windows; a single deterministic packaging step with one archive, its checksum and the release text; draft-first immutable publication with provenance and a bill of materials; a read-back verification job; a measured size attribution of the distributed executable, produced for every pushed revision, with the executable's own file size reported beside the split. |

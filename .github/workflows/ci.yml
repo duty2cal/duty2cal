@@ -49,6 +49,13 @@ jobs:
           # reason.
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-gnu
+      # The size-attribution scenarios drive the real measurement command,
+      # whose two builds need the Windows cross toolchain and the pinned
+      # generator.
+      - run: sudo apt-get update && sudo apt-get install -y mingw-w64
+      - run: cargo install --locked cargo-bloat@0.12.1
       # The suite's change-log scenarios drive scripts/render-changelog.sh as a
       # real subprocess, so the pinned generator must be on PATH — the same
       # version the committed CHANGELOG.md was produced with.
@@ -158,6 +165,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: llvm-tools-preview
+          targets: x86_64-pc-windows-gnu
+      # The @e2e size-attribution scenario runs the real measurement command.
+      - run: sudo apt-get update && sudo apt-get install -y mingw-w64
+      - run: cargo install --locked cargo-bloat@0.12.1
       - run: cargo install cargo-llvm-cov --locked
       - run: ./measure-coverage.sh
       - run: ./merge-coverages.sh
@@ -226,6 +237,33 @@ jobs:
             echo "unexpected non-system DLL import — the executable is not self-contained";
             exit 1;
           fi
+      - name: Install the attribution generator
+        run: cargo install --locked cargo-bloat@0.12.1
+      - name: Produce the size attribution for this revision
+        run: |
+          set +e
+          python3 scripts/measure_executable_size.py \
+            --revision "$GITHUB_SHA" \
+            --executable target/x86_64-pc-windows-gnu/release/duty2cal.exe \
+            --out size-attribution
+          status=$?
+          {
+            echo '### Size attribution'
+            echo ''
+            echo "measurement exit status: $status"
+            echo ''
+            if [ -f size-attribution/attribution.md ]; then
+              cat size-attribution/attribution.md
+            else
+              echo 'no attribution.md was written; see the step log'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: size-attribution
+          path: size-attribution/
       - uses: actions/upload-artifact@v7
         with:
           name: duty2cal-windows-gnu

@@ -227,6 +227,32 @@ the section as the release text and the change log as an asset of the draft
 release, which is inspected before it becomes public.
 
 
+## Measure the executable's size
+
+Every pushed revision produces a size attribution of the Windows x86_64
+executable: the crate and function split of a build that retains names, beside
+the stripped executable's own file size.
+
+```sh
+python3 scripts/measure_executable_size.py --revision <revision> [--repo <dir>] [--out <dir>]
+```
+
+The `windows-gnu-build` job writes `size-attribution/` beside the run and
+appends `attribution.md` to the step summary; the report is evidence, not a
+gate, so a measurement that cannot be produced is published and does not refuse
+the revision or the release. On a host without the cross toolchain:
+
+```sh
+rustup target add x86_64-pc-windows-gnu
+sudo apt-get install mingw-w64
+cargo install --locked cargo-bloat@0.12.1
+```
+
+The stripped executable's file size and the attribution build's `.text` total
+are different quantities: the first is what a downloader receives, the second
+is where the code's bytes go. They are reported side by side and never
+substituted for each other.
+
 ## Contributing
 
 The contribution route is [CONTRIBUTING.md](CONTRIBUTING.md): behaviour is

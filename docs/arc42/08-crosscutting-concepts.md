@@ -227,4 +227,45 @@ refusal that would need a write — creating a missing object, changing a value,
 removing a legacy object — is reported as belonging to a configuration change
 instead.
 
+## Measured size attribution
+
+The size attribution is evidence, not a promise, and it is built to make
+substitution impossible. A measurement resolves a named revision into a
+temporary worktree and builds it twice: the shipped artifact with the committed
+build configuration, and a second build of the same revision with `strip`
+disabled for that build only, in a separate target directory. The first gives
+the executable's file size, digest and section sizes; the second gives the
+crate and function split and the `.text` total of that build. The two
+numbers are separate fields filled by separate reads, and the human report
+labels them separately, because the attribution describes a rebuild with names
+while the distributed executable is stripped.
+
+The report's status is `complete`, `incomplete` or `unreadable`. A failed build
+or a build that keeps no names produces no attribution and states what could
+not be read; a stripped executable whose file size cannot be read leaves the
+report incomplete, states that the size is unavailable, and never presents the
+split's total as the file size. No number is inferred from the release archive,
+and a build for the host machine is not accepted as evidence about the
+supported platform: the supplied artifact is checked for a PE header and the
+x86-64 machine, and a host build or an archive is refused by name.
+
+The measurement is evidence, not a gate. The CI step that produces it always
+publishes the report (or a note that none was written) and exits zero, so an
+unreadable report never refuses a revision, the Windows smoke or a release.
+The report is what a reviewer reads; the automation does not decide on size.
+
+The generator's numbers are estimates of the `.text` section, not a byte-exact
+file size: `cargo-bloat`'s own documentation calls them guesswork. The report
+repeats that caveat, and the attribution total stays a separate field from the
+stripped executable's byte count.
+
+The report names the requested revision, the resolved revision, the platform,
+the toolchain, the pinned generator's version and the digests of the build
+configuration, so a reader can judge whether it is reproducible; the generator
+is pinned for the same reason the change-log and notices generators are. A
+measurement is produced for every pushed revision by the Windows cross-build
+job and published beside that run, and the same command is available to the
+maintainer for any named revision.
+
+
 

@@ -87,6 +87,14 @@ pub struct DutyWorld {
     /// priming adoption and base apply are not mistaken for the change's
     /// writes.
     pub journal_offset: usize,
+    /// The output directory a size-attribution scenario used.
+    pub measurement_out: Option<PathBuf>,
+    /// The `attribution.json` inside `measurement_out`.
+    pub attribution: Option<PathBuf>,
+    /// The executable a size-attribution scenario passed with `--executable`.
+    pub measurement_executable: Option<PathBuf>,
+    /// The revision a size-attribution scenario measured.
+    pub measurement_revision: Option<String>,
 }
 
 impl Drop for DutyWorld {

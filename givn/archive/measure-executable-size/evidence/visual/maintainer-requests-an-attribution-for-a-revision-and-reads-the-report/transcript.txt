@@ -1,0 +1,85 @@
+$ python3 scripts/measure_executable_size.py --repo <scenario-dir>/repo --revision v0.3.0 --out <scenario-dir>/out
+
+
+--- attribution.md ---
+# Size attribution
+
+- Requested: v0.3.0
+- Revision: de2a55794c66aefe9b368766b62978950286c8ed
+- Platform: x86_64-pc-windows-gnu
+- Status: complete
+
+## Build identity
+
+- Toolchain: rustc 1.99.1 (58cf8f9c3 2026-10-13)
+- Generator: cargo-bloat 0.12.1
+- Cargo.toml: bfa13f76ea5fd39c2286b77830dc2d2e32c0591213246f51b84365c0a235fb7f
+- .cargo/config.toml: 79191bd2c53c172ad67a2ea27995065cfa2da6e245bc612235fee3e0836b3cca
+- Attribution build (file): 5067158 B
+
+## The two numbers
+
+- Stripped executable (file): 872448 B (sha256 d7e799c39b106ae038eafbe95523bb0e1e62e09116105297ff6084bfb24819d8)
+- Size attribution (attribution build .text): 658432 B
+
+The size attribution is not the stripped executable's file size: the two
+numbers are different quantities and are never substituted for each other.
+The attribution's numbers are estimates of the `.text` section, not a
+byte-exact accounting.
+
+## By crate
+
+| crate | bytes |
+|---|---:|
+| std | 635089 |
+| fixture_support | 14688 |
+| [Unknown] | 7432 |
+| fixture_app | 79 |
+| __rustc | 24 |
+
+## By function
+
+Largest 25 of 1643 functions.
+
+| crate | function | bytes |
+|---|---|---:|
+| std | <core::io::error::Error>::new::<&str> | 35337 |
+| std | core::slice::sort::unstable::heapsort::heapsort::<(gimli::common::DebugInfoOffset, gimli::common::DebugArangesOffset), <[(gimli::common::DebugInfoOffset, gimli::common::DebugArangesOffset)]>::sort_unstable_by_key<gimli::common::DebugInfoOffset, <addr2line::unit::ResUnits<gimli::read::endian_slice::EndianSlice<gimli::endianity::LittleEndian>>>::parse::{closure#0}>::{closure#0}> | 19728 |
+| std | <std::sys::fs::windows::File>::read_buf | 17648 |
+| fixture_support | fixture_support::fixture_alpha | 14688 |
+| std | core::slice::sort::unstable::ipnsort::<(usize, &object::pe::ImageSymbol), <[(usize, &object::pe::ImageSymbol)]>::sort_unstable_by_key<usize, <std::backtrace_rs::symbolize::gimli::coff::Object>::parse::{closure#0}>::{closure#0}> | 13056 |
+| std | <std::time::SystemTime>::elapsed | 10624 |
+| std | <gimli::read::unit::EntriesRaw<gimli::read::endian_slice::EndianSlice<gimli::endianity::LittleEndian>>>::read_attribute | 10448 |
+| std | <std::process::Command>::env_clear | 10352 |
+| std | core::panicking::assert_failed::<u64, u64> | 8690 |
+| std | <core::escape::EscapeIterInner<10: usize, core::escape::MaybeEscaped>>::next | 8271 |
+| std | std::panicking::begin_panic::<&str> | 6804 |
+| std | std::sys::fs::windows::junction_point | 6608 |
+| std | <std::fs::ReadDir as core::iter::traits::iterator::Iterator>::next | 5056 |
+| std | core::num::imp::flt2dec::strategy::dragon::format_shortest | 4928 |
+| std | std::sys::backtrace::__rust_begin_short_backtrace::<std::sys::process::windows::child_pipe::spawn_pipe_relay::{closure#0}, ()> | 4544 |
+| std | <std::path::Path>::file_stem | 4464 |
+| std | <std::sys::process::env::CommandEnv>::remove | 4400 |
+| std | <gimli::arch::Arm>::name_to_register | 4145 |
+| std | <gimli::arch::RiscV>::name_to_register | 4037 |
+| std | core::num::imp::flt2dec::strategy::dragon::format_exact | 4000 |
+| std | <gimli::constants::DwAt>::static_string | 3716 |
+| std | <rustc_demangle::legacy::Demangle as core::fmt::Display>::fmt | 3704 |
+| std | <str>::word_to_titlecase | 3696 |
+| std | <str>::trim_start_matches::<&str> | 3661 |
+| std | <std::sys::net::connection::socket::UdpSocket>::send_to | 3632 |
+
+## Sections of the stripped executable
+
+| section | bytes |
+|---|---:|
+| .text | 658424 |
+| .data | 3168 |
+| .rdata | 133456 |
+| .pdata | 20712 |
+| .xdata | 42916 |
+| .bss | 576 |
+| .idata | 7460 |
+| .tls | 16 |
+| .reloc | 3376 |
+exit status: 0

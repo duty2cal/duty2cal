@@ -8,12 +8,15 @@ The project publishes one self-contained Windows x86_64 executable, cross-built 
 flowchart TB
   subgraph host["GitHub-hosted runners"]
     b1["ubuntu-latest — Windows x86_64 cross-build"]
+    attr["ubuntu-latest — size attribution for the revision it built"]
     sm["windows-latest — Windows smoke"]
     prep["ubuntu-latest — prepare-release.sh over the one Windows binary"]
     pub["ubuntu-latest — publish (wait for the tagged revision's checks, SBOM, attestations, draft release)"]
     ver["ubuntu-latest — verify the published release"]
   end
   b1 --> prep
+  b1 --> attr
+  attr --> art["workflow-run artifact: size-attribution + step summary"]
   sm --> prep
   prep --> pub --> ver
   ver --> rel["Immutable release at the stable latest address"]
@@ -23,7 +26,7 @@ flowchart TB
 
 | Node / Environment | Description |
 |---|---|
-| `ubuntu-latest` | Cross-builds the Windows (`x86_64-pc-windows-gnu`) executable and also runs the single packaging, publish and verify jobs; the publish job waits for the tagged revision's checks before anything becomes public. It remains the CI, coverage and local test host but publishes nothing of its own. |
+| `ubuntu-latest` | Cross-builds the Windows (`x86_64-pc-windows-gnu`) executable and also runs the single packaging, publish and verify jobs; the publish job waits for the tagged revision's checks before anything becomes public. The Windows cross-build also produces the size attribution for the revision it built and uploads it beside the run. It remains the CI, coverage and local test host but publishes nothing of its own. |
 | `windows-latest` | Starts the cross-built Windows executable: the "started on a machine of that kind" evidence. |
 | GitHub Releases | Serves the published Windows archive, its checksum, its provenance and bill of materials, the release text, and the change log (`CHANGELOG.md`) at a stable latest-release address. |
 | Crew member's machine | Runs the downloaded executable; supplies the plan and receives the calendar or a diagnostic. |
@@ -42,6 +45,12 @@ The archive holds `duty2cal.exe` and nothing else; a checksum file covering the 
 ### The change log among the release assets
 
 Beside the one Windows archive and its checksum (and the archive's provenance and bill of materials), a release carries the change log and its newest section: `CHANGELOG.md` is published as an asset, so a downloader reads what changed without visiting the repository, and the release page's text is that same file's newest section. Both come from one render of the released revision, so the page and the published file cannot state different things about what a version contains.
+
+### The size attribution beside the run
+
+The Windows cross-build job runs `scripts/measure_executable_size.py` after it has built and inspected the executable, so the report describes the revision that job built, and uploads the report as the run's `size-attribution` artifact beside the step summary. The measurement step is evidence, not a gate: it exits zero whatever the command reported, always appends the report (or a note that none was written) to the step summary, and uploads the artifact with `if: always()`, so an unreadable report is published and the job continues; no revision or release is refused because of it. The report is not a release asset, not committed, and not attached to the change: it belongs to the run for the revision it names, which is what lets a reviewer compare two revisions before either lands.
+
+The same command runs on the maintainer's Linux host once the Windows target, `mingw-w64` and the pinned generator are installed; the suite's `test` and `coverage` jobs install the same three so the `@e2e` scenario drives the real command. A host without them runs the suite in a container that provides them (the local deployment path recorded in the change's design).
 
 ### The crew member's machine
 
