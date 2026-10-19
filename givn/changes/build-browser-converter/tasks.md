@@ -1800,6 +1800,13 @@ checked task is a stub.
   744 steps (744 passed)
   FULL_EXIT=0
   ```
+- [x] Post-review fix verification (2026-10-19, commit `0f882f5`): after the
+  trap/OOM recovery, privacy-note, breakpoint, `offerCalendar` and privacy-guard
+  fixes, `givn check tasks --change build-browser-converter` → 166/166
+  scenarios, 744/744 steps, verify passed; all 16 browser scenarios targeted →
+  16/16; `bash scripts/pii-guard.sh` → `pii-guard: clean`; `givn lint
+  --change build-browser-converter` → clean. The four evidence screenshots were
+  regenerated from the fixed page and committed with `0f882f5`.
 - [x] `./run-tests.sh --e2e` — e2e suite exits 0. 9 scenarios (9 passed), 71 steps
   (71 passed); strictly less than 166:
   ```
