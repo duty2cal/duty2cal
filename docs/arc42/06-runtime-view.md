@@ -253,6 +253,58 @@ flowchart TB
 
 **Notes:** The gate is enforced by the repository, not by habit, and a reader sees the outcome on the revision they are looking at.
 
+## Scenario: A pushed revision gains a size attribution
+
+**Trigger:** A revision is pushed or a pull request is opened; the release maintainer may request the same measurement for any named revision.
+
+```mermaid
+flowchart TB
+  rev["Named revision: the pushed revision, or a revision the maintainer names"] --> wt["temporary worktree at that revision"]
+  wt --> ship["shipped build: the committed build configuration (strip = true)"]
+  ship --> exe["stripped duty2cal.exe: file size, digest, section sizes"]
+  wt --> attr["build retaining the names: strip disabled for this build only, separate target directory"]
+  attr --> tool{"the build fails, or the generator reads no names?"}
+  tool -->|"yes"| none["report: no attribution; names what could not be read; the report is published and the job continues"]
+  tool -->|"no"| split["crate split, function split, .text total"]
+  exe --> report["attribution.json + attribution.md: revision, platform, build identity"]
+  split --> report
+  report -->|"every pushed revision"| art["the run's size-attribution artifact and step summary"]
+  exe -.->|"file size cannot be read"| incomplete["report: incomplete; states the file size is unavailable; never uses the split's total"]
+```
+
+**Steps:**
+
+1. The measurement resolves the named revision into a temporary worktree, so it never describes the working tree, and names the supported platform `x86_64-pc-windows-gnu`.
+2. It builds the shipped artifact with the committed build configuration and reads that stripped executable's file size, digest and section sizes.
+3. It builds the same revision again with `strip` disabled for that build only, in a separate target directory, and reads the crate split, the function split and that build's `.text` total.
+4. It writes one report — a machine-readable file and a human rendering of the same data — naming the requested revision, the resolved revision, the platform and the build's identity, with the split and the stripped executable's file size kept as separate numbers.
+5. The Windows cross-build job produces the report for the revision it built and publishes it beside that run; the release maintainer can run the same command for any named revision.
+
+**Notes:** A failed build or a build that keeps no names yields no attribution and names what could not be read; the report is still written, appended to the step summary and uploaded, and the job continues — the measurement is evidence, not a gate. A stripped executable whose file size cannot be read leaves the attribution explicitly incomplete and never presents the split's total as the file size. No number is inferred from the release archive or from a host build, and the shipped build configuration is unchanged. Scenario "A pushed change reaches the gated default branch" still decides whether the revision lands; the attribution does not refuse a revision or a release.
+
+## Scenario: A size lever is measured and landed
+
+**Trigger:** The release maintainer selects one stable lever the size attribution justifies.
+
+```mermaid
+flowchart TB
+  rev["Named revision"] --> wt["temporary worktree"]
+  wt --> base["baseline: panic = unwind, opt-level = z"]
+  wt --> lev["lever: panic = abort"]
+  base --> delta["delta = baseline - lever"]
+  lev --> delta
+  delta -->|"positive"| applied["applied: Cargo.toml panic = abort"]
+  delta -->|"zero or negative"| rejected["rejected: configuration unchanged"]
+  applied --> diag["host lever build: numbered diagnostic"]
+```
+
+**Steps:**
+
+1. The command refuses a nightly-only, UPX or dynamic-linking proposal before any build, naming the violated constraint.
+2. It resolves the revision into a worktree and rebuilds the unchanged configuration as the baseline; the published binary's size is reported separately and never used as the baseline.
+3. It builds each candidate lever cumulatively against the configuration carrying the previously accepted levers; a positive delta is applied, a zero or negative delta is rejected and the configuration stays.
+4. The landed `panic = "abort"` build is smaller by the recorded delta: 2,014,208 B against a 2,098,176 B rebuild on the release branch. A panic aborts with the standard Rust panic message; an unsupported source still writes a numbered diagnostic naming the source and reason.
+
 ## Scenario: The existing public home is adopted into the declared configuration
 
 **Trigger:** The maintainer asks to adopt the selected batch of objects that already exist on GitHub.

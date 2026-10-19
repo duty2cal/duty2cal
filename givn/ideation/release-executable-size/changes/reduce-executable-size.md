@@ -1,6 +1,6 @@
 # Change seed: reduce-executable-size
 
-Status: ready
+Status: proposed by reduce-executable-size
 
 - Use-case IDs: `reduce-distributed-executable-size`
 - Topic: `release-executable-size`
@@ -126,11 +126,13 @@ refuse rather than report.
 
 ### Which concrete example carries the success guarantee?
 
-Parked in Q8. The first lever's measured delta does not exist yet; inventing one
-would fabricate evidence. The example is recorded when the measurement exists.
+Resolved by the change's D3: the first measured lever, `panic = "abort"`, saves
+83,968 B (2,098,176 B → 2,014,208 B); that measured saving is the success
+example. No number is invented.
 
 ### When is the attribution produced?
 
-Inherited from `measure-executable-size` (Q6). Under a release-only cadence this
-seed's first step — consulting an attribution for the revision before selecting
-a lever — cannot start.
+Resolved by `measure-executable-size`: the attribution is produced for every
+pushed revision and requestable for any named revision, so the reduction's first
+step can consult one. The release-only cadence that would block it is no longer
+the chosen cadence.

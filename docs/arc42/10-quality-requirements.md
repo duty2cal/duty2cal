@@ -26,6 +26,7 @@ flowchart TB
   rel2 --> ri6["Committed change log matches the released revision"]
   rel2 --> ri7["Dependency updates are releasable and announced"]
   rel2 --> ri8["Publication waits for every check to conclude"]
+  rel2 --> ri9["Measured size attribution"]
   root --> browser["Browser conversion"]
   browser --> b1["Same calendar as the executable"]
   browser --> b2["No plan leaves the tab; no request after load"]
@@ -75,6 +76,8 @@ flowchart TB
 | QS-029 | Browser diagnostic fidelity | A conversion failure is produced and the diagnostic download is captured. | The captured `<stem>.parse-error.txt` contains `Source PDF: <filename>` and `Reason: <reason>` exactly as the executable composes them, and names the source stem. |
 | QS-030 | Browser save semantics | The offered calendar is saved, dismissed, or the page is reloaded. | A dismissed save leaves the offer visible and the page never reports a save; a reload shows the empty state and offers nothing. |
 | QS-031 | Browser evidence reproducibility | The browser suite is prepared on a clean machine. | Node resolves from the committed `.nvmrc`, Playwright/axe from the lockfile, `wasm-pack` from its pin, and Chromium from the Playwright package; a missing tool fails the run rather than skipping the browser scenarios. |
+| QS-032 | Measured size evidence | A revision is pushed, and the Windows cross-build produces its attribution; a build fails, a build keeps no names, and a stripped executable's file size cannot be read. | The report names the requested revision, the resolved revision and `x86_64-pc-windows-gnu`, records the build identity (toolchain, `cargo-bloat 0.12.1`, configuration digests), divides the build that retains the names by crate and by function, and states the stripped executable's file size beside the split; the two numbers are different quantities and neither is substituted for the other. A failed build or a build that keeps no names produces no attribution and names what could not be read; an unreadable file size leaves the report incomplete and never presents the split's total as the file size. The measurement is evidence, not a gate: its CI step publishes the report and exits zero, so it does not refuse a revision or a release. |
+| QS-033 | Measured size reduction | The release profile carries `panic = "abort"`; the unchanged configuration rebuilds to 2,098,176 B, the lever to 2,014,208 B, and `opt-level = "s"` measures larger. | The reduction is applied (83,968 B smaller); `opt-level = "s"` is rejected; the landed executable is rebuilt and measured smaller; a panic aborts with the standard message, and an unsupported source still writes a numbered diagnostic. |
 
 **Stimulus / response / metric** for the primary scenario:
 
