@@ -31,7 +31,7 @@ Feature: Publish site plumbing
     And the applied state records the generated pages publishing key material
     And a later targeted preview of the pages plumbing reports no differences
 
-  @givn.added @wip
+  @givn.added
   Scenario: The preview refuses each live object the revision would create and names it
     Given the applied state binds every object the earlier configuration changes declared
     And the pages repository already has a deploy key titled "duty2cal.github.io publish"

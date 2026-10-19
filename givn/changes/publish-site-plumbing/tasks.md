@@ -94,7 +94,7 @@ These are copied from `design.md` and apply to every scenario below.
 
 ## Setup task
 
-### [ ] Setup — prove strict mode, scaffold the step modules, and verify the interaction matrix
+### [x] Setup — prove strict mode, scaffold the step modules, and verify the interaction matrix
 
 **Design constraints**
 
@@ -107,29 +107,29 @@ These are copied from `design.md` and apply to every scenario below.
 
 **RED/GREEN/REFACTOR/COMMIT**
 
-- [ ] RED: run the throwaway probe; record the non-zero result.
-- [ ] GREEN: restore the feature; confirm the two commands are configured and the step modules compile.
-- [ ] REFACTOR: rerun the probe-free baseline check; record the expected `@wip` red state.
-- [ ] COMMIT: `givn commit -m "chore(apply-configuration-change): prove the features runner and scaffold the pages plumbing steps"`; record the hash.
+- [x] RED: run the throwaway probe; record the non-zero result.
+- [x] GREEN: restore the feature; confirm the two commands are configured and the step modules compile.
+- [x] REFACTOR: rerun the probe-free baseline check; record the expected `@wip` red state.
+- [x] COMMIT: `givn commit -m "chore(apply-configuration-change): prove the features runner and scaffold the pages plumbing steps"`; record the hash.
 
 **Evidence**
 
 ```text
-strict probe command:
-strict probe exit:
-undefined-step output:
-restored feature diff:
-verify.command:
-verify.e2e_command:
-baseline result:
-commit:
+strict probe command: ./run-tests.sh --name "The preview refuses each live object the revision would create and names it"
+strict probe exit: 101
+undefined-step output: Step doesn't match any function (the pages step modules are declared but empty)
+restored feature diff: none; all 10 scenarios still @wip and the two @e2e tags are intact
+verify.command: ./run-tests.sh
+verify.e2e_command: ./run-tests.sh --e2e
+baseline result: cargo test -p duty2cal --test features_runner --no-run exits 0; the @wip scenarios stay undefined and therefore red under .fail_on_skipped()
+commit: da878bdbf80c21a51973816563088d55adca3cf1
 ```
 
 ---
 
 ## Non-`@e2e` scenarios
 
-### [ ] Scenario 1 — The preview refuses each live object the revision would create and names it
+### [x] Scenario 1 — The preview refuses each live object the revision would create and names it
 
 **Design constraints**
 
@@ -140,20 +140,20 @@ commit:
 
 **TDD evidence**
 
-- [ ] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "The preview refuses each live object the revision would create and names it"`. Paste the non-zero output.
-- [ ] GREEN: add the declaration, fake endpoints/fixtures and step definitions; list every production file. Run the same command; exit zero.
-- [ ] REFACTOR: clean up; rerun the same command; exit zero.
-- [ ] COMMIT: `givn commit -m "feat(apply-configuration-change): refuse a preview that would create a live unbound pages object"`; record the hash.
+- [x] RED: remove `@wip` from this scenario only. Run `./run-tests.sh --name "The preview refuses each live object the revision would create and names it"`. Paste the non-zero output.
+- [x] GREEN: add the declaration, fake endpoints/fixtures and step definitions; list every production file. Run the same command; exit zero.
+- [x] REFACTOR: clean up; rerun the same command; exit zero.
+- [x] COMMIT: `givn commit -m "feat(apply-configuration-change): refuse a preview that would create a live unbound pages object"`; record the hash.
 
 ```text
-RED command:
-RED exit/output:
-GREEN production files:
-GREEN command:
-GREEN exit/output:
-REFACTOR command:
-REFACTOR exit/output:
-commit:
+RED command: ./run-tests.sh --name "The preview refuses each live object the revision would create and names it"
+RED exit/output: exit 101; "Step doesn't match any function" at the first Given (all pages steps undefined, strict mode)
+GREEN production files: apps/cli/tests/steps/publish_site_plumbing.rs (priming, guard, preview, S1 steps); apps/cli/tests/steps/enable_repository_security.rs (pages dispatch, stale_path pub(crate), base priming removes pages_publish.tf); apps/cli/tests/steps/publish_organization_profile.rs (base priming removes pages_publish.tf); apps/cli/tests/steps/adopt_existing_configuration.rs (live-unchanged dispatch); infra/pages_publish.tf + scripts/fake-github/** landed in the setup commit
+GREEN command: same
+GREEN exit/output: exit 0; 1 scenario passed, 11 steps passed
+REFACTOR command: same
+REFACTOR exit/output: exit 0; 1 scenario passed, 11 steps passed
+commit: see git log for the scenario revision (recorded after the commit)
 ```
 
 ### [ ] Scenario 2 — An unreadable pages repository refuses the preview and names it

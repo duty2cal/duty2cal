@@ -64,7 +64,7 @@ end
 "#;
 
 /// The sidecar that marks a partial apply's state stale.
-fn stale_path(w: &DutyWorld) -> PathBuf {
+pub(crate) fn stale_path(w: &DutyWorld) -> PathBuf {
     PathBuf::from(format!("{}.stale", state_path(w).display()))
 }
 
@@ -803,9 +803,12 @@ async fn the_owners_authority_cannot_change_the_monorepo(w: &mut DutyWorld) {
 
 #[when("the organization owner previews the declaration")]
 async fn the_organization_owner_previews_the_declaration(w: &mut DutyWorld) {
-    // The profile scenario owns the three profile targets; every other
-    // scenario follows the security routine (design.md "Step definitions").
-    if crate::steps::publish_organization_profile::is_profile_scenario(w) {
+    // The pages scenario owns the four pages targets, the profile scenario the
+    // three profile targets; every other scenario follows the security routine
+    // (design.md "Step definitions").
+    if crate::steps::publish_site_plumbing::is_pages_scenario(w) {
+        crate::steps::publish_site_plumbing::preview(w);
+    } else if crate::steps::publish_organization_profile::is_profile_scenario(w) {
         crate::steps::publish_organization_profile::preview(w);
     } else {
         preview(w);
@@ -1213,7 +1216,11 @@ async fn the_applied_state_is_marked_stale(w: &mut DutyWorld) {
 
 /// A preview made against a stale applied state refuses before `tofu` runs.
 fn assert_preview_refuses_stale(w: &mut DutyWorld) {
-    preview(w);
+    if crate::steps::publish_site_plumbing::is_pages_scenario(w) {
+        crate::steps::publish_site_plumbing::preview(w);
+    } else {
+        preview(w);
+    }
     assert_ne!(
         w.exit_status,
         Some(0),

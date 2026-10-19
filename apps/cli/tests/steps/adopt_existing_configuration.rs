@@ -797,6 +797,10 @@ async fn the_adoption_refuses_the_batch_and_names_the_organization_settings(w: &
 
 #[then("the live configuration is unchanged")]
 async fn the_live_configuration_is_unchanged(w: &mut DutyWorld) {
+    if crate::steps::publish_site_plumbing::is_pages_scenario(w) {
+        crate::steps::publish_site_plumbing::assert_live_unchanged(w);
+        return;
+    }
     assert_no_live_write(w);
 }
 
