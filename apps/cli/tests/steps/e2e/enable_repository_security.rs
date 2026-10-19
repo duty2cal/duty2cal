@@ -15,14 +15,14 @@ use std::path::PathBuf;
 
 use cucumber::{given, then};
 
-use crate::DutyWorld;
 use crate::steps::adopt_existing_configuration::{
-    BILLING_EMAIL, PASSPHRASE, TOKEN, declaration_dir, repository_root,
+    declaration_dir, repository_root, BILLING_EMAIL, PASSPHRASE, TOKEN,
 };
 use crate::steps::enable_repository_security::{
     assert_scanning_status, combined, ensure_base_state, jq, live_monorepo_report, preview,
     scenario_dir_for, state_addresses, state_values, tofu,
 };
+use crate::DutyWorld;
 
 /// The addresses the base apply and the second batch leave bound.
 const BOUND: [&str; 7] = [

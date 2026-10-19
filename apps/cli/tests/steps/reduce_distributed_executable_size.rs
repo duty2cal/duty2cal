@@ -11,11 +11,11 @@ use std::process::Command;
 
 use cucumber::{given, then, when};
 
-use crate::DutyWorld;
 use crate::steps::measure_distributed_executable_size::{
     field, fixture_repo, init_repo, repository_root, scenario_dir,
 };
 use crate::steps::publish_public_release::run_command;
+use crate::DutyWorld;
 
 /// The `size-lever.md` the measurement wrote.
 pub(crate) fn lever_report_text(w: &DutyWorld) -> String {

@@ -12,8 +12,8 @@ use std::process::Command;
 
 use cucumber::{given, then, when};
 
-use crate::DutyWorld;
 use crate::steps::publish_public_release::run_command;
+use crate::DutyWorld;
 
 /// The repository root: the working directory the measurement is invoked
 /// from, so the command line shows `scripts/measure_executable_size.py`.

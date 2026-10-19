@@ -11,11 +11,11 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use cucumber::{given, then, when};
 
-use crate::DutyWorld;
 use crate::steps::support::{
     self, ACTIVITY_X, AIRCRAFT_X, BLOCKTIME_X, DATE_X, END_X, FROM_X, LAYOVER_X, POS_X, START_X,
     TAGS_X, TO_X, TZ_X,
 };
+use crate::DutyWorld;
 
 /// Scenario sequence, so concurrently executed scenarios never share a directory.
 static SCENARIO_SEQUENCE: AtomicUsize = AtomicUsize::new(0);

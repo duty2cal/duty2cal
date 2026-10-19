@@ -9,11 +9,11 @@ use std::path::PathBuf;
 
 use cucumber::then;
 
-use crate::DutyWorld;
 use crate::steps::measure_distributed_executable_size::repository_root;
 use crate::steps::reduce_distributed_executable_size::{
     lever_report_text, run_unsupported_source_on_host_lever,
 };
+use crate::DutyWorld;
 
 fn transcript_path() -> PathBuf {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");

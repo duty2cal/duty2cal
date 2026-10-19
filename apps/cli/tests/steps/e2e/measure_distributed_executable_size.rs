@@ -10,11 +10,11 @@ use std::path::PathBuf;
 
 use cucumber::then;
 
-use crate::DutyWorld;
 use crate::steps::measure_distributed_executable_size::{
     build_fixture_for_target, field, fixture_repo, is_hex, number_after, report_text, scenario_dir,
     section,
 };
+use crate::DutyWorld;
 
 /// The transcript the visual contract requires, committed with the change
 /// while it is active and with the archive afterwards.

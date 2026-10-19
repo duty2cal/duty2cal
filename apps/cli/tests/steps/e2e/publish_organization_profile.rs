@@ -14,14 +14,14 @@ use std::path::PathBuf;
 
 use cucumber::{given, then};
 
-use crate::DutyWorld;
 use crate::steps::adopt_existing_configuration::{
-    BILLING_EMAIL, PASSPHRASE, TOKEN, fixtures_dir, journal_lines, repository_root,
+    fixtures_dir, journal_lines, repository_root, BILLING_EMAIL, PASSPHRASE, TOKEN,
 };
 use crate::steps::enable_repository_security::{fake_request, jq, state_addresses, state_values};
 use crate::steps::publish_organization_profile::{
     ensure_source_tree, preview, published_file, source_tree, write_profile_descriptors,
 };
+use crate::DutyWorld;
 
 /// The addresses the profile revision declares and the apply binds.
 const PROFILE_ADDRESSES: [&str; 3] = [

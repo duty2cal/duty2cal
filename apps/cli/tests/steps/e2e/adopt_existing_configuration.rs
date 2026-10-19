@@ -13,11 +13,11 @@ use std::path::PathBuf;
 
 use cucumber::{given, then};
 
-use crate::DutyWorld;
 use crate::steps::adopt_existing_configuration::{
     applied_state_addresses, applied_state_show, declaration_dir, journal_lines, prepare,
     repository_root,
 };
+use crate::DutyWorld;
 
 /// The five objects the selected batch binds, in batch order: the organization,
 /// both repositories, the default-branch rule and the site source.
