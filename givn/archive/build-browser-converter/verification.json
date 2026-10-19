@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "build-browser-converter",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "becb62c7eb4b8e540291e67c6a456c634b3530f9",
+  "tested_revision": "becb62c7eb4b8e540291e67c6a456c634b3530f9",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 278.651921976
+    },
+    "regular": {
+      "status": "passed",
+      "total": 166,
+      "passed": 166,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 972.193129142
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 880,
+    "line_valid": 894,
+    "line_percent": 98
+  },
   "started_at_unix": 1792417038,
-  "finished_at_unix": null
+  "finished_at_unix": 1792419270
 }

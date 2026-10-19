@@ -62,6 +62,7 @@ cargo run --release -p duty2cal -- <duty-plan.pdf>
 
 
 
+
 ## Download a release
 
 Every version tag publishes one release at the stable address
@@ -178,6 +179,7 @@ Add lint, build, and other project commands alongside these scripts.
 
 
 
+
 ### Releasing a version
 
 A version's notes are the release-note words of its released revisions, filtered
@@ -262,7 +264,7 @@ Contributions are signed off under the DCO (`git commit -s`); there is no CLA
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 98% (876/890)
+Line coverage: 98% (880/894)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:
