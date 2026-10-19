@@ -12,8 +12,8 @@ use std::process::Command;
 
 use cucumber::{given, then, when};
 
-use crate::steps::publish_public_release::run_command;
 use crate::DutyWorld;
+use crate::steps::publish_public_release::run_command;
 
 /// The repository root: the working directory the measurement is invoked
 /// from, so the command line shows `scripts/measure_executable_size.py`.
@@ -30,10 +30,8 @@ pub(crate) fn fixture_source() -> PathBuf {
 fn fresh_dir() -> PathBuf {
     let mut attempt = 0u32;
     loop {
-        let path = std::env::temp_dir().join(format!(
-            "duty2cal-measure-{}-{attempt}",
-            std::process::id()
-        ));
+        let path =
+            std::env::temp_dir().join(format!("duty2cal-measure-{}-{attempt}", std::process::id()));
         if path.exists() {
             attempt += 1;
             continue;
@@ -83,7 +81,8 @@ fn copy_dir_all(source: &Path, destination: &Path) {
 }
 
 fn replace_in_file(path: &Path, from: &str, to: &str) {
-    let text = fs::read_to_string(path).unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+    let text =
+        fs::read_to_string(path).unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
     assert!(
         text.contains(from),
         "the fixture file {} does not contain {from:?}",
@@ -111,7 +110,11 @@ pub(crate) fn init_repo(w: &mut DutyWorld, with_newest: bool) {
             "fixture_alpha",
             "fixture_beta",
         );
-        replace_in_file(&repo.join("app/src/main.rs"), "fixture_alpha", "fixture_beta");
+        replace_in_file(
+            &repo.join("app/src/main.rs"),
+            "fixture_alpha",
+            "fixture_beta",
+        );
         run_git(&repo, &["add", "-A"]);
         run_git(&repo, &["commit", "-qm", "newest"]);
     }
@@ -195,11 +198,7 @@ fn preflight(need_generator: bool) {
 }
 
 /// Run the measurement command and record its output in the world.
-pub(crate) fn run_measurement(
-    w: &mut DutyWorld,
-    revision: &str,
-    executable: Option<&Path>,
-) {
+pub(crate) fn run_measurement(w: &mut DutyWorld, revision: &str, executable: Option<&Path>) {
     let repo = fixture_repo(w);
     let out = scenario_dir(w).join("out");
     let mut command = Command::new("python3");
@@ -248,7 +247,10 @@ pub(crate) fn section<'a>(text: &'a str, heading: &str) -> &'a str {
         .find(heading)
         .unwrap_or_else(|| panic!("the report carries no {heading:?} section:\n{text}"));
     let rest = &text[start + heading.len()..];
-    let end = rest.find("\n## ").map(|index| index + 1).unwrap_or(rest.len());
+    let end = rest
+        .find("\n## ")
+        .map(|index| index + 1)
+        .unwrap_or(rest.len());
     &rest[..end]
 }
 
@@ -279,8 +281,15 @@ fn assert_no_attribution(text: &str) {
     );
 }
 
-#[given(regex = r#"^a repository whose earlier revision "([^"]+)" carries the function "([^"]+)" and whose newest revision carries "([^"]+)" instead$"#)]
-async fn a_repository_with_an_earlier_revision(w: &mut DutyWorld, tag: String, older: String, newer: String) {
+#[given(
+    regex = r#"^a repository whose earlier revision "([^"]+)" carries the function "([^"]+)" and whose newest revision carries "([^"]+)" instead$"#
+)]
+async fn a_repository_with_an_earlier_revision(
+    w: &mut DutyWorld,
+    tag: String,
+    older: String,
+    newer: String,
+) {
     assert_eq!(tag, "v0.3.0", "the scenario names the earlier revision");
     assert_eq!(older, "fixture_alpha");
     assert_eq!(newer, "fixture_beta");
@@ -400,10 +409,8 @@ async fn a_tool_is_not_available(w: &mut DutyWorld, tool: String) {
         fs::set_permissions(&shim, permissions).expect("mark the objdump shim executable");
     }
     let existing = std::env::var("PATH").unwrap_or_default();
-    w.env.push((
-        "PATH".to_string(),
-        format!("{}:{existing}", bin.display()),
-    ));
+    w.env
+        .push(("PATH".to_string(), format!("{}:{existing}", bin.display())));
 }
 
 #[when(regex = r#"^the maintainer requests the size attribution for "([^"]+)"$"#)]

@@ -11,11 +11,12 @@ use std::process::Command;
 
 use cucumber::{given, then, when};
 
-use crate::steps::publish_public_release::{
-    build_history, change_log_path, run_command, sha256_of, stage_stand_in_executable,
-    staged_archive, staged_dir, supported_executable, supported_platform, FIRST_RELEASE_HISTORY,
-};
 use crate::DutyWorld;
+use crate::steps::publish_public_release::{
+    FIRST_RELEASE_HISTORY, build_history, change_log_path, run_command, sha256_of,
+    stage_stand_in_executable, staged_archive, staged_dir, supported_executable,
+    supported_platform,
+};
 
 /// Where the scenario's terminal transcript is committed as evidence. The
 /// change owns it while it is active; the archive owns it afterwards.

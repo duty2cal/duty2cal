@@ -879,7 +879,9 @@ async fn an_unreadable_executable(w: &mut DutyWorld, platform: String) {
     panic!("the release-preparation scenarios are Linux-only");
 }
 
-#[given("a history whose released revisions carry release-note subjects, including one subject repeated by several revisions and one subject that carries no release-note type, and whose housekeeping revisions do not")]
+#[given(
+    "a history whose released revisions carry release-note subjects, including one subject repeated by several revisions and one subject that carries no release-note type, and whose housekeeping revisions do not"
+)]
 async fn a_history_with_release_note_subjects(w: &mut DutyWorld) {
     // The preparation renders the release text out of this history, so the
     // fixture carries the committed configuration, the capability directories
@@ -924,7 +926,9 @@ async fn the_release_text_lists_these_release_notes(w: &mut DutyWorld, step: &St
     );
 }
 
-#[then("the release text omits the housekeeping revisions and the subject that carries no release-note type")]
+#[then(
+    "the release text omits the housekeeping revisions and the subject that carries no release-note type"
+)]
 async fn the_release_text_omits_the_others(w: &mut DutyWorld) {
     let text = release_text_or_change_log(w);
     for omitted in OMITTED {
@@ -2246,7 +2250,9 @@ async fn notes_name_the_dependency_update(w: &mut DutyWorld) {
     );
 }
 
-#[given("a history whose released revisions name only work no user can see, including dependency updates that changed no path a user receives")]
+#[given(
+    "a history whose released revisions name only work no user can see, including dependency updates that changed no path a user receives"
+)]
 async fn a_history_with_no_announceable_entries(w: &mut DutyWorld) {
     build_history_with(
         w,
@@ -2329,7 +2335,9 @@ const EMPTY_CAPABILITY_BEFORE_DEPENDENCY_HISTORY: [(&str, &str, &str); 3] = [
     ),
 ];
 
-#[given("a history whose capability revision changed only a path no user receives, beside a dependency update that changed the dependency graph")]
+#[given(
+    "a history whose capability revision changed only a path no user receives, beside a dependency update that changed the dependency graph"
+)]
 async fn a_history_with_an_emptied_capability_group(w: &mut DutyWorld) {
     build_history_with(
         w,
@@ -2692,7 +2700,9 @@ async fn gate_refuses_for_no_check_evidence(w: &mut DutyWorld) {
     );
 }
 
-#[given("the default branch and a version tag pushed together, each starting a check suite on the same revision")]
+#[given(
+    "the default branch and a version tag pushed together, each starting a check suite on the same revision"
+)]
 async fn branch_and_tag_pushed_together_with_two_suites(w: &mut DutyWorld) {
     let first = check_poll(&[check_page(&[
         check_run(7, "test", "completed", Some("success")),
@@ -2721,7 +2731,9 @@ async fn gate_waits_for_both_suites(w: &mut DutyWorld) {
     assert_eq!(gate_calls(w), 2, "the gate did not poll both suites");
 }
 
-#[then("the gate reports the revision ready to publish only once every check in both suites has concluded successfully")]
+#[then(
+    "the gate reports the revision ready to publish only once every check in both suites has concluded successfully"
+)]
 async fn gate_ready_only_once_both_suites_concluded(w: &mut DutyWorld) {
     assert_eq!(
         w.exit_status,

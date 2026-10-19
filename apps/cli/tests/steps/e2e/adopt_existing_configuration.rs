@@ -13,11 +13,11 @@ use std::path::PathBuf;
 
 use cucumber::{given, then};
 
+use crate::DutyWorld;
 use crate::steps::adopt_existing_configuration::{
     applied_state_addresses, applied_state_show, declaration_dir, journal_lines, prepare,
     repository_root,
 };
-use crate::DutyWorld;
 
 /// The five objects the selected batch binds, in batch order: the organization,
 /// both repositories, the default-branch rule and the site source.
@@ -129,7 +129,9 @@ async fn the_public_home_already_exists(w: &mut DutyWorld) {
     );
 }
 
-#[given("the declared configuration names the organization, both repositories, the default-branch rule and the site source")]
+#[given(
+    "the declared configuration names the organization, both repositories, the default-branch rule and the site source"
+)]
 async fn the_declared_configuration_names_every_adopted_object(w: &mut DutyWorld) {
     let declaration = declaration_text(w);
     for (address, _) in ADOPTED {
@@ -157,7 +159,9 @@ async fn the_selected_batch_names_those_objects(w: &mut DutyWorld) {
     );
 }
 
-#[then("the adoption reports the organization, both repositories, the default-branch rule and the site source as bound")]
+#[then(
+    "the adoption reports the organization, both repositories, the default-branch rule and the site source as bound"
+)]
 async fn the_adoption_reports_every_object_as_bound(w: &mut DutyWorld) {
     let output = format!("{}{}", w.stdout, w.stderr);
     assert_eq!(

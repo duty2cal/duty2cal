@@ -11,11 +11,11 @@ use std::process::Command;
 
 use cucumber::{given, then, when};
 
+use crate::DutyWorld;
 use crate::steps::measure_distributed_executable_size::{
     field, fixture_repo, init_repo, repository_root, scenario_dir,
 };
 use crate::steps::publish_public_release::run_command;
-use crate::DutyWorld;
 
 /// The `size-lever.md` the measurement wrote.
 pub(crate) fn lever_report_text(w: &DutyWorld) -> String {
@@ -140,10 +140,7 @@ fn run_git(repo: &Path, args: &[&str]) -> String {
 }
 
 fn run_lever(w: &mut DutyWorld, levers: &str) {
-    let repo = w
-        .lever_repo
-        .clone()
-        .unwrap_or_else(repository_root);
+    let repo = w.lever_repo.clone().unwrap_or_else(repository_root);
     let revision = w
         .lever_revision
         .clone()
@@ -205,8 +202,11 @@ async fn a_fixture_revision_that_does_not_build(w: &mut DutyWorld) {
     let repo = fixture_repo(w);
     let source = repo.join("support/src/lib.rs");
     let text = fs::read_to_string(&source).expect("read the fixture support source");
-    fs::write(&source, format!("compile_error!(\"fixture_build_failure\");\n{text}"))
-        .expect("break the fixture build");
+    fs::write(
+        &source,
+        format!("compile_error!(\"fixture_build_failure\");\n{text}"),
+    )
+    .expect("break the fixture build");
     run_git(&repo, &["add", "-A"]);
     run_git(&repo, &["commit", "-qm", "broken"]);
     w.lever_repo = Some(repo.clone());
@@ -239,7 +239,11 @@ async fn lever_applied_and_smaller(w: &mut DutyWorld) {
     let saved = row[4].parse::<i64>().expect("saved bytes");
     let landed = lever_number(&text, "- Landed (committed configuration): ");
     assert!(lever < baseline, "the lever build is not smaller: {text}");
-    assert_eq!(saved, baseline as i64 - lever as i64, "the saved bytes are wrong: {text}");
+    assert_eq!(
+        saved,
+        baseline as i64 - lever as i64,
+        "the saved bytes are wrong: {text}"
+    );
     assert_eq!(
         landed, lever,
         "the landed build differs from the accepted lever build: {text}"
@@ -310,7 +314,10 @@ async fn lever_rejected(w: &mut DutyWorld) {
         lever > row_baseline,
         "the rejected lever is not larger than its cumulative baseline: {text}"
     );
-    assert!(saved < 0, "the rejected lever's saved bytes are not negative: {text}");
+    assert!(
+        saved < 0,
+        "the rejected lever's saved bytes are not negative: {text}"
+    );
     assert_report_surface(w);
 }
 

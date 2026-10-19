@@ -13,14 +13,14 @@ use std::process::Command;
 
 use cucumber::{given, then, when};
 
+use crate::DutyWorld;
 use crate::steps::adopt_existing_configuration::{
     copy_declaration, copy_tree, declaration_dir, fixtures_dir, journal_lines, repository_root,
     scenario_dir, start_fake_with, state_path,
 };
 use crate::steps::enable_repository_security::{
-    combined, fake_request, jq, state_addresses, state_values, tofu, PREFLIGHT_FILTER,
+    PREFLIGHT_FILTER, combined, fake_request, jq, state_addresses, state_values, tofu,
 };
-use crate::DutyWorld;
 
 /// The three resources the profile revision declares, in the design's order.
 const TARGETS: [&str; 3] = [

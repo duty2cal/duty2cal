@@ -16,12 +16,12 @@ use std::process::{Command, Output};
 
 use cucumber::{given, then, when};
 
-use crate::steps::adopt_existing_configuration::{
-    adopt, adoption_output, copy_declaration, copy_tree, declaration_dir, fixtures_dir,
-    journal_lines, repository_root, restart_fake_with, scenario_dir, start_fake_with, state_path,
-    terraformrc, BILLING_EMAIL, PASSPHRASE, TOKEN,
-};
 use crate::DutyWorld;
+use crate::steps::adopt_existing_configuration::{
+    BILLING_EMAIL, PASSPHRASE, TOKEN, adopt, adoption_output, copy_declaration, copy_tree,
+    declaration_dir, fixtures_dir, journal_lines, repository_root, restart_fake_with, scenario_dir,
+    start_fake_with, state_path, terraformrc,
+};
 
 /// The preview guard: refuse a create for a setting that is already live and
 /// unbound (design.md "The apply procedure").

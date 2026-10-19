@@ -10,11 +10,11 @@ use std::path::PathBuf;
 
 use cucumber::then;
 
-use crate::steps::measure_distributed_executable_size::{
-    build_fixture_for_target, field, fixture_repo, is_hex, number_after, report_text,
-    scenario_dir, section,
-};
 use crate::DutyWorld;
+use crate::steps::measure_distributed_executable_size::{
+    build_fixture_for_target, field, fixture_repo, is_hex, number_after, report_text, scenario_dir,
+    section,
+};
 
 /// The transcript the visual contract requires, committed with the change
 /// while it is active and with the archive afterwards.
@@ -42,10 +42,7 @@ fn commit_transcript(w: &DutyWorld) {
     }
     let mut evidence = w
         .scenario_transcript
-        .replace(
-            &w.working_dir().display().to_string(),
-            "<scenario-dir>",
-        );
+        .replace(&w.working_dir().display().to_string(), "<scenario-dir>");
     if let Some(out) = &w.measurement_out {
         let report = out.join("attribution.md");
         if let Ok(text) = fs::read_to_string(&report) {
@@ -53,10 +50,7 @@ fn commit_transcript(w: &DutyWorld) {
             evidence.push_str(&text);
         }
     }
-    evidence.push_str(&format!(
-        "exit status: {}\n",
-        w.exit_status.unwrap_or(-1)
-    ));
+    evidence.push_str(&format!("exit status: {}\n", w.exit_status.unwrap_or(-1)));
     fs::write(&path, evidence).expect("write the transcript");
 }
 
@@ -66,7 +60,9 @@ async fn names_platform(w: &mut DutyWorld, platform: String) {
     assert_eq!(field(&text, "- Platform: "), platform);
 }
 
-#[then(regex = r#"^the build identity records the rustc version, "([^"]+)", and a digest of "([^"]+)" and "([^"]+)"$"#)]
+#[then(
+    regex = r#"^the build identity records the rustc version, "([^"]+)", and a digest of "([^"]+)" and "([^"]+)"$"#
+)]
 async fn records_build_identity(
     w: &mut DutyWorld,
     generator: String,
