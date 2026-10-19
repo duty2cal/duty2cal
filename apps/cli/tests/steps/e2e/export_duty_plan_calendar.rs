@@ -92,8 +92,19 @@ async fn success_exit_status(w: &mut DutyWorld) {
 
 /// The committed per-viewport visual evidence directory for this scenario.
 fn evidence_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
-        "../../givn/changes/build-browser-converter/evidence/visual/\
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let active = root.join("givn/changes/build-browser-converter");
+    let archived = root.join("givn/archive/build-browser-converter");
+    // The archive gate moves the change before it runs the suite. Write the
+    // evidence to the archived copy in that phase so the tested tree stays
+    // inside the candidate; the active change uses its own directory.
+    let base = if active.join("proposal.md").is_file() {
+        active
+    } else {
+        archived
+    };
+    base.join(
+        "evidence/visual/\
          crew-member-converts-a-supported-duty-plan-in-the-browser-and-saves-the-offered-calendar",
     )
 }

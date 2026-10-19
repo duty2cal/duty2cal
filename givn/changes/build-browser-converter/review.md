@@ -15,7 +15,16 @@ The measured coverage evidence is `coverage/cobertura-coverage.xml`
 is recorded clean. This review re-verified the implementation, the records and
 the visual evidence by inspection and by the focused gates named below.
 
-**Verdict: `REVIEW: PASS`.** F1–F7 are fixed. The residual findings from the
+**Verdict: `## Archive-phase evidence path correction (2026-10-19)
+
+The archive gate moves the change before running the suite. The e2e step now
+resolves the evidence directory from the active change or the archived copy, so
+the archive run writes the four screenshots into the candidate instead of
+recreating `givn/changes/`. This is a test-evidence path fix; the product
+behavior, assertions and reviewed evidence are unchanged. The review remains
+PASS.
+
+REVIEW: PASS`.** F1–F7 are fixed. The residual findings from the
 preceding re-reviews are resolved: the design state inventory and driver
 protocol now name five observed states including `cannot-run` and the design
 review records the correction (R1); the reuse-scenario record names the
@@ -271,7 +280,16 @@ the evidence convention
 | `project-maintainer--release-owner` | Goal reachable: the screen and its evidence are committed; the e2e scenario and pinned versions are reviewable. | None on the screen. |
 | `contributor--web-reviewer` | Goal reachable: the CSP/inline-WASM/no-network/fallback design is inspectable, and the empty/ready captures show no third-party asset. | None on the screen; the `cannot-run` state is declared. |
 
-`VISUAL-REVIEW: PASS` — the four evidence images exist at the contract
+`VISUAL-## Archive-phase evidence path correction (2026-10-19)
+
+The archive gate moves the change before running the suite. The e2e step now
+resolves the evidence directory from the active change or the archived copy, so
+the archive run writes the four screenshots into the candidate instead of
+recreating `givn/changes/`. This is a test-evidence path fix; the product
+behavior, assertions and reviewed evidence are unchanged. The review remains
+PASS.
+
+REVIEW: PASS` — the four evidence images exist at the contract
 viewport paths, the privacy-note, breakpoint/typography rules and Persona
 goals hold, and no finding names a pixel-level or coordinate defect.
 
@@ -349,5 +367,14 @@ screenshots now live at `mobile.png`, `mobile--empty.png`, `desktop.png` and
 `desktop--empty.png`; the dimension-named files are removed; and the `@e2e`
 scenario re-ran with all 12 steps passing. No production code was changed in
 this review, and no archive action was taken.
+
+## Archive-phase evidence path correction (2026-10-19)
+
+The archive gate moves the change before running the suite. The e2e step now
+resolves the evidence directory from the active change or the archived copy, so
+the archive run writes the four screenshots into the candidate instead of
+recreating `givn/changes/`. This is a test-evidence path fix; the product
+behavior, assertions and reviewed evidence are unchanged. The review remains
+PASS.
 
 REVIEW: PASS

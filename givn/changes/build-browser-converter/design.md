@@ -1025,3 +1025,9 @@ the capability spec and `givn/specs/export-duty-plan-calendar/usecase.md`, not a
 ADR. The Playwright/JSON-lines driver is test tooling owned by this
 `design.md`, not an ADR. The arc42-docs artifact owns the ADR text and the
 register entry; both are applied in `docs/arc42/adr/` and chapter 09.
+
+**Archive-phase evidence path:** the archive gate moves the change to
+`givn/archive/<id>/` before it runs the suite. The e2e step resolves the
+evidence directory from the active change when `proposal.md` is present and
+from the archived copy otherwise, so the archive run writes the evidence into
+the candidate rather than recreating `givn/changes/`.
