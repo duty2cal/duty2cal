@@ -229,13 +229,19 @@ transient:
 | converting | `Converting…` status, picker disabled | no new plan until the attempt settles |
 | calendar ready | `Calendar ready` heading, `Save <stem>.ics` offer, privacy note | picker enabled, offer clickable |
 | failure | `Conversion failed` heading, reason, `Save <stem>.parse-error.txt` if available, `Choose another plan` | reset enabled |
+| cannot-run (startup) | `This browser cannot run the converter` heading, reason, no picker | none |
 
-The declared screen states are empty, ready and failure. The `@e2e` scenario
-traverses empty and ready and captures both at each viewport. The failure state
-is asserted by the regular failure scenarios (heading, reason, diagnostic offer
-or its absence, and the way back) and its approved reference render is
-committed under `docs/design/reference/`. The converting state is a transient
-status, not a declared screen state, and is not captured.
+The declared conversion-screen states are empty, ready and failure. The
+`cannot-run` state is a startup state outside the conversion flow: the
+capability gate or a module/instantiation failure renders it before the picker
+exists. It is asserted by the WebAssembly, ES-module and startup-failure
+scenarios and has a reference view in the design reference; the `@e2e`
+scenario does not traverse it. The `@e2e` scenario traverses empty and ready
+and captures both at each viewport. The failure state is asserted by the
+regular failure scenarios (heading, reason, diagnostic offer or its absence,
+and the way back) and its approved reference render is committed under
+`docs/design/reference/`. The converting state is a transient status, not a
+declared screen state, and is not captured.
 
 Every `acceptFile` call begins by clearing the previous attempt: it revokes the
 live calendar and diagnostic object URLs, removes the offer links and resets
@@ -412,9 +418,11 @@ form-action 'none'
   both scans (ADR-0006 state ciphertext, where the identifier pattern is a
   false positive on base64), and, in the history scan only, the superseded
   `apps/cli/tests/fixtures/expected/2026-06.ics` revisions (generated test data
-  at a path later overwritten by the fictional-date fixture). No other path is
-  excluded and no non-fictional year is allowed: a real 2026 calendar outside
-  those paths still fails the gate.
+  at a path later overwritten by the fictional-date fixture). The guard's own
+  file and the standard `.git`, `target` and `private` directories are excluded
+  by construction; every other path, including shell scripts, is scanned. No
+  non-fictional year is allowed: a real 2026 calendar outside those paths still
+  fails the gate.
 
 ## Step definition locations
 
@@ -628,11 +636,14 @@ belongs to `publish-public-website`.
   page rather than an external style tile.
 
 **Screens covered:** the converter screen served from the built Site output —
-one page with the empty, ready and failure screen states. The page has no
-separate routes. "Converting" is a transient status, not a declared screen
-state. The public publication of the page is the separate
-`publish-public-website` change; the contract covers the page the built output
-contains.
+one page with the empty, ready and failure screen states, plus the
+`cannot-run` startup state rendered before the picker exists when the browser
+lacks WebAssembly/ES modules or the module cannot initialize. "Converting" is a
+transient status, not a declared screen state. The startup state is asserted by
+the regular capability/startup scenarios and has a reference view in
+`docs/design/reference/`; the `@e2e` scenario does not traverse it. The public
+publication of the page is the separate `publish-public-website` change; the
+contract covers the page the built output contains.
 
 **Design tokens** (style-level; the implementation may adjust values within
 the stated contrast and scale rules):
