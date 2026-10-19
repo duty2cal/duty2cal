@@ -581,8 +581,8 @@ is offered; a diagnostic offer is attempted.
   7 steps (7 passed)
   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A plan larger than the supported size bound is refused by name`; Hash: `<record the revision identifier here>`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+  `Scenario: A plan larger than the supported size bound is refused by name`; Hash: `8b33b3433df23a2f2a0d62b09e6619338b784f85`
 
 ### 4. A source outside the supported family is rejected with a diagnostic offer
 
@@ -601,31 +601,36 @@ fails explicitly; no calendar is offered and a diagnostic is attempted.
   `Source PDF: notes.pdf\nReason: <unsupported-family reason>\n`.
 - No request leaves the page.
 
-- [ ] RED — remove `@wip` from this scenario only; add its new step bodies as
+- [x] RED — remove `@wip` from this scenario only; add its new step bodies as
   `unimplemented!()` stubs (previously implemented shared steps stay implemented); run:
   ```
-  $ ./run-tests.sh --name "A source outside the supported family is rejected with a diagnostic offer"
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A source outside the supported family is rejected with a diagnostic offer"
   Feature: Export a duty-plan calendar
     Scenario: A source outside the supported family is rejected with a diagnostic offer
      ✔  Given the converter page served from the built Site output
      ✘  When the crew member supplies the file "notes.pdf" that is not a supported duty plan
-        Step panicked. Captured output: not implemented: build the unsupported-family PDF and supply it
+        Step failed:
+        Defined: tmp/tmp.fr8dmk0gjt/f0006.feature:47:5
+        Matched: apps/cli/tests/steps/export_duty_plan_calendar.rs:2886:1
+        Step panicked. Captured output: not implemented: the crew member supplies the file that is not a supported duty plan
   [Summary]
   1 feature
   1 scenario (1 failed)
   2 steps (1 passed, 1 failed)
   RED_EXIT=101
   ```
-- [ ] GREEN — real assertions; production files:
+- [x] GREEN — real assertions; production files:
   - None created. Exercised unchanged: `crates/duty2cal-pdf/src/lib.rs`
     (`PdfRosterSource` recognition), `crates/duty2cal-core/src/application/mod.rs`
     (`SourceError::UnsupportedFamily`), `ffi/wasm/src/lib.rs` (error mapping), and the
     failure/diagnostic path in `web/app.js` completed by the previous scenario.
   - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the family steps and the
-    captured diagnostic download.
-  Run:
+    captured diagnostic download. The fixture is a readable PDF without the detail-table
+    header, so the family check — not the size guard or a read error — refuses it.
   ```
-  $ ./run-tests.sh --name "A source outside the supported family is rejected with a diagnostic offer"
+  $ cargo fmt --all --check -> FMT OK
+  $ cargo clippy --workspace --all-targets -- -D warnings -> clean (CLIPPY_EXIT=0)
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A source outside the supported family is rejected with a diagnostic offer"
   Feature: Export a duty-plan calendar
     Scenario: A source outside the supported family is rejected with a diagnostic offer
      ✔  Given the converter page served from the built Site output
@@ -641,10 +646,26 @@ fails explicitly; no calendar is offered and a diagnostic is attempted.
   7 steps (7 passed)
   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — assert a fresh unsupported PDF truly reports the family reason (not a
-  read error), re-run:
+- [x] REFACTOR — assert a fresh unsupported PDF truly reports the family reason (not a
+  read error). The captured diagnostic must start with `Source PDF: notes.pdf` and carry
+  `not a supported Released Roster detail-table export`; a read error would carry
+  `the source is not a readable PDF` instead and fail the assertion. Re-run:
   ```
-  1 scenario (1 passed), 7 steps (7 passed)   REFACTOR_EXIT=0
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A source outside the supported family is rejected with a diagnostic offer"
+  Feature: Export a duty-plan calendar
+    Scenario: A source outside the supported family is rejected with a diagnostic offer
+     ✔  Given the converter page served from the built Site output
+     ✔  When the crew member supplies the file "notes.pdf" that is not a supported duty plan
+     ✔  Then the page shows a failure heading and a failure naming "notes.pdf"
+     ✔  And the page offers no calendar
+     ✔  And the page offers the diagnostic text "notes.parse-error.txt"
+     ✔  And the diagnostic text identifies "notes.pdf" and the unsupported-family reason
+     ✔  And the page offers a way to choose another plan
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  7 steps (7 passed)
+  REFACTOR_EXIT=0
   ```
 - [ ] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A source outside the supported family is rejected with a diagnostic offer`; Hash: `<record the revision identifier here>`

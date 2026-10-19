@@ -41,7 +41,7 @@ Feature: Export a duty-plan calendar
     And the diagnostic text identifies "2026-06.pdf" and the size failure
     And the page offers a way to choose another plan
 
-  @givn.added @wip
+  @givn.added
   Scenario: A source outside the supported family is rejected with a diagnostic offer
     Given the converter page served from the built Site output
     When the crew member supplies the file "notes.pdf" that is not a supported duty plan
