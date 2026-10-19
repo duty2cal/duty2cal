@@ -128,6 +128,38 @@ pub fn weekday_abbreviation(year: i32, month: u32, day: u32) -> &'static str {
 /// Coordinates are in page space (origin bottom-left); the page is A4-sized.
 /// The heading and the date spelling are the producer's, never the fixture's.
 pub fn build_pdf(items: &[(f64, f64, String)]) -> Vec<u8> {
+    build_pdf_with_padding(items, 0)
+}
+
+/// Build a PDF of exactly `size` bytes whose page content stays readable.
+///
+/// The padding is one comment line inside the content stream, so the trailing
+/// `%%EOF` stays where the reader expects it. `/Length` grows with the
+/// padding, so the builder corrects for the changed digit count.
+pub fn build_pdf_at_size(items: &[(f64, f64, String)], size: usize) -> Vec<u8> {
+    let base = build_pdf(items);
+    assert!(
+        base.len() <= size,
+        "a {size}-byte PDF cannot hold the {} bytes of fixture content",
+        base.len()
+    );
+    let mut padding = size - base.len();
+    for _ in 0..8 {
+        let pdf = build_pdf_with_padding(items, padding);
+        if pdf.len() == size {
+            return pdf;
+        }
+        if pdf.len() < size {
+            padding += size - pdf.len();
+        } else {
+            padding = padding.saturating_sub(pdf.len() - size);
+        }
+    }
+    panic!("could not build a PDF of exactly {size} bytes");
+}
+
+/// The PDF builder with `padding` bytes of content-stream comment.
+fn build_pdf_with_padding(items: &[(f64, f64, String)], padding: usize) -> Vec<u8> {
     let (printed, heading) = producer_layout(items);
     let mut all = heading.unwrap_or_default();
     all.extend(printed);
@@ -137,6 +169,15 @@ pub fn build_pdf(items: &[(f64, f64, String)]) -> Vec<u8> {
         content.push_str(&format!("1 0 0 1 {x} {y} Tm ({}) Tj\n", escape(text)));
     }
     content.push_str("ET\n");
+    match padding {
+        0 => {}
+        1 => content.push('\n'),
+        _ => {
+            content.push('%');
+            content.push_str(&" ".repeat(padding - 2));
+            content.push('\n');
+        }
+    }
 
     let objects = [
         "<< /Type /Catalog /Pages 2 0 R >>".to_string(),

@@ -10,7 +10,9 @@ use std::process::Command;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use cucumber::{given, then, when};
+use serde_json::{Map, Value};
 
+use crate::steps::browser::BrowserDriver;
 use crate::steps::support::{
     self, ACTIVITY_X, AIRCRAFT_X, BLOCKTIME_X, DATE_X, END_X, FROM_X, LAYOVER_X, POS_X, START_X,
     TAGS_X, TO_X, TZ_X,
@@ -2683,9 +2685,125 @@ async fn a_plan_with_an_unusable_footer_stamp(w: &mut DutyWorld) {
 // browser scenario can pass before its step is implemented.
 // ---------------------------------------------------------------------------
 
+/// The driver for the current scenario, started on first use.
+fn driver(w: &mut DutyWorld) -> &mut BrowserDriver {
+    w.browser.get_or_insert_with(BrowserDriver::start)
+}
+
+/// The page's current observation object.
+fn page_state(w: &mut DutyWorld) -> Value {
+    driver(w).send("read_state", Map::new())
+}
+
+/// Write a named source fixture into a fresh scenario directory.
+fn named_source(w: &mut DutyWorld, name: &str, bytes: Vec<u8>) {
+    let dir = fresh_dir();
+    let source = dir.join(name);
+    std::fs::write(&source, bytes).expect("write the source fixture");
+    w.dir = Some(dir);
+    w.source = Some(source);
+}
+
+/// Supply the scenario's source through the real file picker.
+fn supply_through_picker(w: &mut DutyWorld) {
+    let path = w.source_path();
+    let mut params = Map::new();
+    params.insert(
+        "path".to_string(),
+        Value::String(path.display().to_string()),
+    );
+    driver(w).send("set_file", params);
+}
+
+/// Save one offered download and return the file it was written to.
+fn capture_offer(w: &mut DutyWorld, kind: &str, file_name: &str) -> PathBuf {
+    let path = w.working_dir().join(file_name);
+    let mut params = Map::new();
+    params.insert("kind".to_string(), Value::String(kind.to_string()));
+    params.insert(
+        "path".to_string(),
+        Value::String(path.display().to_string()),
+    );
+    driver(w).send("save_offer", params);
+    path
+}
+
+/// The diagnostic the page offers, read back from the captured download.
+fn captured_diagnostic(w: &mut DutyWorld) -> String {
+    let path = capture_offer(w, "diagnostic", "offered.parse-error.txt");
+    std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read the offered diagnostic {}: {error}", path.display()))
+}
+
+/// Assert the page shows a failure heading and a reason containing `needle`.
+fn assert_failure_containing(w: &mut DutyWorld, needle: &str) {
+    let state = page_state(w);
+    assert_eq!(
+        state["state"].as_str(),
+        Some("failure"),
+        "expected the visible failure state: {state}"
+    );
+    let text = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        text.contains("Conversion failed"),
+        "the failure heading is not visible: {text}"
+    );
+    let reason = state["failureReason"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    assert!(
+        reason.contains(needle),
+        "the visible reason {reason:?} does not contain {needle:?}"
+    );
+}
+
+/// Assert the page offers no calendar download.
+fn assert_no_calendar_offer(w: &mut DutyWorld) {
+    let state = page_state(w);
+    let calendar = state["offers"]
+        .as_array()
+        .expect("read_state returns offers")
+        .iter()
+        .any(|offer| offer["kind"].as_str() == Some("calendar"));
+    assert!(!calendar, "the page offered a calendar: {state}");
+}
+
+/// A generated June 2026 plan whose Created footer supplies the revision.
+fn equivalence_plan() -> Vec<(f64, f64, String)> {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2026-06-07"),
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "Tychon"),
+            (TO_X, "Mareum"),
+            (START_X, "09:25"),
+            (END_X, "15:45"),
+        ],
+    ));
+    items.extend(support::at(
+        570.0,
+        &[(DATE_X, "2026-06-08"), (ACTIVITY_X, "U")],
+    ));
+    items.extend(support::at(
+        520.0,
+        &[
+            (DATE_X, "Created"),
+            (support::TRIP_X, "2026-05-21"),
+            (support::REPORT_X, "15:52"),
+            (support::POS_X, "UTC"),
+        ],
+    ));
+    items
+}
+
 #[given("the converter page served from the built Site output")]
-async fn the_converter_page(_w: &mut DutyWorld) {
-    unimplemented!("the converter page served from the built Site output")
+async fn the_converter_page(w: &mut DutyWorld) {
+    driver(w).send("start", Map::new());
 }
 
 #[given(
@@ -2728,16 +2846,29 @@ async fn the_converter_page_with_a_broken_module(_w: &mut DutyWorld) {
 #[given(
     regex = r#"^the supported duty plan "([^"]+)" whose Created footer supplies its revision timestamp$"#
 )]
-async fn the_plan_with_a_created_footer(_w: &mut DutyWorld, _name: String) {
-    unimplemented!(
-        "the supported duty plan \"{}\" whose Created footer supplies its revision timestamp",
-        _name
-    )
+async fn the_plan_with_a_created_footer(w: &mut DutyWorld, name: String) {
+    named_source(w, &name, support::build_pdf(&equivalence_plan()));
 }
 
 #[given("the executable has published the calendar for that plan")]
-async fn the_executable_has_published_the_calendar(_w: &mut DutyWorld) {
-    unimplemented!("the executable has published the calendar for that plan")
+async fn the_executable_has_published_the_calendar(w: &mut DutyWorld) {
+    run_converter(w);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the executable did not publish the calendar: {}",
+        transcript(w)
+    );
+    let source = w.source_path();
+    let name = source.file_name().unwrap_or_default().to_string_lossy();
+    let stem = name.strip_suffix(".pdf").unwrap_or(&name);
+    let published = w.working_dir().join(format!("{stem}.ics"));
+    assert!(
+        published.is_file(),
+        "the executable published no calendar at {}: {}",
+        published.display(),
+        transcript(w)
+    );
 }
 
 #[when(
@@ -2748,20 +2879,30 @@ async fn supplies_the_supported_plan(_w: &mut DutyWorld, _name: String) {
 }
 
 #[when("the crew member supplies that plan through the file picker")]
-async fn supplies_that_plan(_w: &mut DutyWorld) {
-    unimplemented!("the crew member supplies that plan through the file picker")
+async fn supplies_that_plan(w: &mut DutyWorld) {
+    supply_through_picker(w);
 }
 
 #[when(
     regex = r#"^the crew member supplies the file "([^"]+)" that is not a supported duty plan$"#
 )]
-async fn supplies_an_unsupported_file(_w: &mut DutyWorld, _name: String) {
-    unimplemented!("the crew member supplies the file that is not a supported duty plan")
+async fn supplies_an_unsupported_file(w: &mut DutyWorld, name: String) {
+    // A readable PDF without the supported detail-table header: the family
+    // check rejects it, not the page's size guard and not a read error.
+    let items = support::at(
+        700.0,
+        &[(DATE_X, "Notes"), (FROM_X, "This page is not a duty plan.")],
+    );
+    named_source(w, &name, support::build_pdf(&items));
+    supply_through_picker(w);
 }
 
 #[when(regex = r#"^the crew member supplies the plan "([^"]+)" of (\d+) MiB$"#)]
-async fn supplies_an_oversized_plan(_w: &mut DutyWorld, _name: String, _size: String) {
-    unimplemented!("the crew member supplies a plan larger than the supported size bound")
+async fn supplies_an_oversized_plan(w: &mut DutyWorld, name: String, size: String) {
+    let bytes = support::build_pdf_at_size(&equivalence_plan(), mebibytes(&size));
+    assert_eq!(bytes.len(), mebibytes(&size));
+    named_source(w, &name, bytes);
+    supply_through_picker(w);
 }
 
 #[when(
@@ -2773,11 +2914,43 @@ async fn supplies_an_unresolvable_plan(_w: &mut DutyWorld, _name: String) {
     )
 }
 
+/// Parse the MiB count in a step.
+fn mebibytes(size: &str) -> usize {
+    size.parse::<usize>()
+        .expect("the step carries an integer MiB count")
+        * 1024
+        * 1024
+}
+
 #[when(
     regex = r#"^the crew member supplies the supported duty plan "([^"]+)" of exactly (\d+) MiB$"#
 )]
-async fn supplies_a_plan_at_the_size_bound(_w: &mut DutyWorld, _name: String, _size: String) {
-    unimplemented!("the crew member supplies a plan at the supported size bound")
+async fn supplies_a_plan_at_the_size_bound(w: &mut DutyWorld, name: String, size: String) {
+    let bytes = support::build_pdf_at_size(&equivalence_plan(), mebibytes(&size));
+    assert_eq!(bytes.len(), mebibytes(&size));
+
+    // Builder-to-reader check: the reader must still recognize the padded
+    // fixture, so this scenario proves the bound and not a rejected file.
+    let dir = fresh_dir();
+    let source = dir.join(&name);
+    std::fs::write(&source, &bytes).expect("write the size-bound fixture");
+    let output = Command::new(env!("CARGO_BIN_EXE_duty2cal"))
+        .arg(&source)
+        .output()
+        .expect("run the converter on the size-bound fixture");
+    assert!(
+        output.status.success(),
+        "the reader rejected the exactly-{size}-MiB fixture: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(
+        dir.join("2026-06.ics").is_file(),
+        "the reader accepted the fixture but published no calendar"
+    );
+
+    w.dir = Some(dir);
+    w.source = Some(source);
+    supply_through_picker(w);
 }
 
 #[when(regex = r#"^the crew member drops the supported duty plan "([^"]+)" onto the drop zone$"#)]
@@ -2796,8 +2969,25 @@ async fn reloads_the_page(_w: &mut DutyWorld) {
 }
 
 #[then("the page shows that the calendar is ready")]
-async fn the_calendar_is_ready(_w: &mut DutyWorld) {
-    unimplemented!("the page shows that the calendar is ready")
+async fn the_calendar_is_ready(w: &mut DutyWorld) {
+    let state = page_state(w);
+    assert_eq!(
+        state["state"].as_str(),
+        Some("ready"),
+        "the page did not reach the ready state: {state}"
+    );
+    let text = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        text.contains("Calendar ready"),
+        "the ready heading is not visible: {text}"
+    );
+    assert_eq!(
+        state["controls"]["picker"].as_bool(),
+        Some(true),
+        "the picker is not enabled in the ready state: {state}"
+    );
 }
 
 #[then("the page shows that the drop was accepted and the calendar is ready")]
@@ -2806,13 +2996,13 @@ async fn the_drop_was_accepted(_w: &mut DutyWorld) {
 }
 
 #[then("the page shows a failure heading and a failure naming the 20 MiB bound")]
-async fn the_failure_names_the_size_bound(_w: &mut DutyWorld) {
-    unimplemented!("the page shows a failure heading and a failure naming the 20 MiB bound")
+async fn the_failure_names_the_size_bound(w: &mut DutyWorld) {
+    assert_failure_containing(w, "20 MiB");
 }
 
 #[then(regex = r#"^the page shows a failure heading and a failure naming "([^"]+)"$"#)]
-async fn the_failure_names_the_file(_w: &mut DutyWorld, _name: String) {
-    unimplemented!("the page shows a failure heading and a failure naming the file")
+async fn the_failure_names_the_file(w: &mut DutyWorld, name: String) {
+    assert_failure_containing(w, &name);
 }
 
 #[then("the page shows a failure heading and the reason")]
@@ -2850,13 +3040,25 @@ async fn the_cannot_run_message_names_startup(_w: &mut DutyWorld) {
 }
 
 #[then(regex = r#"^the page offers the file "([^"]+)"$"#)]
-async fn the_page_offers_the_file(_w: &mut DutyWorld, _name: String) {
-    unimplemented!("the page offers the file")
+async fn the_page_offers_the_file(w: &mut DutyWorld, name: String) {
+    let state = page_state(w);
+    let offered = state["offers"]
+        .as_array()
+        .expect("read_state returns offers")
+        .iter()
+        .any(|offer| {
+            offer["kind"].as_str() == Some("calendar")
+                && offer["name"].as_str() == Some(name.as_str())
+        });
+    assert!(
+        offered,
+        "the page does not offer the calendar {name:?}: {state}"
+    );
 }
 
 #[then("the page offers no calendar")]
-async fn the_page_offers_no_calendar(_w: &mut DutyWorld) {
-    unimplemented!("the page offers no calendar")
+async fn the_page_offers_no_calendar(w: &mut DutyWorld) {
+    assert_no_calendar_offer(w);
 }
 
 #[then(regex = r#"^the page offers no calendar and no longer offers "([^"]+)"$"#)]
@@ -2870,18 +3072,47 @@ async fn the_page_offers_no_file_picker(_w: &mut DutyWorld) {
 }
 
 #[then(regex = r#"^the page offers the diagnostic text "([^"]+)"$"#)]
-async fn the_page_offers_the_diagnostic(_w: &mut DutyWorld, _name: String) {
-    unimplemented!("the page offers the diagnostic text")
+async fn the_page_offers_the_diagnostic(w: &mut DutyWorld, name: String) {
+    let state = page_state(w);
+    let offered = state["offers"]
+        .as_array()
+        .expect("read_state returns offers")
+        .iter()
+        .any(|offer| {
+            offer["kind"].as_str() == Some("diagnostic")
+                && offer["name"].as_str() == Some(name.as_str())
+        });
+    assert!(
+        offered,
+        "the page does not offer the diagnostic {name:?}: {state}"
+    );
 }
 
 #[then(r#"the diagnostic text identifies "2026-06.pdf" and the size failure"#)]
-async fn the_diagnostic_names_the_size_failure(_w: &mut DutyWorld) {
-    unimplemented!("the diagnostic text identifies the plan and the size failure")
+async fn the_diagnostic_names_the_size_failure(w: &mut DutyWorld) {
+    let text = captured_diagnostic(w);
+    assert!(
+        text.starts_with("Source PDF: 2026-06.pdf\nReason: "),
+        "the diagnostic does not identify the plan: {text:?}"
+    );
+    assert!(
+        text.contains("20 MiB") && text.ends_with('\n'),
+        "the diagnostic does not state the size failure: {text:?}"
+    );
 }
 
 #[then(regex = r#"^the diagnostic text identifies "([^"]+)" and the unsupported-family reason$"#)]
-async fn the_diagnostic_names_the_unsupported_family(_w: &mut DutyWorld, _name: String) {
-    unimplemented!("the diagnostic text identifies the file and the unsupported-family reason")
+async fn the_diagnostic_names_the_unsupported_family(w: &mut DutyWorld, name: String) {
+    let text = captured_diagnostic(w);
+    assert!(
+        text.starts_with(&format!("Source PDF: {name}\nReason: ")),
+        "the diagnostic does not identify the file: {text:?}"
+    );
+    assert!(
+        text.contains("not a supported Released Roster detail-table export")
+            && text.ends_with('\n'),
+        "the diagnostic does not state the unsupported-family reason: {text:?}"
+    );
 }
 
 #[then(regex = r#"^the diagnostic text identifies "([^"]+)" and the reason$"#)]
@@ -2890,8 +3121,20 @@ async fn the_diagnostic_names_the_reason(_w: &mut DutyWorld, _name: String) {
 }
 
 #[then("the page offers a way to choose another plan")]
-async fn the_page_offers_a_way_back(_w: &mut DutyWorld) {
-    unimplemented!("the page offers a way to choose another plan")
+async fn the_page_offers_a_way_back(w: &mut DutyWorld) {
+    let state = page_state(w);
+    assert_eq!(
+        state["controls"]["chooseAnother"].as_bool(),
+        Some(true),
+        "the failure state offers no way back: {state}"
+    );
+    let text = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        text.contains("Choose another plan"),
+        "the visible way back is missing: {text}"
+    );
 }
 
 #[then("the page states that no diagnostic was offered")]
@@ -2920,6 +3163,42 @@ async fn the_page_still_offers_the_calendar(_w: &mut DutyWorld) {
 }
 
 #[then("the offered calendar is byte-identical to the executable's calendar")]
-async fn the_offered_calendar_is_byte_identical(_w: &mut DutyWorld) {
-    unimplemented!("the offered calendar is byte-identical to the executable's calendar")
+async fn the_offered_calendar_is_byte_identical(w: &mut DutyWorld) {
+    let state = page_state(w);
+    assert_eq!(
+        state["state"].as_str(),
+        Some("ready"),
+        "the page did not reach the ready state: {state}"
+    );
+
+    let offered_path = capture_offer(w, "calendar", "offered.ics");
+    let offered = std::fs::read(&offered_path)
+        .unwrap_or_else(|error| panic!("read the offered calendar: {error}"));
+
+    let source = w.source_path();
+    let name = source.file_name().unwrap_or_default().to_string_lossy();
+    let stem = name.strip_suffix(".pdf").unwrap_or(&name);
+    let executable_path = w.working_dir().join(format!("{stem}.ics"));
+    let executable = std::fs::read(&executable_path)
+        .unwrap_or_else(|error| panic!("read the executable's calendar: {error}"));
+
+    assert_eq!(
+        offered, executable,
+        "the browser's calendar differs from the executable's calendar"
+    );
+
+    let fixture_path =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/expected/2026-06.ics");
+    let fixture = std::fs::read(&fixture_path)
+        .unwrap_or_else(|error| panic!("read {}: {error}", fixture_path.display()));
+    assert_eq!(
+        executable, fixture,
+        "the executable's calendar differs from the committed fixture"
+    );
+
+    let text = String::from_utf8_lossy(&offered);
+    assert!(
+        text.starts_with("BEGIN:VCALENDAR") && text.trim_end().ends_with("END:VCALENDAR"),
+        "the offered download is not a complete VCALENDAR: {text}"
+    );
 }
