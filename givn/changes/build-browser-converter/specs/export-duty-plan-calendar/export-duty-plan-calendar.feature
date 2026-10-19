@@ -90,7 +90,7 @@ Feature: Export a duty-plan calendar
     And the page offers no calendar
     And the page offers a way to choose another plan
 
-  @givn.added @wip
+  @givn.added
   Scenario: A browser without WebAssembly shows the cannot-run message
     Given the converter page served from the built Site output in a browser without WebAssembly
     Then the page shows a cannot-run heading and states that WebAssembly is required
