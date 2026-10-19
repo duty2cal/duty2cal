@@ -214,7 +214,7 @@ fn assert_visual_baseline(state: &Value, displayed: &str) {
 fn capture_screenshots(w: &mut DutyWorld, empty: bool) {
     let dir = evidence_dir();
     std::fs::create_dir_all(&dir).expect("create the visual evidence directory");
-    for (width, height, viewport) in [(360_u32, 780_u32, "360x780"), (1920, 1080, "1920x1080")] {
+    for (width, height, viewport) in [(360_u32, 780_u32, "mobile"), (1920, 1080, "desktop")] {
         let path = dir.join(if empty {
             format!("{viewport}--empty.png")
         } else {

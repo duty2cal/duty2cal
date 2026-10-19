@@ -81,7 +81,8 @@ calls `page.screenshot({ animations: 'disabled' })`.
 - The `@e2e` scenario "Crew member converts a supported duty plan in the browser
   and saves the offered calendar" commits one final-state screenshot per
   viewport: `<viewport>.png` for the ready state and `<viewport>--empty.png`
-  for the empty state it traverses.
+  for the empty state it traverses. Evidence filenames use the contract
+  viewport labels `mobile` and `desktop`.
 - Intermediate captures go to `reports/visual/` and are not review evidence.
 - Screenshots are execution evidence; the approved reference for the three
   declared states is the committed static reference above. The failure state's
