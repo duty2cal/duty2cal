@@ -55,6 +55,8 @@ fn run_git(repo: &Path, args: &[&str]) -> String {
     let output = Command::new("git")
         .arg("-C")
         .arg(repo)
+        .env("GIT_AUTHOR_DATE", "2000-01-01T00:00:00+00:00")
+        .env("GIT_COMMITTER_DATE", "2000-01-01T00:00:00+00:00")
         .args(args)
         .output()
         .unwrap_or_else(|error| panic!("run git {args:?}: {error}"));

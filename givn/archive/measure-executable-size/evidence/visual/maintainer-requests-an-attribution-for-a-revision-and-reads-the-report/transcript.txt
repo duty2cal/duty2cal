@@ -5,7 +5,7 @@ $ python3 scripts/measure_executable_size.py --repo <scenario-dir>/repo --revisi
 # Size attribution
 
 - Requested: v0.3.0
-- Revision: 9bc72b72308227048cf8c725600bad25faba63cf
+- Revision: c5fdf99ed271f60fd0d3f5c677a0f69eb090495f
 - Platform: x86_64-pc-windows-gnu
 - Status: complete
 
@@ -19,7 +19,7 @@ $ python3 scripts/measure_executable_size.py --repo <scenario-dir>/repo --revisi
 
 ## The two numbers
 
-- Stripped executable (file): 872448 B (sha256 94627c6a7cce69792d925dfa5663d7aaf1cf1f6c1266b3269a0a02e08dce4cb1)
+- Stripped executable (file): 872448 B (sha256 ac9613067d102fed5f1f29732bf283433f195d67afa03186b06819a95ac81784)
 - Size attribution (attribution build .text): 658432 B
 
 The size attribution is not the stripped executable's file size: the two

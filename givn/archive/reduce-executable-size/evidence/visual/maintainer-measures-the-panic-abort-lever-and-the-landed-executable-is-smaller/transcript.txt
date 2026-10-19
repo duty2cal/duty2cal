@@ -10,7 +10,7 @@ Diagnostic: <scenario-dir>/unsupported.parse-error-1.txt
 # Size lever
 
 - Requested: HEAD
-- Revision: e76f898627143e190170db78606e3e561f6ae15c
+- Revision: f4d2bcbb418835f3402902c74135485025928fe6
 - Platform: x86_64-pc-windows-gnu
 - Levers: panic=abort
 - Status: applied
