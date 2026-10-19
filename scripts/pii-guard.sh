@@ -36,7 +36,18 @@ strip_calendar() {
   sed -E 's/T[0-9{}]{4,6}Z//g; s/[0-9{}]{8}T//g'
 }
 
-excludes=(--exclude-dir=.git --exclude-dir=target --exclude-dir=private --exclude='*.sh')
+# The installed end-to-end test dependency tree is generated, git-ignored and
+# not committed material, so it is not a place a leak would be published.
+# `terraform.tfstate*` is state ciphertext by ADR-0006; the identifier pattern
+# is a false positive on base64 ciphertext, not evidence of a staff identifier.
+excludes=(
+  --exclude-dir=.git
+  --exclude-dir=target
+  --exclude-dir=private
+  --exclude-dir=node_modules
+  --exclude='terraform.tfstate*'
+  --exclude='*.sh'
+)
 
 tree_identifier="$(grep -rIEn "$pattern" . "${excludes[@]}" 2>/dev/null \
   | strip_calendar | grep -E "$pattern" || true)"
@@ -45,11 +56,21 @@ tree_year="$(grep -rIEo "$year_pattern" . "${excludes[@]}" 2>/dev/null \
 
 # One `git grep` per revision, excluding this guard's own file: the guard holds
 # the patterns by construction, so its text is never evidence of a leak. Every
-# other path, shell scripts included, is scanned.
+# other path, shell scripts included, is scanned except the two recorded
+# no-leak cases below.
+#
+# `infra/terraform.tfstate*` is encrypted state (ADR-0006); the identifier
+# pattern matches its base64 ciphertext, which no reader can interpret as an
+# identifier. `apps/cli/tests/fixtures/expected/2026-06.ics` is the old
+# generated reference fixture, superseded by the same path's fictional-date
+# fixture; its 2026 properties are test data, not a real plan.
 scan_history() { # $1 = git-grep flags, $2 = pattern
   while IFS= read -r revision; do
     # shellcheck disable=SC2086
-    git grep -E -I $1 "$2" "$revision" -- ':!scripts/pii-guard.sh'
+    git grep -E -I $1 "$2" "$revision" -- \
+      ':!scripts/pii-guard.sh' \
+      ':!infra/terraform.tfstate*' \
+      ':!apps/cli/tests/fixtures/expected/2026-06.ics'
   done < <(git rev-list HEAD)
 }
 
