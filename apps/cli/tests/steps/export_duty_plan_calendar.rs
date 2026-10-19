@@ -156,7 +156,9 @@ async fn a_numbered_diagnostic_identifies_source_and_reason(w: &mut DutyWorld) {
     );
 }
 
-#[given("a supported duty plan whose overview calendar and statistics name activity codes that never appear in its dated detail rows")]
+#[given(
+    "a supported duty plan whose overview calendar and statistics name activity codes that never appear in its dated detail rows"
+)]
 async fn a_supported_plan_with_only_summary_codes(w: &mut DutyWorld) {
     let mut items = support::at(800.0, &[(DATE_X, "Overview"), (FROM_X, "FREE SB OFF")]);
     items.extend(support::at(
@@ -172,7 +174,9 @@ async fn no_activity_from_overview_or_statistics(w: &mut DutyWorld) {
     assert_no_activity(&calendar(w), "the overview/statistics material");
 }
 
-#[given("a supported duty plan whose footer names activity codes that never appear in its dated detail rows")]
+#[given(
+    "a supported duty plan whose footer names activity codes that never appear in its dated detail rows"
+)]
 async fn a_supported_plan_with_a_footer(w: &mut DutyWorld) {
     let mut items = support::at(800.0, &[(DATE_X, "Overview"), (FROM_X, "FREE SB OFF")]);
     items.extend(support::detail_header_row(600.0));
@@ -250,7 +254,9 @@ async fn a_mixed_plan(w: &mut DutyWorld) {
     write_fixture(w, &items);
 }
 
-#[then("the calendar contains exactly three activities: one timed travel activity, one all-day U activity, and one timed SB activity")]
+#[then(
+    "the calendar contains exactly three activities: one timed travel activity, one all-day U activity, and one timed SB activity"
+)]
 async fn three_activities_of_the_right_kinds(w: &mut DutyWorld) {
     let calendar = calendar(w);
     assert_eq!(
@@ -941,7 +947,9 @@ async fn one_travel_between(
     }
 }
 
-#[given("a supported duty plan with one local block whose travel start and end clocks are equal and unqualified")]
+#[given(
+    "a supported duty plan with one local block whose travel start and end clocks are equal and unqualified"
+)]
 async fn zero_length_interval(w: &mut DutyWorld) {
     plan_with_row(
         w,
@@ -994,7 +1002,9 @@ async fn that_endpoint_is(
     );
 }
 
-#[given("a supported duty plan whose explicit UTC day number matches none of the previous, same, or next dates around its local-date block")]
+#[given(
+    "a supported duty plan whose explicit UTC day number matches none of the previous, same, or next dates around its local-date block"
+)]
 async fn no_unique_adjacent_date(w: &mut DutyWorld) {
     plan_with_row(
         w,
@@ -1009,7 +1019,9 @@ async fn no_unique_adjacent_date(w: &mut DutyWorld) {
     );
 }
 
-#[given("a supported duty plan whose roster trip T42 has legs 007 and 008 where only leg 007 prints the Trip ID, followed by roster trip T43")]
+#[given(
+    "a supported duty plan whose roster trip T42 has legs 007 and 008 where only leg 007 prints the Trip ID, followed by roster trip T43"
+)]
 async fn a_roster_trip_with_sparse_ids(w: &mut DutyWorld) {
     let mut items = support::detail_header_row(600.0);
     items.extend(support::at(
@@ -1154,7 +1166,9 @@ async fn description_omits(w: &mut DutyWorld, omitted: String) {
     }
 }
 
-#[given("a compatible departure and arrival fragment of one travel leg where the departure fragment supplies A/C ABC and the arrival fragment supplies Blocktime 02:00")]
+#[given(
+    "a compatible departure and arrival fragment of one travel leg where the departure fragment supplies A/C ABC and the arrival fragment supplies Blocktime 02:00"
+)]
 async fn complementary_fragments(w: &mut DutyWorld) {
     let mut items = support::detail_header_row(600.0);
     items.extend(support::at(
@@ -1191,7 +1205,9 @@ async fn complementary_values_present(w: &mut DutyWorld) {
     );
 }
 
-#[given("a supported duty plan travel leg supplying Trip ID T42, Report (LT) 07:30, A/C ABC, Blocktime 02:00, Timezone Difference +01, Layover duration 03:00, and Tags 5_MFL")]
+#[given(
+    "a supported duty plan travel leg supplying Trip ID T42, Report (LT) 07:30, A/C ABC, Blocktime 02:00, Timezone Difference +01, Layover duration 03:00, and Tags 5_MFL"
+)]
 async fn a_leg_supplying_every_selected_field(w: &mut DutyWorld) {
     let mut items = support::detail_header_row(600.0);
     items.extend(support::at(
@@ -1232,7 +1248,9 @@ async fn a_travel_leg_without_a_report_time(w: &mut DutyWorld) {
     write_fixture(w, &items);
 }
 
-#[then("the travel activity's description lists them in the order Trip ID, Report (LT), A/C, Blocktime, Timezone Difference, Layover duration, Tags")]
+#[then(
+    "the travel activity's description lists them in the order Trip ID, Report (LT), A/C, Blocktime, Timezone Difference, Layover duration, Tags"
+)]
 async fn description_lists_approved_order(w: &mut DutyWorld) {
     let calendar = calendar(w);
     let description = event_descriptions(&calendar)
@@ -1287,17 +1305,23 @@ fn report_time_fragments(w: &mut DutyWorld, departure: &str, arrival: &str) {
     write_fixture(w, &items);
 }
 
-#[given("a compatible departure and arrival fragment of one travel leg supplying Report (LT) 07:30 and Report (LT) 08:00 respectively")]
+#[given(
+    "a compatible departure and arrival fragment of one travel leg supplying Report (LT) 07:30 and Report (LT) 08:00 respectively"
+)]
 async fn differing_report_times(w: &mut DutyWorld) {
     report_time_fragments(w, "07:30", "08:00");
 }
 
-#[given("a compatible departure and arrival fragment of one travel leg supplying different report times 07:30 and 08:00")]
+#[given(
+    "a compatible departure and arrival fragment of one travel leg supplying different report times 07:30 and 08:00"
+)]
 async fn new_differing_report_times(w: &mut DutyWorld) {
     report_time_fragments(w, "07:30", "08:00");
 }
 
-#[given("a compatible departure and arrival fragment of one travel leg supplying the same report time 07:30")]
+#[given(
+    "a compatible departure and arrival fragment of one travel leg supplying the same report time 07:30"
+)]
 async fn equal_report_times(w: &mut DutyWorld) {
     report_time_fragments(w, "07:30", "07:30");
 }
@@ -1527,7 +1551,9 @@ fn revision_pdf(start: &str, end: &str) -> Vec<(f64, f64, String)> {
     items
 }
 
-#[given("a supported duty plan whose later revision changes one flight's UTC time while its other activities are unchanged")]
+#[given(
+    "a supported duty plan whose later revision changes one flight's UTC time while its other activities are unchanged"
+)]
 async fn a_revised_snapshot(w: &mut DutyWorld) {
     let dir = fresh_dir();
     let original = dir.join("roster.pdf");
@@ -1566,7 +1592,9 @@ async fn converts_both_revisions(w: &mut DutyWorld) {
     );
 }
 
-#[then("every activity of the revised snapshot carries a component identifier distinct from the earlier snapshot")]
+#[then(
+    "every activity of the revised snapshot carries a component identifier distinct from the earlier snapshot"
+)]
 async fn revised_identifiers_are_distinct(w: &mut DutyWorld) {
     let original = component_ids(&w.calendars[0]);
     let revised = component_ids(&w.calendars[1]);
@@ -1708,7 +1736,9 @@ async fn existing_calendars_unchanged(w: &mut DutyWorld) {
 /// Contents of a diagnostic that must survive a later failure.
 const EXISTING_DIAGNOSTIC: &str = "Source PDF: earlier.pdf\nReason: an earlier failure\n";
 
-#[given("a supported duty plan with an unresolvable required activity and an existing roster.parse-error.txt beside it")]
+#[given(
+    "a supported duty plan with an unresolvable required activity and an existing roster.parse-error.txt beside it"
+)]
 async fn a_plan_with_a_failure_and_an_older_diagnostic(w: &mut DutyWorld) {
     plan_with_row(
         w,
@@ -1876,7 +1906,9 @@ async fn older_report_not_current(w: &mut DutyWorld) {
     assert_eq!(older, OLDER_REPORT, "the older report was modified");
 }
 
-#[given("a conversion failure beside existing reports roster.parse-error.txt and roster.parse-error-1.txt")]
+#[given(
+    "a conversion failure beside existing reports roster.parse-error.txt and roster.parse-error-1.txt"
+)]
 async fn a_failure_beside_two_reports(w: &mut DutyWorld) {
     plan_with_row(
         w,
@@ -2142,7 +2174,9 @@ async fn converts_the_reference_roster(w: &mut DutyWorld) {
     run_converter(w);
 }
 
-#[then("the published calendar equals the expected calendar after CRLF-to-LF and folding normalisation")]
+#[then(
+    "the published calendar equals the expected calendar after CRLF-to-LF and folding normalisation"
+)]
 async fn equals_the_expected_calendar(w: &mut DutyWorld) {
     let expected_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/expected/2098-06.ics");

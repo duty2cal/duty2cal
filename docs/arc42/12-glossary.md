@@ -21,7 +21,10 @@ executable size ideation Handoff (release-executable-size), plus five
 public-website terms added by the public website ideation Handoff
 (public-website), plus one browser-offer term and the generalized browser
 lifecycle observations added by the change to build the browser converter
-(build-browser-converter).
+(build-browser-converter), plus one measurement-report term added by the change
+to measure the executable's size (measure-executable-size), plus three
+reduction terms added by the change to reduce the executable's size
+(reduce-executable-size).
 Source: [Duty-plan calendar conversion](../ideation/duty-plan-calendar-conversion.md),
 [introduction/collision records](../../givn/ideation/duty-plan-calendar-conversion/domain-terms.md),
 [approved contract](../../givn/ideation/duty-plan-calendar-conversion/use-cases/export-duty-plan-calendar.md),
@@ -103,6 +106,13 @@ This is vocabulary/required behavior, not an implemented enforcement claim.
 | Vacation day | U/Urlaub activity denoting vacation on its duty-plan date. | All-day; source times ignored. | `DutyEntry::AllDay`, `ALL_DAY_CODES` (`application/mod.rs`) | Distinct from FREE/OFF/FZ; no entitlement inference. |
 | User-receiving path | A repository path whose contents reach a downloader: the converter's crates and command-line application, the build inputs that decide what the executable contains, and the packaging and release workflow that decide what an archive holds. | Listed in `cliff.toml`; a released revision that changed none of them is left out of a version's notes, and a listed path the tree does not hold stops the render. | the marked `user-receiving-paths` line in `cliff.toml`, read by `scripts/render-changelog.sh` | Not every path a revision changes: `.github/workflows/ci.yml`, `scripts/render-changelog.sh`, `cliff.toml`, `docs/`, `givn/` and test code decide how the project works on what it ships, not what a downloader receives. |
 | Version tag | The `v<version>` Git tag that names the revision a release publishes; pushing it triggers the release pipeline. | Stated identically to the version in the archive names and the release text; a tag used by a published immutable release is never reusable. | `release.yml` (`push` of `v*`); `duty2cal-<version>-<platform>.tar.gz` | Not the bare version string (a leading `v` is refused in the preparation command); not a branch. |
+| Distributed executable | The artifact built for `x86_64-pc-windows-gnu` and packaged in the release archive; the thing a downloader runs. | Its stripped file size is reported beside a size attribution and is never substituted for the attribution's total. | `target/x86_64-pc-windows-gnu/release/duty2cal.exe`; `duty2cal-<version>-windows-x86_64.tar.gz` | Not the Linux host build; not the compressed archive; not the build that retains the names used for attribution. |
+| Size attribution | The measurement that breaks down the code the distributed executable contains, by crate and by function, from a build that retains the names the measurement needs. | Produced for every pushed revision and on request for any named revision; names the requested revision, the resolved revision, the platform and the build's identity; the stripped artifact's file size is reported beside it, and the two are never substituted. | `scripts/measure_executable_size.py`; `cargo bloat --release --locked --target x86_64-pc-windows-gnu --crates` and the functions run (pinned `cargo-bloat` 0.12.1) | Not the archive's compressed size; not the stripped file's byte count; not a byte-exact file size (the generator's numbers are estimates of `.text`). |
+| Size attribution report | The pair of files a measurement writes — a machine-readable report and a human rendering of the same data — naming the requested revision, the resolved revision, the platform and the build's identity, with the crate and function split and the stripped executable's file size as separate fields. | Its status is `complete`, `incomplete` or `unreadable`: an incomplete report states that the file size is unavailable, an unreadable one states what could not be read, and neither infers a number. Produced for every pushed revision and requestable for any named revision. | `attribution.json`, `attribution.md`; the run's `size-attribution` artifact | Not the attribution itself; not the release archive; not the change log. |
+| Size lever | The build-configuration change whose effect on the distributed executable can be measured and accepted or rejected. | Applied `panic = "abort"`: 2,014,208 B against a 2,098,176 B rebuild of the unchanged configuration (saves 83,968 B on the release branch); `opt-level = "s"` was measured larger and rejected; the panic and conversion outcomes are recorded before landing. | `Cargo.toml` `[profile.release]` `panic = "abort"`; `scripts/measure_size_lever.py`; `size-lever.json`/`size-lever.md` | Not a nightly-only compiler flag; not UPX or dynamic linking, refused before a build; not a lever whose saving is not cumulative. |
+| Baseline | The same revision rebuilt with the unchanged build configuration (`panic = "unwind"`, `opt-level = "z"`) by `scripts/measure_size_lever.py`. | The saving is measured against it; the published binary's size is reported separately and never used as the baseline. | `--repo`/`--revision`; the baseline build in `size-lever.json`; the `- Baseline (rebuild, unchanged):` line | Not the published binary; not the previous release; not the lever build. |
+| Published binary | The executable inside the published release archive, built from the tagged revision and the shipped profile. | Its file size is reported separately from the rebuilt baseline; it is not the baseline and not the lever build. | the release archive's `duty2cal.exe`; `--published-size` in `scripts/measure_size_lever.py` | Not the rebuilt baseline; not the lever build; not the compressed archive. |
+| Saved bytes | The baseline file size minus the lever build's file size; a positive value means the lever build is smaller. | The cumulative table records it per lever; only a positive value is applied. | `saved_bytes` in `size-lever.json`; the cumulative table in `size-lever.md` | Not the file size; not the archive's compressed size; not a signed size change. |
 
 ## Aggregates / boundaries
 
@@ -216,7 +226,16 @@ replacing the executable one; the change to build the browser converter
 (build-browser-converter) records the browser observations **Calendar export
 offered** and **Conversion diagnostic offered**, adds **Offer**, and clarifies
 that **Supported platform** names downloadable archive platforms while the
-browser is a supported conversion route with no archive. Raw
+browser is a supported conversion route with no archive. The change to measure
+the executable's size (measure-executable-size) refines **Size attribution**
+with the per-revision cadence, the build identity and the command, and adds
+**Size attribution report** for the two files a measurement writes and their
+three statuses; it introduces no aggregate either, because the measurement
+observes a build and commits nothing. The change to reduce the executable's
+size (reduce-executable-size) applies **Size lever** and adds **Baseline**,
+**Published binary** and **Saved bytes**; it introduces no aggregate either,
+because the reduction is a build-configuration decision observed by the
+measurement. Raw
 source-column labels
 (A/C, Blocktime, Timezone Difference, Tags) and the FREE/OFF day
 codes are used verbatim in the specification and are not confirmed domain terms.

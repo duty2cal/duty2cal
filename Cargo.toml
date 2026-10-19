@@ -21,3 +21,6 @@ opt-level = "z"
 lto = true
 strip = true
 codegen-units = 1
+# Measured lever: 83,968 B smaller on the supported platform; a panic aborts
+# instead of unwinding (see the reduce-executable-size change).
+panic = "abort"

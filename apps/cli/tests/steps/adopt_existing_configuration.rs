@@ -606,7 +606,9 @@ async fn the_monorepos_live_settings_change_after_the_adoption_reads_them(w: &mu
     restart_fake(w);
 }
 
-#[given("the selected batch names the archived repository, which the declared configuration does not name")]
+#[given(
+    "the selected batch names the archived repository, which the declared configuration does not name"
+)]
 async fn the_selected_batch_names_the_archived_repository(w: &mut DutyWorld) {
     prepare(w);
     let declaration = declaration_dir(w);

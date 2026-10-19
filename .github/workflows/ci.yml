@@ -50,9 +50,9 @@ jobs:
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
         with:
-          # `scripts/build-web.sh` builds the browser bundle for both suite
-          # modes.
-          targets: wasm32-unknown-unknown
+          # `scripts/build-web.sh` builds the browser bundle in both suite
+          # modes; the size-attribution scenarios cross-build for Windows.
+          targets: wasm32-unknown-unknown,x86_64-pc-windows-gnu
       # The browser scenarios drive the real page with the pinned Playwright
       # and Chromium (web/e2e/.nvmrc is the reviewed Node version).
       - uses: actions/setup-node@v5
@@ -62,6 +62,11 @@ jobs:
           cache-dependency-path: web/e2e/package-lock.json
       - run: npm ci --prefix web/e2e
       - run: npx --prefix web/e2e playwright install --with-deps chromium
+      # The size-attribution scenarios drive the real measurement command,
+      # whose two builds need the Windows cross toolchain and the pinned
+      # generator.
+      - run: sudo apt-get update && sudo apt-get install -y mingw-w64
+      - run: cargo install --locked cargo-bloat@0.12.1
       # The suite's change-log scenarios drive scripts/render-changelog.sh as a
       # real subprocess, so the pinned generator must be on PATH — the same
       # version the committed CHANGELOG.md was produced with.
@@ -174,6 +179,7 @@ jobs:
           targets: wasm32-unknown-unknown
       # `measure-coverage.sh` builds the browser bundle and runs the browser
       # scenarios, so the coverage job needs the same Node and Chromium setup.
+      # The @nested-build scenarios are outside the coverage profiles.
       - uses: actions/setup-node@v5
         with:
           node-version-file: web/e2e/.nvmrc
@@ -249,6 +255,33 @@ jobs:
             echo "unexpected non-system DLL import — the executable is not self-contained";
             exit 1;
           fi
+      - name: Install the attribution generator
+        run: cargo install --locked cargo-bloat@0.12.1
+      - name: Produce the size attribution for this revision
+        run: |
+          set +e
+          python3 scripts/measure_executable_size.py \
+            --revision "$GITHUB_SHA" \
+            --executable target/x86_64-pc-windows-gnu/release/duty2cal.exe \
+            --out size-attribution
+          status=$?
+          {
+            echo '### Size attribution'
+            echo ''
+            echo "measurement exit status: $status"
+            echo ''
+            if [ -f size-attribution/attribution.md ]; then
+              cat size-attribution/attribution.md
+            else
+              echo 'no attribution.md was written; see the step log'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: size-attribution
+          path: size-attribution/
       - uses: actions/upload-artifact@v7
         with:
           name: duty2cal-windows-gnu
