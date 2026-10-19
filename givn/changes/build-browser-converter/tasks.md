@@ -405,7 +405,7 @@ equivalence holds only when the source supplies its revision timestamp.
   5 steps (5 passed)
   REFACTOR_EXIT=0
   ```
-- [x] COMMIT: one commit for RED+GREEN+REFACTOR; subject is the release note above
+- [x] COMMIT: 4e0d466d959447ad992b2cf7bc08804cea6a05bf — one commit for RED+GREEN+REFACTOR; subject is the release note above
   (`feat(export-duty-plan-calendar): …`), body contains
   `Scenario: The browser offers the same calendar the executable produces for the same plan`; Hash: `4e0d466d959447ad992b2cf7bc08804cea6a05bf`
 
@@ -486,7 +486,7 @@ Use-case constraint: main-flow step 1 refuses a browser-supplied plan larger tha
   4 steps (4 passed)
   REFACTOR_EXIT=0
   ```
-- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+- [x] COMMIT: afd900bf8b4a397ac5aa799953ff0620a8bd398d — subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A plan at the supported size bound is accepted`; Hash: `afd900bf8b4a397ac5aa799953ff0620a8bd398d`
 
 ### 3. A plan larger than the supported size bound is refused by name
@@ -584,7 +584,7 @@ is offered; a diagnostic offer is attempted.
   7 steps (7 passed)
   REFACTOR_EXIT=0
   ```
-- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+- [x] COMMIT: 8b33b3433df23a2f2a0d62b09e6619338b784f85 — subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A plan larger than the supported size bound is refused by name`; Hash: `8b33b3433df23a2f2a0d62b09e6619338b784f85`
 
 ### 4. A source outside the supported family is rejected with a diagnostic offer
@@ -671,7 +671,7 @@ fails explicitly; no calendar is offered and a diagnostic is attempted.
   7 steps (7 passed)
   REFACTOR_EXIT=0
   ```
-- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+- [x] COMMIT: b078df53e11e5314c19e7326a73c7c8d12f947ee — subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A source outside the supported family is rejected with a diagnostic offer`; Hash: `b078df53e11e5314c19e7326a73c7c8d12f947ee`
 
 ### 5. An unresolved required activity is rejected with a diagnostic offer
@@ -745,7 +745,7 @@ failure is visible and a diagnostic is attempted.
   $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "An unresolved required activity is rejected with a diagnostic offer"
   1 scenario (1 passed), 7 steps (7 passed)   REFACTOR_EXIT=0
   ```
-- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+- [x] COMMIT: c6eab05c1456d998273444f9c485eadb0d53c682 — subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: An unresolved required activity is rejected with a diagnostic offer`; Hash: `c6eab05c1456d998273444f9c485eadb0d53c682`
 
 ### 6. A failed attempt withdraws a calendar offered by an earlier attempt
@@ -824,7 +824,7 @@ offered.
   $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A failed attempt withdraws a calendar offered by an earlier attempt"
   1 scenario (1 passed), 8 steps (8 passed)   REFACTOR_EXIT=0
   ```
-- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+- [x] COMMIT: 66593deb59d84a0dea727e8f7c8bb092c6526a4d — subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A failed attempt withdraws a calendar offered by an earlier attempt`; Hash: `66593deb59d84a0dea727e8f7c8bb092c6526a4d`
 
 ### 7. A calendar that cannot be offered is not reported as ready
@@ -899,7 +899,7 @@ failure and attempt a diagnostic; success is never reported without an offer.
   $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A calendar that cannot be offered is not reported as ready"
   1 scenario (1 passed), 6 steps (6 passed)   REFACTOR_EXIT=0
   ```
-- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+- [x] COMMIT: 63974a1f333e793686dfe8bf36a4703b062cce52 — subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A calendar that cannot be offered is not reported as ready`; Hash: `63974a1f333e793686dfe8bf36a4703b062cce52`
 
 ### 8. A diagnostic that cannot be offered does not hide the primary failure
@@ -972,7 +972,7 @@ primary failure remains visible and the page states that no diagnostic was offer
   $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A diagnostic that cannot be offered does not hide the primary failure"
   1 scenario (1 passed), 6 steps (6 passed)   REFACTOR_EXIT=0
   ```
-- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+- [x] COMMIT: 78ad4e442a5cedf591da3a562324d2e7fab399ad — subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A diagnostic that cannot be offered does not hide the primary failure`; Hash: `78ad4e442a5cedf591da3a562324d2e7fab399ad`
 
 ### 9. A browser without WebAssembly shows the cannot-run message
@@ -1011,7 +1011,8 @@ initializes; a missing capability is refused by name with no file picker and no 
   1 step (1 failed)
   RED_EXIT=101
   ```
-- [x] GREEN — real assertions and minimum production code; production files:
+- [x] GREEN — real assertions; reuse of production code introduced by `30008f0` (no new production file):
+  - **Reuse:** the capability gate and cannot-run panel landed with the setup commit `30008f0`.
   - `web/capability.js` / `web/index.html` / `web/styles.css` — the classic deferred
     gate, the hidden picker/drop zone, the cannot-run region and its panel already
     carried this behavior in the committed baseline; no change was needed here.
@@ -1046,7 +1047,7 @@ initializes; a missing capability is refused by name with no file picker and no 
   $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A browser without WebAssembly shows the cannot-run message"
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
-- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+- [x] COMMIT: 82cbe1364c3ed34cfabba8d7b899738c07cd5bfc — subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A browser without WebAssembly shows the cannot-run message`; Hash:
   `82cbe1364c3ed34cfabba8d7b899738c07cd5bfc`
 
@@ -1117,7 +1118,7 @@ refused by name with no file picker and no calendar.
   $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A browser without ES-module support shows the cannot-run message"
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
-- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+- [x] COMMIT: 5a8243225cccfa1123d5c4c00cb51b354c9e6169 — subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A browser without ES-module support shows the cannot-run message`; Hash:
   `5a8243225cccfa1123d5c4c00cb51b354c9e6169`
 
@@ -1157,7 +1158,8 @@ never falls back to a server or an upload.
   1 step (1 failed)
   RED_EXIT=101
   ```
-- [x] GREEN — real assertions and minimum production code; production files:
+- [x] GREEN — real assertions; reuse of production code introduced by `30008f0` (no new production file):
+  - **Reuse:** the startup-failure rendering landed with the setup commit `30008f0`.
   - `web/app.js` — the `init(bytes)` `try/catch` and the startup-failure rendering
     already existed in the committed baseline; no change was needed.
   - `web/e2e/driver.mjs` — the `start` mode `broken-module`, whose init script replaces
@@ -1194,7 +1196,7 @@ never falls back to a server or an upload.
   $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A converter module that cannot be instantiated shows the startup failure"
   1 scenario (1 passed), 5 steps (5 passed)   REFACTOR_EXIT=0
   ```
-- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+- [x] COMMIT: 257f66254cfe1218fe55ed3af68a9aedaf744100 — subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A converter module that cannot be instantiated shows the startup failure`;
   Hash: `257f66254cfe1218fe55ed3af68a9aedaf744100`
 
@@ -1265,7 +1267,7 @@ plan and produces the same offer.
   $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A supported plan dropped onto the drop zone is converted"
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
-- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+- [x] COMMIT: e607181006c06422d4a11114ff5e83b5aba35483 — subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A supported plan dropped onto the drop zone is converted`; Hash:
   `e607181006c06422d4a11114ff5e83b5aba35483`
 
@@ -1346,7 +1348,7 @@ unchanged.
   $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A cancelled save is not reported as a save"
   1 scenario (1 passed), 5 steps (5 passed)   REFACTOR_EXIT=0
   ```
-- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+- [x] COMMIT: f673ed69e77ec786ccb728f07ea8d60134002cce — subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A cancelled save is not reported as a save`; Hash:
   `f673ed69e77ec786ccb728f07ea8d60134002cce`
 
@@ -1418,7 +1420,7 @@ Use-case constraint: rule — the page offers `<source-stem>.ics` and
   $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "The offered names use the source file's stem"
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
-- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+- [x] COMMIT: d2f3fc7577e571922c3003e5d1352c9c92e0c1e6 — subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: The offered names use the source file's stem`; Hash:
   `d2f3fc7577e571922c3003e5d1352c9c92e0c1e6`
 
@@ -1509,7 +1511,7 @@ a navigable URL/history entry; an ephemeral object URL is allowed and revoked on
   $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A browser conversion leaves no plan in persistent storage or a navigable address"
   1 scenario (1 passed), 8 steps (8 passed)   REFACTOR_EXIT=0
   ```
-- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+- [x] COMMIT: 88d585a3525e4ac6174046f4ce8bdca71d80e7b7 — subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A browser conversion leaves no plan in persistent storage or a navigable address`;
   Hash: `88d585a3525e4ac6174046f4ce8bdca71d80e7b7`
 
@@ -1712,11 +1714,11 @@ has this single `@e2e` scenario.
     canonical `2026-06` plan whose committed reference is `2026-06.ics` (the minimal
     one-event fixture could not match that reference). No assertion of the other browser
     scenarios depended on the old content; they all still pass.
-  - Evidence committed (360x780 and 1920x1080; ready `<viewport>.png`, empty
+  - Evidence committed (mobile 360x780 and desktop 1920x1080; ready `<viewport>.png`, empty
     `<viewport>--empty.png`):
     `givn/changes/build-browser-converter/evidence/visual/crew-member-converts-a-supported-duty-plan-in-the-browser-and-saves-the-offered-calendar/`
-    now holds `360x780.png`, `360x780--empty.png`, `1920x1080.png` and
-    `1920x1080--empty.png`.
+    now holds `mobile.png`, `mobile--empty.png`, `desktop.png` and
+    `desktop--empty.png`; the filenames use the contract viewport labels.
   Run:
   ```
   $ cargo fmt --all --check -> FMT_EXIT=0
@@ -1763,7 +1765,7 @@ has this single `@e2e` scenario.
   $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "Crew member converts a supported duty plan in the browser and saves the offered calendar"
   1 scenario (1 passed), 12 steps (12 passed)   REFACTOR_EXIT=0
   ```
-- [x] COMMIT: one commit for RED+GREEN+REFACTOR; subject
+- [x] COMMIT: 43e916da75795fc754059f796aa3ffcdf4b5cc17 — one commit for RED+GREEN+REFACTOR; subject
   `test(e2e): A crew member can convert one supported duty plan to a complete calendar in a current browser from the built Site output, with the plan never leaving the tab, or receive an explicit failure with an offered diagnostic.`
   (the release note above prefixed with `test(e2e):`); body contains
   `Scenario: Crew member converts a supported duty plan in the browser and saves the offered calendar`; Hash:
@@ -1786,7 +1788,9 @@ checked task is a stub.
 | An unresolved required activity is rejected with a diagnostic offer | `c6eab05` | `4e0d466` | Unresolved-activity fixture and steps |
 | A failed attempt withdraws a calendar offered by an earlier attempt | `66593de` | `4e0d466` | Stale-offer steps |
 | A diagnostic that cannot be offered does not hide the primary failure | `78ad4e4` | `63974a1` | Diagnostic-failure steps |
+| A browser without WebAssembly shows the cannot-run message | `82cbe13` | `30008f0` | Cannot-run steps and driver mode |
 | A browser without ES-module support shows the cannot-run message | `5a82432` | `30008f0` | ES-module branch steps and driver mode |
+| A converter module that cannot be instantiated shows the startup failure | `257f662` | `30008f0` | Startup-failure steps and driver mode |
 | Crew member converts ... and saves the offered calendar (`@e2e`) | `43e916d` | `4e0d466`, `63974a1` | Driver actions, e2e steps and screenshots |
 
 ## Final verification (after every section is GREEN)

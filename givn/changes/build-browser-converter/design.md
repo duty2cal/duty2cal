@@ -102,7 +102,7 @@ New and changed files:
 | `web/e2e/driver.mjs` | new | Long-lived Playwright driver: loopback static server, browser context, actions/observations, screenshots, request log, storage snapshot, download capture |
 | `scripts/build-web.sh` | new | Install the pinned `wasm-pack`, build `web/pkg`, generate `web/pkg/wasm-inline.js` (base64), copy `LICENSES/MPL-2.0.txt` to `web/LICENSE.txt` |
 | `scripts/run-web.sh` | new | Build if needed and serve `web/` on loopback for manual use |
-| `docs/design/reference/` | new | The approved design-only rendered reference views for the empty, ready and failure states (the page source does not exist yet); `docs/design/design-system.md` links them |
+| `docs/design/reference/` | new | The approved design-only rendered reference views for the empty, ready, failure and cannot-run startup states (the page source does not exist yet); `docs/design/design-system.md` links them |
 | `apps/cli/tests/features_runner.rs` | changed | `DutyWorld` owns an optional browser driver and kills it in `Drop` |
 | `apps/cli/tests/steps/mod.rs` | changed | `pub mod browser;` |
 | `apps/cli/tests/steps/browser.rs` | new | Shared JSON-lines driver client; not a step-definition file |
@@ -220,8 +220,8 @@ let outcome = ConvertRoster::new(PdfRosterSource, IcsSink, BrowserClock)
 
 ### State machine
 
-The page has four observed states; three are rendered states and one is
-transient:
+The page has five observed states: four conversion-flow states (one
+ transient) and the `cannot-run` startup state:
 
 | State | Visible content | Controls |
 |---|---|---|
@@ -443,7 +443,7 @@ actions, each returning the observed state the Rust step asserts on:
 
 `start` (serve `web/`, launch Chromium, open the page, return the initial
 rendered state and request log), `set_file` (path, optional init-script mode),
-`drop_file`, `read_state` (empty/converting/ready/failure, visible text, offers,
+`drop_file`, `read_state` (empty/converting/ready/failure/cannot-run, visible text, offers,
 visible failure reason, storage snapshot, address/history, request log),
 `save_offer` (click a calendar or diagnostic offer and capture the browser's
 download to a path), `dismiss_save`, `reload`, `screenshot` (viewport, path),
@@ -685,7 +685,7 @@ the reduced-motion computed value, plus `@axe-core/playwright` after each
 rendered state (contrast, labels, landmarks, duplicate ids).
 
 **Rendered reference:** an approved design-only reference page containing the
-empty, ready and failure views is committed at
+empty, ready, failure and cannot-run startup views is committed at
 `docs/design/reference/converter-reference.html` and linked from
 `docs/design/design-system.md`. It is responsive at both viewports and rendered
 from the same markup, tokens and copy the implementation must use, so the

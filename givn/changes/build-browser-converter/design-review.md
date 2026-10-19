@@ -191,7 +191,7 @@ No grilling question remains unresolved.
 | Risk | WASM instantiation under the real CSP is the first setup milestone; the 20 MiB fixture is validated builder-to-reader; the supply chain fails loudly. |
 | Use-case/Persona | Goal, primary actor, placement, mutation, naming, leaf size and relationships pass. The precondition/trigger/mechanism findings are fixed; three confirmed Personas are dispositioned, visitor is assigned to the sibling change. |
 | Decision ledger | D1–D6 resolve; D3 is approved, D6 is pinned; seed Q1–Q9 are dispositioned; Q2 is corrected. |
-| Visual design contract | `Interface: web`, both viewports, approved direction, durable design system, three reference states, capture mechanics and state alignment. |
+| Visual design contract | `Interface: web`, both viewports, approved direction, durable design system, four reference states (empty, ready, failure, cannot-run startup), capture mechanics and state alignment. |
 | Deferrals | Coverage exclusion approved; trap/OOM manual check accepted with a concrete condition; no other mandatory check is deferred. |
 | Persona disposition | Three confirmed lenses with relevance/evidence; visitor explicitly assigned to `publish-public-website`; no invented or silently promoted Persona. |
 | Interface classification | The converter screen is a Web UI (`Interface: web`) driven by Playwright/Chromium; the executable remains a CLI. The opposite classification (no browser driver) does not hold because the capability renders a page. |
@@ -229,5 +229,15 @@ No grilling question remains unresolved.
   capability-based (chapter 11 R-040, TD-017).
 - **Publication** of the page, its Built revision and its public copy belongs to
   `publish-public-website`; this change must not imply the public URL is live.
+
+## Post-review state-inventory correction (2026-10-19)
+
+The coverage review found that the page renders a `cannot-run` startup state
+that the state table and visual contract did not name. The design, the durable
+design system and the reference now include it as a startup state outside the
+conversion screen's empty/ready/failure states; no product behavior or reviewed
+decision changed. The visual contract now names four reference states (empty,
+ready, failure and the cannot-run startup). This correction does not reopen the
+design decisions; the design-review remains PASS.
 
 DESIGN-REVIEW: PASS
