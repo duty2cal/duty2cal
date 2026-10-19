@@ -1040,8 +1040,8 @@ initializes; a missing capability is refused by name with no file picker and no 
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
 - [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A browser without WebAssembly shows the cannot-run message`; Hash: recorded
-  in the scenario-commit record commit
+  `Scenario: A browser without WebAssembly shows the cannot-run message`; Hash:
+  `82cbe1364c3ed34cfabba8d7b899738c07cd5bfc`
 
 ### 10. A browser without ES-module support shows the cannot-run message
 
@@ -1111,7 +1111,7 @@ refused by name with no file picker and no calendar.
   ```
 - [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A browser without ES-module support shows the cannot-run message`; Hash:
-  recorded in the scenario-commit record commit
+  `5a8243225cccfa1123d5c4c00cb51b354c9e6169`
 
 ### 11. A converter module that cannot be instantiated shows the startup failure
 
@@ -1188,7 +1188,7 @@ never falls back to a server or an upload.
   ```
 - [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A converter module that cannot be instantiated shows the startup failure`;
-  Hash: recorded in the scenario-commit record commit
+  Hash: `257f66254cfe1218fe55ed3af68a9aedaf744100`
 
 ### 12. A supported plan dropped onto the drop zone is converted
 
@@ -1258,8 +1258,8 @@ plan and produces the same offer.
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
 - [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A supported plan dropped onto the drop zone is converted`; Hash: recorded
-  in the scenario-commit record commit
+  `Scenario: A supported plan dropped onto the drop zone is converted`; Hash:
+  `e607181006c06422d4a11114ff5e83b5aba35483`
 
 ### 13. A cancelled save is not reported as a save
 
@@ -1339,8 +1339,8 @@ unchanged.
   1 scenario (1 passed), 5 steps (5 passed)   REFACTOR_EXIT=0
   ```
 - [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A cancelled save is not reported as a save`; Hash: recorded in the
-  scenario-commit record commit
+  `Scenario: A cancelled save is not reported as a save`; Hash:
+  `f673ed69e77ec786ccb728f07ea8d60134002cce`
 
 ### 14. The offered names use the source file's stem
 
@@ -1411,8 +1411,8 @@ Use-case constraint: rule — the page offers `<source-stem>.ics` and
   1 scenario (1 passed), 4 steps (4 passed)   REFACTOR_EXIT=0
   ```
 - [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: The offered names use the source file's stem`; Hash: recorded in the
-  scenario-commit record commit
+  `Scenario: The offered names use the source file's stem`; Hash:
+  `d2f3fc7577e571922c3003e5d1352c9c92e0c1e6`
 
 ### 15. A browser conversion leaves no plan in persistent storage or a navigable address
 
@@ -1503,7 +1503,7 @@ a navigable URL/history entry; an ephemeral object URL is allowed and revoked on
   ```
 - [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A browser conversion leaves no plan in persistent storage or a navigable address`;
-  Hash: recorded in the scenario-commit record commit
+  Hash: `88d585a3525e4ac6174046f4ce8bdca71d80e7b7`
 
 ## E2E setup task — local environment, browser driver, e2e skeleton, subset proof
 
