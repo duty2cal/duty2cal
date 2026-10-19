@@ -31,7 +31,7 @@ Feature: Export a duty-plan calendar
     Then the page shows that the calendar is ready
     And the page offers the file "2026-06.ics"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A plan larger than the supported size bound is refused by name
     Given the converter page served from the built Site output
     When the crew member supplies the plan "2026-06.pdf" of 25 MiB

@@ -485,8 +485,8 @@ Use-case constraint: main-flow step 1 refuses a browser-supplied plan larger tha
   4 steps (4 passed)
   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A plan at the supported size bound is accepted`; Hash: `<record the revision identifier here>`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+  `Scenario: A plan at the supported size bound is accepted`; Hash: `afd900bf8b4a397ac5aa799953ff0620a8bd398d`
 
 ### 3. A plan larger than the supported size bound is refused by name
 
@@ -508,34 +508,42 @@ is offered; a diagnostic offer is attempted.
   optional diagnostic offer and `Choose another plan`; no calendar offer.
 - The 25 MiB fixture is rejected before parsing.
 
-- [ ] RED — remove `@wip` from this scenario only; add its new step bodies as
+- [x] RED — remove `@wip` from this scenario only; add its new step bodies as
   `unimplemented!()` stubs (previously implemented shared steps stay implemented); run:
   ```
-  $ ./run-tests.sh --name "A plan larger than the supported size bound is refused by name"
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A plan larger than the supported size bound is refused by name"
   Feature: Export a duty-plan calendar
     Scenario: A plan larger than the supported size bound is refused by name
      ✔  Given the converter page served from the built Site output
      ✘  When the crew member supplies the plan "2026-06.pdf" of 25 MiB
-        Step panicked. Captured output: not implemented: build and supply the 25-MiB fixture
+        Step failed:
+        Defined: tmp/tmp.zOgoP5HTFc/f0006.feature:37:5
+        Matched: apps/cli/tests/steps/export_duty_plan_calendar.rs:2896:1
+        Step panicked. Captured output: not implemented: the crew member supplies a plan larger than the supported size bound
   [Summary]
   1 feature
   1 scenario (1 failed)
   2 steps (1 passed, 1 failed)
   RED_EXIT=101
   ```
-- [ ] GREEN — real assertions and minimum production code; production files modified:
+- [x] GREEN — real assertions and minimum production code; production files modified:
   - `crates/duty2cal-core/src/application/mod.rs` — `pub fn diagnostic_text(...)`.
   - `apps/cli/src/main.rs` — `report()` uses the shared function (no format change).
   - `ffi/wasm/src/lib.rs` — the `diagnostic_text` wasm export and the failure object's
     `diagnostic` field.
   - `web/app.js` — size refusal, failure-panel rendering, diagnostic offer
     (`Save 2026-06.parse-error.txt`), reset control.
-  - Test support: `apps/cli/tests/steps/support.rs` — a 25 MiB padded fixture.
+    (The shared diagnostic and the page failure path were already present and
+    committed with scenario 1; this scenario exercises them and adds no second
+    spelling.)
+  - Test support: `apps/cli/tests/steps/support.rs` — the same `build_pdf_at_size`
+    helper supplies the 25 MiB fixture; it is never committed as a binary.
   - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the size-refusal steps,
     including the captured diagnostic download.
-  Run:
   ```
-  $ ./run-tests.sh --name "A plan larger than the supported size bound is refused by name"
+  $ cargo fmt --all --check -> FMT OK
+  $ cargo clippy --workspace --all-targets -- -D warnings -> clean (CLIPPY_EXIT=0)
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A plan larger than the supported size bound is refused by name"
   Feature: Export a duty-plan calendar
     Scenario: A plan larger than the supported size bound is refused by name
      ✔  Given the converter page served from the built Site output
@@ -551,10 +559,27 @@ is offered; a diagnostic offer is attempted.
   7 steps (7 passed)
   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — confirm the CLI and facade share one diagnostic format (no second
-  spelling), re-run:
+- [x] REFACTOR — confirm the CLI and facade share one diagnostic format (no second
+  spelling), re-run. `Source PDF:` appears in production only in
+  `crates/duty2cal-core/src/application/mod.rs`; the wasm export calls it and
+  `apps/cli/src/main.rs` uses it. The single page-side spelling is the documented
+  last-resort trap fallback:
   ```
-  1 scenario (1 passed), 7 steps (7 passed)   REFACTOR_EXIT=0
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A plan larger than the supported size bound is refused by name"
+  Feature: Export a duty-plan calendar
+    Scenario: A plan larger than the supported size bound is refused by name
+     ✔  Given the converter page served from the built Site output
+     ✔  When the crew member supplies the plan "2026-06.pdf" of 25 MiB
+     ✔  Then the page shows a failure heading and a failure naming the 20 MiB bound
+     ✔  And the page offers no calendar
+     ✔  And the page offers the diagnostic text "2026-06.parse-error.txt"
+     ✔  And the diagnostic text identifies "2026-06.pdf" and the size failure
+     ✔  And the page offers a way to choose another plan
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  7 steps (7 passed)
+  REFACTOR_EXIT=0
   ```
 - [ ] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
   `Scenario: A plan larger than the supported size bound is refused by name`; Hash: `<record the revision identifier here>`
