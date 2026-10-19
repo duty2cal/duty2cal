@@ -14,6 +14,7 @@ file at `docs/arc42/adr/ADR-NNNN-short-slug.md`; the chapter-09 register
 | ADR-0004 | Publish releases immutably from an inspected draft | accepted | 2026-10-13 | [ADR-0004-immutable-draft-first-publication.md](ADR-0004-immutable-draft-first-publication.md) |
 | ADR-0005 | Declare the public home's GitHub configuration with OpenTofu and the GitHub provider | accepted | 2026-10-17 | [ADR-0005-declare-the-public-home-with-opentofu.md](ADR-0005-declare-the-public-home-with-opentofu.md) |
 | ADR-0006 | Keep the applied state local, passphrase-encrypted and committed, and check configuration drift locally | accepted | 2026-10-17 | [ADR-0006-encrypted-local-applied-state.md](ADR-0006-encrypted-local-applied-state.md) |
+| ADR-0007 | Run the conversion in the browser through a WASM facade over the unchanged application | accepted | 2026-10-19 | [ADR-0007-browser-local-conversion-facade.md](ADR-0007-browser-local-conversion-facade.md) |
 
 ## Notes
 
@@ -30,5 +31,11 @@ file at `docs/arc42/adr/ADR-NNNN-short-slug.md`; the chapter-09 register
   (the declaration mechanism) and ADR-0006 (the encrypted local applied state
   and the local drift check). Each records one boundary; neither supersedes an
   earlier record.
+- The change to build the browser converter (build-browser-converter) minted
+  ADR-0007 (the browser-local conversion facade). It applies ADR-0002's layer
+  model rather than amending it, and it is not ADR-0003 because the browser is a
+  conversion route, not a downloadable archive platform. The browser-owned save
+  and the browser test driver were routed to the capability specification and
+  `design.md` respectively, not to an ADR.
 - Archived historical ADRs live under `docs/arc42/adr/archive/` with their IDs
   preserved; both indexes are updated on any move.

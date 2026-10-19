@@ -1,0 +1,111 @@
+# WASM feasibility probe — 2026-10-19
+
+Repository revision: 9734f98c4f4006a982abf5df9b76b2959dd0316e
+Host: x86_64 / Linux
+Rust: rustc 1.99.1 (58cf8f9c3 2026-10-13)
+Cargo: cargo 1.99.1 (5f94df478 2026-08-27)
+
+## Probe consumer manifest (/tmp/wasmprobe/Cargo.toml)
+```toml
+[package]
+name = "wasmprobe"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+duty2cal-pdf = { path = "/home/dan/dev/PRIVATE/duty2cal/crates/duty2cal-pdf" }
+getrandom = { version = "0.4", features = ["wasm_js"] }
+```
+
+## Probe source (/tmp/wasmprobe/src/main.rs)
+```rust
+fn main() {}
+```
+
+## Command
+```sh
+CARGO_TARGET_DIR=/tmp/wasmprobe-target cargo check --manifest-path /tmp/wasmprobe/Cargo.toml --target wasm32-unknown-unknown
+```
+
+## Output (clean target; dependencies compiled)
+```text
+    Checking typenum v1.20.1
+   Compiling unicode-ident v1.0.27
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling rustversion v1.0.23
+   Compiling wasm-bindgen-shared v0.2.129
+    Checking cfg-if v1.0.5
+    Checking hybrid-array v0.4.15
+   Compiling syn v3.0.9
+   Compiling bumpalo v3.20.3
+    Checking memchr v2.8.3
+    Checking crypto-common v0.2.2
+    Checking block-padding v0.4.2
+   Compiling wasm-bindgen v0.2.129
+    Checking inout v0.2.4
+    Checking block-buffer v0.12.1
+    Checking const-oid v0.10.2
+   Compiling thiserror v2.0.21
+    Checking rand_core v0.10.1
+    Checking cipher v0.5.2
+   Compiling getrandom v0.4.3
+   Compiling crc32fast v1.5.2
+    Checking once_cell v1.21.4
+    Checking tinyvec v1.13.3
+    Checking digest v0.11.3
+    Checking aho-corasick v1.1.5
+   Compiling encoding_rs v0.8.42
+    Checking unicode-bidi v0.3.18
+    Checking unicode-normalization v0.1.26
+    Checking adler2 v2.0.1
+    Checking simd-adler32 v0.3.10
+    Checking regex-syntax v0.8.11
+    Checking miniz_oxide v0.9.1
+    Checking chacha20 v0.10.2
+    Checking scopeguard v1.2.0
+   Compiling multiversion_no_op v1.0.0
+    Checking hashbrown v0.17.1
+    Checking equivalent v1.0.3
+    Checking cpubits v0.1.1
+    Checking unicode-properties v0.1.4
+    Checking stringprep v0.1.5
+    Checking aes v0.9.3
+    Checking indexmap v2.14.2
+   Compiling wasm-bindgen-macro-support v0.2.129
+    Checking regex-automata v0.4.18
+    Checking flate2 v1.1.10
+    Checking md-5 v0.11.0
+    Checking sha2 v0.11.1
+    Checking cbc v0.2.1
+    Checking ecb v0.2.1
+    Checking nom v8.0.0
+    Checking regex v1.13.1
+    Checking weezl v0.2.1
+    Checking bitflags v2.13.2
+    Checking log v0.4.34
+    Checking rangemap v1.8.0
+    Checking itoa v1.0.18
+    Checking pdfplumber-core v0.4.1
+   Compiling thiserror-impl v2.0.21
+    Checking powerfmt v0.2.1
+    Checking num-conv v0.2.2
+    Checking deranged v0.5.9
+    Checking time-core v0.1.9
+    Checking time v0.3.55
+    Checking duty2cal-core v0.1.0 (/home/dan/dev/PRIVATE/duty2cal/crates/duty2cal-core)
+   Compiling wasm-bindgen-macro v0.2.129
+    Checking rand v0.10.3
+    Checking lopdf v0.44.0
+    Checking pdfplumber-parse v0.4.1
+    Checking pdfplumber v0.4.1
+    Checking duty2cal-pdf v0.1.0 (/home/dan/dev/PRIVATE/duty2cal/crates/duty2cal-pdf)
+    Checking wasmprobe v0.1.0 (/tmp/wasmprobe)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 52.75s
+```
+
+## Scope of this evidence
+
+This proves that the Rust crates compile for wasm32-unknown-unknown with the
+getrandom wasm_js feature enabled. It does not prove linking, wasm-pack output,
+a browser run, or the no-network claim; those remain unverified.

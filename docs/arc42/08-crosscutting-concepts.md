@@ -10,7 +10,7 @@ New calendars and diagnostics are written with `create_new`, under the plain nam
 
 ## Explicit failure reporting
 
-A failure carries a primary reason and is reported independently of diagnostic persistence. The diagnostic path is reported only after a successful write; when no new report can be saved, the message states that and never presents an older report as current. Exit status is zero only for a real publication.
+A failure carries a primary reason and is reported independently of diagnostic persistence. The diagnostic path is reported only after a successful write; when no new report can be saved, the message states that and never presents an older report as current. Exit status is zero only for a real publication. The browser realization keeps the same shape: the reason is visible, the calendar is not offered on failure, a diagnostic offer is attempted, and a failed offer never replaces the primary failure.
 
 ## Source-snapshot-scoped identity and determinism
 
@@ -19,6 +19,53 @@ Component identity is derived from the source snapshot and the represented activ
 ## Privacy
 
 Real duty plans are read for analysis but never committed. Fixtures, golden calendars, and public examples are generated or anonymized, and privacy checks consider identifying combinations (dates, itineraries, trip identifiers) rather than names alone. No real plan or identifying output is sent to an external service.
+
+## Browser-local conversion and the no-network boundary
+
+The browser page is a second driving adapter, not a second conversion. It
+passes the selected file's bytes and name to the unchanged `ConvertRoster`
+through `ffi/wasm`; the facade performs no filesystem, network or environment
+I/O and uses a browser clock only for the existing fallback. The page makes no
+request to another origin after it loads and loads no third-party asset. The
+meta CSP is `default-src 'self'; connect-src 'none'; script-src 'self'
+'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data:; object-src 'none';
+base-uri 'none'; form-action 'none'`. The WASM bytes are inlined as base64 so
+the generated loader never fetches the `.wasm` file; the CSP is not weakened
+for it. The driver records every request and the `@e2e` scenario fails on any
+other-origin request after load.
+
+## Browser offer and browser-owned save
+
+The page never writes a file and never uses the File System Access API. It
+creates an object URL over a `Blob` and an `<a download="<name>">`; the browser
+performs the save and owns the location and any collision suffix. The page
+never claims a save it did not observe and never promises an unused numbered
+name. Every `acceptFile` clears the prior offer and status first, so a failed
+attempt withdraws an earlier calendar offer. A failed calendar offer is a
+failure, never a ready state; a failed diagnostic offer leaves the primary
+failure visible and says no diagnostic was offered. Object URLs are revoked when
+replaced and on `pagehide`. No plan or derived data enters localStorage,
+sessionStorage, IndexedDB, cookies, a history entry or a navigable URL.
+
+## Capability gate, startup failure and the input bound
+
+A classic deferred check tests `WebAssembly`, `WebAssembly.instantiate` and
+ES-module support before the module is used; the picker and drop zone stay
+hidden until the gate passes and the module initializes. A missing capability
+or a module-load/instantiation failure renders the cannot-run treatment, offers
+no picker and no calendar, and never falls back to a server or an upload. The
+page refuses a plan larger than 20 MiB by name before reading it; the converter
+still checks the family and content.
+
+## Browser toolchain pinning
+
+The browser test surface is pinned: Playwright and `@axe-core/playwright` in
+`web/e2e/package-lock.json`, Node in `web/e2e/.nvmrc` after one LTS resolution,
+Chromium through the Playwright package, `wasm-pack` in
+`web/.wasm-pack-version`. These are test/build dependencies, not runtime
+assets. The Rust resolution is in `Cargo.lock`, and `wasm-bindgen`, `js-sys`
+and `getrandom` are target-scoped so native builds stay clean. A setup without
+the pinned tools fails loudly rather than skipping the browser scenarios.
 
 ## Classification and timing as pure rules
 
@@ -127,9 +174,12 @@ The organization profile and the organization's default security policy are
 public copy, not product output. They live in `org/` in the monorepo, are
 reviewed like code, are licensed CC0-1.0, and are published into the public
 profile repository by the declaration; the profile repository is output and is
-never edited by hand. The copy states only what the repository keeps: a local
-converter, Windows x86_64 as the only distributed platform, no browser
-application, and no third-party provider name. It links the stable
+never edited by hand. The copy states only what the repository keeps: the
+converter and its crew duty plan input, Windows x86_64 as the only downloadable
+archive platform, the browser conversion route only once the Site publication
+makes it reachable (that copy belongs to `publish-public-website`), no hosted
+converter or upload, no third-party provider name. The profile must not describe
+the built-but-unpublished page as live. It links the stable
 latest-release address, the source and the site repositories, attributes the
 third-party Unicode data to Unicode-3.0 with an absolute licence link, and
 states explicitly that the project is not affiliated with any duty-plan

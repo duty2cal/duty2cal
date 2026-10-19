@@ -14,6 +14,7 @@ Markdown file under `docs/arc42/adr/ADR-NNNN-short-slug.md`.
 | ADR-0004 | Publish releases immutably from an inspected draft | accepted | 2026-10-13 | [ADR-0004-immutable-draft-first-publication.md](adr/ADR-0004-immutable-draft-first-publication.md) |
 | ADR-0005 | Declare the public home's GitHub configuration with OpenTofu and the GitHub provider | accepted | 2026-10-17 | [ADR-0005-declare-the-public-home-with-opentofu.md](adr/ADR-0005-declare-the-public-home-with-opentofu.md) |
 | ADR-0006 | Keep the applied state local, passphrase-encrypted and committed, and check configuration drift locally | accepted | 2026-10-17 | [ADR-0006-encrypted-local-applied-state.md](adr/ADR-0006-encrypted-local-applied-state.md) |
+| ADR-0007 | Run the conversion in the browser through a WASM facade over the unchanged application | accepted | 2026-10-19 | [ADR-0007-browser-local-conversion-facade.md](adr/ADR-0007-browser-local-conversion-facade.md) |
 
 ADR-0001 and ADR-0002 were minted by the change to export released roster
 calendars (export-released-roster-calendar); ADR-0003 and ADR-0004 were minted
@@ -26,9 +27,15 @@ configuration, and where the applied state lives and how it is protected. They
 are separate records because they are separate boundaries — the tool that
 declares the configuration does not decide where the state lives, and the state
 decision does not depend on the tool choice beyond its encryption support.
-Every other design choice in those changes is a supplied constraint (chapter 2),
-a local mechanism (`design.md`), or product behaviour owned by the capability
-specification and the glossary, and did not pass the qualification gate.
+ADR-0007 was minted by the change to build the browser converter
+(build-browser-converter): one record for the browser-local conversion facade
+(the new driving adapter, the `wasm32` target and the no-server deployment
+boundary). The browser-owned save is observable workflow behavior routed to the
+capability specification and `usecase.md`; the Playwright/JSON-lines test
+driver is test tooling routed to `design.md`. Every other design choice in
+those changes is a supplied constraint (chapter 2), a local mechanism
+(`design.md`), or product behaviour owned by the capability specification and
+the glossary, and did not pass the qualification gate.
 
 ## Individual ADR contract
 

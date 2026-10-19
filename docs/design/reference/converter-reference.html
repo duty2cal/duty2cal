@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Converter screen design reference</title>
+<style>
+  :root {
+    --color-bg: #ffffff;
+    --color-surface: #f5f7fa;
+    --color-text: #14181f;
+    --color-muted: #4b5563;
+    --color-border: #d6dbe3;
+    --color-accent: #0b5fd7;
+    --color-accent-contrast: #ffffff;
+    --color-success: #0f6b3f;
+    --color-danger: #a12622;
+    --color-focus: #0b5fd7;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --space-8: 64px;
+    --radius-control: 4px;
+    --radius-panel: 8px;
+    --motion-duration: 120ms;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: light; }
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  header, main, footer { padding-inline: var(--space-4); }
+  header { padding-block: var(--space-5) var(--space-3); border-bottom: 1px solid var(--color-border); }
+  main { padding-block: var(--space-6); }
+  footer { padding-block: var(--space-5); color: var(--color-muted); font-size: 14px; border-top: 1px solid var(--color-border); }
+  h1 { margin: 0; font-size: 28px; line-height: 1.2; }
+  h2 { margin: 0 0 var(--space-2); font-size: 20px; line-height: 1.2; }
+  p { margin: 0 0 var(--space-3); }
+  .panel {
+    max-width: 720px;
+    margin: 0 auto var(--space-7);
+    padding: var(--space-5);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-panel);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+  }
+  .panel-note { color: var(--color-muted); font-size: 14px; }
+  .drop {
+    display: block;
+    margin: var(--space-4) 0;
+    padding: var(--space-6) var(--space-4);
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-control);
+    text-align: center;
+    color: var(--color-muted);
+    transition: opacity var(--motion-duration) ease;
+  }
+  .picker {
+    display: inline-block;
+    padding: var(--space-3) var(--space-5);
+    min-height: 44px;
+    border: 0;
+    border-radius: var(--radius-control);
+    background: var(--color-accent);
+    color: var(--color-accent-contrast);
+    font: inherit;
+    font-weight: 600;
+  }
+  .picker:focus-visible, a:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+  .status { margin-top: var(--space-4); }
+  .ready h2 { color: var(--color-success); }
+  .failure h2 { color: var(--color-danger); }
+  a { color: var(--color-accent); }
+  .offer { display: inline-block; margin-right: var(--space-4); font-weight: 600; }
+  .muted { color: var(--color-muted); }
+  .reference-label { font-size: 14px; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  @media (min-width: 480px) { header, main, footer { padding-inline: var(--space-5); } }
+  @media (min-width: 720px) {
+    header, main, footer { padding-inline: var(--space-6); }
+    h1 { font-size: 36px; }
+  }
+  @media (prefers-reduced-motion: reduce) { :root { --motion-duration: 0ms; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Convert a duty plan to a calendar</h1>
+  <p class="muted">Processing happens in this tab. The plan is never uploaded.</p>
+</header>
+<main>
+  <section class="panel" aria-labelledby="empty-heading">
+    <p class="reference-label">Reference: empty state</p>
+    <h2 id="empty-heading">Choose a duty plan</h2>
+    <p>Select one supported duty-plan PDF, or drop it here. Plans up to 20 MiB.</p>
+    <div class="drop">Drop one duty plan here</div>
+    <button class="picker" type="button">Choose a duty plan</button>
+    <p class="status" role="status" aria-live="polite">No plan selected.</p>
+  </section>
+
+  <section class="panel ready" aria-labelledby="ready-heading">
+    <p class="reference-label">Reference: ready state</p>
+    <h2 id="ready-heading">Calendar ready</h2>
+    <p>Your complete calendar is ready. The browser chooses where the file is saved.</p>
+    <p><a class="offer" href="#ready-heading">Save 2026-06.ics</a></p>
+    <p class="muted" role="status" aria-live="polite">Calendar ready for 2026-06.pdf.</p>
+    <button class="picker" type="button">Choose another duty plan</button>
+  </section>
+
+  <section class="panel failure" aria-labelledby="failure-heading">
+    <p class="reference-label">Reference: failure state</p>
+    <h2 id="failure-heading">Conversion failed</h2>
+    <p>The file notes.pdf is not a supported duty plan.</p>
+    <p><a class="offer" href="#failure-heading">Save notes.parse-error.txt</a></p>
+    <p class="muted">The diagnostic names the source and the reason.</p>
+    <button class="picker" type="button">Choose another plan</button>
+  </section>
+</main>
+<footer>
+  <p>No account, email or upload is needed. The page stores nothing and sends no request after it loads.</p>
+</footer>
+</body>
+</html>

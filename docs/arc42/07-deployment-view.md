@@ -2,7 +2,13 @@
 
 ## Infrastructure level 1
 
-The project publishes one self-contained Windows x86_64 executable, cross-built by its own automation on a GitHub-hosted Linux runner, started on a Windows runner and published as an immutable release from the public repository. A crew member on Windows downloads the archive from the stable latest-release address and runs the executable on their own machine; it touches only the local filesystem. Other platforms are unsupported, untested and undistributed and build the source with a Rust toolchain.
+The project publishes one self-contained Windows x86_64 executable, cross-built by its own automation on a GitHub-hosted Linux runner, started on a Windows runner and published as an immutable release from the public repository. A crew member on Windows downloads the archive from the stable latest-release address and runs the executable on their own machine; it touches only the local filesystem. Other platforms receive no archive and build the source with a Rust toolchain.
+
+The browser conversion page is a second deployment realization of the same
+conversion: a static Site output served over loopback for the test and manual
+run. The page needs no application server, database or runtime service; its
+only runtime is the browser. Publishing that built output as the Public website
+is the separate Site publication, not this deployment.
 
 ```mermaid
 flowchart TB
@@ -19,6 +25,10 @@ flowchart TB
   ver --> rel["Immutable release at the stable latest address"]
   rel --> dl["Crew member on Windows x86_64 downloads the archive"]
   dl --> run["Runs it locally; touches only the local filesystem"]
+  build["scripts/build-web.sh — wasm-pack + base64 inline"] --> site["web/ Site output"]
+  site --> loop["loopback static server (manual run and E2E)"]
+  loop --> browser["crew member's current browser; no backend"]
+  site -.->|"later Site publication"| pages["Pages repository / Public website"]
 ```
 
 | Node / Environment | Description |
@@ -28,8 +38,22 @@ flowchart TB
 | GitHub Releases | Serves the published Windows archive, its checksum, its provenance and bill of materials, the release text, and the change log (`CHANGELOG.md`) at a stable latest-release address. |
 | Crew member's machine | Runs the downloaded executable; supplies the plan and receives the calendar or a diagnostic. |
 | Local filesystem | Holds the input plan and the published calendar/report files. |
+| Loopback static server | Serves the built `web/` output for the manual run and each browser scenario; no application server, database or queue. |
+| Crew member's browser | Runs the page and the inline WASM; offers the calendar/diagnostic for a browser-owned save. Supported by capability (WebAssembly and ES modules), not by a version matrix. |
+| GitHub Pages / Public website | The built Site output's eventual public deployment, owned by the separate Site publication; not published by this change. |
 
 ## Infrastructure level 2
+
+### The browser conversion output
+
+| Property | Value |
+|---|---|
+| Artefact | Static Site output: `index.html`, `capability.js`, `app.js`, `styles.css`, the generated `pkg/` modules and the inline WASM bytes, plus the licence file |
+| Build | `scripts/build-web.sh` installs the pinned `wasm-pack`, builds the bundle and writes the base64 inline module; Node, Playwright and Chromium are test-only and pinned |
+| Runtime | The crew member's current browser; no application server, database, queue or container |
+| Serving | Loopback static server for the manual run and each E2E scenario; the GitHub Pages deployment is the separate Site publication |
+| Network | No request to another origin after load; no third-party asset; the WASM is inline, so no `.wasm` request occurs |
+| Evidence | A Playwright/Chromium `@e2e` scenario plus regular browser variants; screenshots at 360x780 and 1920x1080; the capability and startup branches are forced with init scripts |
 
 ### The Windows artefact and the runners that build it
 
@@ -48,7 +72,7 @@ Beside the one Windows archive and its checksum (and the archive's provenance an
 | Property | Value |
 |---|---|
 | Hardware / VM | Crew member's ordinary machine |
-| OS | Windows x86_64 only. Linux, macOS and any other platform are unsupported, untested and undistributed; their users may build the source with a Rust toolchain. |
+| OS | Windows x86_64 for this executable. No archive is offered for Linux, macOS or any other platform, and their users may build the source with a Rust toolchain. The browser conversion route is separate: it needs a current browser, not this machine class. |
 | Middleware / Runtime | None beyond the executable (Windows GNU statically linked; no companion DLL or runtime installer) |
 | Key software deployed | One self-contained `duty2cal.exe` executable |
 
@@ -168,7 +192,7 @@ repeating the step. Chapter 11 records the limitation.
 - The apply that publishes the profile creates `duty2cal/.github` and writes its two reviewed files. The repository is not adopted: it does not exist live, so the preview names the three creations and the apply records them. The profile and security-policy text stays in `org/` under CC0-1.0; the profile repository is output and is never edited by hand.
 - Before that apply, the owner enables private vulnerability reporting on `duty2cal/duty2cal` by hand, because the pinned provider cannot declare it and the published policy names its route. The setting is not in the declaration, the applied state or the drift check.
 - The declaration resolves its reviewed source through `variable "org_source_dir"`; the default is `../org` beside `infra/`. The adoption command stages the declaration without `org_profile.tf`, and the setup proof and security base workspaces omit it, so no non-profile workspace evaluates the profile files.
-- The organization profile page is GitHub's rendering of that output. This change does not publish a browser converter or a three-platform release: the live Pages site still serves a placeholder, and the profile describes the local Windows x86_64 tool. The page embeds no third-party resource, so opening it issues no request beyond GitHub's own.
+- The organization profile page is GitHub's rendering of that output. This change builds and locally/CI-serves the browser converter but does not publish it: the live Pages site still serves a placeholder until the Site publication runs, and the profile keeps its truthful current-release wording (the browser route becomes a published claim with that publication). No three-platform archive is released. The profile page embeds no third-party resource, so opening it issues no request beyond GitHub's own.
 - Pinned repositories are a one-time manual step in the organization's web settings. They have no declared object, no state binding and no drift report; the step is recorded above and the limitation is a chapter-11 risk.
 - The test environment starts the fake in `--writes` mode only for the scenarios that apply a change; it now serves repository creation, repository contents, branches and commits from an in-memory overlay. The adoption scenarios keep the read-only server and still prove that adoption issues no write.
 - The administer token, the passphrase, the billing email and the transient encrypted plan file never leave the workstation; the plan file is git-ignored and deleted after the apply.
