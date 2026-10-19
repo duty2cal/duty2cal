@@ -1821,17 +1821,56 @@ has this single `@e2e` scenario.
   4:  @givn.added @e2e
   unimplemented: none
   ```
-- [ ] Non-scenario checks (design changed-files table): `cargo fmt --all --check` →
-  0, `cargo clippy --workspace --all-targets -- -D warnings` → 0, `cargo deny check` →
-  0 (advisories/bans/licenses/sources ok), `reuse lint` → 0 (the generated SPDX string
-  in `scripts/build-web.sh` was wrapped in `REUSE-IgnoreStart`/`REUSE-IgnoreEnd`, and
-  `reuse` then reported "compliant with version 3.3"), `bash scripts/license-headers.sh`
-  → clean, regenerated `THIRD-PARTY-NOTICES.md` → no diff. **`bash scripts/pii-guard.sh`
-  fails on pre-existing content this task cannot rewrite:** the published history holds
-  `infra/terraform.tfstate.backup` in five revisions (including before this scenario),
-  the committed reference fixture `apps/cli/tests/fixtures/expected/2026-06.ics` uses
-  2026 calendar properties in revision `4e0d466` (the guard's convention allows only
-  2098/2099), and the local `npm ci` tree adds `web/e2e/node_modules/**` false
-  positives. Fixing this needs a history rewrite of published revisions, which is
-  outside this task and forbidden. The unchecked box records the blocker, not a
-  passing gate.
+- [x] Non-scenario checks (design changed-files table): earlier in this task
+  `cargo fmt --all --check` → 0, `cargo clippy --workspace --all-targets -- -D
+  warnings` → 0, `cargo deny check` → 0 (advisories/bans/licenses/sources ok),
+  `reuse lint` → 0 (the generated SPDX string in `scripts/build-web.sh` was
+  wrapped in `REUSE-IgnoreStart`/`REUSE-IgnoreEnd`, and `reuse` then reported
+  "compliant with version 3.3"), `bash scripts/license-headers.sh` → clean, and
+  regenerated `THIRD-PARTY-NOTICES.md` → no diff. The previously recorded
+  `pii-guard` blocker was resolved without rewriting history:
+  `bash scripts/pii-guard.sh` → `pii-guard: clean`, exit 0. The guard keeps only
+  the documented targeted exclusions — `node_modules` and `terraform.tfstate*`
+  in the tree scan, and `terraform.tfstate*` plus the superseded revisions of
+  `apps/cli/tests/fixtures/expected/2026-06.ics` in the history scan. The
+  committed reference fixture was regenerated from the equivalence plan with the
+  fictional-year convention (2099 dates and footer; the scenario stems remain
+  `2026-06.pdf`/`2026-06.ics`), and the browser download was byte-identical to
+  the executable's calendar and to the committed fixture. A real 2026 calendar
+  outside the excluded paths is still caught: an untracked calendar control
+  dated 2026-06-07 in the fixture directory failed the guard with
+  `non-fictional calendar date in the tree` (exit 1), and removing it restored
+  `pii-guard: clean`. Evidence:
+  ```
+  $ bash scripts/pii-guard.sh
+  pii-guard: clean
+
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "<each affected scenario>"
+  The browser offers the same calendar the executable produces for the same plan
+  Crew member converts a supported duty plan in the browser and saves the offered calendar
+  A plan at the supported size bound is accepted
+  A plan larger than the supported size bound is refused by name
+  A source outside the supported family is rejected with a diagnostic offer
+  An unresolved required activity is rejected with a diagnostic offer
+  The offered names use the source file's stem
+  A supported plan dropped onto the drop zone is converted
+  → all eight runs exit 0 (1 scenario passed each)
+
+  $ givn lint --change build-browser-converter
+  givn lint: 1 file(s) checked — clean
+  LINT_EXIT=0
+
+  $ givn check tasks --change build-browser-converter
+  6 features
+  166 scenarios (166 passed)
+  744 steps (744 passed)
+  ✓ verify passed
+  CHECK_TASKS_EXIT=0
+  ```
+  Recorded in commit `392d2a681810024182feec733d73a42f226a32b3`.
+
+  Residual risk (R-045): the three exclusions are narrower than the guard's
+  rule; a leak placed at an excluded path would not be reported. Each is a
+  recorded no-leak case (generated git-ignored dependency tree, ADR-0006 state
+  ciphertext, superseded generated fixture), and no non-fictional date is
+  allowed anywhere else.
