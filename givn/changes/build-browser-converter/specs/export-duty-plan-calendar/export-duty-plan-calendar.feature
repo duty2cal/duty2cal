@@ -72,7 +72,7 @@ Feature: Export a duty-plan calendar
     And the page offers no calendar and no longer offers "2026-06.ics"
     And the page offers the diagnostic text "notes.parse-error.txt"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A calendar that cannot be offered is not reported as ready
     Given the converter page served from the built Site output that cannot create a download offer for the calendar
     When the crew member supplies the supported duty plan "2026-06.pdf" through the file picker

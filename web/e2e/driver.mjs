@@ -224,6 +224,26 @@ const actions = {
       colorScheme: 'light',
       reducedMotion: 'reduce',
     });
+    if (params.mode) {
+      const blockedType =
+        params.mode === 'calendar-offer-failure'
+          ? 'text/calendar'
+          : params.mode === 'diagnostic-offer-failure'
+            ? 'text/plain'
+            : undefined;
+      if (!blockedType) {
+        throw new Error(`unknown start mode: ${params.mode}`);
+      }
+      await context.addInitScript((type) => {
+        const create = URL.createObjectURL.bind(URL);
+        URL.createObjectURL = (blob) => {
+          if (blob instanceof Blob && blob.type.startsWith(type)) {
+            throw new Error(`the driver refuses a ${type} object URL`);
+          }
+          return create(blob);
+        };
+      }, blockedType);
+    }
     page = await context.newPage();
     requestLog = [];
     page.on('request', (request) => {

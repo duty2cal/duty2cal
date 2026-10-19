@@ -837,30 +837,41 @@ failure and attempt a diagnostic; success is never reported without an offer.
 - The failure panel keeps its heading, the reason and `Choose another plan`.
 - The diagnostic offer is `2026-06.parse-error.txt`; the step captures and reads it.
 
-- [ ] RED — remove `@wip` from this scenario only; add its new step bodies as
-  `unimplemented!()` stubs (previously implemented shared steps stay implemented); run:
+- [x] RED — remove `@wip` from this scenario only; its new step body stayed the committed
+  `unimplemented!()` stub; run:
   ```
-  $ ./run-tests.sh --name "A calendar that cannot be offered is not reported as ready"
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A calendar that cannot be offered is not reported as ready"
   Feature: Export a duty-plan calendar
     Scenario: A calendar that cannot be offered is not reported as ready
      ✘  Given the converter page served from the built Site output that cannot create a download offer for the calendar
-        Step panicked. Captured output: not implemented: start the page with the calendar-offer failure injection
+        Step failed:
+        Defined: tmp/tmp.zF3rL5Qi9W/f0006.feature:77:5
+        Matched: apps/cli/tests/steps/export_duty_plan_calendar.rs:2825:1
+        Step panicked. Captured output: not implemented: the converter page served from the built Site output that cannot create a download offer for the calendar
   [Summary]
   1 feature
   1 scenario (1 failed)
   1 step (1 failed)
   RED_EXIT=101
   ```
-- [ ] GREEN — real assertions and minimum production code; production files modified:
-  - `web/app.js` — offer-creation `try/catch`, failure reason, diagnostic fallback with the
-    same reason, no ready state.
-  - `web/e2e/driver.mjs` — the init-script mode (`context.addInitScript` applied before
-    navigation, as design.md's `set_file` mode specifies) that throws for `text/calendar`
-    object URLs.
-  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the offer-failure steps.
+- [x] GREEN — real assertions and minimum production code; production files modified:
+  - `web/app.js` — `showReady` creates the offer inside `try/catch` **before** the ready
+    status or heading; on failure it calls `showFailure` with `the calendar could not be
+    offered for saving`, which offers no calendar and attempts the diagnostic with the
+    same reason.
+  - `web/index.html` — the `failure-note` paragraph (hidden unless a diagnostic offer
+    fails; scenario 8).
+  - `web/e2e/driver.mjs` — `start` accepts `mode`; `calendar-offer-failure` (and
+    `diagnostic-offer-failure`) install `context.addInitScript` before `newPage()` so
+    `URL.createObjectURL` throws only for the matching Blob type.
+  - `apps/cli/tests/steps/export_duty_plan_calendar.rs` — the mode's Given step and the
+    failure assertion, which also captures the diagnostic and requires
+    `Source PDF: 2026-06.pdf\nReason: the calendar could not be offered for saving\n`.
   Run:
   ```
-  $ ./run-tests.sh --name "A calendar that cannot be offered is not reported as ready"
+  $ cargo fmt --all --check -> FMT OK
+  $ cargo clippy --workspace --all-targets -- -D warnings -> clean (CLIPPY_EXIT=0)
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A calendar that cannot be offered is not reported as ready"
   Feature: Export a duty-plan calendar
     Scenario: A calendar that cannot be offered is not reported as ready
      ✔  Given the converter page served from the built Site output that cannot create a download offer for the calendar
@@ -875,13 +886,15 @@ failure and attempt a diagnostic; success is never reported without an offer.
   6 steps (6 passed)
   GREEN_EXIT=0
   ```
-- [ ] REFACTOR — ensure the ready heading is never rendered before the offer exists,
-  re-run:
+- [x] REFACTOR — the ready heading is rendered only after `addOffer` returned, so an
+  offer failure never shows `Calendar ready` or `ready to save`; the assertion checks
+  both. No cleanup was needed; re-run:
   ```
+  $ DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A calendar that cannot be offered is not reported as ready"
   1 scenario (1 passed), 6 steps (6 passed)   REFACTOR_EXIT=0
   ```
-- [ ] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
-  `Scenario: A calendar that cannot be offered is not reported as ready`; Hash: `<record the revision identifier here>`
+- [x] COMMIT: subject `feat(export-duty-plan-calendar): <release note>`; body
+  `Scenario: A calendar that cannot be offered is not reported as ready`; Hash: `<recorded in the change's follow-up commit>`
 
 ### 8. A diagnostic that cannot be offered does not hide the primary failure
 
