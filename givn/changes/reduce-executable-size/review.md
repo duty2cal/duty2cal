@@ -135,6 +135,10 @@ without that record.
 The three confirmed Personas are review lenses; the Actor is the Release
 maintainer; no Persona biography is a Gherkin actor.
 
+PERSONAS: project-maintainer--release-owner
+PERSONAS: contributor--build-configuration-reviewer
+PERSONAS: crew-member--personal-calendar-owner
+
 ## Visual review (terminal transcript)
 
 The committed transcript is
