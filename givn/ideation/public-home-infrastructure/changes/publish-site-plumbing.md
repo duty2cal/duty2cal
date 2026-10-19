@@ -1,6 +1,6 @@
 # Change seed: publish-site-plumbing
 
-Status: proposed by publish-site-plumbing
+Status: ready
 
 - Use-case IDs: `apply-configuration-change`
 - Topic: `public-home-infrastructure`
