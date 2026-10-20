@@ -158,7 +158,8 @@ async fn the_pages_repository_has_no_deploy_key_and_no_rule_set(w: &mut DutyWorl
 async fn the_monorepo_has_no_secret(w: &mut DutyWorld, name: String) {
     let (_, secrets, _) =
         crate::steps::publish_site_plumbing::live_lists(w).expect("the live lists are readable");
-    let secrets = crate::steps::publish_site_plumbing::report(w, "e2e-empty-secrets.json", &secrets);
+    let secrets =
+        crate::steps::publish_site_plumbing::report(w, "e2e-empty-secrets.json", &secrets);
     assert_eq!(
         crate::steps::enable_repository_security::jq(
             w,
@@ -189,11 +190,11 @@ async fn the_preview_names_the_deploy_key_as_a_create(w: &mut DutyWorld) {
 
 #[then(regex = r#"^the preview names the "([^"]+)" secret as an object to create$"#)]
 async fn the_preview_names_the_secret_as_a_create(w: &mut DutyWorld, name: String) {
-    assert!(
-        plan_report(w).is_file(),
-        "the preview wrote a plan report"
+    assert!(plan_report(w).is_file(), "the preview wrote a plan report");
+    assert_eq!(
+        name, "PAGES_DEPLOY_KEY",
+        "the step names the declared secret"
     );
-    assert_eq!(name, "PAGES_DEPLOY_KEY", "the step names the declared secret");
     assert_create(w, "github_actions_secret.pages_publish");
 }
 
@@ -221,7 +222,10 @@ async fn the_preview_names_no_other_change(w: &mut DutyWorld) {
         "the preview names exactly the four creations; report was:\n{}",
         fs::read_to_string(&report).unwrap_or_default()
     );
-    let mut declared: Vec<String> = DECLARED.iter().map(|address| (*address).to_string()).collect();
+    let mut declared: Vec<String> = DECLARED
+        .iter()
+        .map(|address| (*address).to_string())
+        .collect();
     declared.sort();
     assert_eq!(
         crate::steps::enable_repository_security::jq(w, CREATES, &report, false),
@@ -279,15 +283,19 @@ async fn the_pages_repository_carries_the_write_enabled_deploy_key(
     w: &mut DutyWorld,
     title: String,
 ) {
-    let (status, body) = fake_request(w, "GET", "/repos/duty2cal/duty2cal.github.io/keys", &[], None);
+    let (status, body) = fake_request(
+        w,
+        "GET",
+        "/repos/duty2cal/duty2cal.github.io/keys",
+        &[],
+        None,
+    );
     assert_eq!(status, 200, "the deploy keys are readable: {body}");
     let keys = report(w, "e2e-applied-keys.json", &format!("[{body}]"));
     assert_eq!(
         jq(
             w,
-            &format!(
-                "[.[][]? | select(.title == {title:?})] | length"
-            ),
+            &format!("[.[][]? | select(.title == {title:?})] | length"),
             &keys,
             false
         ),
@@ -297,9 +305,7 @@ async fn the_pages_repository_carries_the_write_enabled_deploy_key(
     assert_eq!(
         jq(
             w,
-            &format!(
-                "[.[][]? | select(.title == {title:?}) | .read_only] | .[0]"
-            ),
+            &format!("[.[][]? | select(.title == {title:?}) | .read_only] | .[0]"),
             &keys,
             false
         ),
@@ -354,13 +360,17 @@ async fn the_secret_write_is_sealed(w: &mut DutyWorld) {
 
 #[then("the pages rule set is active and grants write-enabled deploy keys an always bypass")]
 async fn the_pages_rule_set_is_active_with_the_bypass(w: &mut DutyWorld) {
-    let (status, body) =
-        fake_request(w, "GET", "/repos/duty2cal/duty2cal.github.io/rulesets", &[], None);
+    let (status, body) = fake_request(
+        w,
+        "GET",
+        "/repos/duty2cal/duty2cal.github.io/rulesets",
+        &[],
+        None,
+    );
     assert_eq!(status, 200, "the rule sets are readable: {body}");
     let rulesets = report(w, "e2e-applied-rulesets.json", &body);
-    let filter = |field: &str| {
-        format!("[.[] | select(.name == \"pages protection\")] | .[0].{field}")
-    };
+    let filter =
+        |field: &str| format!("[.[] | select(.name == \"pages protection\")] | .[0].{field}");
     assert_eq!(
         jq(w, &filter("enforcement"), &rulesets, false),
         "active",
@@ -396,8 +406,13 @@ async fn the_pages_rule_set_is_active_with_the_bypass(w: &mut DutyWorld) {
 
 #[then("the pages rule set forbids deletion, force pushes and merge commits")]
 async fn the_pages_rule_set_forbids_the_three_rules(w: &mut DutyWorld) {
-    let (status, body) =
-        fake_request(w, "GET", "/repos/duty2cal/duty2cal.github.io/rulesets", &[], None);
+    let (status, body) = fake_request(
+        w,
+        "GET",
+        "/repos/duty2cal/duty2cal.github.io/rulesets",
+        &[],
+        None,
+    );
     assert_eq!(status, 200, "the rule sets are readable: {body}");
     let rulesets = report(w, "e2e-applied-rules.json", &body);
     let rules = jq(
@@ -465,13 +480,11 @@ fn redact_private_material(text: &str) -> String {
         };
         result.push_str(&rest[..begin]);
         let after = &rest[begin..];
-        let end = after
-            .find("-----END ")
-            .and_then(|end_at| {
-                after[end_at + 9..]
-                    .find("-----")
-                    .map(|close| end_at + 9 + close + 5)
-            });
+        let end = after.find("-----END ").and_then(|end_at| {
+            after[end_at + 9..]
+                .find("-----")
+                .map(|close| end_at + 9 + close + 5)
+        });
         result.push_str("<private-key>");
         rest = match end {
             Some(end) => &after[end..],

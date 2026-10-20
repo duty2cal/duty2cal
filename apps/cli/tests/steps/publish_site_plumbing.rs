@@ -20,9 +20,7 @@ use crate::steps::enable_repository_security::{
     combined, fake_request, jq, scenario_dir_for, stale_path, state_addresses, state_values, tofu,
     PREFLIGHT_FILTER,
 };
-use crate::steps::publish_organization_profile::{
-    ensure_source_tree, write_profile_descriptors,
-};
+use crate::steps::publish_organization_profile::{ensure_source_tree, write_profile_descriptors};
 use crate::DutyWorld;
 
 /// The deploy key's title on the pages repository.
@@ -198,8 +196,13 @@ pub(crate) fn prime_pages_state(w: &mut DutyWorld) {
 /// The fake's three live list bodies, wrapped the way `gh --slurp` returns
 /// the paginated lists so the design's own verdict filters apply unchanged.
 pub(crate) fn live_lists(w: &DutyWorld) -> Result<(String, String, String), String> {
-    let (status, keys) =
-        fake_request(w, "GET", "/repos/duty2cal/duty2cal.github.io/keys", &[], None);
+    let (status, keys) = fake_request(
+        w,
+        "GET",
+        "/repos/duty2cal/duty2cal.github.io/keys",
+        &[],
+        None,
+    );
     if status != 200 {
         return Err(format!(
             "GET /repos/duty2cal/duty2cal.github.io/keys answered {status}"
@@ -296,7 +299,8 @@ pub(crate) fn assert_live_unchanged(w: &DutyWorld) {
         })
         .count();
     assert_eq!(
-        writes, 0,
+        writes,
+        0,
         "the refused preview issued no write; journal was:\n{:#?}",
         journal_lines(w)
     );
@@ -714,9 +718,8 @@ pub(crate) fn apply_previewed(w: &mut DutyWorld) {
 
     let reason = failure_reason(&combined(&apply));
     if landed.is_empty() {
-        transcript.push_str(
-            "refused: no live object was created; the applied state is unchanged\n",
-        );
+        transcript
+            .push_str("refused: no live object was created; the applied state is unchanged\n");
         transcript.push_str(&format!(
             "failed: these live objects were not created: {}\n",
             described(&failed)
@@ -822,8 +825,13 @@ fn read_back(w: &DutyWorld) -> Option<(String, String)> {
         .map(str::to_owned)
         .collect();
 
-    let (status, keys) =
-        fake_request(w, "GET", "/repos/duty2cal/duty2cal.github.io/keys", &[], None);
+    let (status, keys) = fake_request(
+        w,
+        "GET",
+        "/repos/duty2cal/duty2cal.github.io/keys",
+        &[],
+        None,
+    );
     if status != 200 {
         return Some((
             "github_repository_deploy_key.pages_publish".to_string(),
@@ -949,7 +957,10 @@ async fn the_applied_state_binds_every_earlier_object(w: &mut DutyWorld) {
 
 #[given(regex = r#"^the pages repository already has a deploy key titled "([^"]+)"$"#)]
 async fn the_pages_repository_already_has_a_deploy_key(w: &mut DutyWorld, title: String) {
-    assert_eq!(title, DEPLOY_KEY_TITLE, "the step names the declared key title");
+    assert_eq!(
+        title, DEPLOY_KEY_TITLE,
+        "the step names the declared key title"
+    );
     write_list_fixture(
         &fixtures_dir(w),
         "repos/duty2cal/duty2cal.github.io/keys.json",
@@ -1076,10 +1087,7 @@ fn restore_inherited_live(w: &mut DutyWorld) {
         "the inherited live state re-plans:\n{}",
         combined(&plan)
     );
-    let apply = tofu(
-        w,
-        &["apply", "-input=false", "-no-color", "reprime.bin"],
-    );
+    let apply = tofu(w, &["apply", "-input=false", "-no-color", "reprime.bin"]);
     assert!(
         apply.status.success(),
         "the inherited live state is re-applied:\n{}",
@@ -1125,9 +1133,10 @@ fn transcript_line<'a>(transcript: &'a str, prefix: &str) -> &'a str {
             // The saved plan's own output may prefix the line with indentation.
             line.starts_with(prefix) || line.contains(prefix)
         })
-        .unwrap_or_else(|| panic!("the report carries a {prefix:?} line; output was:\n{transcript}"))
+        .unwrap_or_else(|| {
+            panic!("the report carries a {prefix:?} line; output was:\n{transcript}")
+        })
 }
-
 
 #[given("the owner's authority cannot create any live object the revision declares")]
 async fn the_owners_authority_cannot_create_any_live_object(w: &mut DutyWorld) {
@@ -1184,7 +1193,6 @@ async fn the_failed_apply_records_the_planned_deploy_key(w: &mut DutyWorld) {
     w.applied_state_snapshot = Some(state_values(w));
 }
 
-
 #[given("the applied state binds the pages deploy key and not the publishing secret")]
 async fn the_applied_state_binds_the_deploy_key_only(w: &mut DutyWorld) {
     prime_pages_state(w);
@@ -1236,8 +1244,13 @@ async fn the_applied_state_binds_the_deploy_key_only(w: &mut DutyWorld) {
         "the applied state does not bind the failed secret; it was: {addresses:?}"
     );
 
-    let (status, keys) =
-        fake_request(w, "GET", "/repos/duty2cal/duty2cal.github.io/keys", &[], None);
+    let (status, keys) = fake_request(
+        w,
+        "GET",
+        "/repos/duty2cal/duty2cal.github.io/keys",
+        &[],
+        None,
+    );
     assert_eq!(status, 200, "the deploy key is readable: {keys}");
     fs::write(scenario_dir_for(w).join("bound-deploy-key.json"), &keys)
         .expect("record the bound deploy key before the recovery");
@@ -1249,7 +1262,6 @@ async fn the_applied_state_binds_the_deploy_key_only(w: &mut DutyWorld) {
     );
 }
 
-
 #[given("the applied state does not record the pages rule set")]
 async fn the_applied_state_records_no_pages_rule_set(w: &mut DutyWorld) {
     let addresses = state_addresses(w);
@@ -1260,7 +1272,6 @@ async fn the_applied_state_records_no_pages_rule_set(w: &mut DutyWorld) {
         "the applied state records no rule set; it was: {addresses:?}"
     );
 }
-
 
 #[given("the applied state is marked stale")]
 async fn the_applied_state_is_marked_stale_before_recovery(w: &mut DutyWorld) {
@@ -1289,7 +1300,9 @@ async fn the_owner_clears_the_stale_marker(w: &mut DutyWorld) {
     assert!(!stale.exists(), "the stale marker is cleared");
 }
 
-#[given("a previewed revision that adds the pages publishing key, its secret and the pages rule set")]
+#[given(
+    "a previewed revision that adds the pages publishing key, its secret and the pages rule set"
+)]
 async fn a_previewed_pages_revision(w: &mut DutyWorld) {
     preview(w);
     assert_eq!(
@@ -1305,7 +1318,10 @@ async fn the_pages_repository_gains_a_deploy_key_after_the_preview(
     w: &mut DutyWorld,
     title: String,
 ) {
-    assert_eq!(title, DEPLOY_KEY_TITLE, "the step names the declared key title");
+    assert_eq!(
+        title, DEPLOY_KEY_TITLE,
+        "the step names the declared key title"
+    );
     assert!(
         w.plan_path.is_some(),
         "the scenario holds no previewed revision"
@@ -1503,9 +1519,7 @@ async fn the_pages_repository_carries_the_write_enabled_deploy_key(w: &mut DutyW
     assert_eq!(
         jq(
             w,
-            &format!(
-                "[.[][]? | select(.title == {DEPLOY_KEY_TITLE:?})] | length"
-            ),
+            &format!("[.[][]? | select(.title == {DEPLOY_KEY_TITLE:?})] | length"),
             &keys,
             false
         ),
@@ -1515,9 +1529,7 @@ async fn the_pages_repository_carries_the_write_enabled_deploy_key(w: &mut DutyW
     assert_eq!(
         jq(
             w,
-            &format!(
-                "[.[][]? | select(.title == {DEPLOY_KEY_TITLE:?}) | .read_only] | .[0]"
-            ),
+            &format!("[.[][]? | select(.title == {DEPLOY_KEY_TITLE:?}) | .read_only] | .[0]"),
             &keys,
             false
         ),
@@ -1719,8 +1731,16 @@ async fn no_live_object_is_created(w: &mut DutyWorld) {
     let keys = report(w, "refused-keys.json", &keys);
     let secrets = report(w, "refused-secrets.json", &secrets);
     let rulesets = report(w, "refused-rulesets.json", &rulesets);
-    assert_eq!(jq(w, ".[0] | length", &keys, false), "0", "no deploy key is live");
-    assert_eq!(jq(w, ".total_count", &secrets, false), "0", "no secret is live");
+    assert_eq!(
+        jq(w, ".[0] | length", &keys, false),
+        "0",
+        "no deploy key is live"
+    );
+    assert_eq!(
+        jq(w, ".total_count", &secrets, false),
+        "0",
+        "no secret is live"
+    );
     assert_eq!(
         jq(w, ".[0] | length", &rulesets, false),
         "0",
@@ -1766,8 +1786,7 @@ async fn the_preview_does_not_name_the_deploy_key_as_created(w: &mut DutyWorld) 
         false,
     );
     assert_eq!(
-        creates,
-        "github_actions_secret.pages_publish github_repository_ruleset.pages_publish",
+        creates, "github_actions_secret.pages_publish github_repository_ruleset.pages_publish",
         "the recovery plan creates only the missing secret and rule set"
     );
 }
@@ -1782,8 +1801,13 @@ async fn the_apply_creates_only_the_missing_objects(w: &mut DutyWorld) {
     );
     let before = fs::read_to_string(scenario_dir_for(w).join("bound-deploy-key.json"))
         .expect("read the recorded deploy key");
-    let (status, after) =
-        fake_request(w, "GET", "/repos/duty2cal/duty2cal.github.io/keys", &[], None);
+    let (status, after) = fake_request(
+        w,
+        "GET",
+        "/repos/duty2cal/duty2cal.github.io/keys",
+        &[],
+        None,
+    );
     assert_eq!(status, 200, "the deploy key is readable: {after}");
     assert_eq!(after, before, "the bound deploy key is unchanged");
 
@@ -1874,7 +1898,12 @@ fn stock_site(w: &DutyWorld) -> String {
 /// The applied writes the journal records after the scenario's offset.
 fn journal_writes(w: &DutyWorld, offset: usize) -> Vec<String> {
     let lines = journal_lines(w);
-    let tail = lines.iter().skip(offset).cloned().collect::<Vec<_>>().join("\n");
+    let tail = lines
+        .iter()
+        .skip(offset)
+        .cloned()
+        .collect::<Vec<_>>()
+        .join("\n");
     let path = scenario_dir_for(w).join("journal-after.jsonl");
     fs::write(&path, tail).expect("write the journal tail");
     let writes = jq(
@@ -1904,7 +1933,10 @@ async fn the_pages_repository_serves_the_stock_site(
 
     let (status, pages_repository) =
         fake_request(w, "GET", "/repos/duty2cal/duty2cal.github.io", &[], None);
-    assert_eq!(status, 200, "the pages repository is readable: {pages_repository}");
+    assert_eq!(
+        status, 200,
+        "the pages repository is readable: {pages_repository}"
+    );
     fs::write(dir.join("pages-repository-before.json"), &pages_repository)
         .expect("record the pages repository");
 
@@ -1924,14 +1956,20 @@ async fn the_pages_repository_still_serves_the_stock_site(
     let site = stock_site(w);
     let before = fs::read_to_string(scenario_dir_for(w).join("stock-site-before.json"))
         .expect("read the recorded stock site");
-    assert_eq!(site, before, "the Pages configuration is unchanged by the apply");
+    assert_eq!(
+        site, before,
+        "the Pages configuration is unchanged by the apply"
+    );
 }
 
 #[then("the apply wrote no site file, no Pages configuration and no repository setting")]
 async fn the_apply_wrote_no_site_configuration(w: &mut DutyWorld) {
     let dir = scenario_dir_for(w);
     for (name, before_name) in [
-        ("pages-repository-after.json", "pages-repository-before.json"),
+        (
+            "pages-repository-after.json",
+            "pages-repository-before.json",
+        ),
         ("monorepo-after.json", "monorepo-before.json"),
     ] {
         let request = if name.starts_with("pages") {
@@ -1942,9 +1980,12 @@ async fn the_apply_wrote_no_site_configuration(w: &mut DutyWorld) {
         let (status, body) = fake_request(w, "GET", request, &[], None);
         assert_eq!(status, 200, "{request} remains readable: {body}");
         fs::write(dir.join(name), &body).expect("record the live repository body");
-        let before = fs::read_to_string(dir.join(before_name))
-            .expect("read the recorded repository body");
-        assert_eq!(body, before, "{request}'s settings are unchanged by the apply");
+        let before =
+            fs::read_to_string(dir.join(before_name)).expect("read the recorded repository body");
+        assert_eq!(
+            body, before,
+            "{request}'s settings are unchanged by the apply"
+        );
     }
 
     let writes = journal_writes(w, w.journal_offset);
@@ -1956,7 +1997,9 @@ async fn the_apply_wrote_no_site_configuration(w: &mut DutyWorld) {
     }
 }
 
-#[then("the journal records no applied write other than the deploy key, the secret and the rule set")]
+#[then(
+    "the journal records no applied write other than the deploy key, the secret and the rule set"
+)]
 async fn the_journal_records_only_the_credential_writes(w: &mut DutyWorld) {
     let mut writes = journal_writes(w, w.journal_offset);
     writes.sort();
