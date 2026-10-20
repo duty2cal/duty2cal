@@ -99,9 +99,21 @@ jobs:
       # Playwright and the pinned generators. `givn archive` runs the gate and
       # merges the delta specs; the revision is pushed so the archive is
       # durable.
+      # givn is not published on crates.io; it is built from the private
+      # source repository at the revision that produced 0.9.2. The token is
+      # supplied by the GIVN_SOURCE_TOKEN repository secret and only used to
+      # clone that repository.
       - name: Install the pinned givn
         if: github.event_name == 'workflow_dispatch'
-        run: cargo install --locked givn@0.9.2
+        env:
+          GIVN_SOURCE_TOKEN: ${{ secrets.GIVN_SOURCE_TOKEN }}
+        run: |
+          set -euo pipefail
+          rewrite="url.https://x-access-token:${GIVN_SOURCE_TOKEN}@github.com/"
+          trap 'git config --global --remove-section "${rewrite}" || true' EXIT
+          git config --global "${rewrite}.insteadOf" "https://github.com/"
+          cargo install --locked --git https://github.com/buster/givn givn \
+            --rev 45e9e6d53f52c44d35b0e24ec82d1d6d294d488d
       - name: Archive the completed change
         if: github.event_name == 'workflow_dispatch'
         env:
