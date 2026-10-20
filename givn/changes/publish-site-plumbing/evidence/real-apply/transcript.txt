@@ -1,0 +1,272 @@
+
+===== pages operator apply 2026-10-20T03:15:58Z =====
+
+== 1. Applied state (failed apply) ==
+
+Initializing the backend...
+
+Initializing provider plugins...
+- Reusing previous version of integrations/github from the dependency lock file
+- Reusing previous version of hashicorp/tls from the dependency lock file
+- Using previously-installed hashicorp/tls v4.4.1
+- Using previously-installed integrations/github v6.13.0
+
+OpenTofu has been successfully initialized!
+
+You may now begin working with OpenTofu. Try running "tofu plan" to see
+any changes that are required for your infrastructure. All OpenTofu commands
+should now work.
+
+If you ever set or change modules or backend configuration for OpenTofu,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+github_organization_settings.org
+github_repository.dot_github
+github_repository.mono
+github_repository.pages
+github_repository_dependabot_security_updates.mono
+github_repository_file.org_profile_readme
+github_repository_file.org_security
+github_repository_pages.pages
+github_repository_ruleset.main
+github_repository_ruleset.pages_publish
+github_repository_vulnerability_alerts.mono
+tls_private_key.pages_publish
+
+== 2. Live lists ==
+deploy keys: 
+secrets: 
+rule sets: pages protection
+
+== 3. Remove failed planned values, preserve the TLS key and rule set ==
+TLS private key is in state: preserved
+pages protection rule set is live: preserved
+
+== 4. Stale marker ==
+2026-10-20T03:16:04Z
+github_repository_ruleset.pages_publish
+github_repository_deploy_key.pages_publish failed: deploy keys disabled for the organization
+
+== 5. Organization deploy-key policy ==
+deploy_keys_enabled_for_repositories=false
+Deploy keys are disabled for the duty2cal organization. Provider 6.13.0 cannot
+declare this setting. Enable it with an admin:org token:
+
+  gh api -X PATCH orgs/duty2cal -F deploy_keys_enabled_for_repositories=true
+
+Then verify:
+
+  gh api orgs/duty2cal --jq '.deploy_keys_enabled_for_repositories'
+
+The stale marker stays. Read it, then re-run:
+
+  bash recover-pages-apply.sh --resume
+
+
+===== pages operator apply 2026-10-20T03:19:18Z =====
+
+== 1. Applied state (failed apply) ==
+
+Initializing the backend...
+
+Initializing provider plugins...
+- Reusing previous version of hashicorp/tls from the dependency lock file
+- Reusing previous version of integrations/github from the dependency lock file
+- Using previously-installed hashicorp/tls v4.4.1
+- Using previously-installed integrations/github v6.13.0
+
+OpenTofu has been successfully initialized!
+
+You may now begin working with OpenTofu. Try running "tofu plan" to see
+any changes that are required for your infrastructure. All OpenTofu commands
+should now work.
+
+If you ever set or change modules or backend configuration for OpenTofu,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+github_organization_settings.org
+github_repository.dot_github
+github_repository.mono
+github_repository.pages
+github_repository_dependabot_security_updates.mono
+github_repository_file.org_profile_readme
+github_repository_file.org_security
+github_repository_pages.pages
+github_repository_ruleset.main
+github_repository_ruleset.pages_publish
+github_repository_vulnerability_alerts.mono
+tls_private_key.pages_publish
+
+== 2. Live lists ==
+deploy keys: 
+secrets: 
+rule sets: pages protection
+
+== 3. Remove failed planned values, preserve the TLS key and rule set ==
+TLS private key is in state: preserved
+pages protection rule set is live: preserved
+
+== 4. Stale marker ==
+2026-10-20T03:16:04Z
+github_repository_ruleset.pages_publish
+github_repository_deploy_key.pages_publish failed: deploy keys disabled for the organization
+
+== 5. Organization deploy-key policy ==
+deploy_keys_enabled_for_repositories=true
+Operator removes the stale marker deliberately.
+
+== 6. Creation guard before the preview ==
+guard: no live unbound pages object
+
+== 7. Preview the missing set ==
+expected creates: github_actions_secret.pages_publish github_repository_deploy_key.pages_publish
+Acquiring state lock. This may take a few moments...
+tls_private_key.pages_publish: Refreshing state... [id=ff06ca8136f4447c85c61797e895ee9c19f8aca8]
+github_repository.pages: Refreshing state... [id=duty2cal.github.io]
+github_repository.mono: Refreshing state... [id=duty2cal]
+github_repository_ruleset.pages_publish: Refreshing state... [id=25450667]
+
+OpenTofu used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+OpenTofu will perform the following actions:
+
+  # github_actions_secret.pages_publish will be created
+  + resource "github_actions_secret" "pages_publish" {
+      + created_at        = (known after apply)
+      + id                = (known after apply)
+      + key_id            = (known after apply)
+      + remote_updated_at = (known after apply)
+      + repository        = "duty2cal"
+      + repository_id     = (known after apply)
+      + secret_name       = "PAGES_DEPLOY_KEY"
+      + updated_at        = (known after apply)
+      + value             = (sensitive value)
+    }
+
+  # github_repository_deploy_key.pages_publish will be created
+  + resource "github_repository_deploy_key" "pages_publish" {
+      + etag       = (known after apply)
+      + id         = (known after apply)
+      + key        = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHPgu2aUpbUidgVzcxY9SAM2qaWrCoq5HJDMnD0fYNPG"
+      + read_only  = false
+      + repository = "duty2cal.github.io"
+      + title      = "duty2cal.github.io publish"
+    }
+
+Plan: 2 to add, 0 to change, 0 to destroy.
+
+Warning: Resource targeting is in effect
+
+You are creating a plan with either the -target option or the -exclude
+option, which means that the result of this plan may not represent all of the
+changes requested by the current configuration.
+
+The -target and -exclude options are not for routine use, and are provided
+only for exceptional situations such as recovering from errors or mistakes,
+or when OpenTofu specifically suggests to use it as part of an error message.
+
+─────────────────────────────────────────────────────────────────────────────
+
+Saved the plan to: plan.bin
+
+To perform exactly these actions, run the following command to apply:
+    tofu apply "plan.bin"
+
+== 8. Refresh-only preflight ==
+
+== 9. Second guard immediately before the write ==
+guard: no live unbound pages object
+
+== 10. Apply the missing deploy key and secret ==
+Acquiring state lock. This may take a few moments...
+[0m[1mgithub_repository_deploy_key.pages_publish: Creating...[0m[0m
+[0m[1mgithub_repository_deploy_key.pages_publish: Creation complete after 2s [id=duty2cal.github.io:167017309][0m
+[0m[1mgithub_actions_secret.pages_publish: Creating...[0m[0m
+[0m[1mgithub_actions_secret.pages_publish: Creation complete after 3s [id=duty2cal:PAGES_DEPLOY_KEY][0m
+[33m╷[0m[0m
+[33m│[0m [0m[1m[33mWarning: [0m[0m[1mApplied changes may be incomplete[0m
+[33m│[0m [0m
+[33m│[0m [0m[0mThe plan was created with the -target or the -exclude option in effect, so
+[33m│[0m [0msome changes requested in the configuration may have been ignored and the
+[33m│[0m [0moutput values may not be fully updated. Run the following command to verify
+[33m│[0m [0mthat no other changes are pending:
+[33m│[0m [0m    tofu plan
+[33m│[0m [0m	
+[33m│[0m [0mNote that the -target and -exclude options are not suitable for routine
+[33m│[0m [0muse, and are provided only for exceptional situations such as recovering
+[33m│[0m [0mfrom errors or mistakes, or when OpenTofu specifically suggests to use it
+[33m│[0m [0mas part of an error message.
+[33m╵[0m[0m
+[0m[1m[32m
+Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
+[0m
+== 11. Post-apply read-back ==
+github_actions_secret.pages_publish
+github_repository_deploy_key.pages_publish
+github_repository_ruleset.pages_publish
+tls_private_key.pages_publish
+deploy key: duty2cal.github.io publish, read_only=false
+PAGES_DEPLOY_KEY
+{
+  "name": "pages protection",
+  "enforcement": "active",
+  "bypass_actors": [
+    {
+      "actor_id": null,
+      "actor_type": "DeployKey",
+      "bypass_mode": "always"
+    }
+  ],
+  "rules": [
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "required_linear_history"
+    },
+    {
+      "type": "non_fast_forward"
+    }
+  ]
+}
+
+== 12. Follow-up targeted plan ==
+Acquiring state lock. This may take a few moments...
+tls_private_key.pages_publish: Refreshing state... [id=ff06ca8136f4447c85c61797e895ee9c19f8aca8]
+github_repository.pages: Refreshing state... [id=duty2cal.github.io]
+github_repository.mono: Refreshing state... [id=duty2cal]
+github_repository_deploy_key.pages_publish: Refreshing state... [id=duty2cal.github.io:167017309]
+github_repository_ruleset.pages_publish: Refreshing state... [id=25450667]
+github_actions_secret.pages_publish: Refreshing state... [id=duty2cal:PAGES_DEPLOY_KEY]
+
+No changes. Your infrastructure matches the configuration.
+
+Note: You used the -target option, so OpenTofu only checked resources
+matching those targets and may have skipped others. If you expected changes
+to appear, verify that the addresses passed to -target are correct.
+
+Warning: Resource targeting is in effect
+
+You are creating a plan with either the -target option or the -exclude
+option, which means that the result of this plan may not represent all of the
+changes requested by the current configuration.
+
+The -target and -exclude options are not for routine use, and are provided
+only for exceptional situations such as recovering from errors or mistakes,
+or when OpenTofu specifically suggests to use it as part of an error message.
+
+== 13. Commit ==
+Review the state and transcript, then run:
+
+  cd ..
+  git add infra/pages_publish.tf infra/versions.tf infra/.terraform.lock.hcl \
+    infra/terraform.tfstate infra/terraform.tfstate.backup \
+    givn/changes/publish-site-plumbing/evidence/real-apply/transcript.txt \
+    givn/changes/publish-site-plumbing/tasks.md
+  givn commit -m "feat(apply-configuration-change): create the pages publishing credential and its rule set"
+
+Check off the operator-apply items in tasks.md and record the revision.
+
+== Done ==

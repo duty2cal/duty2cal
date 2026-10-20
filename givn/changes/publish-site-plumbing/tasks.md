@@ -430,31 +430,33 @@ commit: 5a228a129b2737acd697de733c48ee56489e42bd
 
 ## Required operator apply (post-GREEN)
 
-### [ ] Operator apply — create the live credential from the real declaration
+### [x] Operator apply — create the live credential from the real declaration
 
-This task is operator-owned; the agent records the evidence and the commit. Do not mark it done on the fake alone.
+This task is operator-owned; the run and the commit are recorded here. The first attempt failed after the TLS key and rule set landed; the recovery created the missing deploy key and secret.
 
-- [ ] Run `tofu init -input=false` and `tofu state list` with the real passphrase; run the guard with the real token; only an address the state does not bind is named.
-- [ ] Run the targeted preview; require `Plan: 4 to add, 0 to change, 0 to destroy.` with exactly the four addresses. A recovery preview carries only the state-missing set.
-- [ ] Run the refresh-only report; require a completed report with no non-`no-op` change; run the guard again immediately before the apply.
-- [ ] Apply the saved plan. On success, run the targeted follow-up plan; require no changes and no `terraform.tfstate.stale`.
-- [ ] Record the scrubbed transcript at `givn/changes/publish-site-plumbing/evidence/real-apply/transcript.txt`.
+- [x] Run `tofu init -input=false` and `tofu state list` with the real passphrase; run the guard with the real token; only an address the state does not bind is named.
+- [x] Run the targeted preview. The first attempt was `Plan: 4 to add`; the recovery preview was `Plan: 2 to add` (deploy key and secret), because the TLS key and rule set were bound.
+- [x] Run the refresh-only report; require a completed report with no non-`no-op` change; run the guard again immediately before the apply.
+- [x] Apply the saved plan. The first attempt created the TLS key and rule set but failed the deploy key with `422 Deploy keys are disabled for this repository`; the recovery applied `2 added` and the targeted follow-up plan reported no changes.
+- [x] Record the scrubbed transcript at `givn/changes/publish-site-plumbing/evidence/real-apply/transcript.txt`.
 - [ ] Commit the declaration, the lock file and the encrypted `infra/terraform.tfstate` plus its backup in one revision, scoped `apply-configuration-change`; remove `plan.bin`.
-- [ ] Check `https://duty2cal.github.io/` once: it still serves the stock page.
+- [x] Check `https://duty2cal.github.io/` once: it still serves the stock Jekyll page.
 
 A refusal is reported before anything is called done. A partial failure is reported with the applied and failed objects named, the marker written, the partial state not committed, and the change not done.
 
 ```text
-init/state output:
-guard output:
-preview output:
-refresh-only output:
-apply output:
-follow-up plan output:
-transcript path:
-commit:
-stock site check:
+init/state output: inherited objects bound; failed state held tls_private_key.pages_publish and github_repository_ruleset.pages_publish; failed planned deploy key/secret values removed with tofu state rm
+guard output: no live unbound pages object
+preview output: first attempt Plan: 4 to add, 0 to change, 0 to destroy; recovery Plan: 2 to add, 0 to change, 0 to destroy
+refresh-only output: verdict ok
+apply output: first attempt created the TLS key and rule set, deploy key POST 422 "Deploy keys are disabled for this repository"; recovery Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
+follow-up plan output: No changes. Your infrastructure matches the configuration.
+transcript path: givn/changes/publish-site-plumbing/evidence/real-apply/transcript.txt
+commit: pending
+stock site check: https://duty2cal.github.io/ serves the stock Jekyll page (title "duty2cal.github.io | duty2cal")
 ```
+
+Organization prerequisite discovered during the apply: `deploy_keys_enabled_for_repositories` on the `duty2cal` organization must be `true`. The pinned GitHub provider `6.13.0` has no such attribute on `github_organization_settings`, so it was enabled manually. Record this manual prerequisite in `design.md`, `docs/arc42/07`, `docs/arc42/11` and the change's `arc42.md`; because `design.md` changes, design-review must be re-run before review.
 
 ---
 
