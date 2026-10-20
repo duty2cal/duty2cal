@@ -1,7 +1,8 @@
 # Arc42 assessment: publish-site-plumbing
 
 Assessed against `proposal.md`, `specs/apply-configuration-change/` and
-`design.md` on 2026-10-19.
+`design.md` on 2026-10-19; the organization deploy-key prerequisite delta was
+reassessed on 2026-10-20.
 
 | # | Chapter | Affected? | Reason / change |
 |---|---|---|---|

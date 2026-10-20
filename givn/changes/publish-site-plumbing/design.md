@@ -20,8 +20,8 @@ Four boundaries shape what follows:
   `PAGES_DEPLOY_KEY` secret on `duty2cal/duty2cal`, and the pages repository's
   protection rule set with the deploy-key actor type as an always-bypass
   actor.
-- **What the declared revision changes live.** Exactly three creates and no
-  update or delete in the declared revision. The stock Jekyll site, its source,
+- **What the declared revision changes live.** Exactly three live creates and
+  no update or delete in the declared revision. The stock Jekyll site, its source,
   its Pages configuration, both repositories' settings and every other
   declared object stay as they are. The one live organization setting changed
   outside the declaration is the manual deploy-key policy in the next bullet.

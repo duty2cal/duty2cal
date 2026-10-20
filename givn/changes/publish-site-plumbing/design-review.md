@@ -507,4 +507,34 @@ count in the delta: 2.
   numbers; the plumbing side was renumbered and the merged release rows were
   preserved.
 
+## 7. Re-review after the operator apply (2026-10-20)
+
+The operator apply exposed one missing prerequisite: the organization
+deploy-key policy. The delta `6b201f2` records it in `design.md`,
+`docs/arc42/02`, `docs/arc42/07`, `docs/arc42/11` and the change `arc42.md`.
+The operator commit `daad3f5b2eeadcb7b2dcb13188e7c41abc46d2e9` records the
+encrypted state, backup, transcript and task record; live verification shows
+the policy true, the write-enabled deploy key, the `PAGES_DEPLOY_KEY` secret,
+the active `pages protection` rule set and the unchanged stock Jekyll site.
+
+A fresh-context re-review of the delta found **no blocking findings**. It
+confirmed:
+
+- the declared revision still creates exactly three live objects and no
+  update/delete; the manual organization policy stays outside the declaration;
+- the pinned provider 6.13.0 cannot declare the policy; the documented
+  `gh api` verification/enablement and 422 recovery are correct;
+- the affected arc42 rows are 2, 7 and 11; the chapter content matches
+  `design.md`; no new ADR is required; the glossary needs no new term;
+- the ten delta scenarios, the two `@e2e` transcripts, the operator transcript
+  and the task record are consistent;
+- the full-suite pre-existing failures and the website change are
+  operator-deferred out-of-delta work, not design-review blockers.
+
+Non-blocking precision notes applied with this record: “exactly three live
+creates”; the operator-apply commit's tree-level scope; the arc42 reassessment
+date; the full-suite deferral note; the archive-time use-case merge check. The
+optional chapter-8 manual-step-register and transcript-preflight notes are not
+required for sign-off.
+
 DESIGN-REVIEW: PASS
