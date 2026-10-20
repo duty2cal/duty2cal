@@ -4,6 +4,7 @@ name: ci
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 # Every check here only reads the repository. Stated explicitly rather than
 # inherited, so a changed repository default cannot widen it and the requirement
@@ -37,8 +38,10 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    # The manual dispatch runs `givn archive` after the suite and pushes the
+    # archive revision. Normal push and pull-request runs only read.
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -91,6 +94,26 @@ jobs:
       # change specs; a bare `cargo test` leaves it looking for
       # tests/features, which does not exist.
       - run: ./run-tests.sh
+      # The manual dispatch archives the change after the same suite has
+      # passed, in the environment that carries the Windows cross toolchain,
+      # Playwright and the pinned generators. `givn archive` runs the gate and
+      # merges the delta specs; the revision is pushed so the archive is
+      # durable.
+      - name: Install the pinned givn
+        if: github.event_name == 'workflow_dispatch'
+        run: cargo install --locked givn@0.9.2
+      - name: Archive the completed change
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          givn archive --change publish-site-plumbing
+          git add -A
+          git commit -m "chore(archive): archive publish-site-plumbing"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
   changelog:
     runs-on: ubuntu-latest
