@@ -20,9 +20,18 @@ Four boundaries shape what follows:
   `PAGES_DEPLOY_KEY` secret on `duty2cal/duty2cal`, and the pages repository's
   protection rule set with the deploy-key actor type as an always-bypass
   actor.
-- **What changes live.** Exactly three creates and no update or delete. The
-  stock Jekyll site, its source, its Pages configuration, both repositories'
-  settings and every other declared object stay as they are.
+- **What the declared revision changes live.** Exactly three creates and no
+  update or delete in the declared revision. The stock Jekyll site, its source,
+  its Pages configuration, both repositories' settings and every other
+  declared object stay as they are. The one live organization setting changed
+  outside the declaration is the manual deploy-key policy in the next bullet.
+- **What is a manual prerequisite.** The organization's
+  `deploy_keys_enabled_for_repositories` policy must be `true` before the
+  deploy-key create. The pinned provider 6.13.0 cannot declare this
+  organization setting, so it is not part of the declaration or the apply's
+  create set. A false policy fails the deploy-key create with 422 after the
+  TLS key and rule set have landed; chapter 7 records the operator step and
+  chapter 11 R-056 records the gap.
 - **What the state now holds.** The private half of a live credential. The
   state was already reserved for this (ADR-0006, the decision that keeps the
   applied state local, passphrase-encrypted and committed, amended by this
@@ -70,6 +79,7 @@ version on 2026-10-19):
 | Rule-set create reads the repository (archived check) then creates; read fetches by id | `resource_github_repository_ruleset.go` lines 697, 705, 742 |
 | `DeployKey` bypass actors carry no id, and `bypass_actors` must be an array even when empty | `util_rules.go` (`expandBypassActors`), the pinned schema's attribute description |
 | The private key's OpenSSH format is produced for ED25519 | `hashicorp/tls` `v4.4.1` `resource_private_key.go` (`ssh.MarshalPrivateKey`) and `prvKeySupportsOpenSSHMarshalling` |
+| The organization deploy-key policy is outside the declaration | `github_organization_settings` in provider `v6.13.0` has no `deploy_keys_enabled_for_repositories` attribute (verified against the provider source); the live organization field is read and patched manually, and a disabled policy fails the deploy-key create with 422 |
 
 ## Architecture impact
 
@@ -1025,6 +1035,11 @@ covered by the delta's scenarios. The only Rust added is step definitions.
 - **The fake proves shapes, not GitHub's acceptance.** ED25519 deploy keys,
   the `DeployKey` bypass actor and the secret encryption are proven only by
   the operator's real apply after GREEN (R-055).
+- **The organization deploy-key policy is outside the declaration.** The
+  pinned provider cannot express `deploy_keys_enabled_for_repositories`; if the
+  organization disables deploy keys, the deploy-key create fails with 422 after
+  the TLS key and rule set have landed (R-056). The operator confirms the policy
+  before the apply and recovers a partial outcome through the stale marker.
 
 ## Post-GREEN operator apply (required)
 
@@ -1033,6 +1048,16 @@ fake; it cannot prove that GitHub accepts an ED25519 deploy key, stores the
 sealed secret, or applies the rule set's bypass. The change is therefore not
 done when the suite is GREEN. The maintainer:
 
+0. confirms the organization's deploy-key policy is enabled:
+   `gh api orgs/duty2cal --jq .deploy_keys_enabled_for_repositories` returns
+   `true`. The pinned provider 6.13.0 has no attribute for this organization
+   setting, so it is a manual prerequisite; if it is false, the deploy-key
+   create returns `422 Deploy keys are disabled for this repository` after the
+   TLS key and rule set have landed. The operator enables it with
+   `gh api -X PATCH orgs/duty2cal -F deploy_keys_enabled_for_repositories=true`
+   (or Organization settings → Repository policies → Deploy keys), recovers
+   the partial outcome through the stale marker and `tofu state rm`, and
+   re-runs the preview;
 1. runs `tofu init` and `tofu state list` with the real passphrase and then the
    guard with the real token: three `gh api` reads, and only an address the
    state does not bind is named;

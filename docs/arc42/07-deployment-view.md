@@ -157,6 +157,7 @@ absolute and it embeds no third-party image or widget.
 | Property | Value |
 |---|---|
 | Pages repository | `duty2cal/duty2cal.github.io`, public, already serving the stock Jekyll site |
+| Organization prerequisite | `deploy_keys_enabled_for_repositories = true`; manual, not expressible in provider 6.13.0 |
 | Deploy key | `duty2cal.github.io publish`, write-enabled (`read_only = false`), public half generated from the declaration's Ed25519 key pair |
 | Secret | `PAGES_DEPLOY_KEY` on `duty2cal/duty2cal`, carrying the private half in the OpenSSH format; the provider seals it with the repository's public key before sending it |
 | Private material | Exists only in `infra/terraform.tfstate` (twice: the generated key and the secret's value) and in the encrypted plan file, which is deleted after the apply; GitHub never returns it |
@@ -192,6 +193,32 @@ only that the published policy names the route; neither the fake nor the suite
 can prove the live setting, and the operator's confirmation is the acceptance
 evidence that the route exists.
 
+### Manual operator prerequisite: organization deploy-key policy
+
+The pages publishing credential requires the organization's deploy-key policy
+to be enabled. The pinned `integrations/github` provider (6.13.0) has no
+attribute for `deploy_keys_enabled_for_repositories`, so the setting is outside
+the declaration, the applied state and the drift check. The operator confirms
+it before the pages apply:
+
+```bash
+gh api orgs/duty2cal --jq '.deploy_keys_enabled_for_repositories'
+```
+
+It must print `true`. If it prints `false`, enable it with an `admin:org` token
+(or Organization settings → Repository policies → Deploy keys):
+
+```bash
+gh api -X PATCH orgs/duty2cal -F deploy_keys_enabled_for_repositories=true
+```
+
+A disabled policy makes the deploy-key create fail with
+`422 Deploy keys are disabled for this repository`. The rule set and the
+state-only TLS key may already have landed; the operator recovers through the
+stale marker and `tofu state rm`, removes the marker, and re-runs the preview.
+Chapter 11's R-056 records the gap. The setting cannot be previewed and is not
+in the applied state; the confirmation is the acceptance evidence.
+
 ### Manual operator step: pinned repositories
 
 GitHub shows up to six pinned repositories on the organization overview, and
@@ -223,6 +250,7 @@ repeating the step. Chapter 11 records the limitation.
 - The applied state is deployed as a committed ciphertext: `infra/terraform.tfstate` and its backup are in the repository, protected by the passphrase and by OpenTofu's `enforced = true` encryption. Losing the passphrase loses the state; re-adopting rebuilds the bindings without changing anything live, except for the pages publishing key, whose private material cannot be read back from GitHub — that one is replaced, which is a credential rotation (Q11).
 - The security change from this workstation, after the earlier configuration change, enables secret scanning and push protection on the monorepo. The two Dependabot settings are adopted read-only first, so the apply carries one live change; a read-only refresh-only preflight refuses a live edit made since the preview before `tofu apply` runs. The state that records the change is committed only after the apply is green; a partial apply's state is marked stale beside itself and is not committed.
 - The pages publishing change creates three objects and one generated key: the write-enabled deploy key on the pages repository, the `PAGES_DEPLOY_KEY` secret on the monorepo, and the `pages protection` rule set. The private half exists only in the encrypted state and the deleted plan file, so the repository holds a live credential's only recoverable copy; a lost passphrase means replacing the credential, not rebuilding the state from GitHub. The stock site, its source and its Pages configuration are untouched, and no workflow consumes the credential yet.
+- Before the pages apply, the owner confirms `deploy_keys_enabled_for_repositories` is true. The pinned provider cannot declare it; a false policy fails the deploy-key create with 422 after the rule set and TLS key have landed.
 - The creation guard runs before the preview and again immediately before the write: an object that already exists live and the state does not bind refuses, naming the address. A failure after the deploy key is created restores the pre-apply state, reads live again, marks the state stale when a write landed, and refuses a blind retry.
 - The apply that publishes the profile creates `duty2cal/.github` and writes its two reviewed files. The repository is not adopted: it does not exist live, so the preview names the three creations and the apply records them. The profile and security-policy text stays in `org/` under CC0-1.0; the profile repository is output and is never edited by hand.
 - Before that apply, the owner enables private vulnerability reporting on `duty2cal/duty2cal` by hand, because the pinned provider cannot declare it and the published policy names its route. The setting is not in the declaration, the applied state or the drift check.

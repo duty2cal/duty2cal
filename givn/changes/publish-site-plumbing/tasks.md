@@ -439,7 +439,7 @@ This task is operator-owned; the run and the commit are recorded here. The first
 - [x] Run the refresh-only report; require a completed report with no non-`no-op` change; run the guard again immediately before the apply.
 - [x] Apply the saved plan. The first attempt created the TLS key and rule set but failed the deploy key with `422 Deploy keys are disabled for this repository`; the recovery applied `2 added` and the targeted follow-up plan reported no changes.
 - [x] Record the scrubbed transcript at `givn/changes/publish-site-plumbing/evidence/real-apply/transcript.txt`.
-- [ ] Commit the declaration, the lock file and the encrypted `infra/terraform.tfstate` plus its backup in one revision, scoped `apply-configuration-change`; remove `plan.bin`.
+- [x] Commit the declaration, the lock file and the encrypted `infra/terraform.tfstate` plus its backup in one revision, scoped `apply-configuration-change`; remove `plan.bin`. Revision `daad3f5b2eeadcb7b2dcb13188e7c41abc46d2e9`.
 - [x] Check `https://duty2cal.github.io/` once: it still serves the stock Jekyll page.
 
 A refusal is reported before anything is called done. A partial failure is reported with the applied and failed objects named, the marker written, the partial state not committed, and the change not done.
@@ -452,7 +452,7 @@ refresh-only output: verdict ok
 apply output: first attempt created the TLS key and rule set, deploy key POST 422 "Deploy keys are disabled for this repository"; recovery Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
 follow-up plan output: No changes. Your infrastructure matches the configuration.
 transcript path: givn/changes/publish-site-plumbing/evidence/real-apply/transcript.txt
-commit: pending
+commit: daad3f5b2eeadcb7b2dcb13188e7c41abc46d2e9
 stock site check: https://duty2cal.github.io/ serves the stock Jekyll page (title "duty2cal.github.io | duty2cal")
 ```
 
