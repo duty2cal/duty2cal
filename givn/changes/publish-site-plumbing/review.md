@@ -16,7 +16,7 @@
   - verify the merged `givn/specs/apply-configuration-change/usecase.md` carries the delta's corrected stale-marker contract and the post-apply read-back extension.
 - The user's continuation is recorded: the design re-review (§7 of `design-review.md`) found no blocking findings, and `tasks.md` “Done criteria” records the operator's deferral of the pre-existing full-suite failures from the release 0.5.0 merge.
 - Scope of this review: the change's ten delta scenarios, the declaration and the two `@e2e` transcripts. The full-suite failures and the website publication change are recorded below as out-of-delta work, not as a coverage bucket.
-- Proposal routing: the table row at `proposal.md:124–127` names `publish-site-plumbing` / `NEW in apply-configuration-change`; the backticked-cell parser warning was removed by formatting the capability and decision cells, and `givn check review` reports no routing warning. The capability is new to the use case and the delta `usecase.md` declares it.
+- Proposal routing: the table row at `proposal.md:124–127` names `publish-site-plumbing` / `NEW in apply-configuration-change`. `givn check review` still emits its advisory “no filled Capability Routing table” warning despite the row, so the warning is a parser limitation, not a missing routing decision; the check exits 0. The capability is new to the use case and the delta `usecase.md` declares it.
 
 ## Step 0 — Fabrication audit
 
