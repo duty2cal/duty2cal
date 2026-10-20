@@ -58,7 +58,7 @@ jobs:
           targets: wasm32-unknown-unknown,x86_64-pc-windows-gnu
       # The browser scenarios drive the real page with the pinned Playwright
       # and Chromium (web/e2e/.nvmrc is the reviewed Node version).
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version-file: web/e2e/.nvmrc
           cache: npm
@@ -215,7 +215,7 @@ jobs:
       # `measure-coverage.sh` builds the browser bundle and runs the browser
       # scenarios, so the coverage job needs the same Node and Chromium setup.
       # The @nested-build scenarios are outside the coverage profiles.
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version-file: web/e2e/.nvmrc
           cache: npm
