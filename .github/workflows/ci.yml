@@ -82,7 +82,7 @@ jobs:
       - name: Read the pinned OpenTofu version
         id: tofu_version
         run: echo "version=$(cat infra/.opentofu-version)" >> "$GITHUB_OUTPUT"
-      - uses: opentofu/setup-opentofu@v1
+      - uses: opentofu/setup-opentofu@v2
         with:
           tofu_version: ${{ steps.tofu_version.outputs.version }}
       # Mirror the locked provider and write the terraformrc, so `tofu init`
