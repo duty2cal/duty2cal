@@ -370,6 +370,12 @@ fn build_site_template() -> PathBuf {
     fixture_env(&mut clone);
     run_command(&mut clone, "clone the fixture template");
 
+    // The project's own tags are not this fixture's history: the scenario
+    // reads the revision text back from the tag it creates.
+    for tag in git_ok(&template, &["tag", "-l", "v*"]).lines() {
+        git_ok(&template, &["tag", "-d", tag]);
+    }
+
     // Overlay the working-tree implementation. Tracked modifications and
     // untracked source files are copied; a tracked deletion is removed. The
     // change's planning artifacts (`givn/changes/**`) are not part of a
@@ -538,6 +544,11 @@ fn site_target(w: &mut DutyWorld) -> PathBuf {
 /// The publication's output directory.
 fn site_output(w: &mut DutyWorld) -> PathBuf {
     site_directory(w).join("out")
+}
+
+/// The output directory a step asserts against.
+pub fn site_output_directory(w: &mut DutyWorld) -> PathBuf {
+    site_output(w)
 }
 
 fn site_state_path(w: &mut DutyWorld, key: &str) -> PathBuf {

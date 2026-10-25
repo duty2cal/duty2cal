@@ -29,7 +29,7 @@ Feature: Publish the public website
     And the served page shows its ready state once a supported plan file is offered
     And the served page meets the visual baseline in the empty state and in the ready state it traverses
 
-  @givn.added @site-publication @wip
+  @givn.added @site-publication
   Scenario: A default-branch revision that changes none of the site's inputs starts no Site publication
     Given a hosting target serving the Site output built from "abc1234"
     And the default branch's previous revision "abc1234"

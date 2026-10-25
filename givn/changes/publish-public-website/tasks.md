@@ -124,7 +124,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
       - Evidence: `givn lint --change publish-public-website` → `3 file(s) checked, 28 finding(s)` (advisory persona references and `@wip` notes), exit 2.
 - [x] COMMIT — `chore(publish-public-website): prepare the site publication steps`
       (body: setup task).
-      - Revision:
+      - Revision: b09405664342e9da4c6104aafcfbbbae74f6e3d0
 
 ---
 
@@ -139,18 +139,28 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   revision (`docs/**`) is the fixture's shape.
 - Domain constraints: trigger rule for default-branch revisions; the current
   Public website stays; protects the current-site minimal guarantee.
-- [ ] RED — remove `@wip` from this scenario only; run
+- [x] RED — remove `@wip` from this scenario only; run
       `./run-tests.sh --name "A default-branch revision that changes none of the site's inputs starts no Site publication"`;
       must exit non-zero.
-  - Evidence:
-- [ ] GREEN — implement the trigger decision in `scripts/publish-site.sh`
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A default-branch revision that changes none of the site's inputs starts no Site publication"`
+    → `✘ Given a hosting target serving the Site output built from "abc1234"` /
+    `not implemented: a hosting target serving the Site output built from a revision`,
+    `1 scenario (1 failed)`; exit 101.
+- [x] GREEN — implement the trigger decision in `scripts/publish-site.sh`
       (site-input list, `--since` resolution, `no site input changed`).
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — remove duplication in the path-list handling; re-run scoped;
+  - Production files: `scripts/publish-site.sh` (argument parsing, the owned
+    site-input list, the `--since` diff decision and `no site input changed`),
+    `scripts/build-site.sh` (the eight-member assembler the fixture's base page
+    needs), `web/index.html` and `web/styles.css` (the stamped footer anchor and
+    the statement panels), `apps/cli/tests/steps/support.rs` (the fixture base
+    output), `apps/cli/tests/steps/publish_public_website.rs` (the T01 steps).
+  - Evidence: scoped run → all six steps pass,
+    `1 scenario (1 passed)`, `6 steps (6 passed)`, exit 0.
+- [x] REFACTOR — remove duplication in the path-list handling; re-run scoped;
       exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): skip publication when a revision changes no site input`
+  - Evidence: the site inputs are one list iterated by `site_input()`;
+    scoped re-run `1 scenario (1 passed)`, `6 steps (6 passed)`, exit 0.
+- [x] COMMIT — `feat(publish-public-website): skip publication when a revision changes no site input`
       (body: the scenario title).
   - Revision:
 
