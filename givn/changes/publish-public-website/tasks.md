@@ -537,7 +537,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     checks; scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): name an unlicensed site asset`
       (body: the scenario title).
-  - Revision:
+  - Revision: 699b9cca902c18233b42ddd7527b65adcd345c27
 
 ### T14 — Republishing an unchanged revision reports the target as current and writes nothing
 
@@ -566,14 +566,30 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
 - Domain constraints: the served page must name the Built revision; a serving
   refusal is named after the replacement and is never reported as a working
   page.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — bounded serving check and named refusal.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): name an address that serves an earlier revision`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "An address that serves an earlier revision refuses the publication and is named"`
+    → `✘ And an address that keeps serving the page built from "abc1234" after the hosting target's content is replaced` /
+    `Step panicked. Captured output: not implemented: an address that keeps serving the page built from an earlier revision`,
+    `1 scenario (1 failed)`; exit 101.
+- [x] GREEN — bounded serving check and named refusal.
+  - Production files: `apps/cli/tests/steps/support.rs` (`site_serve_earlier`
+    starts the loopback twin over the earlier tree under `/earlier/` and points
+    `--verify-url` at it; `site_server_port` is the one server spawn),
+    `apps/cli/tests/steps/publish_public_website.rs` (the scenario's steps and
+    the revision-aware `the hosting target holds the Site output built from`
+    assertion).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `6 steps (6 passed)`,
+    exit 0; the gate passed (the target received the new output), the
+    replacement landed, and the publication then refused with
+    `the address 'http://127.0.0.1:<port>/earlier/' serves the Built revision
+    'v0.5.0' instead of 'v0.5.0-1-g<sha>'; the target holds the complete output
+    built from v0.5.0-1-g<sha>`. The target's footer named
+    `v0.5.0-1-g<sha>`, i.e. `def5678`'s own history.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: both loopback servers — the target's branch tip and the earlier
+    tree — start through one `site_server_port` helper; scoped re-run
+    `1 scenario (1 passed)`, `6 steps (6 passed)`, exit 0.
+- [x] COMMIT — `feat(publish-public-website): name an address that serves an earlier revision`
       (body: the scenario title).
   - Revision:
 

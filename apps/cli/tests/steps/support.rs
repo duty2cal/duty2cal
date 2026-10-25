@@ -850,6 +850,22 @@ pub fn site_set_up_target(w: &mut DutyWorld, label: &str) -> String {
     site_set(w, "base-revision", &revision);
     site_set(w, "base-describe", &describe);
 
+    let port = site_server_port(w, &[]);
+
+    let url = format!("http://127.0.0.1:{port}/");
+    site_set(w, "verify-url", &url);
+    url
+}
+
+/// Start the fixture's loopback static server over the hosting target's branch
+/// tip, with extra arguments, and return its port. Any earlier server is
+/// reaped first: a scenario has one serving address at a time.
+fn site_server_port(w: &mut DutyWorld, extra: &[&str]) -> u16 {
+    if let Some(mut child) = w.fake.take() {
+        let _ = child.kill();
+        let _ = child.wait();
+    }
+    let target = site_target(w);
     let server = repository_root().join("apps/cli/tests/support/site_server.py");
     let mut child = Command::new("python3")
         .arg(&server)
@@ -857,10 +873,11 @@ pub fn site_set_up_target(w: &mut DutyWorld, label: &str) -> String {
         .arg(&target)
         .arg("--branch")
         .arg("main")
+        .args(extra)
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
         .spawn()
-        .expect("start the loopback hosting target server");
+        .expect("start the loopback site server");
     let mut reader = BufReader::new(child.stdout.take().expect("the server owns a stdout pipe"));
     let mut line = String::new();
     reader
@@ -871,15 +888,26 @@ pub fn site_set_up_target(w: &mut DutyWorld, label: &str) -> String {
         .parse()
         .unwrap_or_else(|error| panic!("the loopback server printed {line:?}: {error}"));
     w.fake = Some(child);
-
-    let url = format!("http://127.0.0.1:{port}/");
-    site_set(w, "verify-url", &url);
-    url
+    port
 }
 
 /// The address the publication reads.
 pub fn site_verify_url(w: &mut DutyWorld) -> String {
     site_get(w, "verify-url").expect("the scenario prepared no serving address")
+}
+
+/// Point the publication's serving check at a loopback address that keeps
+/// serving the page built from the fixture's base revision, so the target's
+/// replacement cannot change what that address returns. The earlier tree is
+/// served under `/earlier/` by the same server that serves the target's branch
+/// tip, which is the twin the design describes.
+pub fn site_serve_earlier(w: &mut DutyWorld) -> String {
+    let earlier = site_base_output();
+    let port = site_server_port(w, &["--earlier", path_str(&earlier)]);
+
+    let url = format!("http://127.0.0.1:{port}/earlier/");
+    site_set(w, "verify-url", &url);
+    url
 }
 
 /// Run the publication once, recording its exit status and both streams.

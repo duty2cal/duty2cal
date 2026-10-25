@@ -241,11 +241,14 @@ async fn starts_from_the_tagged_revision(w: &mut DutyWorld) {
 #[then(regex = r#"^the hosting target holds the Site output built from "([^"]+)"$"#)]
 async fn the_target_holds_the_output(w: &mut DutyWorld, revision: String) {
     let label = support::site_label(w, &revision);
-    assert_eq!(
-        support::site_get(w, "base-revision"),
-        Some(label.clone()),
-        "the scenario's target was not built from {revision}"
-    );
+    if revision == BASE_REVISION {
+        // The fixture's starting target was assembled from this revision.
+        assert_eq!(
+            support::site_get(w, "base-revision"),
+            Some(label.clone()),
+            "the scenario's target was not built from {revision}"
+        );
+    }
     assert_eq!(
         support::site_target_members(w),
         support::SITE_MEMBERS.to_vec(),
@@ -611,5 +614,63 @@ async fn refused_naming_the_licensing_check(w: &mut DutyWorld) {
         support::site_get(w, "target-tip"),
         Some(support::site_target_tip(w)),
         "the refused publication changed the hosting target"
+    );
+}
+
+#[given("an address that keeps serving the page built from \"abc1234\" after the hosting target's content is replaced")]
+async fn an_address_serving_the_earlier_page(w: &mut DutyWorld) {
+    let url = support::site_serve_earlier(w);
+    assert!(
+        url.ends_with("/earlier/"),
+        "the fixture's earlier-tree address is not the pinned one: {url}"
+    );
+    let page = support::site_served_page(w);
+    let served = support::served_revision(&page)
+        .unwrap_or_else(|| panic!("the earlier page carries no Built revision: {page}"));
+    let expected = support::site_get(w, "base-describe")
+        .expect("the fixture recorded no base revision text");
+    assert_eq!(
+        served, expected,
+        "the earlier address does not serve the page built from {BASE_REVISION}"
+    );
+}
+
+#[given(regex = r#"^a source revision "([^"]+)" that changes the page$"#)]
+async fn a_revision_that_changes_the_page(w: &mut DutyWorld, revision: String) {
+    // A comment inside the body: the page is a different tree and a different
+    // Built revision, while every rendered statement and the visual baseline
+    // stay exactly as they were, so the gate passes and the serving check is
+    // what refuses.
+    let committed = support::site_commit_replace(
+        w,
+        "web/index.html",
+        "</body>",
+        "  <!-- fixture revision: republished page -->\n</body>",
+        "docs: fixture page revision",
+    );
+    let recorded = support::site_record_label(w, &revision);
+    assert_eq!(recorded, committed, "the fixture recorded another revision");
+    support::site_set(w, "revision", &committed);
+}
+
+#[then("the publication is refused and names the address and the revision it serves")]
+async fn refused_naming_the_address(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the publication was not refused:\n{}",
+        w.command_transcript
+    );
+    let url = support::site_verify_url(w);
+    let served = support::site_get(w, "base-describe")
+        .expect("the fixture recorded no base revision text");
+    let text = support::site_publication_text(w);
+    assert!(
+        text.contains(&url),
+        "the refusal does not name the address {url}:\n{text}"
+    );
+    assert!(
+        text.contains(&served),
+        "the refusal does not name the revision the address serves ({served}):\n{text}"
     );
 }

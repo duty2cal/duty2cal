@@ -145,7 +145,7 @@ Feature: Publish the public website
     Then the Site publication reports that the hosting target is already current
     And the hosting target's history holds no new commit
 
-  @givn.added @site-publication @wip
+  @givn.added @site-publication
   Scenario: An address that serves an earlier revision refuses the publication and is named
     Given a hosting target serving the Site output built from "abc1234"
     And an address that keeps serving the page built from "abc1234" after the hosting target's content is replaced
