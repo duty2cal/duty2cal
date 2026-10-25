@@ -121,9 +121,9 @@ top candidates tie at 13.00, and no ranked list is printed without signal. The
 decision below is recorded with its rationale; there is no recommendation to
 compare against.
 
-| Proposed capability | Decision | Rationale |
-|---|---|---|
-| publish-site-plumbing | NEW in apply-configuration-change | The goal — create the pages repository's publishing credential and its protection rule set through one previewed, reviewed configuration change, and report the outcome — belongs to the organization owner's administration goal. It shares no object, rule or end state with the conversion capability (`export-duty-plan-calendar`) or the release capability (`publish-public-release`); route's tie is lexical, from generic preview/apply words that every configuration change uses. The owning use case is the ideation contract for exactly this goal. |
+| Proposed capability | Route | Decision | Rationale |
+|---|---|---|---|
+| publish-site-plumbing | no signal | NEW in apply-configuration-change | The goal — create the pages repository's publishing credential and its protection rule set through one previewed, reviewed configuration change, and report the outcome — belongs to the organization owner's administration goal. It shares no object, rule or end state with the conversion capability (`export-duty-plan-calendar`) or the release capability (`publish-public-release`); route's tie is lexical, from generic preview/apply words that every configuration change uses. The owning use case is the ideation contract for exactly this goal. |
 
 ## Out of Scope
 
