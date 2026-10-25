@@ -114,6 +114,9 @@ jobs:
           git config --global "${rewrite}.insteadOf" "https://github.com/"
           cargo install --locked --git https://github.com/buster/givn givn \
             --rev 45e9e6d53f52c44d35b0e24ec82d1d6d294d488d
+      - name: Record the change verification
+        if: github.event_name == 'workflow_dispatch'
+        run: givn check tasks --change publish-site-plumbing
       - name: Archive the completed change
         if: github.event_name == 'workflow_dispatch'
         env:
