@@ -130,7 +130,7 @@ Feature: Publish the public website
     Then the publication is refused and names the lockfile and the revision to prepare
     And the hosting target still serves the Site output built from "abc1234"
 
-  @givn.added @site-publication @wip
+  @givn.added @site-publication
   Scenario: An asset without licence information is refused and the asset is named
     Given a hosting target serving the Site output built from "abc1234"
     And a source revision that adds a site asset with no licence information

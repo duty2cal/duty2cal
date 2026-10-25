@@ -503,7 +503,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): refuse a driver tree from a different lockfile`
       (body: the scenario title).
-  - Revision:
+  - Revision: f23a944ea2d921109c62f04447a0e2daf3281ebe
 
 ### T13 — An asset without licence information is refused and the asset is named
 
@@ -513,14 +513,29 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   publication path, and the copied `LICENSE.txt` is a build output.
 - Domain constraints: MPL-2.0 for code, CC0-1.0 for non-code assets,
   Unicode-3.0 attribution for third-party data.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — licensing gate step and named failure.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): name an unlicensed site asset`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "An asset without licence information is refused and the asset is named"`
+    → `✘ And a source revision that adds a site asset with no licence information` /
+    `Step panicked. Captured output: not implemented: a source revision that adds a site asset with no licence information`,
+    `1 scenario (1 failed)`; exit 101.
+- [x] GREEN — licensing gate step and named failure.
+  - Production files: `scripts/site-evidence.sh` (check 2 refuses a missing
+    `reuse` by name, runs `reuse lint` inside the revision's worktree, prints
+    its report — which names the offending file — and then the `licensing`
+    refusal), `apps/cli/tests/steps/publish_public_website.rs` (the scenario's
+    steps: the revision adds `web/fixture-glyph.svg` naming a licence whose text
+    does not exist, while `REUSE.toml`'s `docs/assets/**` CC0-1.0 override and
+    the copied `LICENSE.txt` stay as they are).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `5 steps (5 passed)`,
+    exit 0; `reuse lint` reported `MISSING LICENSES 'LicenseRef-Fixture-Proprietary'
+    found in: * web/fixture-glyph.svg` and the gate printed
+    `site-evidence: the licensing check failed; the offending file is named
+    above`. The project's own `reuse lint` still exits 0.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: every refused check goes through one `refuse` helper, so the
+    `site-evidence: …` prefix and the exit status cannot drift between the four
+    checks; scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
+- [x] COMMIT — `feat(publish-public-website): name an unlicensed site asset`
       (body: the scenario title).
   - Revision:
 

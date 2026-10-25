@@ -29,6 +29,14 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
+# Every refused check prints one `site-evidence: the <check> …` line, so the
+# publication's refusal names the check that failed and never reports an
+# unperformed check as passed.
+refuse() {
+  echo "site-evidence: $*" >&2
+  exit 1
+}
+
 [ -n "$out" ] || { usage; exit 2; }
 [ -d "$repo" ] || { echo "site-evidence: the worktree does not exist: $repo" >&2; exit 2; }
 [ -d "$out" ] || { echo "site-evidence: the Site output does not exist: $out" >&2; exit 2; }
@@ -42,20 +50,17 @@ trap 'rm -rf "$results"' EXIT
 
 # 1. Page content: cheap and purely local.
 if ! ( cd "$repo" && scripts/check-site-content.sh "$out" ); then
-  echo "site-evidence: the page content check failed" >&2
-  exit 1
+  refuse "the page content check failed"
 fi
 
 # 2. Licensing: MPL-2.0 for code, CC0-1.0 for non-code assets. A missing tool
 #    refuses the check by name; it never turns into a skipped check.
 if ! command -v reuse >/dev/null 2>&1; then
-  echo "site-evidence: the licensing check cannot run: 'reuse' is not installed" >&2
-  exit 1
+  refuse "the licensing check cannot run: 'reuse' is not installed"
 fi
 if ! lint="$( cd "$repo" && reuse lint 2>&1 )"; then
   printf '%s\n' "$lint" >&2
-  echo "site-evidence: the licensing check failed; the offending file is named above" >&2
-  exit 1
+  refuse "the licensing check failed; the offending file is named above"
 fi
 
 # The result file names what a filtered run selected. A run that wrote no
@@ -82,14 +87,12 @@ require_selection() {
   case "$rule" in
     exactly-one)
       if [ "$total" -ne 1 ]; then
-        echo "site-evidence: the $check selected $total scenarios; exactly one is required" >&2
-        exit 1
+        refuse "the $check selected $total scenarios; exactly one is required"
       fi
       ;;
     at-least-one)
       if [ "$total" -le 0 ]; then
-        echo "site-evidence: the $check selected no scenario; a run that selects nothing is a refusal" >&2
-        exit 1
+        refuse "the $check selected no scenario; a run that selects nothing is a refusal"
       fi
       ;;
     *) echo "site-evidence: unknown selection rule: $rule" >&2; exit 2 ;;
@@ -113,26 +116,22 @@ run_revision_suite() {
 #    tree and Chromium are prerequisites of *this* check, so their absence
 #    refuses it by name instead of skipping the browser it was meant to drive.
 if [ ! -d "$repo/web/e2e/node_modules" ]; then
-  echo "site-evidence: the browser check has no driver tree at '$repo/web/e2e/node_modules'; run 'npm ci --prefix web/e2e' at this revision" >&2
-  exit 1
+  refuse "the browser check has no driver tree at '$repo/web/e2e/node_modules'; run 'npm ci --prefix web/e2e' at this revision"
 fi
 if ! command -v node >/dev/null 2>&1; then
-  echo "site-evidence: the browser check cannot run: 'node' is not installed" >&2
-  exit 1
+  refuse "the browser check cannot run: 'node' is not installed"
 fi
 chromium="${CHROMIUM_PATH:-}"
 if [ -z "$chromium" ]; then
   chromium="$( ( cd "$repo/web/e2e" && node -e 'const { chromium } = require("playwright"); process.stdout.write(chromium.executablePath());' ) 2>/dev/null || true )"
 fi
 if [ -z "$chromium" ] || [ ! -x "$chromium" ]; then
-  echo "site-evidence: the browser check cannot run: Chromium is not installed; set CHROMIUM_PATH or run 'npx --prefix web/e2e playwright install chromium'" >&2
-  exit 1
+  refuse "the browser check cannot run: Chromium is not installed; set CHROMIUM_PATH or run 'npx --prefix web/e2e playwright install chromium'"
 fi
 browser_result="$results/browser.json"
 if ! run_revision_suite "$browser_result" \
     --name "Crew member converts a supported duty plan in the browser and saves the offered calendar"; then
-  echo "site-evidence: the browser check failed" >&2
-  exit 1
+  refuse "the browser check failed"
 fi
 require_selection "browser check" "$browser_result" exactly-one
 
@@ -142,8 +141,7 @@ require_selection "browser check" "$browser_result" exactly-one
 conversion_result="$results/conversion.json"
 if ! run_revision_suite "$conversion_result" \
     --tags "not @e2e and not @site-publication"; then
-  echo "site-evidence: the conversion suite failed" >&2
-  exit 1
+  refuse "the conversion suite failed"
 fi
 require_selection "conversion suite" "$conversion_result" at-least-one
 

@@ -569,3 +569,47 @@ async fn refused_naming_the_lockfile(w: &mut DutyWorld) {
         "the refused publication changed the hosting target"
     );
 }
+
+#[given("a source revision that adds a site asset with no licence information")]
+async fn a_revision_adding_an_unlicensed_asset(w: &mut DutyWorld) {
+    // The asset names a licence nobody can read: no `LICENSES/LicenseRef-…`
+    // text exists for it, so `reuse lint` reports the missing licence and names
+    // the file. The asset's own header is a string literal, not this file's
+    // header; keep REUSE from parsing it as part of the expression.
+    // REUSE-IgnoreStart
+    let asset = "<!-- SPDX-FileCopyrightText: 2026 Daniel Kressner -->\n\
+                 <!-- SPDX-License-Identifier: LicenseRef-Fixture-Proprietary -->\n\
+                 <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"/>\n";
+    // REUSE-IgnoreEnd
+    let committed = support::site_commit_file(
+        w,
+        "web/fixture-glyph.svg",
+        asset,
+        "docs: fixture asset without licence text",
+    );
+    support::site_set(w, "revision", &committed);
+}
+
+#[then("the publication is refused and names the licensing check and the asset")]
+async fn refused_naming_the_licensing_check(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the publication was not refused:\n{}",
+        w.command_transcript
+    );
+    let text = support::site_publication_text(w);
+    assert!(
+        text.contains("licensing"),
+        "the refusal does not name the licensing check:\n{text}"
+    );
+    assert!(
+        text.contains("web/fixture-glyph.svg"),
+        "the refusal does not name the offending asset:\n{text}"
+    );
+    assert_eq!(
+        support::site_get(w, "target-tip"),
+        Some(support::site_target_tip(w)),
+        "the refused publication changed the hosting target"
+    );
+}
