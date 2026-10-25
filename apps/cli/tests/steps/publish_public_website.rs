@@ -86,8 +86,16 @@ async fn a_revision_the_repository_lacks(w: &mut DutyWorld) {
 
 #[given(regex = r#"^a working tree at the revision "([^"]+)" carrying edits to files the revision tracks$"#)]
 async fn an_unclean_working_tree(w: &mut DutyWorld, revision: String) {
-    let _ = (w, revision);
-    unimplemented!("a working tree carrying edits to files the revision tracks");
+    let resolved = support::site_label(w, &revision);
+    support::site_checkout(w, &resolved);
+    support::site_append(w, "web/styles.css", "\n/* fixture edit: never committed */\n");
+    // An untracked file cannot reach the Site output, so it must not refuse.
+    support::site_write_untracked(
+        w,
+        "fixture-untracked.txt",
+        "an untracked file must not refuse the publication\n",
+    );
+    support::site_set(w, "revision", &resolved);
 }
 
 #[given(regex = r#"^a source revision "([^"]+)" the repository cannot check out$"#)]
@@ -276,8 +284,22 @@ async fn refused_naming_the_built_revision(w: &mut DutyWorld) {
 
 #[then("the publication is refused and names the unclean revision")]
 async fn refused_naming_the_unclean_revision(w: &mut DutyWorld) {
-    let _ = w;
-    unimplemented!("the publication is refused and names the unclean revision");
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the publication was not refused:\n{}",
+        w.command_transcript
+    );
+    let revision = support::site_get(w, "revision").expect("the scenario named no revision");
+    let text = support::site_publication_text(w);
+    assert!(
+        text.contains("unclean"),
+        "the refusal does not say the tree is unclean:\n{text}"
+    );
+    assert!(
+        text.contains(&revision),
+        "the refusal does not name the unclean revision {revision}:\n{text}"
+    );
 }
 
 #[then("the publication is refused and names the worktree")]

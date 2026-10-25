@@ -87,6 +87,17 @@ done
 [ -n "$verify_url" ] || { usage; refuse "--verify-url is required"; }
 [ -d "$repo" ] || refuse "the repository does not exist: $repo"
 
+# Refuse an unclean caller tree. Untracked and ignored files cannot reach the
+# Site output, so they are not reported; a modified or deleted tracked file
+# would be missed if it were not.
+if ! status="$(git -C "$repo" status --porcelain --untracked-files=no 2>/dev/null)"; then
+  refuse "the repository cannot be read: $repo"
+fi
+if [ -n "$status" ]; then
+  printf '%s\n' "$status" >&2
+  refuse "the working tree at revision '$revision' is unclean; commit or discard the tracked changes first"
+fi
+
 # Decide whether the revision changes a site input. Only --since asks the
 # question; a tag publication omits it and always builds.
 if [ -n "$since" ]; then

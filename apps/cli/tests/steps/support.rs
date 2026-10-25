@@ -631,6 +631,33 @@ pub fn site_record_label(w: &mut DutyWorld, label: &str) -> String {
     revision
 }
 
+/// Check out a revision in the fixture repository.
+pub fn site_checkout(w: &mut DutyWorld, revision: &str) {
+    git_ok(&site_repository(w), &["checkout", "-q", "--detach", revision]);
+}
+
+/// Append text to a file in the fixture's working tree, leaving it tracked but
+/// modified.
+pub fn site_append(w: &mut DutyWorld, relative: &str, body: &str) {
+    use std::io::Write as _;
+    let path = site_repository(w).join(relative);
+    let mut file = fs::OpenOptions::new()
+        .append(true)
+        .open(&path)
+        .unwrap_or_else(|error| panic!("append {}: {error}", path.display()));
+    file.write_all(body.as_bytes())
+        .expect("append the fixture edit");
+}
+
+/// Write a file the fixture revision does not track.
+pub fn site_write_untracked(w: &mut DutyWorld, relative: &str, body: &str) {
+    let path = site_repository(w).join(relative);
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).expect("create an untracked fixture directory");
+    }
+    fs::write(&path, body).expect("write the untracked fixture file");
+}
+
 /// Commit a file on the fixture's current branch and return the revision.
 pub fn site_commit_file(
     w: &mut DutyWorld,

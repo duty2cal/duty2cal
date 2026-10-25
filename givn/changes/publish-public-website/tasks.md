@@ -229,7 +229,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     exit 0.
 - [x] COMMIT — `feat(publish-public-website): refuse an unresolvable Built revision`
       (body: the scenario title).
-  - Revision:
+  - Revision: 7a22d40607a877fadbb87bcbc397c28aac610388
 
 ### T04 — A source revision whose working tree carries changes it does not hold is refused
 
@@ -238,15 +238,24 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   the unclean revision and writes nothing. Untracked files must NOT refuse.
 - Domain constraints: the publication builds only committed revisions; a
   maintainer must not believe uncommitted edits were published.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — cleanliness check with `--untracked-files=no` and the named
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A source revision whose working tree carries changes it does not hold is refused"`
+    → `✘ And a working tree at the revision "abc1234" carrying edits to files the revision tracks` /
+    `not implemented: a working tree carrying edits to files the revision tracks`,
+    `1 step failed`; exit 101.
+- [x] GREEN — cleanliness check with `--untracked-files=no` and the named
       refusal.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): refuse an unclean caller tree`
+  - Production files: `scripts/publish-site.sh` (the tracked-change check
+    before the trigger decision), `apps/cli/tests/steps/support.rs`
+    (`site_checkout`, `site_append`, `site_write_untracked`),
+    `apps/cli/tests/steps/publish_public_website.rs` (the scenario's steps).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `5 steps (5 passed)`,
+    exit 0; the refusal named the unclean revision and the target still
+    served the earlier page.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`,
+    exit 0.
+- [x] COMMIT — `feat(publish-public-website): refuse an unclean caller tree`
       (body: the scenario title).
   - Revision:
 
