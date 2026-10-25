@@ -51,4 +51,5 @@ fi
 } > web/pkg/wasm-inline.js
 # REUSE-IgnoreEnd
 
-cp LICENSES/MPL-2.0.txt web/LICENSE.txt
+# The licence file is assembled into the Site output by scripts/build-site.sh
+# from LICENSES/MPL-2.0.txt; the web tree carries no separate copy.

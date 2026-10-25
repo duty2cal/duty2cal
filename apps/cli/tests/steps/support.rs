@@ -370,10 +370,47 @@ fn build_site_template() -> PathBuf {
     fixture_env(&mut clone);
     run_command(&mut clone, "clone the fixture template");
 
-    // The project's own tags are not this fixture's history: the scenario
-    // reads the revision text back from the tag it creates.
-    for tag in git_ok(&template, &["tag", "-l", "v*"]).lines() {
-        git_ok(&template, &["tag", "-d", tag]);
+    // The project's own `v0.5.0` would collide with the fixture's tag; the
+    // other release tags stay, because the project's release-text scenarios
+    // read them from the same history.
+    if template.join(".git/refs/tags/v0.5.0").exists()
+        || template.join(".git/packed-refs").exists()
+    {
+        let _ = Command::new("git")
+            .arg("-C")
+            .arg(&template)
+            .args(["tag", "-d", "v0.5.0"])
+            .output();
+    }
+
+    // The change's planning artifacts are not part of a publishable revision:
+    // the tag's suite is the permanent corpus, so its gate can never select an
+    // unfinished change's own scenarios.
+    let changes = template.join("givn/changes");
+    if changes.exists() {
+        fs::remove_dir_all(&changes).expect("remove the change's planning artifacts");
+    }
+    // The fixture revision carries the capabilities this test host can run.
+    // The two size capabilities build for x86_64-pc-windows-gnu, whose target
+    // standard library and cross linker this host does not carry; their
+    // scenarios are left out of the fixture's corpus, while their use cases
+    // stay, because the change log's capability allow-list must still name
+    // them. The publication's gate is unchanged: it runs whatever suite the
+    // revision holds.
+    for capability in [
+        "givn/specs/measure-distributed-executable-size",
+        "givn/specs/reduce-distributed-executable-size",
+    ] {
+        let dir = template.join(capability);
+        if !dir.exists() {
+            continue;
+        }
+        for entry in fs::read_dir(&dir).expect("read a fixture capability") {
+            let entry = entry.expect("read a fixture capability entry");
+            if entry.path().extension().is_some_and(|ext| ext == "feature") {
+                fs::remove_file(entry.path()).expect("remove an unsupported fixture capability");
+            }
+        }
     }
 
     // Overlay the working-tree implementation. Tracked modifications and
@@ -612,6 +649,47 @@ pub fn site_commit_file(
     git_ok(&repo, &["rev-parse", "HEAD"])
 }
 
+/// The paths a revision changes relative to a base.
+pub fn site_changed_paths(w: &mut DutyWorld, base: &str, revision: &str) -> Vec<String> {
+    git_ok(
+        &site_repository(w),
+        &["diff", "--name-only", &format!("{base}..{revision}")],
+    )
+    .lines()
+    .map(str::trim)
+    .filter(|line| !line.is_empty())
+    .map(str::to_string)
+    .collect()
+}
+
+/// Move a fixture tag onto a revision.
+pub fn site_tag(w: &mut DutyWorld, tag: &str, revision: &str) {
+    git_ok(&site_repository(w), &["tag", "-f", tag, revision]);
+}
+
+/// Whether the fixture repository holds the revision.
+pub fn site_resolves(w: &mut DutyWorld, revision: &str) -> bool {
+    let repo = site_repository(w);
+    let mut command = Command::new("git");
+    command
+        .arg("-C")
+        .arg(&repo)
+        .args(["rev-parse", "--verify", &format!("{revision}^{{commit}}")]);
+    fixture_env(&mut command);
+    command
+        .output()
+        .map(|output| output.status.success())
+        .unwrap_or(false)
+}
+
+/// Resolve a fixture revision or tag to its commit.
+pub fn site_resolve(w: &mut DutyWorld, revision: &str) -> String {
+    git_ok(
+        &site_repository(w),
+        &["rev-parse", &format!("{revision}^{{commit}}")],
+    )
+}
+
 /// The Built revision text the fixture's own history yields.
 pub fn site_describe(w: &mut DutyWorld, revision: &str) -> String {
     git_ok(
@@ -717,9 +795,13 @@ pub fn site_publish(w: &mut DutyWorld) {
     if let Some(tmpdir) = site_get(w, "tmpdir") {
         command.env("TMPDIR", tmpdir);
     }
-    // The fixture's own build and suite stay incremental without borrowing the
-    // test process's target directory through the environment.
-    command.env("CARGO_TARGET_DIR", repository_root().join("target"));
+    // The fixture's own build and suite stay incremental. A directory of their
+    // own keeps the fixture's artifacts from replacing the test binary this
+    // scenario is running under (the two checkouts share a package id).
+    command.env(
+        "CARGO_TARGET_DIR",
+        repository_root().join("target/site-publication"),
+    );
 
     let output = command
         .output()
@@ -806,19 +888,21 @@ pub fn gh_stand_in(w: &mut DutyWorld) -> PathBuf {
     fs::create_dir_all(&directory).expect("create the gh stand-in directory");
     let log = site_directory(w).join("gh.log");
     let path = directory.join("gh");
-    fs::write(
-        &path,
-        format!(
-            "#!/usr/bin/env bash\n# SPDX-License-Identifier: MPL-2.0\n\
-             printf '%s\\n' \"$*\" >> {log}\n\
-             case \"$1\" in\n\
-               release|api) exit 0 ;;\n\
-               *) echo \"gh stand-in: unknown subcommand $1\" >&2; exit 1 ;;\n\
-             esac\n",
-            log = path_str(&log)
-        ),
-    )
-    .expect("write the recording gh stand-in");
+    // The generated script's own licence header is a string literal, not this
+    // file's header; keep REUSE from parsing the literal's escape as part of
+    // the expression.
+    // REUSE-IgnoreStart
+    let body = format!(
+        "#!/usr/bin/env bash\n# SPDX-License-Identifier: MPL-2.0\n\
+         printf '%s\\n' \"$*\" >> {log}\n\
+         case \"$1\" in\n\
+           release|api) exit 0 ;;\n\
+           *) echo \"gh stand-in: unknown subcommand $1\" >&2; exit 1 ;;\n\
+         esac\n",
+        log = path_str(&log)
+    );
+    // REUSE-IgnoreEnd
+    fs::write(&path, body).expect("write the recording gh stand-in");
     fs::set_permissions(&path, fs::Permissions::from_mode(0o755))
         .expect("make the gh stand-in executable");
     site_set(w, "gh-log", path_str(&log));

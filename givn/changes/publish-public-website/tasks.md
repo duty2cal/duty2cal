@@ -174,14 +174,32 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
 - Domain constraints: a release tag always starts a publication from the tagged
   revision even when it changes no site input; the footer's tag and the release
   agree.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — tag handling (no `--since`), worktree checkout, footer stamping.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): build a tagged publication from the tagged revision`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A release tag republishes the site from the tagged revision and the footer names the tag"`
+    → `✘ And the release tag "v0.5.0" pushed on a revision "abc1234" ...` /
+    `not implemented: the release tag pushed on a revision that changes none of the site's inputs`,
+    `1 step failed`; exit 101.
+- [x] GREEN — tag handling (no `--since`), worktree checkout, footer stamping.
+  - Production files: `scripts/publish-site.sh` (revision resolution, detached
+    worktree and trap, driver-tree link, the revision's `scripts/build-web.sh`
+    and `scripts/build-site.sh`, the evidence gate, the `flock` publication,
+    read-back and bounded serving check), `scripts/build-site.sh` (the
+    eight-member output with the stamped footer), `scripts/site-evidence.sh`
+    and `scripts/check-site-content.sh` (the four gate checks and the
+    `GIVN_RESULT_FILE` count), `scripts/build-web.sh` and `scripts/run-web.sh`
+    (the licence leaves the web tree, the local run serves `dist/site/`),
+    `web/index.html` and `web/styles.css` (the two statement panels, the
+    header icon and the footer anchor), `.gitignore`, `REUSE.toml` and
+    `scripts/pii-guard.sh` (the assembled output's ignore, the icon's
+    CC0-1.0 override, the generated tree's exclusion).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `8 steps (8 passed)`,
+    exit 0; the gate ran `check-site-content.sh`, `reuse lint`, the browser
+    scenario and the conversion suite, and the target's footer read
+    `v0.5.0`.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: the three logged build/gate failures share `fail_with_log`;
+    scoped re-run `1 scenario (1 passed)`, `8 steps (8 passed)`, exit 0.
+- [x] COMMIT — `feat(publish-public-website): build a tagged publication from the tagged revision`
       (body: the scenario title).
   - Revision:
 

@@ -19,3 +19,11 @@ path = ["org/**"]
 precedence = "override"
 SPDX-FileCopyrightText = "2026 Daniel Kressner"
 SPDX-License-Identifier = "CC0-1.0"
+
+# The project's non-code assets are CC0-1.0; the icon is copied into the Site
+# output as icon.png, so its licence travels with the asset.
+[[annotations]]
+path = ["docs/assets/**"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Daniel Kressner"
+SPDX-License-Identifier = "CC0-1.0"

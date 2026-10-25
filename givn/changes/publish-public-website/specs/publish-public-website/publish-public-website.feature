@@ -38,7 +38,7 @@ Feature: Publish the public website
     Then the Site publication reports that the revision changes none of the site's inputs
     And the hosting target still serves the Site output built from "abc1234"
 
-  @givn.added @site-publication @wip
+  @givn.added @site-publication
   Scenario: A release tag republishes the site from the tagged revision and the footer names the tag
     Given a hosting target serving the Site output built from "abc1234"
     And the release tag "v0.5.0" pushed on a revision "abc1234" that changes none of the site's inputs
@@ -49,7 +49,7 @@ Feature: Publish the public website
     And the footer names the Built revision "v0.5.0" and links the tagged commit
     And the footer names no tag-distance form
 
-  @givn.added @site-publication @wip
+  @givn.added @site-publication
   Scenario: A Built revision that cannot be resolved refuses the publication
     Given a hosting target serving the Site output built from "abc1234"
     And a source revision whose history the repository does not hold
@@ -57,7 +57,7 @@ Feature: Publish the public website
     Then the publication is refused and names the Built revision
     And the hosting target still serves the Site output built from "abc1234"
 
-  @givn.added @site-publication @wip
+  @givn.added @site-publication
   Scenario: A source revision whose working tree carries changes it does not hold is refused
     Given a hosting target serving the Site output built from "abc1234"
     And a working tree at the revision "abc1234" carrying edits to files the revision tracks

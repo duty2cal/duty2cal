@@ -45,6 +45,7 @@ strip_calendar() {
 excludes=(
   --exclude-dir=.git
   --exclude-dir=target
+  --exclude-dir=dist
   --exclude-dir=private
   --exclude-dir=node_modules
   --exclude='terraform.tfstate*'

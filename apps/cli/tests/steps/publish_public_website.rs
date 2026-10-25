@@ -52,20 +52,36 @@ async fn a_documents_only_revision(w: &mut DutyWorld, revision: String) {
 
 #[given(regex = r#"^the release tag "([^"]+)" pushed on a revision "([^"]+)" that changes none of the site's inputs$"#)]
 async fn a_release_tag_on_a_revision(w: &mut DutyWorld, tag: String, revision: String) {
-    let _ = (w, tag, revision);
-    unimplemented!("the release tag pushed on a revision that changes none of the site's inputs");
+    let resolved = support::site_label(w, &revision);
+    let changed = support::site_changed_paths(w, "v0.5.0", &resolved);
+    assert!(
+        changed.iter().all(|path| path.starts_with("docs/")),
+        "the tagged revision changes a site input: {changed:?}"
+    );
+    support::site_tag(w, &tag, &resolved);
+    assert_eq!(
+        support::site_describe(w, &resolved),
+        tag,
+        "the fixture's own history does not yield the tag"
+    );
+    support::site_set(w, "tag", &tag);
 }
 
 #[given("the publication names no earlier revision to compare against")]
 async fn no_comparison_base(w: &mut DutyWorld) {
-    let _ = w;
-    unimplemented!("the publication names no earlier revision to compare against");
+    assert!(
+        support::site_get(w, "since").is_none(),
+        "the scenario named an earlier revision to compare against"
+    );
 }
 
 #[given("a source revision whose history the repository does not hold")]
 async fn a_revision_the_repository_lacks(w: &mut DutyWorld) {
-    let _ = w;
-    unimplemented!("a source revision whose history the repository does not hold");
+    assert!(
+        !support::site_resolves(w, "9999999"),
+        "the fixture holds the revision the scenario expects it to lack"
+    );
+    support::site_set(w, "revision", "9999999");
 }
 
 #[given(regex = r#"^a working tree at the revision "([^"]+)" carrying edits to files the revision tracks$"#)]
@@ -97,14 +113,18 @@ async fn publish_compared_with_the_previous_revision(w: &mut DutyWorld) {
 
 #[when("the release maintainer publishes the site from the tagged revision")]
 async fn publish_from_the_tagged_revision(w: &mut DutyWorld) {
-    let _ = w;
-    unimplemented!("the release maintainer publishes the site from the tagged revision");
+    let tag = support::site_get(w, "tag").expect("the scenario named no release tag");
+    support::site_set(w, "revision", &tag);
+    support::site_publish(w);
 }
 
 #[when("the release maintainer publishes the site from that revision")]
 async fn publish_from_that_revision(w: &mut DutyWorld) {
-    let _ = w;
-    unimplemented!("the release maintainer publishes the site from that revision");
+    assert!(
+        support::site_get(w, "revision").is_some(),
+        "the scenario named no revision to publish"
+    );
+    support::site_publish(w);
 }
 
 #[then("the Site publication reports that the revision changes none of the site's inputs")]
@@ -161,32 +181,97 @@ async fn the_target_still_serves(w: &mut DutyWorld, revision: String) {
 
 #[then("the Site publication starts from the tagged revision even though it changes none of the site's inputs")]
 async fn starts_from_the_tagged_revision(w: &mut DutyWorld) {
-    let _ = w;
-    unimplemented!("the Site publication starts from the tagged revision");
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the publication failed:\n{}",
+        w.command_transcript
+    );
+    assert!(
+        !w.stdout.contains("no site input changed"),
+        "the tag publication was skipped as an unchanged revision:\n{}",
+        w.command_transcript
+    );
+    let tag = support::site_get(w, "tag").expect("the scenario named no release tag");
+    assert!(
+        w.stdout.contains(&tag),
+        "the publication did not report the tagged revision {tag}:\n{}",
+        w.command_transcript
+    );
 }
 
 #[then(regex = r#"^the hosting target holds the Site output built from "([^"]+)"$"#)]
 async fn the_target_holds_the_output(w: &mut DutyWorld, revision: String) {
-    let _ = (w, revision);
-    unimplemented!("the hosting target holds the Site output built from a revision");
+    let label = support::site_label(w, &revision);
+    assert_eq!(
+        support::site_get(w, "base-revision"),
+        Some(label.clone()),
+        "the scenario's target was not built from {revision}"
+    );
+    assert_eq!(
+        support::site_target_members(w),
+        support::SITE_MEMBERS.to_vec(),
+        "the hosting target holds another member list"
+    );
+    let expected = support::site_describe(w, &label);
+    let page = support::site_target_file(w, "index.html");
+    let built = support::served_revision(&page)
+        .unwrap_or_else(|| panic!("the published page carries no Built revision: {page}"));
+    assert_eq!(
+        built, expected,
+        "the published page does not name the revision's own history"
+    );
 }
 
 #[then(regex = r#"^the footer names the Built revision "([^"]+)" and links the tagged commit$"#)]
 async fn the_footer_names_the_built_revision(w: &mut DutyWorld, revision: String) {
-    let _ = (w, revision);
-    unimplemented!("the footer names the Built revision and links the tagged commit");
+    let tagged = support::site_resolve(w, &revision);
+    let page = support::site_target_file(w, "index.html");
+    assert!(
+        page.contains(&format!(
+            "data-site-statement=\"built-revision\">{revision}<"
+        )),
+        "the footer does not name the Built revision {revision}: {page}"
+    );
+    assert!(
+        page.contains(&format!("/commit/{tagged}")),
+        "the footer does not link the tagged commit {tagged}: {page}"
+    );
 }
 
 #[then("the footer names no tag-distance form")]
 async fn the_footer_names_no_tag_distance(w: &mut DutyWorld) {
-    let _ = w;
-    unimplemented!("the footer names no tag-distance form");
+    let page = support::site_target_file(w, "index.html");
+    let built = support::served_revision(&page)
+        .unwrap_or_else(|| panic!("the published page carries no Built revision: {page}"));
+    let parts: Vec<&str> = built.split('-').collect();
+    let distance = parts.len() >= 3
+        && parts[parts.len() - 2].parse::<u32>().is_ok()
+        && parts[parts.len() - 1].starts_with('g');
+    assert!(
+        !distance,
+        "the footer names the tag-distance form {built:?}"
+    );
 }
 
 #[then("the publication is refused and names the Built revision")]
 async fn refused_naming_the_built_revision(w: &mut DutyWorld) {
-    let _ = w;
-    unimplemented!("the publication is refused and names the Built revision");
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the publication was not refused:\n{}",
+        w.command_transcript
+    );
+    let revision = support::site_get(w, "revision").expect("the scenario named no revision");
+    let text = support::site_publication_text(w);
+    assert!(
+        text.contains("Built revision"),
+        "the refusal does not name the Built revision:\n{text}"
+    );
+    assert!(
+        text.contains(&revision),
+        "the refusal does not name the revision {revision}:\n{text}"
+    );
 }
 
 #[then("the publication is refused and names the unclean revision")]

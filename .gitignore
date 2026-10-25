@@ -7,14 +7,13 @@ private
 
 # Rust build output
 /target
+# Assembled Site output (scripts/build-site.sh)
+/dist/
 __pycache__/
 *.pyc
 
 # Browser bundle and test-only Node artifacts (design.md "Architecture impact")
 /web/pkg/
-# Build output: scripts/build-web.sh copies LICENSES/MPL-2.0.txt here so the
-# served Site carries its licence.
-/web/LICENSE.txt
 web/e2e/node_modules/
 web/e2e/test-results/
 reports/visual/
