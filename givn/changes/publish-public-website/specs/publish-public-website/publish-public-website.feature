@@ -65,7 +65,7 @@ Feature: Publish the public website
     Then the publication is refused and names the unclean revision
     And the hosting target still serves the Site output built from "abc1234"
 
-  @givn.added @site-publication @wip
+  @givn.added @site-publication
   Scenario: A revision whose tree cannot be checked out is refused and the worktree is named
     Given a hosting target serving the Site output built from "abc1234"
     And a source revision "def5678" the repository cannot check out

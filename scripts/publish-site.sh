@@ -128,7 +128,9 @@ describe="$(git -C "$repo" describe --tags --always --match 'v*' "$commit" 2>/de
 # Build the revision's own tree in a detached worktree. The trap removes it on
 # every exit path.
 scratch_parent="${TMPDIR:-/tmp}"
-scratch="$(mktemp -d "$scratch_parent/duty2cal-site.XXXXXX")"
+if ! scratch="$(mktemp -d "$scratch_parent/duty2cal-site.XXXXXX" 2>/dev/null)"; then
+  refuse "cannot create the worktree under '$scratch_parent' for revision '$revision': the scratch path is not writable"
+fi
 tree="$scratch/tree"
 cleanup() {
   if [ -d "$tree" ]; then
@@ -138,8 +140,11 @@ cleanup() {
 }
 trap cleanup EXIT
 
-git -C "$repo" worktree add --detach "$tree" "$commit" \
-  >/dev/null 2>"$scratch/worktree.err"
+if ! git -C "$repo" worktree add --detach "$tree" "$commit" \
+    >/dev/null 2>"$scratch/worktree.err"; then
+  cause="$(tr '\n' ' ' < "$scratch/worktree.err" 2>/dev/null || true)"
+  refuse "cannot create the worktree '$tree' for revision '$revision': ${cause:-git worktree add failed}"
+fi
 
 # The revision's driver tree is its own pinned set, never the caller's unless
 # the lockfiles agree.

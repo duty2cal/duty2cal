@@ -100,8 +100,23 @@ async fn an_unclean_working_tree(w: &mut DutyWorld, revision: String) {
 
 #[given(regex = r#"^a source revision "([^"]+)" the repository cannot check out$"#)]
 async fn a_revision_that_cannot_be_checked_out(w: &mut DutyWorld, revision: String) {
-    let _ = (w, revision);
-    unimplemented!("a source revision the repository cannot check out");
+    let committed = support::site_commit_file(
+        w,
+        "web/fixture-revision.txt",
+        "a real revision whose worktree cannot be created\n",
+        "fix: fixture revision",
+    );
+    let recorded = support::site_record_label(w, &revision);
+    assert_eq!(recorded, committed, "the fixture recorded another revision");
+    support::site_set(w, "revision", &committed);
+    // The revision resolves, but the scratch path the worktree is created
+    // under is not writable.
+    let scratch = support::unwritable_scratch(w);
+    support::site_set(
+        w,
+        "tmpdir",
+        scratch.to_str().expect("the scratch path is valid UTF-8"),
+    );
 }
 
 #[given("a source revision whose browser build fails")]
@@ -304,8 +319,22 @@ async fn refused_naming_the_unclean_revision(w: &mut DutyWorld) {
 
 #[then("the publication is refused and names the worktree")]
 async fn refused_naming_the_worktree(w: &mut DutyWorld) {
-    let _ = w;
-    unimplemented!("the publication is refused and names the worktree");
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the publication was not refused:\n{}",
+        w.command_transcript
+    );
+    let revision = support::site_get(w, "revision").expect("the scenario named no revision");
+    let text = support::site_publication_text(w);
+    assert!(
+        text.contains("worktree"),
+        "the refusal does not name the worktree:\n{text}"
+    );
+    assert!(
+        text.contains(&revision),
+        "the refusal does not name the revision {revision}:\n{text}"
+    );
 }
 
 #[then("the publication is refused and names the revision's browser build step")]

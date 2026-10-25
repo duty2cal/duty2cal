@@ -257,7 +257,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     exit 0.
 - [x] COMMIT — `feat(publish-public-website): refuse an unclean caller tree`
       (body: the scenario title).
-  - Revision:
+  - Revision: 84ac95a3e5099d0ebdecfb18eee0314cc72ea752
 
 ### T05 — A revision whose tree cannot be checked out is refused and the worktree is named
 
@@ -265,14 +265,23 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   unwritable scratch path); refuse naming the worktree and the cause; the trap
   removes any worktree on every exit path, including this refusal.
 - Domain constraints: minimal guarantee; no stale registration.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — worktree creation, trap, named refusal.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): name a worktree that cannot be created`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A revision whose tree cannot be checked out is refused and the worktree is named"`
+    → `✘ And a source revision "def5678" the repository cannot check out` /
+    `not implemented: a source revision the repository cannot check out`,
+    `1 step failed`; exit 101.
+- [x] GREEN — worktree creation, trap, named refusal.
+  - Production files: `scripts/publish-site.sh` (the scratch path's failure and
+    `git worktree add` fail closed, naming the worktree and the cause; the trap
+    removes any worktree on every exit path),
+    `apps/cli/tests/steps/publish_public_website.rs` (the scenario's steps).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `5 steps (5 passed)`,
+    exit 0; the refusal named the worktree and the target still served the
+    earlier page.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`,
+    exit 0.
+- [x] COMMIT — `feat(publish-public-website): name a worktree that cannot be created`
       (body: the scenario title).
   - Revision:
 
