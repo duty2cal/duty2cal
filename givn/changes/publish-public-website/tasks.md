@@ -379,6 +379,16 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     `the page requested another origin "https://beacon.example/fixture-request"`
     assertion. The CSP was not changed: `web/index.html` still carries
     `connect-src 'none'`.
+    Prerequisite probes (each exit 1, each naming the check): with `reuse`
+    absent from `PATH`, `site-evidence: the licensing check cannot run: 'reuse'
+    is not installed`; with `node` absent, `site-evidence: the browser check
+    cannot run: 'node' is not installed`; with `CHROMIUM_PATH` naming no
+    executable, `site-evidence: the browser check cannot run: Chromium is not
+    installed; …`; against a clean worktree with no installed driver tree,
+    `site-evidence: the browser check has no driver tree at
+    '<worktree>/web/e2e/node_modules'; run 'npm ci --prefix web/e2e' at this
+    revision`. Content and licensing were exercised first in each probe, so the
+    refusal came from the check under test.
 - [x] REFACTOR — re-run scoped; exit 0.
   - Evidence: checks 3–4 share one `run_revision_suite` helper that owns
     `GIVN_RESULT_FILE`, `DUTY2CAL_SITE_ROOT` and `DUTY2CAL_SKIP_WEB_BUILD=1`;
@@ -591,7 +601,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     `1 scenario (1 passed)`, `6 steps (6 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): name an address that serves an earlier revision`
       (body: the scenario title).
-  - Revision:
+  - Revision: a2a79fe8d04ed9f5525c69eac46b486858dc03a4
 
 ### T16 — A hand edit in the hosting target is removed by the whole-content replacement
 
