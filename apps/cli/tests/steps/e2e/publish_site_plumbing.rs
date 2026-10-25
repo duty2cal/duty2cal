@@ -84,6 +84,7 @@ fn commit_transcript(w: &DutyWorld, slug: &str) {
         .replace(PASSPHRASE, "<passphrase>")
         .replace(BILLING_EMAIL, "<billing-email>");
     evidence = redact_private_material(&evidence);
+    evidence = scrub_generated_material(&evidence);
     let status = w.exit_status.unwrap_or(-1);
     if !evidence
         .trim_end()
@@ -493,6 +494,247 @@ fn redact_private_material(text: &str) -> String {
         };
     }
     redact_sealed_value(&result)
+}
+
+/// Normalize everything in a transcript that changes between runs: the plan's
+/// wall-clock timestamp, the apply output's durations, provider-init line
+/// order, the generated key pair, and the generated key's identifier.
+fn scrub_generated_material(text: &str) -> String {
+    let text = scrub_volatile(text);
+    let text = sort_provider_lines(&text);
+    let text = canonicalize_relevant_attributes(&text);
+    let text = scrub_key_material(&text);
+    let text = scrub_hex_ids(&text);
+    sort_refresh_lines(&text)
+}
+
+/// Sort adjacent `Refreshing state...` lines; their order follows the state's
+/// map iteration, not the plan.
+fn sort_refresh_lines(text: &str) -> String {
+    fn is_refresh(line: &str) -> bool {
+        line.chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_alphanumeric())
+            && line.contains(": Refreshing state...")
+    }
+    fn flush(run: &mut Vec<&str>, out: &mut String) {
+        run.sort_unstable();
+        for line in run.drain(..) {
+            out.push_str(line);
+        }
+    }
+    let mut out = String::with_capacity(text.len());
+    let mut run: Vec<&str> = Vec::new();
+    for line in text.split_inclusive('\n') {
+        if is_refresh(line) {
+            run.push(line);
+        } else {
+            flush(&mut run, &mut out);
+            out.push_str(line);
+        }
+    }
+    flush(&mut run, &mut out);
+    out
+}
+
+/// `tofu` prints the two relevant `tls_private_key` attributes in map order;
+/// pin one order so the transcript is reproducible.
+fn canonicalize_relevant_attributes(text: &str) -> String {
+    const PRIVATE: &str =
+        r#"{"resource":"tls_private_key.pages_publish","attribute":["private_key_openssh"]}"#;
+    const PUBLIC: &str =
+        r#"{"resource":"tls_private_key.pages_publish","attribute":["public_key_openssh"]}"#;
+    text.replace(
+        &format!("{PUBLIC},{PRIVATE}"),
+        &format!("{PRIVATE},{PUBLIC}"),
+    )
+}
+
+/// Replace wall-clock values that `tofu` prints so the committed transcript is
+/// reproducible across runs: the plan JSON's timestamp and the apply output's
+/// per-resource durations.
+fn scrub_volatile(text: &str) -> String {
+    let mut result = String::with_capacity(text.len());
+    let mut rest = text;
+    loop {
+        let stamp = rest.find("\"timestamp\":\"").map(|at| {
+            let value = at + "\"timestamp\":\"".len();
+            let end = rest[value..]
+                .find('"')
+                .map_or(rest.len(), |close| value + close + 1);
+            (at, end)
+        });
+        let duration = find_duration(rest);
+        let (start, end, is_stamp) = match (stamp, duration) {
+            (Some(a), Some(b)) if b.0 < a.0 => (b.0, b.1, false),
+            (Some(a), _) => (a.0, a.1, true),
+            (None, Some(b)) => (b.0, b.1, false),
+            (None, None) => break,
+        };
+        result.push_str(&rest[..start]);
+        result.push_str(if is_stamp {
+            "\"timestamp\":\"<timestamp>\""
+        } else {
+            "after <duration>"
+        });
+        rest = &rest[end..];
+    }
+    result.push_str(rest);
+    result
+}
+
+/// Find an `after <digits>s` or `after <digits>m<digits>s` duration.
+fn find_duration(text: &str) -> Option<(usize, usize)> {
+    let bytes = text.as_bytes();
+    let mut from = 0;
+    while let Some(rel) = text[from..].find("after ") {
+        let start = from + rel;
+        let mut i = start + "after ".len();
+        let first = i;
+        while i < bytes.len() && bytes[i].is_ascii_digit() {
+            i += 1;
+        }
+        if i == first {
+            from = start + "after ".len();
+            continue;
+        }
+        if i < bytes.len() && bytes[i] == b'm' {
+            i += 1;
+            let second = i;
+            while i < bytes.len() && bytes[i].is_ascii_digit() {
+                i += 1;
+            }
+            if i == second {
+                from = start + "after ".len();
+                continue;
+            }
+        }
+        if i < bytes.len() && bytes[i] == b's' {
+            return Some((start, i + 1));
+        }
+        from = start + "after ".len();
+    }
+    None
+}
+
+/// Sort adjacent provider lines; `tofu init` emits them in map order.
+fn sort_provider_lines(text: &str) -> String {
+    fn flush(run: &mut Vec<&str>, out: &mut String) {
+        run.sort_unstable();
+        for line in run.drain(..) {
+            out.push_str(line);
+        }
+    }
+    let mut out = String::with_capacity(text.len());
+    let mut run: Vec<&str> = Vec::new();
+    for line in text.split_inclusive('\n') {
+        if line.starts_with("- Using previously-installed ")
+            || line.starts_with("- Reusing previous version of ")
+        {
+            run.push(line);
+        } else {
+            flush(&mut run, &mut out);
+            out.push_str(line);
+        }
+    }
+    flush(&mut run, &mut out);
+    out
+}
+
+/// Replace the generated public key material; it stays the same within a run
+/// but changes on every run.
+fn scrub_key_material(text: &str) -> String {
+    let mut text = text.to_string();
+    for (key, placeholder) in [
+        ("public_key_fingerprint_md5", "<fingerprint>"),
+        ("public_key_fingerprint_sha256", "<fingerprint>"),
+        ("public_key_openssh", "<public-key>"),
+        ("public_key_pem", "<public-key>"),
+    ] {
+        text = replace_json_value(&text, key, "", placeholder);
+    }
+    replace_json_value(&text, "key", "ssh-ed25519 ", "<public-key>")
+}
+
+/// Replace a JSON string value with a placeholder, optionally only when the
+/// value starts with `prefix`.
+fn replace_json_value(text: &str, key: &str, prefix: &str, placeholder: &str) -> String {
+    let needle = format!("\"{key}\":\"");
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(at) = rest.find(&needle) {
+        out.push_str(&rest[..at + needle.len()]);
+        let after = &rest[at + needle.len()..];
+        let end = after.find('"');
+        if !after.starts_with(prefix) {
+            match end {
+                Some(end) => {
+                    out.push_str(&after[..end]);
+                    rest = &after[end..];
+                }
+                None => {
+                    out.push_str(after);
+                    return out;
+                }
+            }
+            continue;
+        }
+        match end {
+            Some(end) => {
+                out.push_str(placeholder);
+                rest = &after[end..];
+            }
+            None => {
+                out.push_str(placeholder);
+                return out;
+            }
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
+/// Replace generated identifiers and commit SHAs wherever the transcript
+/// prints them.
+fn scrub_hex_ids(text: &str) -> String {
+    let text = replace_hex_after(text, "\"id\":\"", "\"", "\"id\":\"<key-id>\"");
+    let text = replace_hex_after(
+        &text,
+        "\"commit_sha\":\"",
+        "\"",
+        "\"commit_sha\":\"<commit-sha>\"",
+    );
+    let text = replace_hex_after(&text, "\"sha\":\"", "\"", "\"sha\":\"<commit-sha>\"");
+    replace_hex_after(&text, "[id=", "]", "[id=<key-id>]")
+}
+
+/// Replace a marker plus a 40-character lowercase hexadecimal run plus its
+/// closing token with `replacement`.
+fn replace_hex_after(text: &str, marker: &str, closing: &str, replacement: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(at) = rest.find(marker) {
+        out.push_str(&rest[..at]);
+        let after = &rest[at + marker.len()..];
+        let value: String = after
+            .chars()
+            .take_while(|c| c.is_ascii_hexdigit())
+            .collect();
+        let is_generated_id = value.len() == 40
+            && value
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit())
+            && after[value.len()..].starts_with(closing);
+        if is_generated_id {
+            out.push_str(replacement);
+            rest = &after[value.len() + closing.len()..];
+        } else {
+            out.push_str(&rest[at..at + marker.len()]);
+            rest = &rest[at + marker.len()..];
+        }
+    }
+    out.push_str(rest);
+    out
 }
 
 /// Replace an `"encrypted_value":"..."` JSON string with a placeholder.

@@ -406,12 +406,12 @@ pub(crate) fn preview(w: &mut DutyWorld) {
     expected.sort();
     transcript.push_str(&format!("expected: {}\n", expected.join(" ")));
 
-    let mut plan_args = vec!["plan", "-input=false", "-no-color"];
+    let mut plan_args = vec!["plan", "-input=false", "-no-color", "-parallelism=1"];
     plan_args.extend(TARGETS.iter().copied());
     plan_args.push("-out=plan.bin");
     let plan = tofu(w, &plan_args);
     transcript.push_str(&format!(
-        "$ tofu plan -input=false -no-color {} -out=plan.bin\n",
+        "$ tofu plan -input=false -no-color -parallelism=1 {} -out=plan.bin\n",
         TARGETS.join(" ")
     ));
     transcript.push_str(&combined(&plan));
@@ -621,8 +621,17 @@ pub(crate) fn apply_previewed(w: &mut DutyWorld) {
 
     fs::copy(state_path(w), &state_before).expect("record the applied state before the apply");
 
-    let apply = tofu(w, &["apply", "-input=false", "plan.bin"]);
-    transcript.push_str("$ tofu apply -input=false plan.bin\n");
+    let apply = tofu(
+        w,
+        &[
+            "apply",
+            "-input=false",
+            "-no-color",
+            "-parallelism=1",
+            "plan.bin",
+        ],
+    );
+    transcript.push_str("$ tofu apply -input=false -no-color -parallelism=1 plan.bin\n");
     transcript.push_str(&combined(&apply));
     w.stdout = String::from_utf8_lossy(&apply.stdout).into_owned();
     w.stderr = String::from_utf8_lossy(&apply.stderr).into_owned();

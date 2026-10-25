@@ -223,7 +223,15 @@ fn assert_visual_baseline(state: &Value, displayed: &str) {
 
 /// Capture the committed screenshots for one displayed state at both viewports.
 fn capture_screenshots(w: &mut DutyWorld, empty: bool) {
-    let dir = evidence_dir();
+    // The archived screenshots are the frozen record of the reviewed run.
+    // A normal run captures into the scenario directory so rendering
+    // differences between machines cannot rewrite that record; updating it
+    // is an explicit act.
+    let dir = if std::env::var_os("DUTY2CAL_UPDATE_VISUAL_EVIDENCE").is_some() {
+        evidence_dir()
+    } else {
+        w.working_dir().join("visual-capture")
+    };
     std::fs::create_dir_all(&dir).expect("create the visual evidence directory");
     for (width, height, viewport) in [(360_u32, 780_u32, "mobile"), (1920, 1080, "desktop")] {
         let path = dir.join(if empty {
