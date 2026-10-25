@@ -16,23 +16,52 @@ flowchart LR
 | Crew member running the executable | One supported Released Roster duty-plan PDF (path or drag-and-drop) | A complete RFC 5545 calendar file beside the source; or an explicit failure with a numbered diagnostic report naming the source and reason |
 | Crew member using the browser conversion page | One supported PDF selected or dropped in the tab, at most 20 MiB | The offered `<source-stem>.ics` download for the browser to save; or an explicit failure with an offered `<source-stem>.parse-error.txt` diagnostic; the page writes nothing |
 
-### The browser conversion route
+### The browser conversion route and the Public website
 
-The page is served from the built Site output. It runs the same conversion
-inside the tab, offers the calendar or diagnostic, and never contacts another
-origin after it loads. The plan is never uploaded, and the page stores nothing
-in persistent storage or a navigable address. Publishing that page at the
-Public website is the separate Site publication; this change builds and serves
-the page on loopback for its evidence.
+The page is served from the Site output. It runs the same conversion inside the
+tab, offers the calendar or diagnostic, and never contacts another origin after
+it loads. The plan is never uploaded, and the page stores nothing in persistent
+storage or a navigable address. The Site publication publishes that output at
+the Public website: a gated command builds the Site output from a named Built
+revision, refuses it unless the page-content, licensing, browser and conversion
+checks pass, and replaces the hosting target's content as a whole.
 
 ```mermaid
 flowchart LR
-  crew["Crew member"] -->|"one supported PDF, at most 20 MiB, selected or dropped"| page["browser conversion page<br/>built Site output"]
+  crew["Crew member"] -->|"one supported PDF, at most 20 MiB, selected or dropped"| page["browser conversion page<br/>Site output at the Public website"]
   page -->|"offers source-stem.ics"| browser["browser-owned save"]
   page -->|"explicit failure + offered parse-error.txt"| crew
   wasm["ffi/wasm facade<br/>no filesystem or network I/O"] --> page
   page -.->|"no request to another origin after load"| none["no remote system"]
 ```
+
+### The Public website and its publication
+
+The Public website is GitHub's serving of the Pages repository's default
+branch. The project writes that branch from the monorepo and never by hand: a
+source revision reaches the publication, the Site output is built from it, and
+one commit replaces the target's content. The page's footer names and links the
+Built revision, so a reader can trace the page in hand to the revision that
+produced it. The hosting service serves the page; the project's side never
+writes into a visitor's browser and never learns that a page was read.
+
+```mermaid
+flowchart LR
+  rev["Source revision on the default branch, or a release tag"] --> pub["Site publication<br/>build, evidence, whole-content replacement"]
+  pub -->|"refused: previous page stays, the failed check is named"| rev
+  pub --> target[("Pages repository<br/>default branch: the Site output")]
+  target --> pages["GitHub Pages"]
+  pages --> reader["Visitor"]
+  rel["Release maintainer"] --> pub
+  pub -->|"success"| release["Release for the tag may publish its archive"]
+```
+
+| Partner | Input to the project | Output from the project |
+|---|---|---|
+| Release maintainer | The revision to publish and the publication command | A named Built revision, the accepted evidence, or a refusal naming the failed check; the hosting target's previous content is untouched on a refusal |
+| Visitor opening the Public website | The served page, built from the Built revision named in its footer | A page whose statements panel, above the file picker, states what it does, the browser route, downloads for various operating systems available on request with its release page linked, the privacy rule, the non-affiliation statement and the as-is statement; whose panel below the converter carries the source and the licence; and whose footer names the Built revision |
+| GitHub Pages (hosting service) | The Pages repository's default branch, written by the Site publication | The served Public website; the project asserts the content it published and the page it reads at the publication's verified address |
+| GitHub Releases | The release the publication command creates only after the site publication succeeded | — |
 
 ### The public home and release channel
 
@@ -75,7 +104,8 @@ flowchart LR
 |---|---|---|
 | GitHub | The live configuration of the declared objects, read (adoption, preview, drift check) | The declared changes of one previewed revision, written by an apply; nothing during adoption or a preview |
 | Organization owner | The declaration, the selected batches, the passphrase and the token | One adopted/bound line per object, a preview naming every difference, one reported change per applied object, or a refusal naming the object; a create guard naming an object that already exists live |
-| Publishing workflow (the website topic, not yet built) | The registered write-enabled deploy key and the monorepo's `PAGES_DEPLOY_KEY` secret | A push to the pages repository's default branch that the pages rule set admits; this change creates the credential but no consumer |
+| Site publication (`scripts/publish-site.sh`, called by the reusable `site.yml` from `web.yml` or the release's `site` job) | The registered write-enabled deploy key and the monorepo's `PAGES_DEPLOY_KEY` secret | A push to the pages repository's default branch that the pages rule set admits: one commit carrying the complete Site output built from the Built revision |
+| GitHub Pages (the served page) | The page served at the address the publication verifies (`--verify-url`), read with bounded retries after the replacement | The publication's acceptance: the served page names the same Built revision as the output, or a refusal naming the address and the served revision |
 | Repository reader | The declaration, the batches and the encrypted state | The reviewable intended configuration; ciphertext they cannot open |
 | Organization profile reader | The reviewed `org/` text and the default security policy, published by an apply | A public overview page and a default security policy that state the current release truthfully and request no third-party resource |
 | Contributor without a repository policy | Nothing; GitHub resolves the organization default | The organization's default `SECURITY.md` with the private reporting route |
@@ -91,9 +121,25 @@ The browser conversion route adds a browser boundary rather than a backend
 interface: the page reads the selected file in the tab, calls the in-tab WASM
 facade, and offers Blob downloads. It makes no request to another origin after
 it loads, has no server or database, and keeps no plan in persistent storage.
-Its only external systems are the browser and the static server that serves
-the built Site output (loopback for the evidence and manual run; the Pages
-repository after the separate Site publication).
+Its only external systems are the browser and whatever serves the Site output:
+loopback for the evidence and manual run, and GitHub Pages at the Public
+website's address.
+
+The Site publication adds a second interface to the project's side: it reads
+the repository's history (tags and commits) through `git`, and writes the Site
+output into the Pages repository over a git transport admitted by the pages
+rule set. The hosting service then serves that branch. The project never calls
+the hosting service's API, and no visitor request reaches the project.
+
+```mermaid
+flowchart LR
+  hist["Repository history and tags"] -->|"describe, rev-parse"| build["Site output build"]
+  build --> gate["Evidence checks<br/>content, licensing, browser, conversion"]
+  gate -->|"accepted"| push["One fast-forward commit"]
+  push --> pages[("Pages repository default branch")]
+  pages --> serve["GitHub Pages serves the Public website"]
+  gh[("GitHub Releases")] ---|"created only after the site deploy succeeded"| push
+```
 
 The public-home tooling adds one separate interface to the project's side: it
 reads GitHub's REST API during adoption, preview and the drift check, and
@@ -118,6 +164,8 @@ flowchart LR
 | Offered diagnostic (browser) | In-memory Blob and `<a download>`; the browser performs the save | Out |
 | Construction clock | Operating-system clock (UTC) in the executable; `js_sys::Date` in the browser | In |
 | Browser runtime | Chromium, Firefox or Safari with WebAssembly and ES modules; no other-origin request after load | In |
+| Site publication target | Git push over SSH with the deploy key (or a local git target in the test twin), admitted by the pages rule set; one fast-forward commit | Out |
+| Public website serving | GitHub Pages serves the Pages repository's default branch; the project never calls the hosting API | Out (the host's interface) |
 | Public-home adoption, preview and configuration change | GitHub REST API over HTTPS: object reads for adoption, preview, the creation guard and the drift check; writes only the declared changes of a previewed revision (including the pages deploy key, its secret and the pages rule set), from the maintainer's workstation | In (reads) and out (an apply only), never the converter |
 | Organization profile publication | The same GitHub REST API: the profile repository is created and its two files are written by a previewed apply; GitHub renders the page and serves the default security policy | Out (an apply only), never the converter |
 | Pinned repositories and private vulnerability reporting | The organization's and repository's web settings, changed once by the organization owner; no API or declaration path | Out (manual only), never the converter |
@@ -126,4 +174,4 @@ flowchart LR
 
 Inside: reading one supported plan, resolving its activities and dates, composing one calendar, publishing it without clobbering (executable) or offering it for a browser-owned save (browser), and reporting failures with diagnostics. The browser route also owns the capability gate, the 20 MiB input bound, the no-network/no-storage page behavior and the inline WASM build.
 
-Outside: importing the calendar into a client, reconciling revised plans, editing the official schedule, entitlement/legality calculations, visa or booking actions, standby activation, and release approval. The public home and release channel — the repository, its automation, its release pages, the organization profile and the default security policy — belong to separate capabilities; the converter neither uses nor reaches them. Publishing the page at the Public website, the deploy key, the Pages workflow and the Built revision belong to the Site publication. See the use case's out-of-scope list for the full boundary.
+Outside: importing the calendar into a client, reconciling revised plans, editing the official schedule, entitlement/legality calculations, visa or booking actions, standby activation, and release approval. The public home and release channel — the repository, its automation, its release pages, the organization profile and the default security policy — belong to separate capabilities; the converter neither uses nor reaches them. Publishing the page at the Public website — its Site output, gate, Built revision, hosting target and release coupling — is the site publication capability of the `publish-public-website` use case; the deploy key and its secret are a prerequisite created by the declared configuration, and the profile copy that describes the site is a configuration change. See the use case's out-of-scope list for the full boundary.

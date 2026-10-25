@@ -256,3 +256,574 @@ pub fn detail_header_row(y: f64) -> Vec<(f64, f64, String)> {
     items.extend(at(y - 9.0, &[(TZ_X, "Difference")]));
     items
 }
+
+// ---------------------------------------------------------------------------
+// Site publication fixtures (design.md "Local runnability & digital twins").
+//
+// A per-process template is a real git clone of the project's committed
+// history with the working-tree implementation overlaid and committed, a real
+// `v0.5.0` tag and three documentation-only commits after it. Scenarios clone
+// the template cheaply; a clone may retag, commit and be checked out without
+// touching another scenario. `abc1234` labels the revision three commits after
+// the tag (the branch `site-base`); a scenario that needs `def5678` commits it
+// and records the label. `9999999` is deliberately not a revision.
+//
+// The hosting target is a real bare repository; a loopback server reads the
+// target's branch tip on every request, so a publication's own serving check
+// sees its push. The recording `gh` stand-in completes the twins the change's
+// later tasks consume.
+// ---------------------------------------------------------------------------
+
+use std::fs;
+use std::io::{BufRead, BufReader};
+use std::os::unix::fs::PermissionsExt;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Output, Stdio};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::OnceLock;
+
+use crate::DutyWorld;
+
+/// The project checkout under test: the implementation the steps drive.
+pub fn repository_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+/// A fixed identity and clock, so every fixture revision is reproducible.
+fn fixture_env(command: &mut Command) -> &mut Command {
+    command
+        .env("GIT_AUTHOR_NAME", "duty2cal fixture")
+        .env("GIT_AUTHOR_EMAIL", "fixture@duty2cal.invalid")
+        .env("GIT_COMMITTER_NAME", "duty2cal fixture")
+        .env("GIT_COMMITTER_EMAIL", "fixture@duty2cal.invalid")
+        .env("GIT_AUTHOR_DATE", "2026-01-01T00:00:00+0000")
+        .env("GIT_COMMITTER_DATE", "2026-01-01T00:00:00+0000")
+}
+
+fn run_command(command: &mut Command, what: &str) -> Output {
+    let output = command
+        .output()
+        .unwrap_or_else(|error| panic!("{what}: {error}"));
+    assert!(
+        output.status.success(),
+        "{what} failed with {}\nstdout:\n{}\nstderr:\n{}",
+        output.status,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    output
+}
+
+fn git_ok(dir: &Path, args: &[&str]) -> String {
+    let mut command = Command::new("git");
+    command.arg("-C").arg(dir).args(args);
+    fixture_env(&mut command);
+    let output = run_command(&mut command, &format!("git {}", args.join(" ")));
+    String::from_utf8_lossy(&output.stdout).trim().to_string()
+}
+
+fn git_bare(target: &Path, args: &[&str]) -> String {
+    let mut command = Command::new("git");
+    command.arg(format!("--git-dir={}", target.display())).args(args);
+    fixture_env(&mut command);
+    let output = run_command(&mut command, &format!("git --git-dir target {}", args.join(" ")));
+    String::from_utf8_lossy(&output.stdout).trim().to_string()
+}
+
+fn copy_tree(source: &Path, destination: &Path) {
+    fs::create_dir_all(destination)
+        .unwrap_or_else(|error| panic!("create {}: {error}", destination.display()));
+    for entry in fs::read_dir(source).unwrap_or_else(|error| panic!("read {}: {error}", source.display())) {
+        let entry = entry.expect("read a fixture directory entry");
+        let target = destination.join(entry.file_name());
+        if entry.path().is_dir() {
+            copy_tree(&entry.path(), &target);
+        } else {
+            fs::copy(entry.path(), &target).unwrap_or_else(|error| {
+                panic!("copy {} to {}: {error}", entry.path().display(), target.display())
+            });
+        }
+    }
+}
+
+/// The per-process fixture template.
+fn site_template() -> PathBuf {
+    static TEMPLATE: OnceLock<PathBuf> = OnceLock::new();
+    TEMPLATE.get_or_init(build_site_template).clone()
+}
+
+fn build_site_template() -> PathBuf {
+    let template = std::env::temp_dir().join(format!(
+        "duty2cal-site-template-{}",
+        std::process::id()
+    ));
+    let _ = fs::remove_dir_all(&template);
+    let project = repository_root();
+
+    let mut clone = Command::new("git");
+    clone
+        .arg("clone")
+        .arg("-q")
+        .arg("--no-hardlinks")
+        .arg(&project)
+        .arg(&template);
+    fixture_env(&mut clone);
+    run_command(&mut clone, "clone the fixture template");
+
+    // Overlay the working-tree implementation. Tracked modifications and
+    // untracked source files are copied; a tracked deletion is removed. The
+    // change's planning artifacts (`givn/changes/**`) are not part of a
+    // publishable revision, so the tag's suite is the permanent corpus.
+    let changed = git_ok(&project, &["diff", "--name-only", "-z", "HEAD"]);
+    for relative in changed.split('\0').filter(|path| !path.is_empty()) {
+        let source = project.join(relative);
+        let destination = template.join(relative);
+        if source.is_file() {
+            if let Some(parent) = destination.parent() {
+                fs::create_dir_all(parent).expect("create an overlay directory");
+            }
+            fs::copy(&source, &destination).unwrap_or_else(|error| {
+                panic!("overlay {relative}: {error}")
+            });
+        } else if destination.exists() {
+            fs::remove_file(&destination).expect("remove a deleted fixture file");
+        }
+    }
+    let untracked = git_ok(&project, &["ls-files", "--others", "--exclude-standard", "-z"]);
+    for relative in untracked.split('\0').filter(|path| !path.is_empty()) {
+        if relative.starts_with("givn/changes/")
+            || relative.starts_with("dist/")
+            || relative.starts_with("coverage/")
+            || relative.starts_with("reports/")
+        {
+            continue;
+        }
+        let source = project.join(relative);
+        if !source.is_file() {
+            continue;
+        }
+        let destination = template.join(relative);
+        if let Some(parent) = destination.parent() {
+            fs::create_dir_all(parent).expect("create an overlay directory");
+        }
+        fs::copy(&source, &destination)
+            .unwrap_or_else(|error| panic!("overlay {relative}: {error}"));
+    }
+    git_ok(&template, &["add", "-A"]);
+    git_ok(&template, &["commit", "-q", "-m", "fixture: overlay the working tree"]);
+
+    // A real tag and three commits after it, so the `tag-N-gSHA` form is
+    // produced by git rather than synthesised by the test.
+    git_ok(&template, &["tag", "v0.5.0"]);
+    for number in 1..=3 {
+        let relative = format!("docs/fixture-commit-{number}.md");
+        fs::write(
+            template.join(&relative),
+            format!("Fixture documentation revision {number}.\n"),
+        )
+        .expect("write a fixture documentation revision");
+        git_ok(&template, &["add", &relative]);
+        git_ok(
+            &template,
+            &["commit", "-q", "-m", &format!("docs: fixture revision {number}")],
+        );
+    }
+    // The label `abc1234` is this branch; it stays put when a scenario commits
+    // a later revision on `main`.
+    git_ok(&template, &["branch", "site-base"]);
+    template
+}
+
+/// The Site output assembled from the fixture revision `abc1234`, built once
+/// per process from the project's already-built browser bundle.
+fn site_base_output() -> PathBuf {
+    static OUTPUT: OnceLock<PathBuf> = OnceLock::new();
+    OUTPUT
+        .get_or_init(|| {
+            let template = site_template();
+            let revision = git_ok(&template, &["rev-parse", "refs/heads/site-base"]);
+            let work = std::env::temp_dir().join(format!(
+                "duty2cal-site-base-tree-{}",
+                std::process::id()
+            ));
+            let output = std::env::temp_dir().join(format!(
+                "duty2cal-site-base-output-{}",
+                std::process::id()
+            ));
+            let _ = fs::remove_dir_all(&work);
+            let _ = fs::remove_dir_all(&output);
+            git_ok(
+                &template,
+                &["worktree", "add", "--detach", path_str(&work), revision.as_str()],
+            );
+            copy_tree(
+                &repository_root().join("web/pkg"),
+                &work.join("web/pkg"),
+            );
+            let mut command = Command::new(work.join("scripts/build-site.sh"));
+            command
+                .arg("--repo")
+                .arg(&work)
+                .arg("--revision")
+                .arg(&revision)
+                .arg("--out")
+                .arg(&output);
+            run_command(&mut command, "assemble the fixture's base Site output");
+            git_ok(
+                &template,
+                &["worktree", "remove", "--force", path_str(&work)],
+            );
+            output
+        })
+        .clone()
+}
+
+fn path_str(path: &Path) -> &str {
+    path.to_str().expect("the fixture path is valid UTF-8")
+}
+
+/// Fresh per-scenario directory, so concurrently executed scenarios never
+/// share a fixture.
+fn fresh_site_directory() -> PathBuf {
+    static SEQUENCE: AtomicUsize = AtomicUsize::new(0);
+    let sequence = SEQUENCE.fetch_add(1, Ordering::Relaxed);
+    let dir = std::env::temp_dir().join(format!(
+        "duty2cal-site-{}-{sequence}",
+        std::process::id()
+    ));
+    let _ = fs::remove_dir_all(&dir);
+    fs::create_dir_all(&dir).expect("create the scenario's site directory");
+    dir
+}
+
+/// The scenario's fixture directory, created on first use.
+fn site_directory(w: &mut DutyWorld) -> PathBuf {
+    if w.dir.is_none() {
+        w.dir = Some(fresh_site_directory());
+    }
+    let dir = w.working_dir().join("site");
+    fs::create_dir_all(&dir).expect("create the site fixture directory");
+    dir
+}
+
+/// The scenario's clone of the fixture template.
+fn site_repository(w: &mut DutyWorld) -> PathBuf {
+    let dir = site_directory(w);
+    let repo = dir.join("fixture");
+    if !repo.join(".git").exists() {
+        let template = site_template();
+        let mut clone = Command::new("git");
+        clone
+            .arg("clone")
+            .arg("-q")
+            .arg("--no-hardlinks")
+            .arg(&template)
+            .arg(&repo);
+        fixture_env(&mut clone);
+        run_command(&mut clone, "clone the scenario fixture");
+        // The caller's installed driver tree stands in for the clone's: the
+        // lockfiles are identical because the clone holds the same revision.
+        let node_modules = repository_root().join("web/e2e/node_modules");
+        std::os::unix::fs::symlink(node_modules, repo.join("web/e2e/node_modules"))
+            .expect("link the driver tree into the fixture");
+    }
+    repo
+}
+
+/// The bare hosting target.
+fn site_target(w: &mut DutyWorld) -> PathBuf {
+    site_directory(w).join("target.git")
+}
+
+/// The publication's output directory.
+fn site_output(w: &mut DutyWorld) -> PathBuf {
+    site_directory(w).join("out")
+}
+
+fn site_state_path(w: &mut DutyWorld, key: &str) -> PathBuf {
+    site_directory(w).join(format!("state-{key}"))
+}
+
+/// Record one scenario fact the steps share (a revision label, the serving
+/// address, and so on).
+pub fn site_set(w: &mut DutyWorld, key: &str, value: &str) {
+    let path = site_state_path(w, key);
+    fs::write(&path, value).unwrap_or_else(|error| panic!("write {}: {error}", path.display()));
+}
+
+/// Read one scenario fact.
+pub fn site_get(w: &mut DutyWorld, key: &str) -> Option<String> {
+    fs::read_to_string(site_state_path(w, key))
+        .ok()
+        .map(|value| value.trim().to_string())
+}
+
+/// Resolve a scenario's revision label to the fixture's real commit.
+pub fn site_label(w: &mut DutyWorld, label: &str) -> String {
+    if label == "abc1234" {
+        // `site-base` is a remote-tracking branch in every clone, so it keeps
+        // naming the third commit after the tag as `main` advances.
+        git_ok(&site_repository(w), &["rev-parse", "refs/remotes/origin/site-base"])
+    } else if label == "9999999" {
+        label.to_string()
+    } else {
+        let path = site_directory(w).join(format!("label-{label}"));
+        fs::read_to_string(&path)
+            .unwrap_or_else(|_| panic!("the fixture holds no revision labelled {label}"))
+            .trim()
+            .to_string()
+    }
+}
+
+/// Record the checked-out commit under a scenario's label.
+pub fn site_record_label(w: &mut DutyWorld, label: &str) -> String {
+    let revision = git_ok(&site_repository(w), &["rev-parse", "HEAD"]);
+    let path = site_directory(w).join(format!("label-{label}"));
+    fs::write(&path, &revision).expect("record a fixture revision label");
+    revision
+}
+
+/// Commit a file on the fixture's current branch and return the revision.
+pub fn site_commit_file(
+    w: &mut DutyWorld,
+    relative: &str,
+    body: &str,
+    message: &str,
+) -> String {
+    let repo = site_repository(w);
+    let path = repo.join(relative);
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).expect("create a fixture commit directory");
+    }
+    fs::write(&path, body).expect("write a fixture commit file");
+    git_ok(&repo, &["add", relative]);
+    git_ok(&repo, &["commit", "-q", "-m", message]);
+    git_ok(&repo, &["rev-parse", "HEAD"])
+}
+
+/// The Built revision text the fixture's own history yields.
+pub fn site_describe(w: &mut DutyWorld, revision: &str) -> String {
+    git_ok(
+        &site_repository(w),
+        &["describe", "--tags", "--always", "--match", "v*", revision],
+    )
+}
+
+/// Populate the bare hosting target with the Site output built from `label`
+/// and start a loopback server over the target's branch tip.
+pub fn site_set_up_target(w: &mut DutyWorld, label: &str) -> String {
+    assert_eq!(
+        label, "abc1234",
+        "the scenario fixtures build their hosting target from the base revision"
+    );
+    let revision = site_label(w, label);
+    let populated = site_base_output();
+    let target = site_target(w);
+    fs::create_dir_all(site_directory(w)).expect("create the fixture directory");
+    let mut init = Command::new("git");
+    init.arg("init").arg("-q").arg("--bare").arg(&target);
+    fixture_env(&mut init);
+    run_command(&mut init, "create the fixture hosting target");
+
+    let stage = site_directory(w).join("target-stage");
+    let _ = fs::remove_dir_all(&stage);
+    let mut init = Command::new("git");
+    init.arg("init").arg("-q").arg(&stage);
+    fixture_env(&mut init);
+    run_command(&mut init, "create the fixture target staging tree");
+    copy_tree(&populated, &stage);
+    git_ok(&stage, &["add", "-A"]);
+    git_ok(
+        &stage,
+        &["commit", "-q", "-m", "publish-site: the previously published page"],
+    );
+    git_ok(&stage, &["remote", "add", "origin", path_str(&target)]);
+    git_ok(&stage, &["push", "-q", "origin", "HEAD:refs/heads/main"]);
+
+    let tip = git_bare(&target, &["rev-parse", "refs/heads/main"]);
+    let describe = site_describe(w, &revision);
+    site_set(w, "target-tip", &tip);
+    site_set(w, "base-revision", &revision);
+    site_set(w, "base-describe", &describe);
+
+    let server = repository_root().join("apps/cli/tests/support/site_server.py");
+    let mut child = Command::new("python3")
+        .arg(&server)
+        .arg("--repo")
+        .arg(&target)
+        .arg("--branch")
+        .arg("main")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("start the loopback hosting target server");
+    let mut reader = BufReader::new(child.stdout.take().expect("the server owns a stdout pipe"));
+    let mut line = String::new();
+    reader
+        .read_line(&mut line)
+        .expect("read the loopback server's port");
+    let port: u16 = line
+        .trim()
+        .parse()
+        .unwrap_or_else(|error| panic!("the loopback server printed {line:?}: {error}"));
+    w.fake = Some(child);
+
+    let url = format!("http://127.0.0.1:{port}/");
+    site_set(w, "verify-url", &url);
+    url
+}
+
+/// The address the publication reads.
+pub fn site_verify_url(w: &mut DutyWorld) -> String {
+    site_get(w, "verify-url").expect("the scenario prepared no serving address")
+}
+
+/// Run the publication once, recording its exit status and both streams.
+pub fn site_publish(w: &mut DutyWorld) {
+    let repo = site_repository(w);
+    let revision = site_get(w, "revision").expect("the scenario named no revision to publish");
+    let since = site_get(w, "since");
+    let out = site_output(w);
+    let target = site_target(w);
+    let url = site_verify_url(w);
+    let script = repository_root().join("scripts/publish-site.sh");
+
+    let mut command = Command::new(&script);
+    command
+        .arg("--repo")
+        .arg(&repo)
+        .arg("--revision")
+        .arg(&revision)
+        .arg("--target")
+        .arg(&target)
+        .arg("--out")
+        .arg(&out)
+        .arg("--verify-url")
+        .arg(&url);
+    if let Some(since) = since.as_deref() {
+        command.arg("--since").arg(since);
+    }
+    if let Some(tmpdir) = site_get(w, "tmpdir") {
+        command.env("TMPDIR", tmpdir);
+    }
+    // The fixture's own build and suite stay incremental without borrowing the
+    // test process's target directory through the environment.
+    command.env("CARGO_TARGET_DIR", repository_root().join("target"));
+
+    let output = command
+        .output()
+        .unwrap_or_else(|error| panic!("run {}: {error}", script.display()));
+    w.exit_status = output.status.code();
+    w.stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+    w.stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+    w.command_transcript = format!(
+        "$ scripts/publish-site.sh --repo <fixture> --revision {revision}{} --target <target> --out <out> --verify-url <url>\n\
+         exit: {:?}\nstdout:\n{}\nstderr:\n{}",
+        since
+            .as_deref()
+            .map(|base| format!(" --since {base}"))
+            .unwrap_or_default(),
+        w.exit_status,
+        w.stdout,
+        w.stderr
+    );
+}
+
+/// The publication's combined output, for a refusal's named failure.
+pub fn site_publication_text(w: &DutyWorld) -> String {
+    format!("{}\n{}", w.stdout, w.stderr)
+}
+
+/// One file from the hosting target's branch tip.
+pub fn site_target_file(w: &mut DutyWorld, relative: &str) -> String {
+    let target = site_target(w);
+    git_bare(&target, &["show", &format!("main:{relative}")])
+}
+
+/// Every member of the hosting target's branch tip, sorted.
+pub fn site_target_members(w: &mut DutyWorld) -> Vec<String> {
+    let target = site_target(w);
+    git_bare(&target, &["ls-tree", "-r", "--name-only", "main"])
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_string)
+        .collect()
+}
+
+/// The hosting target's branch tip.
+pub fn site_target_tip(w: &mut DutyWorld) -> String {
+    let target = site_target(w);
+    git_bare(&target, &["rev-parse", "refs/heads/main"])
+}
+
+/// Read the page the serving address returns.
+pub fn site_served_page(w: &mut DutyWorld) -> String {
+    let url = site_verify_url(w);
+    let mut command = Command::new("curl");
+    command.args(["-fsS", "--max-time", "10", &url]);
+    let output = run_command(&mut command, "read the serving address");
+    String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
+/// The Built revision text the served page carries, if any.
+pub fn served_revision(page: &str) -> Option<String> {
+    let marker = "data-site-statement=\"built-revision\">";
+    let start = page.find(marker)? + marker.len();
+    let rest = &page[start..];
+    let end = rest.find('<')?;
+    Some(rest[..end].to_string())
+}
+
+/// The publication's own evidence of the eight output members.
+pub const SITE_MEMBERS: [&str; 8] = [
+    "LICENSE.txt",
+    "app.js",
+    "capability.js",
+    "icon.png",
+    "index.html",
+    "pkg/duty2cal_wasm.js",
+    "pkg/wasm-inline.js",
+    "styles.css",
+];
+
+/// Create a recording `gh` stand-in on `PATH` and return its directory. It
+/// records every invocation and refuses an unknown subcommand, so a scenario
+/// can prove both the order and the absence of a call.
+pub fn gh_stand_in(w: &mut DutyWorld) -> PathBuf {
+    let directory = site_directory(w).join("bin");
+    fs::create_dir_all(&directory).expect("create the gh stand-in directory");
+    let log = site_directory(w).join("gh.log");
+    let path = directory.join("gh");
+    fs::write(
+        &path,
+        format!(
+            "#!/usr/bin/env bash\n# SPDX-License-Identifier: MPL-2.0\n\
+             printf '%s\\n' \"$*\" >> {log}\n\
+             case \"$1\" in\n\
+               release|api) exit 0 ;;\n\
+               *) echo \"gh stand-in: unknown subcommand $1\" >&2; exit 1 ;;\n\
+             esac\n",
+            log = path_str(&log)
+        ),
+    )
+    .expect("write the recording gh stand-in");
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o755))
+        .expect("make the gh stand-in executable");
+    site_set(w, "gh-log", path_str(&log));
+    directory
+}
+
+/// The lockfile-installed driver tree a publication links into its worktree.
+pub fn installed_driver_tree() -> PathBuf {
+    repository_root().join("web/e2e/node_modules")
+}
+
+/// A scratch path the publication cannot create its worktree under.
+pub fn unwritable_scratch(w: &mut DutyWorld) -> PathBuf {
+    let path = site_directory(w).join("unwritable");
+    fs::create_dir_all(&path).expect("create the unwritable scratch directory");
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o555))
+        .expect("make the scratch directory unwritable");
+    path
+}

@@ -21,7 +21,7 @@ flowchart TB
 |---|---|
 | `apps/cli` (package `duty2cal`) | Parse the invocation, invoke the conversion, print the reported path or failure, set the exit status, and publish the calendar or the diagnostic (`fs` module). |
 | `ffi/wasm` (package `duty2cal-wasm`) | A thin `wasm-bindgen` driving adapter: accepts the filename and bytes, wires the unchanged `ConvertRoster` with a browser clock, and returns calendar text or a structured failure. Target-scoped to `wasm32-unknown-unknown`; performs no filesystem, network or environment I/O. |
-| `web/` | The converter page: capability gate, file picker and drop zone, 20 MiB bound, conversion call, status/failure panels, Blob offers, privacy copy and CSP. No backend, no upload, no persistent storage. |
+| `web/` | The converter page: a header with the project icon as a 48×48 mark left of the heading (and as the favicon via `icon.png`), a statements panel above the converter panel (what it does, the browser route, downloads for various operating systems on request with the release page linked, privacy, non-affiliation, as-is), capability gate, file picker and drop zone, 20 MiB bound, conversion call, status/failure panels, Blob offers, a "Source and licence" panel below the converter panels, and a full footer carrying the Built revision and the plain-prose non-affiliation, as-is and privacy statements. No backend, no upload, no persistent storage. |
 | `crates/duty2cal-pdf` | The only crate that depends on `pdfplumber`; produces the `RawRosterTable` anti-corruption input. |
 | `crates/duty2cal-core` | Pure domain, application ports + `ConvertRoster`, and the dependency-free ICS adapter. |
 
@@ -48,12 +48,62 @@ flowchart TB
 
 | Block | Responsibility |
 |---|---|
-| `scripts/build-web.sh` | Install the pinned `wasm-pack`, build `web/pkg`, generate the base64 `wasm-inline.js`, and copy the licence. |
-| `scripts/run-web.sh` | Build if needed and serve `web/` on loopback for manual use. |
-| `web/e2e/driver.mjs` | Start a loopback static server and Chromium, perform actions, read rendered state/request log/storage, capture downloads and screenshots, and fail closed on an unknown action. |
+| `scripts/build-web.sh` | Install the pinned `wasm-pack`, build `web/pkg`, and generate the base64 `wasm-inline.js`. |
+| `scripts/run-web.sh` | Build the Site output and serve `dist/site/` on loopback for manual use. |
+| `web/e2e/driver.mjs` | Serve the Site output named by `DUTY2CAL_SITE_ROOT` on loopback and drive Chromium: perform actions, read rendered state/request log/storage, capture downloads and screenshots, and fail closed on an unknown action or a missing root. |
 | `apps/cli/tests/steps/browser.rs` | The Rust client for the driver protocol; shared by the `@e2e` and regular browser step files. |
 | `apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs` | The one browser `@e2e` scenario, alongside the existing CLI e2e steps. |
 | `apps/cli/tests/steps/export_duty_plan_calendar.rs` | The regular browser variants (size, family, stale offer, drop, capability, startup, offer failures, cancelled save, naming, persistence). |
+
+## Site publication toolbox (outside the product crates)
+
+The Public website's publication adds blocks beside the workspace. They are
+build-and-publish tooling: they change nothing about the product blocks above,
+and the page they publish is the same `web/` page.
+
+```mermaid
+flowchart TB
+  ASSEMBLE["scripts/build-site.sh — assemble dist/site (page, icon, script, capability gate, stylesheet, bundle, licence), stamp the Built revision"]
+  CONTENT["scripts/check-site-content.sh — name each missing public statement or foreign asset"]
+  EVIDENCE["scripts/site-evidence.sh — content, licensing, browser, conversion"]
+  PUBLISH["scripts/publish-site.sh — status/--since decision, worktree, build, gate, replace, read back, verify the served page"]
+  RELEASE["scripts/publish-release.sh — verify the target's tag, then the release"]
+  WEBWF[".github/workflows/web.yml — main push (--since) and manual dispatch; no tag trigger"]
+  SITEWF[".github/workflows/site.yml — reusable: toolchain, key to a 600 file, publish-site.sh"]
+  RELWF[".github/workflows/release.yml — site job, then publish job (needs: site)"]
+  WORKTREE["detached worktree at the publication revision"]
+  SERVED["GitHub Pages: the served page (--verify-url)"]
+  STEPS["apps/cli/tests/steps/publish_public_website.rs + steps/e2e/publish_public_website.rs"]
+  WEBWF -->|"calls"| SITEWF
+  RELWF -->|"site job calls"| SITEWF
+  SITEWF -->|"runs"| PUBLISH
+  RELWF -->|"publish job runs"| RELEASE
+  RELEASE -->|"git ls-remote / fetch of the target"| TARGET[("Pages repository")]
+  PUBLISH -->|"git worktree add --detach"| WORKTREE
+  WORKTREE -->|"build-web.sh, then"| ASSEMBLE
+  PUBLISH -->|invokes| ASSEMBLE
+  PUBLISH -->|invokes| EVIDENCE
+  EVIDENCE -->|invokes| CONTENT
+  EVIDENCE -->|"real subprocess, inside the worktree"| RUNNER["run-tests.sh → features_runner → Playwright driver"]
+  STEPS -->|"real subprocess"| PUBLISH
+  STEPS -->|"serves the target's checked-out tree"| DRIVER["web/e2e/driver.mjs"]
+  ASSEMBLE --> OUT["dist/site — the Site output"]
+  PUBLISH -->|"one fast-forward commit"| TARGET
+  TARGET --> SERVED
+  PUBLISH -->|"read with bounded retries"| SERVED
+```
+
+| Block | Responsibility |
+|---|---|
+| `scripts/build-site.sh` | Assemble `dist/site/` from the checkout it is pointed at (the publication passes the revision's detached worktree) and those `web/pkg/` members, copy the project icon to `icon.png`, stamp the footer anchor from `--revision`, and copy `LICENSES/MPL-2.0.txt` as `LICENSE.txt`; the output holds exactly eight members — `index.html`, `app.js`, `capability.js`, `styles.css`, `icon.png`, `pkg/duty2cal_wasm.js`, `pkg/wasm-inline.js` and `LICENSE.txt`; refuse a missing converter bundle and name `scripts/build-web.sh`. |
+| `scripts/check-site-content.sh` | Read the assembled page and name every missing public statement, a missing header icon or favicon, a missing Built revision link or a missing licence file; refuse an asset loaded from another origin. |
+| `scripts/site-evidence.sh` | Run the four checks as real subprocesses in fail-fast order and name the failing one; it runs inside the revision's worktree, so the conversion suite and browser scenario are that revision's own. |
+| `scripts/publish-site.sh` | Refuse an unclean caller tree (`git status --porcelain --untracked-files=no`), decide `--since` against the site-input list it owns, resolve the Built revision, create a detached worktree at it, build and gate there, report the target as current and write nothing when republishing content the target already holds, replace the hosting target's content in one fast-forward commit under an exclusive lock, read the pushed tree back, and verify the page served at `--verify-url` names the same Built revision before reporting success. |
+| `scripts/publish-release.sh` | Read the hosting target's branch tip (`git ls-remote`, then a fetch) and refuse before any `gh` call unless it carries the tagged Built revision; then create, inspect and publish the draft release through `gh`, comparing the asset set while excluding `release-notes.md`; it takes `--site-repo DIR` for the target it reads. |
+| `.github/workflows/web.yml` | The trigger workflow only: every default-branch push (passing `github.event.before` as `--since`) and manual dispatch, with no `v*` tag trigger; it calls the reusable `site.yml` with `fetch-depth: 0` and holds no build, gate or publish step of its own. |
+| `.github/workflows/site.yml` | The reusable publication workflow (`on: workflow_call`, inputs `revision` and `since`, secret `PAGES_DEPLOY_KEY`): prepares the gate's toolchain, writes the key to a `600` file and runs `scripts/publish-site.sh` with `--verify-url`; its concurrency group is the site publication's serialization. |
+| `.github/workflows/release.yml` | A `site` job that calls `site.yml` for the tag (`fetch-depth: 0`, `revision` = the tag, no `since`), then a `publish` job (`needs: site`) that keeps the SBOM and attestation steps and runs `scripts/publish-release.sh`; the `publish` job no longer publishes the site itself. |
+| `apps/cli/tests/steps/publish_public_website.rs`, `apps/cli/tests/steps/e2e/publish_public_website.rs` | The capability's step definitions: the regular refusal and replacement scenarios, and the one `@e2e` that publishes into a local target and drives the published tree in Chromium. |
 
 ## Release toolbox (outside the product crates)
 
@@ -214,7 +264,7 @@ workspace build.
 
 | Element | Responsibility |
 |---|---|
-| `index.html` | Title, heading, drop zone and picker markup hidden until ready, status and failure panels, privacy note, meta CSP. |
+| `index.html` | Title, a flex header row carrying the project icon as a 48×48 mark left of the `h1` and subheadline with the alt text `duty2cal` and a `<link rel="icon" href="./icon.png">` favicon, the statements panel above the converter panel (what the tool does, the browser route, downloads for various operating systems on request with `https://github.com/duty2cal/duty2cal/releases` linked, privacy, non-affiliation, as-is), drop zone and picker markup hidden until ready, status and failure panels, a "Source and licence" panel below the converter panels, and a full footer carrying the Built revision and the plain-prose statements; meta CSP including `img-src 'self'`. |
 | `capability.js` | Classic deferred check for WebAssembly and ES modules; renders the cannot-run message and leaves the picker hidden. |
 | `app.js` | ES module: `init(bytes)` from the inline bundle, `acceptFile` (clear prior offer, size bound, read, convert), state machine, offer/object-URL lifecycle, failure/diagnostic fallback, no storage or network. |
 | `styles.css` | Design tokens, layout, breakpoints, states and reduced-motion rules. |
@@ -222,4 +272,4 @@ workspace build.
 
 ### Deferred (roadmap)
 
-`ffi/uniffi` (Phase 2) and native UIs (Phase 3) — driving adapters over the unchanged application; not created by this change. `ffi/wasm` moved out of this list: the browser converter creates it.
+`ffi/uniffi` and native UIs — driving adapters over the unchanged application; neither exists yet, and creating one is a later change. `ffi/wasm` is no longer on this list: the browser converter built it, and the Site publication now serves it.

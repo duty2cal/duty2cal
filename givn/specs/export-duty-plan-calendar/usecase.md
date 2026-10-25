@@ -172,12 +172,6 @@ This is a changing use case: it creates a new calendar export, not a read-only o
 | export-duty-plan-calendar | supply a duty plan for conversion through the executable | Crew member converts a supported duty plan and receives a calendar file |
 | export-duty-plan-calendar | supply a duty plan through the converter page and save the offered calendar | Crew member converts a supported duty plan in the browser and saves the offered calendar |
 
-Dropping a plan onto the drop zone is the same supply action as the picker and
-adds no inventory entry. The inventory's two actions have exactly one `@e2e`
-scenario each; the size, family, unresolved-activity, stale-offer, drop,
-capability, startup, offer-failure, cancelled-save, naming and persistence
-scenarios are regular coverage of those actions.
-
 ## Includes
 
 - none
@@ -209,3 +203,10 @@ flowchart LR
   goal --> published["Complete new calendar at unused path"]
   goal --> failed["Explicit failure; numbered diagnostic attempted"]
 ```
+
+The inventory in `## Interactions` names the two actions a consumer performs
+against this use case's real interfaces. Dropping a plan onto the drop zone is
+the same supply action as the picker and adds no inventory entry: the size,
+family, unresolved-activity, stale-offer, drop, capability, startup,
+offer-failure, cancelled-save, naming and persistence scenarios are regular
+coverage of those two actions, each of which has exactly one `@e2e` scenario.

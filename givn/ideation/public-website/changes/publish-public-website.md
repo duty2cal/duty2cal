@@ -1,6 +1,6 @@
 # Change seed: publish-public-website
 
-Status: ready
+Status: proposed by publish-public-website
 
 - Use-case IDs: `publish-public-website`, `apply-configuration-change`
   (profile copy), `publish-public-release` (platform wording and the

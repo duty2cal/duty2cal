@@ -168,6 +168,146 @@ flowchart TB
 3. A module-load or instantiation failure renders the same treatment; the page never falls back to a server or an upload.
 4. The failed states make no request to another origin.
 
+## Scenario: The Site publication builds, gates and publishes the page
+
+**Trigger:** A default-branch revision that changes the site's inputs, a release tag, or the maintainer running the publication command.
+
+```mermaid
+sequenceDiagram
+  participant M as Release maintainer
+  participant P as publish-site
+  participant W as detached worktree
+  participant G as site-evidence
+  participant B as browser check
+  participant T as Pages repository
+  participant H as GitHub Pages
+  M->>P: publish the site from a revision (and a base revision on a branch push)
+  P->>P: git status --porcelain --untracked-files=no
+  alt the caller's tree is unclean
+    P-->>M: refused, naming the unclean revision
+  else clean
+    P->>P: diff base..revision against the site-input list
+    alt the base is unknown
+      P-->>M: refused, naming the base
+    else no site input changed
+      P-->>M: "no site input changed"; nothing built or written
+    else a site input changed, or no base was supplied
+      P->>P: resolve git describe and the commit
+      alt the Built revision cannot be resolved
+        P-->>M: refused, naming the revision
+      else resolved
+        P->>W: git worktree add --detach at that commit
+        alt the worktree cannot be created
+          P-->>M: refused, naming the worktree
+        else the revision's tree is checked out
+          W->>W: build-web.sh, then build-site.sh (stamp the footer, copy the licence)
+          alt the build fails
+            P-->>M: refused, naming the build step
+          else dist/site is assembled
+            P->>G: evaluate the evidence inside the worktree
+            G->>G: page content, then licensing
+            G->>B: drive the assembled page in Chromium
+            B->>B: convert, and record every request after load
+            alt any check fails
+              G-->>M: refused, naming the failed check
+            else every check passed
+              G->>G: run the conversion suite
+              G-->>P: accepted
+              P->>T: compare the target's branch tip with the output
+              alt the target already holds this output
+                P-->>M: "target is current"; nothing written
+              else the content differs
+                P->>T: one commit whose tree is the Site output, pushed fast-forward
+                P->>T: read the pushed tree back
+                P->>H: fetch the --verify-url address with bounded retries
+                alt the served page does not name the Built revision
+                  P-->>M: refused, naming the address and the served revision
+                else the served page names the Built revision
+                  P-->>M: report the Built revision
+                end
+              end
+              P->>W: remove the worktree
+            end
+          end
+        end
+      end
+    end
+  end
+```
+
+**Steps:**
+
+1. The command first refuses an unclean caller tree
+   (`git status --porcelain --untracked-files=no`), because the publication
+   would otherwise look as if it shipped the maintainer's uncommitted edits; it
+   names the revision. Untracked files are excluded deliberately: the commit's
+   tree is the Site output, so an untracked build output or scratch file cannot
+   reach the published page, while a change to a tracked file can.
+2. A default-branch publication compares the supplied base revision with the
+   publication revision against the site-input list it owns; an empty
+   intersection reports `no site input changed` and writes nothing, and an
+   unresolvable base is refused rather than read as "no change". A tag
+   publication supplies no base and always continues.
+3. The Built revision is resolved next, and the revision's own tree is checked
+   out into a detached worktree; every later step runs there, so a tag
+   publication publishes the tagged tree even when the default branch is newer,
+   and the footer's string and the assembled content describe one commit.
+4. The assembled output is the artifact the gate inspects and the artifact the
+   commit carries; nothing is rebuilt between the check and the push, and the
+   gate's conversion suite is the revision's own.
+5. The checks run fail-fast in the order page content, licensing, browser
+   check, conversion suite; the first failure ends the publication, names the
+   check and leaves the target untouched. The worktree is removed on every exit
+   path, including a refusal.
+6. Before writing, the command compares the target branch's content with the
+   output. When the target already holds it, the publication reports that the
+   target is current and exits 0 without a commit, so a repeated or retried run
+   adds nothing to the target's history.
+7. The replacement is one commit with a single parent, so the pages rule set's
+   linear-history and non-fast-forward rules admit it, and the previous pages
+   remain in the target's history.
+8. The command reads the pushed tree back, then fetches the required
+   `--verify-url` address with bounded retries. The publication succeeds only
+   when the served page carries the same Built revision text as the output; when
+   it does not, or the address never answers within the bound, the publication
+   refuses and names the address and the served revision. The check runs after
+   the replacement, so a serving refusal leaves the new page in the target
+   instead of restoring the previous one.
+
+## Scenario: A release publishes the site before its archive
+
+**Trigger:** The maintainer publishes a version whose tag is pushed.
+
+```mermaid
+flowchart TB
+  tag["v* tag on the tagged revision"] --> checks["the release's check gate and the prepared staged set"]
+  checks --> sitejob["release.yml site job: calls the reusable site workflow for the tag"]
+  sitejob -->|"refused: the failed check or the serving check is named"| none["previous page stays; no archive is published"]
+  sitejob -->|"published and served: the footer names the tag"| verifytip["publish job (needs: site): publish-release.sh reads the target branch tip"]
+  verifytip -->|"the tip does not carry the tagged Built revision"| nositestate["refused, naming the site revision; no gh call, no release"]
+  verifytip -->|"the tip carries it"| draft["create and inspect the draft release"]
+  draft -->|"the draft's asset set differs (release-notes.md excluded)"| nositestate
+  draft -->|"the asset set matches the staged set"| public["publish the release"]
+```
+
+**Steps:**
+
+1. The release's `site` job calls the reusable site workflow with the tag as
+   its revision and no `since`; the site is built, gated, published and its
+   serving verified there. A refusal ends the release with the failed check
+   named and publishes no archive; the previous page stays.
+2. Only after that job succeeds does the `publish` job (`needs: site`) run
+   `scripts/publish-release.sh`, which reads the hosting target's branch tip
+   with `git ls-remote` and a fetch. When the tip does not carry the tagged
+   Built revision the command refuses before any `gh` call, naming the site
+   revision, and no release is published.
+3. When the tip carries the tagged Built revision, the command creates the
+   draft release, compares its asset set with the staged set while excluding
+   `release-notes.md`, and publishes it.
+4. The site's footer names the tag, because the tag itself is the revision the
+   site was built from, and the target verification is what makes the release
+   notes' announcement of the site true.
+
 ## Scenario: A version tag becomes a verified published release
 
 **Trigger:** The maintainer decides a version is ready and pushes its `v*` tag.
@@ -180,9 +320,13 @@ flowchart TB
   build --> prep["prepare on ubuntu-latest: render and stage the change log and the release text, then run scripts/prepare-release.sh over the one Windows binary"]
   smoke --> prep
   prep -->|"incomplete set, no visible change, or change-log drift"| nostage["nothing staged, no release"]
-  prep --> pub["publish on ubuntu-latest: resolve the release-workflow check suites, then wait for the tagged revision's checks"]
+  prep --> sitejob["site job on ubuntu-latest: calls the reusable site workflow for the tagged revision (build, gate, publish, verify the served page)"]
+  sitejob -->|"refused: the failed check is named"| nosite["previous page stays; no archive is published"]
+  sitejob -->|"published and served: the footer names the tag"| pub["publish job (needs: site): resolve the release-workflow check suites, then wait for the tagged revision's checks"]
   pub -->|"non-success, no success, no evidence, unreadable source, or the bound"| nopub["nothing public"]
-  pub -->|"every check concluded, at least one success"| stage["generate the SBOM, attest every archive, create and inspect the draft, then publish"]
+  pub -->|"every check concluded, at least one success"| tip["publish-release.sh reads the target branch tip (git ls-remote, fetch)"]
+  tip -->|"the tip does not carry the tagged Built revision"| nosite
+  tip -->|"the tip carries it"| stage["generate the SBOM, attest every archive, create and inspect the draft, then publish"]
   stage --> ver["verify: download the assets back, compare checksums, run gh attestation verify, assert immutable"]
   ver --> done["verified immutable release, reachable at the stable latest address"]
 ```
@@ -191,9 +335,11 @@ flowchart TB
 
 1. The tag starts `release.yml`; the build job cross-builds the one Windows x86_64 executable (`x86_64-pc-windows-gnu`) on `ubuntu-latest`, and the Windows smoke job starts that executable on `windows-latest`.
 2. The `prepare` job installs the pinned generator, renders the change log and the release text (the newest section of that change log) and runs `scripts/prepare-release.sh` over the one Windows binary; it refuses and stages nothing when that executable is missing or unreadable, when an executable is presented for a platform outside the supported set (including a previously offered Linux or macOS target), when the render would name no change a user receives, or when the committed change log differs from the released revision.
-3. The `publish` job resolves every check suite the release workflow created for the tagged revision and invokes `scripts/await-green-checks.sh`; the gate waits, bounded, for the remaining check runs to conclude. It refuses a concluded non-success, a set with no successful check, no check outside the release-workflow suites, an unreadable check-run source, or a check still running at the bound, naming the checks. Nothing later in the job runs on a refusal.
-4. After the gate passes, the `publish` job generates the SBOM, attests the archive, creates a draft release with the Windows archive, the release text and the change log, checks the draft's asset set against the staged set, and publishes it.
-5. The `verify` job reads the published release back: it compares the checksum, runs `gh attestation verify` on the archive, and asserts the release reports `immutable: true`.
+3. The `site` job calls the reusable site workflow for the tagged revision (no `since`, `fetch-depth: 0`); the site is built, gated, published and its serving verified there. A refusal ends the release here, publishes no archive and leaves the previous page.
+4. The `publish` job (`needs: site`) resolves every check suite the release workflow created for the tagged revision and invokes `scripts/await-green-checks.sh`; the gate waits, bounded, for the remaining check runs to conclude. It refuses a concluded non-success, a set with no successful check, no check outside the release-workflow suites, an unreadable check-run source, or a check still running at the bound, naming the checks. Nothing later in the job runs on a refusal.
+5. The `publish` job runs `scripts/publish-release.sh`, which first reads the hosting target's branch tip with `git ls-remote` and a fetch. When the tip does not carry the tagged Built revision the command refuses before any `gh` call, naming the site revision, so a release never announces a page the target lacks.
+6. When the tip carries the tagged Built revision, the command creates a draft release with the Windows archive, the release text and the change log, checks the draft's asset set against the staged set while excluding `release-notes.md`, and publishes it.
+7. The `verify` job reads the published release back: it compares the checksum, runs `gh attestation verify` on the archive, and asserts the release reports `immutable: true`.
 
 **Notes:** Publication cannot be undone, so every check that can precede publication does, and the one that cannot — reading the public record — fails the run loudly.
 
@@ -468,8 +614,10 @@ flowchart TB
    the encrypted state records the generated private key, the three bindings and
    the secret's sealed value; a targeted follow-up plan reports no differences;
    the declaration, the lock file and the state are committed in one revision.
-   The stock site, its source and its Pages configuration are untouched, and
-   nothing reads the credential until the website topic.
+   The apply writes no site file, changes no Pages configuration and rebuilds
+   nothing; the credential's consumer is the Site publication, which writes the
+   Pages repository's default branch and replaces the stock page with the Site
+   output.
 
 **Notes:** The suite drives steps 2–6 against the fake in `--writes` mode and
 asserts the guard's verdicts, the changed set (the four declared addresses on

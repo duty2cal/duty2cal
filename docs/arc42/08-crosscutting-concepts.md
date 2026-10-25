@@ -198,9 +198,94 @@ declared title. The key's own
 pushes are unreviewed, which is the accepted cost of the user's decision
 (proposal D1).
 
-The credential has no consumer until the website topic. No workflow holds it,
-no scenario publishes with it, and the stock site's source, content and Pages
-configuration are untouched by this change.
+The credential's consumer is the Site publication: `scripts/publish-site.sh` supplies the key through `GIT_SSH_COMMAND`, the reusable `.github/workflows/site.yml` holds `contents: read`, receives `PAGES_DEPLOY_KEY` and writes it to a `600` file, and the two callers that pass the secret to it are `.github/workflows/web.yml` and the `site` job of `.github/workflows/release.yml`. No other workflow, job or writer holds the secret; the scenarios use a local git target with no credential, and the branch the key writes is the Public website's only source.
+
+## The Site publication: gated output, whole-content replacement, named revision, verified serving
+
+The Public website is produced by one command and by no other path. The command
+decides whether the revision is a site input, resolves the Built revision,
+checks that revision out into a detached worktree, assembles the Site output
+there, evaluates the evidence there and writes the hosting target; each step
+refuses rather than degrades.
+
+- **The trigger is a command argument.** `--since <base>` names the revision to
+  compare against; the command owns the site-input path list and reports
+  `no site input changed` when the comparison is empty. The trigger workflow
+  `web.yml` carries no `paths:` filter and passes `github.event.before`, because
+  a host-side filter is untestable and a filter plus a command list would be two
+  owners of one rule. A tag's publication is the release's `site` job, which
+  calls the same reusable workflow with the tag and no base, so a tag always
+  builds; an unresolvable base is refused rather than read as "no change".
+- **The build is the revision's tree, not the caller's.** A detached
+  `git worktree` at the publication revision is the only source for the page,
+  the bundle and the checks, and it is removed on every exit path. This is what
+  makes a tag publication publish the tagged tree while the default branch is
+  newer, and what lets the footer's string and the assembled bytes describe one
+  commit. An unclean caller tree is refused up front (`git status --porcelain
+  --untracked-files=no`; describe does not append `-dirty` to a named revision),
+  so a maintainer never believes uncommitted edits were published. Untracked
+  files are excluded because the commit's tree is the Site output: an untracked
+  scratch file or build output cannot reach the page, while a change to a
+  tracked file can.
+- **The gate is a command, not a workflow.** `scripts/site-evidence.sh` runs
+  four real subprocess checks fail-fast — page content, licensing/REUSE, the
+  browser check and the conversion suite — and names the first one that fails.
+  It runs inside the revision's worktree, so the conversion suite and the
+  browser scenario are that revision's own, and the suite excludes scenarios
+  tagged `@site-publication`, so the gate cannot re-enter the publication it is
+  gating. The worktree has no driver tree of its own: the publication compares
+  the worktree's `web/e2e/package-lock.json` with the checkout's and symlinks
+  the installed `web/e2e/node_modules` only when they are identical, refusing by
+  name and naming `npm ci --prefix web/e2e` at the revision otherwise, so a
+  publication never runs Playwright or axe versions the revision does not pin.
+  CI satisfies the comparison because it checks out the revision it publishes.
+  The browser check is the project's
+  existing rendered-page scenario driven against the assembled output, so the
+  no-other-origin assertion the page makes is the same one the gate relies on;
+  no second browser test surface exists.
+- **The artifact the gate inspected is the artifact published.** Nothing is
+  rebuilt between the accepted check and the commit, so a page cannot become
+  public with content the check never saw.
+- **Replacement is whole, and an unchanged page is not rewritten.** One commit's
+  tree is exactly the Site output, so a hand-added file disappears and no
+  partial state can be reported as a mixed page. The commit has a single parent
+  and the push is fast-forward, because the pages rule set forbids
+  non-fast-forward pushes and merge commits; the earlier pages therefore stay in
+  the target's history, which is the rollback the project has without rewriting a
+  published ref. When the target already holds the output, the publication
+  reports the target as current and exits 0 without a commit, so a retry cannot
+  add an empty commit or look like a new publication.
+- **The revision is named, never guessed.** `git describe --tags --always
+  --match 'v*'` plus `git rev-parse`, resolved from the worktree at that commit,
+  produce the footer text and its commit link, and the publication refuses an
+  unresolvable revision or an unclean caller tree. The page cannot name a
+  revision that did not build it.
+- **The page's own promises hold, and it gains one local image.** `connect-src
+  'none'`, no persistent storage and no navigable state are inherited from the
+  browser capability. The page adds no third-party asset: the header icon and
+  the favicon are its one image, taken from `docs/assets/duty2cal.png` and
+  copied into the Site output as `icon.png`, so the policy stays closed with
+  `img-src 'self'`. The statements panel above the converter names what the tool
+  does, the browser route, downloads for various operating systems available on
+  request (linking `https://github.com/duty2cal/duty2cal/releases`), the privacy
+  rule, the non-affiliation sentence and the as-is sentence; the "Source and
+  licence" panel below the converter carries the source and licence statements;
+  the footer carries the Built revision and the plain-prose non-affiliation,
+  as-is and privacy statements, without repeating any statement attribute. The
+  page does not prescribe a Windows download: the one-archive platform rule
+  belongs to the release capability and chapter 7.
+- **Two publications cannot race.** The command holds an exclusive `flock`
+  across fetch, replacement and push, and the reusable `site.yml` workflow
+  carries the concurrency group, so both of the site's callers share one
+  serialization; without either, the loser of a race would be refused as a
+  non-fast-forward push.
+- **The served page is verified, not assumed.** After the replacement and the
+  read-back, the publication fetches its required `--verify-url` address with
+  bounded retries and refuses unless the served page carries the same Built
+  revision text as the output, naming the address and the served revision. The
+  check runs after the replacement, so a serving refusal leaves the new page in
+  the target instead of restoring the previous one; Pages' propagation and
+  caching are why the check retries rather than failing on one read.
 
 ## Public organization copy
 
@@ -209,11 +294,12 @@ public copy, not product output. They live in `org/` in the monorepo, are
 reviewed like code, are licensed CC0-1.0, and are published into the public
 profile repository by the declaration; the profile repository is output and is
 never edited by hand. The copy states only what the repository keeps: the
-converter and its crew duty plan input, Windows x86_64 as the only downloadable
-archive platform, the browser conversion route only once the Site publication
-makes it reachable (that copy belongs to `publish-public-website`), no hosted
-converter or upload, no third-party provider name. The profile must not describe
-the built-but-unpublished page as live. It links the stable
+converter and its crew duty plan input, the browser conversion route now
+reachable on the Public website at `https://duty2cal.github.io/`, Windows x86_64
+as the only published archive platform with builds for other operating systems
+available on request, no hosted
+converter or upload, no third-party provider name. The copy is applied only
+after the page is live, so it never promises a page that is absent. It links the stable
 latest-release address, the source and the site repositories, attributes the
 third-party Unicode data to Unicode-3.0 with an absolute licence link, and
 states explicitly that the project is not affiliated with any duty-plan
@@ -221,10 +307,11 @@ provider or airline. The two published terms are the **profile content**
 (`profile/README.md`) and the **default security policy** (`SECURITY.md`); the
 reviewed pair is the **reviewed public copy**.
 
-The page is self-contained: every link is absolute and there are no images,
-badges, statistics widgets or other third-party resources. A reader opening the
-profile therefore issues no request beyond GitHub's own, which is the same
-promise the converter makes at runtime. The content-invariant scenario compares
+The profile page is self-contained: every link is absolute and there are no
+images, badges, statistics widgets or other third-party resources. A reader
+opening the profile therefore issues no request beyond GitHub's own, which is
+the same promise the converter makes at runtime — the converter page's one
+image is its own local `icon.png`, served from the Site output itself. The content-invariant scenario compares
 the published bytes with the reviewed `org/` source and asserts the positive
 claims; the profile is not trusted because a reviewer once looked at it, and the
 absence of the excluded provider name is a review control rather than a stored
@@ -251,7 +338,8 @@ The fallback itself is GitHub's behaviour, not the project's code. The
 capability proves that the file exists at the required path and carries the
 route; it does not simulate GitHub's renderer. `CONTRIBUTING.md`,
 `CODE_OF_CONDUCT.md` and the issue and pull-request templates remain in the
-monorepo and are not published into the profile repository by this change.
+monorepo and were not published into the profile repository by the archived
+profile change.
 
 ## Declared objects and manual operator steps
 

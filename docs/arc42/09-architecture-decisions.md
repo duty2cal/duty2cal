@@ -49,6 +49,48 @@ component or deployment boundary), and the choice to generate the key pair with
 `tls_private_key` inside the declaration is a local mechanism owned by
 `design.md` once ADR-0006 fixes that the state holds it.
 
+The change that publishes the Public website (publish-public-website) minted
+no ADR and amended none. Four candidates were assessed and routed; the serving
+check was assessed in the design-review hardening of 2026-10-25:
+
+- **The site's publishing topology** — an external Pages repository written
+  from the monorepo by a write-enabled deploy key, with the project site and a
+  hand-edited target rejected. It fails `lower_level_artifact`: the choice,
+  its alternatives and their costs were already decided and recorded in the
+  ideation seed's accepted decision, and the durable position is a deployment
+  fact recorded in chapter 7 and `docs/arc42/07-deployment-view.md`. Routing:
+  `CANONICAL_ARTIFACT` → `docs/arc42/07-deployment-view.md`.
+- **The release's coupling to the site deploy** — a version publishes only
+  after the site publication for its tag succeeded and the hosting target's
+  branch tip carries the tagged Built revision; the site publication is a
+  `site` job that calls the reusable workflow, and the `publish` job
+  (`needs: site`) refuses before any `gh` call otherwise. It fails
+  `architectural_impact` and `durable_consequence` as a boundary: it orders two
+  existing capabilities and adds a read of the target the deployment view
+  already fixes, reversal is one change's workflow and command edit, and the
+  behaviour is owned by the release capability's specification. Routing:
+  `CANONICAL_ARTIFACT` →
+  `givn/specs/publish-public-release/publish-public-release.feature`.
+- **The publication mechanism** — one command, a reusable workflow wrapper, an
+  assembled `dist/site/` output of eight members including the header icon, a
+  build-time `git describe` stamp and a local git target as the test twin. It
+  fails `architectural_impact` and `durable_consequence`: the wrapper and the
+  command choose build-and-publish tooling inside one boundary the deployment
+  view already fixes, and reversing them costs a script and workflow edit.
+  Routing: `CANONICAL_ARTIFACT` → `givn/changes/publish-public-website/design.md`.
+- **The serving check** — the publication fetches the required `--verify-url`
+  address after the replacement and refuses unless the served page carries the
+  same Built revision text, with bounded retries; leaving serving unchecked, a
+  separate post-deploy job and trusting the host's reported deployment were
+  rejected. It fails `lower_level_artifact`: the refusal and its naming are
+  observable workflow behaviour owned by the capability specification, and it
+  moves no component, authority or deployment boundary — the write target and
+  the credential are unchanged, and the check only reads an address the use
+  case already names. It also fails the product-behaviour falsification test for
+  the same reason. Routing: `CANONICAL_ARTIFACT` →
+  `givn/specs/publish-public-website/publish-public-website.feature`; the
+  retry bound and the fetch are ordinary design detail in `design.md`.
+
 ## Individual ADR contract
 
 Written and tailored from `docs/arc42/adr/adr-template.md`; MADR sections,
