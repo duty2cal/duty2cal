@@ -161,7 +161,8 @@ fi
 
 # The revision's own browser build, then the assembler.
 if ! ( cd "$tree" && ./scripts/build-web.sh ) >"$scratch/build-web.log" 2>&1; then
-  fail_with_log "$scratch/build-web.log"
+  cat "$scratch/build-web.log" >&2
+  refuse "the browser build step (scripts/build-web.sh) failed for revision '$revision' ($describe)"
 fi
 if ! "$tree/scripts/build-site.sh" --repo "$tree" --revision "$commit" --out "$out" \
     >"$scratch/build-site.log" 2>&1; then

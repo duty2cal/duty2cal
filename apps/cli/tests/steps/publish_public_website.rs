@@ -121,8 +121,23 @@ async fn a_revision_that_cannot_be_checked_out(w: &mut DutyWorld, revision: Stri
 
 #[given("a source revision whose browser build fails")]
 async fn a_revision_whose_browser_build_fails(w: &mut DutyWorld) {
-    let _ = w;
-    unimplemented!("a source revision whose browser build fails");
+    // The generated script's own licence header is a string literal, not this
+    // file's header; keep REUSE from parsing the literal's escape as part of
+    // the expression.
+    // REUSE-IgnoreStart
+    let script = "#!/usr/bin/env bash\n\
+                  # SPDX-License-Identifier: MPL-2.0\n\
+                  # The fixture revision's pinned toolchain step fails.\n\
+                  echo 'fixture: the pinned toolchain step failed' >&2\n\
+                  exit 1\n";
+    // REUSE-IgnoreEnd
+    let committed = support::site_commit_file(
+        w,
+        "scripts/build-web.sh",
+        script,
+        "build: fixture browser build failure",
+    );
+    support::site_set(w, "revision", &committed);
 }
 
 #[when("the release maintainer publishes the site from that revision, compared with the previous revision")]
@@ -339,6 +354,20 @@ async fn refused_naming_the_worktree(w: &mut DutyWorld) {
 
 #[then("the publication is refused and names the revision's browser build step")]
 async fn refused_naming_the_browser_build_step(w: &mut DutyWorld) {
-    let _ = w;
-    unimplemented!("the publication is refused and names the revision's browser build step");
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the publication was not refused:\n{}",
+        w.command_transcript
+    );
+    let revision = support::site_get(w, "revision").expect("the scenario named no revision");
+    let text = support::site_publication_text(w);
+    assert!(
+        text.contains("browser build") && text.contains("scripts/build-web.sh"),
+        "the refusal does not name the revision's browser build step:\n{text}"
+    );
+    assert!(
+        text.contains(&revision),
+        "the refusal does not name the revision {revision}:\n{text}"
+    );
 }

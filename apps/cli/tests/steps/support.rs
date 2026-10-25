@@ -941,6 +941,26 @@ pub fn installed_driver_tree() -> PathBuf {
     repository_root().join("web/e2e/node_modules")
 }
 
+/// Install a `pre-receive` hook that refuses every push into the fixture's
+/// hosting target, so a scenario can prove a refused replacement.
+pub fn site_refuse_pushes(w: &mut DutyWorld) {
+    let target = site_target(w);
+    let hooks = target.join("hooks");
+    fs::create_dir_all(&hooks).expect("create the hosting target's hooks directory");
+    let hook = hooks.join("pre-receive");
+    // The generated hook's own licence header is a string literal, not this
+    // file's header.
+    // REUSE-IgnoreStart
+    let body = "#!/usr/bin/env bash\n\
+                # SPDX-License-Identifier: MPL-2.0\n\
+                echo 'the hosting target refuses the incoming content' >&2\n\
+                exit 1\n";
+    // REUSE-IgnoreEnd
+    fs::write(&hook, body).expect("write the hosting target's pre-receive hook");
+    fs::set_permissions(&hook, fs::Permissions::from_mode(0o755))
+        .expect("make the pre-receive hook executable");
+}
+
 /// A scratch path the publication cannot create its worktree under.
 pub fn unwritable_scratch(w: &mut DutyWorld) -> PathBuf {
     let path = site_directory(w).join("unwritable");

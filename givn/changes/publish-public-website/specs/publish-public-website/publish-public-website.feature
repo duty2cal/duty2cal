@@ -73,7 +73,7 @@ Feature: Publish the public website
     Then the publication is refused and names the worktree
     And the hosting target still serves the Site output built from "abc1234"
 
-  @givn.added @site-publication @wip
+  @givn.added @site-publication
   Scenario: A browser build that fails refuses the publication and names the build step
     Given a hosting target serving the Site output built from "abc1234"
     And a source revision whose browser build fails

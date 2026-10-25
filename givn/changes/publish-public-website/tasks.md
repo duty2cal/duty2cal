@@ -283,7 +283,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     exit 0.
 - [x] COMMIT — `feat(publish-public-website): name a worktree that cannot be created`
       (body: the scenario title).
-  - Revision:
+  - Revision: 4b4f8e55081593a20a00be9615d4041464786dc0
 
 ### T06 — A browser build that fails refuses the publication and names the build step
 
@@ -294,14 +294,22 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   check but is not the scenario's path.
 - Domain constraints: a failed build publishes nothing and leaves the previous
   page; the failed step is named.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — build invocation and named failure propagation.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): name the browser build step when it fails`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A browser build that fails refuses the publication and names the build step"`
+    → `✘ And a source revision whose browser build fails` /
+    `not implemented: a source revision whose browser build fails`,
+    `1 step failed`; exit 101.
+- [x] GREEN — build invocation and named failure propagation.
+  - Production files: `scripts/publish-site.sh` (the worktree's
+    `scripts/build-web.sh` failure is refused by name),
+    `apps/cli/tests/steps/publish_public_website.rs` (the scenario's steps).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `5 steps (5 passed)`,
+    exit 0; the refusal named `browser build`, `scripts/build-web.sh` and the
+    revision, and the target still served the earlier page.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`,
+    exit 0.
+- [x] COMMIT — `feat(publish-public-website): name the browser build step when it fails`
       (body: the scenario title).
   - Revision:
 
