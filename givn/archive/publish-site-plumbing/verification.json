@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "publish-site-plumbing",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "cd4b485e4e12422a7ae10770c3dc9f61448cd420",
+  "tested_revision": "cd4b485e4e12422a7ae10770c3dc9f61448cd420",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 13,
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 372.277920924
+    },
+    "regular": {
+      "status": "passed",
+      "total": 194,
+      "passed": 194,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 1389.122214249
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 880,
+    "line_valid": 894,
+    "line_percent": 98
+  },
   "started_at_unix": 1792942745,
-  "finished_at_unix": null
+  "finished_at_unix": 1792945587
 }
