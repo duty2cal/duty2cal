@@ -122,7 +122,7 @@ Feature: Publish the public website
     Then the publication is refused and names the earlier revision
     And the hosting target still serves the Site output built from "abc1234"
 
-  @givn.added @site-publication @wip
+  @givn.added @site-publication
   Scenario: A driver package tree installed from a different lockfile is refused and the lockfile is named
     Given a hosting target serving the Site output built from "abc1234"
     And a source revision that pins different driver packages than the working copy installs

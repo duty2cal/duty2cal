@@ -147,16 +147,19 @@ if ! git -C "$repo" worktree add --detach "$tree" "$commit" \
 fi
 
 # The revision's driver tree is its own pinned set, never the caller's unless
-# the lockfiles agree.
+# the lockfiles agree. A lockfile present on only one side is a difference too:
+# the revision would otherwise run packages nobody pinned for it.
 caller_lock="$repo/web/e2e/package-lock.json"
 revision_lock="$tree/web/e2e/package-lock.json"
-if [ -f "$caller_lock" ] && [ -f "$revision_lock" ] && ! cmp -s "$caller_lock" "$revision_lock"; then
-  refuse "the driver lockfile '$revision_lock' differs from the caller's; run 'npm ci --prefix web/e2e' at revision '$revision' first"
+prepare_driver="npm ci --prefix web/e2e"
+if [ ! -f "$revision_lock" ] || [ ! -f "$caller_lock" ] \
+    || ! cmp -s "$caller_lock" "$revision_lock"; then
+  refuse "the driver lockfile 'web/e2e/package-lock.json' differs between the revision '$revision' ($revision_lock) and the caller ($caller_lock); run '$prepare_driver' at revision '$revision' before publishing it"
 fi
 if [ -d "$repo/web/e2e/node_modules" ]; then
   ln -s "$repo/web/e2e/node_modules" "$tree/web/e2e/node_modules"
 else
-  refuse "the caller holds no installed driver tree at '$repo/web/e2e/node_modules'; run 'npm ci --prefix web/e2e' first"
+  refuse "the caller holds no installed driver tree at '$repo/web/e2e/node_modules'; run '$prepare_driver' at revision '$revision' first"
 fi
 
 # The revision's own browser build, then the assembler.

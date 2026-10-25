@@ -525,3 +525,47 @@ async fn refused_naming_the_conversion_suite(w: &mut DutyWorld) {
         "the refused publication changed the hosting target"
     );
 }
+
+#[given("a source revision that pins different driver packages than the working copy installs")]
+async fn a_revision_pinning_other_driver_packages(w: &mut DutyWorld) {
+    // The caller's checkout pins the newer Playwright; the revision it is asked
+    // to publish still pins the previous one, so the two lockfiles differ.
+    let revision = support::site_label(w, BASE_REVISION);
+    support::site_commit_replace(
+        w,
+        "web/e2e/package-lock.json",
+        "\"playwright\": \"1.64.1\"",
+        "\"playwright\": \"1.63.0\"",
+        "chore: fixture driver packages differ from the revision's pin",
+    );
+    support::site_set(w, "revision", &revision);
+}
+
+#[then("the publication is refused and names the lockfile and the revision to prepare")]
+async fn refused_naming_the_lockfile(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the publication was not refused:\n{}",
+        w.command_transcript
+    );
+    let revision = support::site_get(w, "revision").expect("the scenario named no revision");
+    let text = support::site_publication_text(w);
+    assert!(
+        text.contains("web/e2e/package-lock.json"),
+        "the refusal does not name the lockfile:\n{text}"
+    );
+    assert!(
+        text.contains("npm ci --prefix web/e2e"),
+        "the refusal does not name the command to prepare the revision:\n{text}"
+    );
+    assert!(
+        text.contains(&revision),
+        "the refusal does not name the revision to prepare ({revision}):\n{text}"
+    );
+    assert_eq!(
+        support::site_get(w, "target-tip"),
+        Some(support::site_target_tip(w)),
+        "the refused publication changed the hosting target"
+    );
+}

@@ -450,7 +450,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): name a failing conversion check`
       (body: the scenario title).
-  - Revision:
+  - Revision: 22e731d6e6f49c0301790507dfd83b380d5b5996
 
 ### T11 — A revision the publication is asked to compare against cannot be resolved
 
@@ -477,14 +477,31 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   when they match, and refuse by name when no installed tree exists.
 - Domain constraints: the gate runs the revision's own pinned Playwright and
   axe, never versions from another lockfile.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — lockfile comparison, symlink/refusal path.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): refuse a driver tree from a different lockfile`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A driver package tree installed from a different lockfile is refused and the lockfile is named"`
+    → `✘ And a source revision that pins different driver packages than the working copy installs` /
+    `Step panicked. Captured output: not implemented: a source revision that pins different driver packages than the working copy installs`,
+    `1 scenario (1 failed)`; exit 101.
+- [x] GREEN — lockfile comparison, symlink/refusal path.
+  - Production files: `scripts/publish-site.sh` (the worktree's
+    `web/e2e/package-lock.json` is compared with the caller's; a difference —
+    including a file present on only one side — refuses naming the lockfile,
+    both paths and `npm ci --prefix web/e2e` at the revision, before any build;
+    the caller's installed tree is symlinked only after the comparison, and a
+    caller with no installed tree is refused by name),
+    `apps/cli/tests/steps/publish_public_website.rs` (the scenario's steps: the
+    caller pins Playwright 1.64.1 while the published revision pins 1.63.0).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `5 steps (5 passed)`,
+    exit 0; the refusal printed `the driver lockfile
+    'web/e2e/package-lock.json' differs between the revision '<sha>'
+    (.../tree/web/e2e/package-lock.json) and the caller (...); run 'npm ci
+    --prefix web/e2e' at revision '<sha>' before publishing it`, and the target
+    still served the earlier page.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: both driver-tree refusals name one `prepare_driver` command, so
+    the lockfile and the missing-tree paths cannot drift apart; scoped re-run
+    `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
+- [x] COMMIT — `feat(publish-public-website): refuse a driver tree from a different lockfile`
       (body: the scenario title).
   - Revision:
 
