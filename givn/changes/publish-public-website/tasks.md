@@ -415,7 +415,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     `5 steps (5 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): refuse a page that loads a foreign asset`
       (body: the scenario title).
-  - Revision:
+  - Revision: 0effcaf4785775d6454226a66b3688b313f5ea6d
 
 ### T10 — A failing conversion check is refused and the conversion suite is named
 
@@ -425,14 +425,30 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   A `total == 0` selection is a refusal, not a pass.
 - Domain constraints: only a working page becomes public; the success guarantee
   rests on complete-or-explicit-failure evidence.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — conversion gate step and result-file count contract.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): name a failing conversion check`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A failing conversion check is refused and the conversion suite is named"`
+    → `✘ And a source revision whose conversion of a supported plan file fails its checks` /
+    `Step panicked. Captured output: not implemented: a source revision whose conversion of a supported plan file fails its checks`,
+    `1 scenario (1 failed)`; exit 101.
+- [x] GREEN — conversion gate step and result-file count contract.
+  - Production files: `scripts/site-evidence.sh` (check 4 runs the revision's
+    suite with `GIVN_RESULT_FILE`, `DUTY2CAL_SITE_ROOT` and
+    `DUTY2CAL_SKIP_WEB_BUILD=1` after the browser check, fails fast, and refuses
+    a selection that records no scenario), `apps/cli/tests/steps/publish_public_website.rs`
+    (the scenario's steps: the fixture revision drops the `OFF` activity code
+    from `crates/duty2cal-core/src/application/mod.rs`, which the browser
+    scenario's plan does not use).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `5 steps (5 passed)`,
+    exit 0; the publication printed `site-evidence: the conversion suite
+    failed` and the gate's log named the failing scenario
+    `All-day codes ignore printed clocks`. The browser check passed first with
+    the same revision, so the refusal is the conversion suite's own.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: both checks read their count through one `require_selection`
+    contract (`exactly-one` for the browser check, `at-least-one` for the
+    conversion suite), so `total == 0` refuses in one place; scoped re-run
+    `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
+- [x] COMMIT — `feat(publish-public-website): name a failing conversion check`
       (body: the scenario title).
   - Revision:
 

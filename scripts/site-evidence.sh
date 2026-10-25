@@ -72,6 +72,30 @@ PY
   printf '%s' "${total:-0}"
 }
 
+# The result-file contract: a check that selected fewer scenarios than it must
+# have performed less than it claims, so it is a refusal, not a pass. "exactly"
+# is the browser check (a renamed scenario must not become a silent green);
+# "at least one" is the conversion suite (an empty selection proves nothing).
+require_selection() {
+  local check="$1" file="$2" rule="$3" total
+  total="$(selected_total "$file")"
+  case "$rule" in
+    exactly-one)
+      if [ "$total" -ne 1 ]; then
+        echo "site-evidence: the $check selected $total scenarios; exactly one is required" >&2
+        exit 1
+      fi
+      ;;
+    at-least-one)
+      if [ "$total" -le 0 ]; then
+        echo "site-evidence: the $check selected no scenario; a run that selects nothing is a refusal" >&2
+        exit 1
+      fi
+      ;;
+    *) echo "site-evidence: unknown selection rule: $rule" >&2; exit 2 ;;
+  esac
+}
+
 # One run of the revision's own suite, against the assembled output and with
 # the result file the gate reads back.
 run_revision_suite() {
@@ -110,11 +134,7 @@ if ! run_revision_suite "$browser_result" \
   echo "site-evidence: the browser check failed" >&2
   exit 1
 fi
-browser_total="$(selected_total "$browser_result")"
-if [ "$browser_total" -ne 1 ]; then
-  echo "site-evidence: the browser check selected $browser_total scenarios; exactly one is required" >&2
-  exit 1
-fi
+require_selection "browser check" "$browser_result" exactly-one
 
 # 4. The conversion suite: every non-browser scenario the revision holds. The
 #    @site-publication tag keeps a publication's own scenarios out of the suite
@@ -125,10 +145,6 @@ if ! run_revision_suite "$conversion_result" \
   echo "site-evidence: the conversion suite failed" >&2
   exit 1
 fi
-conversion_total="$(selected_total "$conversion_result")"
-if [ "$conversion_total" -le 0 ]; then
-  echo "site-evidence: the conversion suite selected no scenario; a run that selects nothing is a refusal" >&2
-  exit 1
-fi
+require_selection "conversion suite" "$conversion_result" at-least-one
 
 echo "site-evidence: page content, licensing, browser check and conversion suite passed"

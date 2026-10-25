@@ -485,3 +485,43 @@ async fn refused_naming_the_page_content_check(w: &mut DutyWorld) {
         "the refused publication changed the hosting target"
     );
 }
+
+#[given("a source revision whose conversion of a supported plan file fails its checks")]
+async fn a_revision_whose_conversion_fails(w: &mut DutyWorld) {
+    // The fixture revision drops one all-day activity code, so the conversion
+    // of a plan carrying `OFF` no longer matches its scenario's expectation.
+    // The browser scenario's plan carries no `OFF` row, so the gate reaches the
+    // conversion suite instead of failing the browser check first.
+    let committed = support::site_commit_replace(
+        w,
+        "crates/duty2cal-core/src/application/mod.rs",
+        "const ALL_DAY_CODES: [&str; 4] = [\"FREE\", \"OFF\", \"U\", \"FZ\"];",
+        "const ALL_DAY_CODES: [&str; 3] = [\"FREE\", \"U\", \"FZ\"];",
+        "fix: fixture conversion drops the OFF activity code",
+    );
+    support::site_set(w, "revision", &committed);
+}
+
+#[then("the publication is refused and names the conversion suite")]
+async fn refused_naming_the_conversion_suite(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the publication was not refused:\n{}",
+        w.command_transcript
+    );
+    let text = support::site_publication_text(w);
+    assert!(
+        text.contains("conversion suite"),
+        "the refusal does not name the conversion suite:\n{text}"
+    );
+    assert!(
+        text.contains("All-day codes ignore printed clocks"),
+        "the conversion suite's failing scenario is not named:\n{text}"
+    );
+    assert_eq!(
+        support::site_get(w, "target-tip"),
+        Some(support::site_target_tip(w)),
+        "the refused publication changed the hosting target"
+    );
+}
