@@ -201,7 +201,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     scoped re-run `1 scenario (1 passed)`, `8 steps (8 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): build a tagged publication from the tagged revision`
       (body: the scenario title).
-  - Revision:
+  - Revision: 605f7be9ff5d9d3ddc44c06e7f5cd81b5cb0bbbc
 
 ### T03 — A Built revision that cannot be resolved refuses the publication
 
@@ -210,14 +210,24 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   target is unchanged.
 - Domain constraints: rule K3 (a page cannot name a revision that did not build
   it); minimal guarantee.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — revision resolution and named refusal.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): refuse an unresolvable Built revision`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A Built revision that cannot be resolved refuses the publication"`
+    → `✘ And a source revision whose history the repository does not hold` /
+    `not implemented: a source revision whose history the repository does not hold`,
+    `1 step failed`; exit 101.
+- [x] GREEN — revision resolution and named refusal.
+  - Production files: `scripts/publish-site.sh` (`rev-parse --verify
+    "<rev>^{commit}"` and `describe` failures refuse, naming the Built
+    revision, before any build), `apps/cli/tests/steps/support.rs`
+    (`site_resolves`), `apps/cli/tests/steps/publish_public_website.rs` (the
+    scenario's steps).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `5 steps (5 passed)`,
+    exit 0; the publication printed `cannot resolve the Built revision
+    '9999999'` and the target still served `v0.5.0-3-g…`.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`,
+    exit 0.
+- [x] COMMIT — `feat(publish-public-website): refuse an unresolvable Built revision`
       (body: the scenario title).
   - Revision:
 

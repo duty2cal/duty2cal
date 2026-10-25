@@ -107,9 +107,12 @@ if [ -n "$since" ]; then
 fi
 
 # Resolve the Built revision: the commit it names and the text the footer
-# carries.
-commit="$(git -C "$repo" rev-parse --verify "$revision^{commit}" 2>/dev/null)"
-describe="$(git -C "$repo" describe --tags --always --match 'v*' "$commit" 2>/dev/null)"
+# carries. A page cannot name a revision that did not build it, so an
+# unresolvable revision refuses before any build.
+commit="$(git -C "$repo" rev-parse --verify "$revision^{commit}" 2>/dev/null)" \
+  || refuse "cannot resolve the Built revision '$revision'"
+describe="$(git -C "$repo" describe --tags --always --match 'v*' "$commit" 2>/dev/null)" \
+  || refuse "cannot derive the Built revision text for '$revision'"
 
 # Build the revision's own tree in a detached worktree. The trap removes it on
 # every exit path.
