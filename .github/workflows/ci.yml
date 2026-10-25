@@ -129,8 +129,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           givn archive --change publish-site-plumbing
-          git add -A
-          git commit -m "chore(archive): archive publish-site-plumbing"
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
   changelog:
