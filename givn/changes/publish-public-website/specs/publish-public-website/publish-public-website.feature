@@ -89,7 +89,7 @@ Feature: Publish the public website
     Then the publication is refused and names the missing privacy statement
     And the hosting target still serves the Site output built from "abc1234"
 
-  @givn.added @site-publication @wip
+  @givn.added @site-publication
   Scenario: A page whose script requests another origin after it loads is refused and the browser check is named
     Given a hosting target serving the Site output built from "abc1234"
     And a source revision whose page's script attempts a request to another origin after the page loads

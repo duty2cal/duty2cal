@@ -31,6 +31,11 @@ done
 
 [ -n "$out" ] || { usage; exit 2; }
 [ -d "$repo" ] || { echo "site-evidence: the worktree does not exist: $repo" >&2; exit 2; }
+[ -d "$out" ] || { echo "site-evidence: the Site output does not exist: $out" >&2; exit 2; }
+# The browser check hands the output to another process, so the path must not
+# depend on this process's working directory.
+out="$( cd "$out" && pwd )"
+repo="$( cd "$repo" && pwd )"
 
 results="$(mktemp -d)"
 trap 'rm -rf "$results"' EXIT
@@ -41,31 +46,67 @@ if ! ( cd "$repo" && scripts/check-site-content.sh "$out" ); then
   exit 1
 fi
 
-# 2. Licensing: MPL-2.0 for code, CC0-1.0 for non-code assets.
+# 2. Licensing: MPL-2.0 for code, CC0-1.0 for non-code assets. A missing tool
+#    refuses the check by name; it never turns into a skipped check.
+if ! command -v reuse >/dev/null 2>&1; then
+  echo "site-evidence: the licensing check cannot run: 'reuse' is not installed" >&2
+  exit 1
+fi
 if ! lint="$( cd "$repo" && reuse lint 2>&1 )"; then
   printf '%s\n' "$lint" >&2
-  echo "site-evidence: the licensing check failed" >&2
+  echo "site-evidence: the licensing check failed; the offending file is named above" >&2
   exit 1
 fi
 
-# The result file names what a filtered run selected.
+# The result file names what a filtered run selected. A run that wrote no
+# result file performed no check the gate can read, so it refuses too.
 selected_total() {
-  python3 - "$1" <<'PY'
+  local file="$1" total
+  total="$(python3 - "$file" <<'PY' 2>/dev/null
 import json
 import sys
 with open(sys.argv[1], encoding="utf-8") as handle:
     print(int(json.load(handle).get("total", 0)))
 PY
+)"
+  printf '%s' "${total:-0}"
+}
+
+# One run of the revision's own suite, against the assembled output and with
+# the result file the gate reads back.
+run_revision_suite() {
+  local result="$1"
+  shift
+  ( cd "$repo" && \
+    GIVN_RESULT_FILE="$result" \
+    DUTY2CAL_SITE_ROOT="$out" \
+    DUTY2CAL_SKIP_WEB_BUILD=1 \
+    ./run-tests.sh "$@" )
 }
 
 # 3. The browser check: the project's existing browser scenario, driven
-#    against the assembled output, and exactly one selected scenario.
+#    against the assembled output, and exactly one selected scenario. The driver
+#    tree and Chromium are prerequisites of *this* check, so their absence
+#    refuses it by name instead of skipping the browser it was meant to drive.
+if [ ! -d "$repo/web/e2e/node_modules" ]; then
+  echo "site-evidence: the browser check has no driver tree at '$repo/web/e2e/node_modules'; run 'npm ci --prefix web/e2e' at this revision" >&2
+  exit 1
+fi
+if ! command -v node >/dev/null 2>&1; then
+  echo "site-evidence: the browser check cannot run: 'node' is not installed" >&2
+  exit 1
+fi
+chromium="${CHROMIUM_PATH:-}"
+if [ -z "$chromium" ]; then
+  chromium="$( ( cd "$repo/web/e2e" && node -e 'const { chromium } = require("playwright"); process.stdout.write(chromium.executablePath());' ) 2>/dev/null || true )"
+fi
+if [ -z "$chromium" ] || [ ! -x "$chromium" ]; then
+  echo "site-evidence: the browser check cannot run: Chromium is not installed; set CHROMIUM_PATH or run 'npx --prefix web/e2e playwright install chromium'" >&2
+  exit 1
+fi
 browser_result="$results/browser.json"
-if ! ( cd "$repo" && \
-    GIVN_RESULT_FILE="$browser_result" \
-    DUTY2CAL_SITE_ROOT="$out" \
-    DUTY2CAL_SKIP_WEB_BUILD=1 \
-    ./run-tests.sh --name "Crew member converts a supported duty plan in the browser and saves the offered calendar" ); then
+if ! run_revision_suite "$browser_result" \
+    --name "Crew member converts a supported duty plan in the browser and saves the offered calendar"; then
   echo "site-evidence: the browser check failed" >&2
   exit 1
 fi
@@ -75,21 +116,18 @@ if [ "$browser_total" -ne 1 ]; then
   exit 1
 fi
 
-# 4. The conversion suite: every non-browser scenario the revision holds.
-#    The @site-publication tag keeps a publication's own scenarios out of the
-#    suite it runs, so the gate can never re-enter itself.
+# 4. The conversion suite: every non-browser scenario the revision holds. The
+#    @site-publication tag keeps a publication's own scenarios out of the suite
+#    it runs, so the gate can never re-enter itself.
 conversion_result="$results/conversion.json"
-if ! ( cd "$repo" && \
-    GIVN_RESULT_FILE="$conversion_result" \
-    DUTY2CAL_SITE_ROOT="$out" \
-    DUTY2CAL_SKIP_WEB_BUILD=1 \
-    ./run-tests.sh --tags "not @e2e and not @site-publication" ); then
+if ! run_revision_suite "$conversion_result" \
+    --tags "not @e2e and not @site-publication"; then
   echo "site-evidence: the conversion suite failed" >&2
   exit 1
 fi
 conversion_total="$(selected_total "$conversion_result")"
 if [ "$conversion_total" -le 0 ]; then
-  echo "site-evidence: the conversion suite selected no scenario" >&2
+  echo "site-evidence: the conversion suite selected no scenario; a run that selects nothing is a refusal" >&2
   exit 1
 fi
 

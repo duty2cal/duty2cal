@@ -347,7 +347,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): name a missing public statement`
       (body: the scenario title).
-  - Revision:
+  - Revision: bc5ab02149e2ab5c72ea3e1c6f22197f2f98093a
 
 ### T08 — A page whose script requests another origin after it loads is refused and the browser check is named
 
@@ -359,14 +359,31 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
 - Domain constraints: K5 — after load the page sends no request to another
   origin; the whole-web-reviewer lens holds no publishing authority to weaken
   it.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — driver request observation and named browser-check refusal.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): refuse a page that requests another origin`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A page whose script requests another origin after it loads is refused and the browser check is named"`
+    → `✘ And a source revision whose page's script attempts a request to another origin after the page loads` /
+    `Step panicked. Captured output: not implemented: a source revision whose page's script attempts a request to another origin after the page loads`,
+    `1 scenario (1 failed)`; exit 101.
+- [x] GREEN — driver request observation and named browser-check refusal.
+  - Production files: `web/e2e/driver.mjs` (serves the directory named by
+    `DUTY2CAL_SITE_ROOT` and fails closed when it is missing, records
+    `securitypolicyviolation` attempts in the request log the steps read),
+    `scripts/site-evidence.sh` (the browser check's driver tree, `node` and
+    Chromium prerequisites refuse it by name instead of skipping, the output
+    path is made absolute for the driver, the licensing check refuses a missing
+    `reuse` by name), `apps/cli/tests/steps/publish_public_website.rs` (the
+    scenario's steps).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `5 steps (5 passed)`,
+    exit 0; the publication printed `site-evidence: the browser check failed`
+    and the gate's log carried the browser scenario's own
+    `the page requested another origin "https://beacon.example/fixture-request"`
+    assertion. The CSP was not changed: `web/index.html` still carries
+    `connect-src 'none'`.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: checks 3–4 share one `run_revision_suite` helper that owns
+    `GIVN_RESULT_FILE`, `DUTY2CAL_SITE_ROOT` and `DUTY2CAL_SKIP_WEB_BUILD=1`;
+    scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
+- [x] COMMIT — `feat(publish-public-website): refuse a page that requests another origin`
       (body: the scenario title).
   - Revision:
 

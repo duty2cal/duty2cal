@@ -406,3 +406,42 @@ async fn refused_naming_the_missing_statement(w: &mut DutyWorld) {
         "the refused publication changed the hosting target"
     );
 }
+
+#[given("a source revision whose page's script attempts a request to another origin after the page loads")]
+async fn a_revision_whose_page_requests_another_origin(w: &mut DutyWorld) {
+    let script = "\n// The fixture revision asks another origin for a beacon once the page has loaded.\n\
+                  window.addEventListener('load', () => {\n\
+                    fetch('https://beacon.example/fixture-request').catch(() => {});\n\
+                  });\n";
+    let committed = support::site_commit_append(
+        w,
+        "web/app.js",
+        script,
+        "fix: fixture page requests another origin",
+    );
+    support::site_set(w, "revision", &committed);
+}
+
+#[then("the publication is refused and names the browser check")]
+async fn refused_naming_the_browser_check(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the publication was not refused:\n{}",
+        w.command_transcript
+    );
+    let text = support::site_publication_text(w);
+    assert!(
+        text.contains("browser check"),
+        "the refusal does not name the browser check:\n{text}"
+    );
+    assert!(
+        text.contains("beacon.example"),
+        "the browser check did not observe the attempted request to another origin:\n{text}"
+    );
+    assert_eq!(
+        support::site_get(w, "target-tip"),
+        Some(support::site_target_tip(w)),
+        "the refused publication changed the hosting target"
+    );
+}

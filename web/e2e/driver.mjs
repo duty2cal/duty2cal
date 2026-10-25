@@ -17,6 +17,14 @@ import { chromium } from 'playwright';
 
 const WEB_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
+// The publication's gate serves the assembled Site output, so the browser
+// check inspects the artifact it is about to publish. `DUTY2CAL_SITE_ROOT`
+// names that directory; without it the driver serves the working tree's web
+// directory, which is what a local `./run-tests.sh` run expects.
+const SERVED_ROOT = process.env.DUTY2CAL_SITE_ROOT
+  ? resolve(process.env.DUTY2CAL_SITE_ROOT)
+  : WEB_ROOT;
+
 const CONTENT_TYPES = {
   '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
@@ -40,15 +48,15 @@ function answer(result) {
   process.stdout.write(`${JSON.stringify(result)}\n`);
 }
 
-/** Serve one file from `web/`, refusing every path outside it. */
+/** Serve one file from the served root, refusing every path outside it. */
 async function serve(request, response) {
   const requested = new URL(request.url, baseUrl);
   let pathname = decodeURIComponent(requested.pathname);
   if (pathname === '/' || pathname === '') {
     pathname = '/index.html';
   }
-  const filePath = resolve(WEB_ROOT, `.${pathname}`);
-  if (filePath !== WEB_ROOT && !filePath.startsWith(`${WEB_ROOT}${sep}`)) {
+  const filePath = resolve(SERVED_ROOT, `.${pathname}`);
+  if (filePath !== SERVED_ROOT && !filePath.startsWith(`${SERVED_ROOT}${sep}`)) {
     response.writeHead(403, { 'content-type': 'text/plain' });
     response.end('outside the served root');
     return;
@@ -71,8 +79,23 @@ async function serve(request, response) {
   }
 }
 
+/** Fail closed when the directory to serve does not exist. */
+async function requireServedRoot() {
+  try {
+    const info = await stat(SERVED_ROOT);
+    if (!info.isDirectory()) {
+      throw new Error('not a directory');
+    }
+  } catch (error) {
+    throw new Error(
+      `the served root ${SERVED_ROOT} is not a directory: ${error?.message || error}`,
+    );
+  }
+}
+
 /** Start the loopback static server and return its origin. */
 async function startServer() {
+  await requireServedRoot();
   const loopback = createServer((request, response) => {
     serve(request, response).catch((error) => {
       response.writeHead(500, { 'content-type': 'text/plain' });
@@ -327,6 +350,21 @@ const actions = {
       reducedMotion: 'reduce',
     });
     const mode = params.mode;
+    // A request the page attempts but the browser refuses — the page's CSP
+    // `connect-src 'none'` blocks every fetch — never reaches the network
+    // stack, so it produces no `request`/`requestfailed` events. The violation
+    // event is the observable record of the attempt, and the request log the
+    // steps read carries it, so an attempted request to another origin is
+    // never invisible.
+    await context.addInitScript(() => {
+      window.__duty2calBlockedRequests = [];
+      document.addEventListener('securitypolicyviolation', (event) => {
+        window.__duty2calBlockedRequests.push({
+          url: event.blockedURI,
+          directive: event.effectiveDirective || event.violatedDirective || 'blocked',
+        });
+      });
+    });
     const blockedType =
       mode === 'calendar-offer-failure'
         ? 'text/calendar'
@@ -446,9 +484,20 @@ const actions = {
     if (!page) {
       throw new Error('the page is not started');
     }
+    const blocked = await page.evaluate(
+      () => window.__duty2calBlockedRequests || [],
+    );
     return {
       ...(await readState(Boolean(params && params.baseline))),
-      requestLog,
+      requestLog: [
+        ...requestLog,
+        ...blocked.map((entry) => ({
+          url: entry.url,
+          method: '',
+          resourceType: 'blocked',
+          failed: entry.directive,
+        })),
+      ],
       initialAddress,
     };
   },
