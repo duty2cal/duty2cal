@@ -97,7 +97,7 @@ Feature: Publish the public website
     Then the publication is refused and names the browser check
     And the hosting target still serves the Site output built from "abc1234"
 
-  @givn.added @site-publication @wip
+  @givn.added @site-publication
   Scenario: A page that loads a third-party asset is refused and the page-content check is named
     Given a hosting target serving the Site output built from "abc1234"
     And a source revision whose page loads an asset from another origin

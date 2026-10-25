@@ -445,3 +445,43 @@ async fn refused_naming_the_browser_check(w: &mut DutyWorld) {
         "the refused publication changed the hosting target"
     );
 }
+
+#[given("a source revision whose page loads an asset from another origin")]
+async fn a_revision_whose_page_loads_a_foreign_asset(w: &mut DutyWorld) {
+    let marker = "https://tracker.example/fixture.png";
+    let asset = format!(
+        "  <img src=\"{marker}\" alt=\"fixture tracker\" width=\"1\" height=\"1\">\n</body>"
+    );
+    let committed = support::site_commit_replace(
+        w,
+        "web/index.html",
+        "</body>",
+        &asset,
+        "docs: fixture page loads a foreign asset",
+    );
+    support::site_set(w, "revision", &committed);
+}
+
+#[then("the publication is refused and names the page-content check and the foreign asset")]
+async fn refused_naming_the_page_content_check(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the publication was not refused:\n{}",
+        w.command_transcript
+    );
+    let text = support::site_publication_text(w);
+    assert!(
+        text.contains("page content"),
+        "the refusal does not name the page-content check:\n{text}"
+    );
+    assert!(
+        text.contains("https://tracker.example/fixture.png"),
+        "the refusal does not name the asset loaded from another origin:\n{text}"
+    );
+    assert_eq!(
+        support::site_get(w, "target-tip"),
+        Some(support::site_target_tip(w)),
+        "the refused publication changed the hosting target"
+    );
+}

@@ -385,7 +385,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): refuse a page that requests another origin`
       (body: the scenario title).
-  - Revision:
+  - Revision: 391a59d25d45a92d0ce1c3811a4e1e708186050c
 
 ### T09 — A page that loads a third-party asset is refused and the page-content check is named
 
@@ -393,14 +393,27 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   refused by `scripts/check-site-content.sh`, naming `page content` and the
   foreign asset; this is distinct from a runtime attempt (T08).
 - Domain constraints: K5 and the self-contained-page rule.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — foreign-asset refusal in the content check.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): refuse a page that loads a foreign asset`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A page that loads a third-party asset is refused and the page-content check is named"`
+    → `✘ And a source revision whose page loads an asset from another origin` /
+    `Step panicked. Captured output: not implemented: a source revision whose page loads an asset from another origin`,
+    `1 scenario (1 failed)`; exit 101.
+- [x] GREEN — foreign-asset refusal in the content check.
+  - Production files: `scripts/check-site-content.sh` (the assembled
+    `index.html` is the only input; `src`/`srcset`/`poster` and `<link href>`
+    naming another origin refuse, the asset is printed, navigation `<a href>`
+    links stay allowed), `apps/cli/tests/steps/publish_public_website.rs` (the
+    scenario's steps).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `5 steps (5 passed)`,
+    exit 0; the publication printed `check-site-content: page content check
+    failed: the page content loads an asset from another origin:
+    src="https://tracker.example/fixture.png"` and the target still served the
+    earlier page. This is the static half of K5; the runtime half is T08.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: the two foreign-asset patterns are one `foreign_asset_patterns`
+    list read by one loop; scoped re-run `1 scenario (1 passed)`,
+    `5 steps (5 passed)`, exit 0.
+- [x] COMMIT — `feat(publish-public-website): refuse a page that loads a foreign asset`
       (body: the scenario title).
   - Revision:
 

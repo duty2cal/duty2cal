@@ -92,10 +92,17 @@ grep -Eq '<img[^>]+width="48"[^>]+height="48"' "$index" \
   || fail "the page's header icon is not declared at 48 by 48"
 
 # No asset may be loaded from another origin; the CSP forbids it and the
-# content check refuses the markup that would ask.
-foreign="$(grep -Eo '(src|srcset|poster)="(https?:)?//[^"]*"' "$index" || true)"
-[ -z "$foreign" ] || fail "the page loads an asset from another origin: $foreign"
-foreign="$(grep -Eo '<link[^>]+href="(https?:)?//[^"]*"' "$index" || true)"
-[ -z "$foreign" ] || fail "the page loads an asset from another origin: $foreign"
+# content check refuses the markup that would ask. `<a href>` links are
+# navigation and stay allowed: the release page and the source live elsewhere
+# by design.
+foreign_asset_patterns=(
+  '(src|srcset|poster)="(https?:)?//[^"]*"'
+  '<link[^>]+href="(https?:)?//[^"]*"'
+)
+for pattern in "${foreign_asset_patterns[@]}"; do
+  foreign="$(grep -Eo "$pattern" "$index" || true)"
+  [ -z "$foreign" ] \
+    || fail "the page content loads an asset from another origin: $foreign"
+done
 
 echo "check-site-content: the page carries the required statements and assets"
