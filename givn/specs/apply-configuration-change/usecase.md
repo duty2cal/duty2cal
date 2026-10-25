@@ -1,3 +1,4 @@
+<!-- givn:base-sha256:9d445cb118012f2e2c61ae55c4aed780a822cf7a65c001749c214f71eb41d8d1 -->
 # Use case: apply-configuration-change
 
 ## Level
@@ -36,10 +37,11 @@ declared configuration.
 
 - 2: the live configuration cannot be read → refuse the preview and name the object; protects the success guarantee.
 - 2: the preview would add an object that already exists live and is not bound → refuse the preview and name the object; the owner adopts it first; protects the minimal guarantee (P1).
-- 2: the applied state is marked stale → refuse the preview and name the stale state until a green apply removes the marker; protects the minimal guarantee.
+- 2: the applied state is marked stale → refuse the preview and the apply and name the stale state while the marker exists; the operator removes the marker after reading the report, and the next green apply completes the revision; protects the minimal guarantee.
 - 3: the live configuration changed since the preview (a manual edit) → the read-only refresh-only preflight for the previewed objects names the changed object and refuses the apply; the saved plan is not applied; protects the success guarantee and the no-silent-overwrite rule.
+- 3: a live object the revision declares appears after the preview → the second creation guard immediately before the write refuses the apply and names the object; nothing is written and the applied state is unchanged and not stale; protects the minimal guarantee (P1).
 - 3: the owner's authority does not cover the first object → refuse before any write and name the object; nothing changes; protects the minimal guarantee.
-- 3: the live write succeeds and a later read-back fails → report the repository and the reason; mark the applied state stale; a new preview refuses and names the stale applied state; protects the truthful-reporting rule (P6).
+- 3: the live write succeeds and a later read-back fails → report the applied objects, the object that cannot be read and the reason; mark the applied state stale; a new preview refuses and names the stale applied state; protects the truthful-reporting rule (P6).
 - 3: the first live change succeeds and a later object fails → report the applied objects, the failed object and the reason; write the stale marker beside the applied state and do not record the failed object; protects the minimal guarantee and the truthful-reporting rule (P6).
 
 ## Rules
@@ -51,7 +53,7 @@ declared configuration.
 - **Adoption before update**: an object or setting that already exists live must be adopted before it is updated; a preview that would add it instead is refused and names it.
 - **Preflight**: immediately before applying the saved plan, the System compares the applied state with the live configuration in a read-only refresh-only plan for the previewed objects; a non-no-op change is refused and names the address that changed.
 - **Refusal and partial outcomes**: a refused apply makes no live change; a failure after the first write is reported as partial, names the object and the reason, and its applied state carries a stale marker beside it (P4, P6).
-- **Recorded revision and stale state**: the applied revision is recorded only when every object succeeded; after a partial failure the applied state is marked stale, and while the marker exists the preview refuses and names the stale state.
+- **Recorded revision and stale state**: the applied revision is recorded only when every object succeeded; after a partial failure the applied state is marked stale, and while the marker exists the preview and the apply refuse and name the stale state. The operator removes the marker after reading the partial report, and the next green apply completes the revision.
 - **Unreadable authority**: settings the owner's authority cannot read are not declared silently; the preview names the object.
 - **Declared values**: the two scanning settings and both Dependabot settings are declared enabled through the revision's own declaration (Q5 closed 2026-10-17).
 
@@ -63,12 +65,12 @@ declared configuration.
 - Authority before the first write: the owner's authority covers the repositories but not the organization settings. The apply refuses before any write and names the organization settings; nothing changes.
 - Manual edit since preview: live `has_projects` was changed by hand after the preview that saw it on. The read-only refresh-only preflight names `has_projects` and refuses the apply; the saved plan is not applied; a new preview shows the edit.
 - Partial failure: the scanning settings apply; the Dependabot security-updates change then fails on authority. The report names the applied settings, the failed setting and the reason; the applied state does not record the failed setting and is marked stale; the next preview refuses and names the stale state.
-- Read-back failure: the repository update succeeds; the provider's read-back then fails. The apply reports the repository and the reason; live carries the enabled statuses, the applied state is marked stale, and the next preview refuses and names the stale state.
+- Read-back failure: the publishing secret is stored but the routine's post-apply read-back fails. The apply reports the applied deploy key, secret and rule set, names the secret that could not be read and the reason; live carries the created objects, the applied state is marked stale, and the next preview refuses and names the stale state.
 - Publish the profile: the declaration adds the public organization profile repository and its two files, and the live organization has no such repository. The targeted preview names the three creations and no other change; the apply creates them and records them; a later targeted preview of the profile objects reports no differences.
 
 ## Minimal guarantee
 
-A refusal before the first live write leaves the live configuration and the applied state unchanged; a failure after the first write is reported as partial with the applied state marked stale by a marker beside it, and the preview refuses while the marker exists until a green apply removes it; the failure names the object and the reason.
+A refusal before the first live write leaves the live configuration and the applied state unchanged; a failure after the first write is reported as partial with the applied state marked stale by a marker beside it, and while the marker exists the preview and the apply refuse; the operator removes the marker after reading the partial report, and the next green apply completes the revision; the failure names the applied objects, the failed object or read and the reason.
 
 ## Success guarantee
 
@@ -86,6 +88,7 @@ This is a changing use case: it changes the live organization and repositories.
 
 - enable-repository-security
 - publish-organization-profile
+- publish-site-plumbing
 
 ## Interactions
 
@@ -95,6 +98,8 @@ This is a changing use case: it changes the live organization and repositories.
 | enable-repository-security | apply the previewed revision and read the outcome | Organization owner applies the previewed revision and the security settings are enabled |
 | publish-organization-profile | preview the declared configuration and read the named differences | Organization owner previews the profile declaration and only the three creations are named |
 | publish-organization-profile | apply the previewed revision and read the outcome | Organization owner applies the previewed revision and the organization profile is published |
+| publish-site-plumbing | preview the declared configuration and read the named differences | Organization owner previews the pages plumbing and only the three live creations are named |
+| publish-site-plumbing | apply the previewed revision and read the outcome | Organization owner applies the previewed revision and the pages publishing credential is created |
 
 ## Includes
 
@@ -118,7 +123,7 @@ This is a changing use case: it changes the live organization and repositories.
 - Deleting or disabling anything (Q11): no declared object is removed and no security setting is turned off.
 - Enabling settings the seed does not name: non-provider patterns, validity checks, advanced security, and the pages repository's scanning.
 - Private vulnerability reporting, release immutability and organization-level security defaults.
-- The deploy key and `PAGES_DEPLOY_KEY` secret: they are not part of this capability.
+- Rotating or removing the pages deploy key and the `PAGES_DEPLOY_KEY` secret (Q11): this capability creates them once and neither rotates nor removes a credential.
 - Reporting configuration drift, publishing the website, and repairing an already-published release.
 - Creating the organization or transferring a repository into it; creating a
   repository the revision declares and the live configuration lacks is the main
