@@ -117,6 +117,9 @@ jobs:
       - name: Record the change verification
         if: github.event_name == 'workflow_dispatch'
         run: givn check tasks --change publish-site-plumbing
+      - name: Install the coverage tool
+        if: github.event_name == 'workflow_dispatch'
+        run: cargo install cargo-llvm-cov --locked
       - name: Archive the completed change
         if: github.event_name == 'workflow_dispatch'
         env:
