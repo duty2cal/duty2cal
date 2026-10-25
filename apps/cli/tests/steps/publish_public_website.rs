@@ -371,3 +371,38 @@ async fn refused_naming_the_browser_build_step(w: &mut DutyWorld) {
         "the refusal does not name the revision {revision}:\n{text}"
     );
 }
+
+#[given("a source revision whose page carries no privacy statement")]
+async fn a_revision_without_the_privacy_statement(w: &mut DutyWorld) {
+    let committed = support::site_commit_drop_line(
+        w,
+        "web/index.html",
+        "data-site-statement=\"privacy\"",
+        "docs: fixture page without the privacy statement",
+    );
+    support::site_set(w, "revision", &committed);
+}
+
+#[then("the publication is refused and names the missing privacy statement")]
+async fn refused_naming_the_missing_statement(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the publication was not refused:\n{}",
+        w.command_transcript
+    );
+    let text = support::site_publication_text(w);
+    assert!(
+        text.contains("page content"),
+        "the refusal does not name the page-content check:\n{text}"
+    );
+    assert!(
+        text.contains("privacy statement"),
+        "the refusal does not name the missing privacy statement:\n{text}"
+    );
+    assert_eq!(
+        support::site_get(w, "target-tip"),
+        Some(support::site_target_tip(w)),
+        "the refused publication changed the hosting target"
+    );
+}

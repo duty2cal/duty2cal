@@ -162,7 +162,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     scoped re-run `1 scenario (1 passed)`, `6 steps (6 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): skip publication when a revision changes no site input`
       (body: the scenario title).
-  - Revision:
+  - Revision: ed51e5db4f0ea9be9fb9f9a8ca8f6d322faf2a28
 
 ### T02 — A release tag republishes the site from the tagged revision and the footer names the tag
 
@@ -311,7 +311,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     exit 0.
 - [x] COMMIT — `feat(publish-public-website): name the browser build step when it fails`
       (body: the scenario title).
-  - Revision:
+  - Revision: 58cecd3d18157a7753e557cbf351b37594e5ed25
 
 ### T07 — A page missing a public statement is refused and the statement is named
 
@@ -321,14 +321,31 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   refusal. The check reads the assembled output, not the page source.
 - Domain constraints: K4 — the page states what it does, both routes, source,
   licence, privacy, non-affiliation and as-is before it asks for a file.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — the content check with per-statement names.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — extract the name list; re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): name a missing public statement`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A page missing a public statement is refused and the statement is named"`
+    → `✘ And a source revision whose page carries no privacy statement` /
+    `Step panicked. Captured output: not implemented: a source revision whose page carries no privacy statement`,
+    `1 scenario (1 failed)`; exit 101.
+- [x] GREEN — the content check with per-statement names.
+  - Production files: `scripts/check-site-content.sh` (the name list, the
+    per-name count that survives `pipefail` when a name is absent, the
+    non-empty-text requirement and the duplicate refusal),
+    `apps/cli/tests/steps/support.rs` (`site_commit_drop_line` and the fixture
+    trim that keeps the gate's conversion suite to one capability),
+    `apps/cli/tests/steps/publish_public_website.rs` (the scenario's steps).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `5 steps (5 passed)`,
+    exit 0; the publication printed `check-site-content: page content check
+    failed: the page carries no privacy statement` and the target still served
+    the earlier page. A manual duplicate probe printed `the page carries the
+    privacy statement 2 times; exactly one element per statement name is
+    required` (exit 1), and an empty element printed `the page's privacy
+    statement carries no text` (exit 1).
+- [x] REFACTOR — extract the name list; re-run scoped; exit 0.
+  - Evidence: the names are one `statement_names` list read by
+    `statement_count`/`statement_text`, and the absent-name exit is handled in
+    `statement_count` instead of aborting under `pipefail`; scoped re-run
+    `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
+- [x] COMMIT — `feat(publish-public-website): name a missing public statement`
       (body: the scenario title).
   - Revision:
 

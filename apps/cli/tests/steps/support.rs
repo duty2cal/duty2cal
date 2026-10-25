@@ -413,6 +413,30 @@ fn build_site_template() -> PathBuf {
         }
     }
 
+    // The publication gate runs the revision's own suite, so the fixture keeps
+    // one representative capability instead of the project's whole runtime
+    // suite: the test needs the gate mechanism, not a second copy of every
+    // product scenario. `export-duty-plan-calendar` is the capability whose
+    // browser `@e2e` and conversion suite the gate invokes, so it stays; the
+    // other capabilities' use-case directories stay too, because the change
+    // log's capability allow-list must still name them.
+    let specs = template.join("givn/specs");
+    for capability in fs::read_dir(&specs).expect("read the fixture corpus") {
+        let capability = capability.expect("read a fixture capability entry");
+        if !capability.path().is_dir() {
+            continue;
+        }
+        for entry in fs::read_dir(capability.path()).expect("read a fixture capability directory") {
+            let entry = entry.expect("read a fixture capability file");
+            let path = entry.path();
+            if path.extension().is_some_and(|ext| ext == "feature")
+                && entry.file_name() != "export-duty-plan-calendar.feature"
+            {
+                fs::remove_file(&path).expect("trim a fixture capability feature");
+            }
+        }
+    }
+
     // Overlay the working-tree implementation. Tracked modifications and
     // untracked source files are copied; a tracked deletion is removed. The
     // change's planning artifacts (`givn/changes/**`) are not part of a
@@ -674,6 +698,70 @@ pub fn site_commit_file(
     git_ok(&repo, &["add", relative]);
     git_ok(&repo, &["commit", "-q", "-m", message]);
     git_ok(&repo, &["rev-parse", "HEAD"])
+}
+
+/// Replace one text fragment in a file the fixture tracks, commit the result
+/// on the current branch and return the revision.
+pub fn site_commit_replace(
+    w: &mut DutyWorld,
+    relative: &str,
+    needle: &str,
+    replacement: &str,
+    message: &str,
+) -> String {
+    let path = site_repository(w).join(relative);
+    let body = fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+    assert!(
+        body.contains(needle),
+        "{} does not carry the fragment the fixture replaces: {needle:?}",
+        path.display()
+    );
+    site_commit_file(w, relative, &body.replacen(needle, replacement, 1), message)
+}
+
+/// Remove every line carrying `marker` from a file the fixture tracks, commit
+/// the result and return the revision.
+pub fn site_commit_drop_line(
+    w: &mut DutyWorld,
+    relative: &str,
+    marker: &str,
+    message: &str,
+) -> String {
+    let path = site_repository(w).join(relative);
+    let body = fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+    let mut removed = false;
+    let mut edited = String::new();
+    for line in body.lines() {
+        if line.contains(marker) {
+            removed = true;
+            continue;
+        }
+        edited.push_str(line);
+        edited.push('\n');
+    }
+    assert!(
+        removed,
+        "{} carries no line with the marker the fixture drops: {marker:?}",
+        path.display()
+    );
+    site_commit_file(w, relative, &edited, message)
+}
+
+/// Append text to a file the fixture tracks, commit the result and return the
+/// revision.
+pub fn site_commit_append(
+    w: &mut DutyWorld,
+    relative: &str,
+    body: &str,
+    message: &str,
+) -> String {
+    let path = site_repository(w).join(relative);
+    let mut current = fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+    current.push_str(body);
+    site_commit_file(w, relative, &current, message)
 }
 
 /// The paths a revision changes relative to a base.

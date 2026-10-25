@@ -36,13 +36,38 @@ statement_names=(
   license
   built-revision
 )
+# The text inside the element carrying one statement name, with the element's
+# own markup removed, so an empty element is refused as well as an absent one.
+statement_text() {
+  local name="$1"
+  tr '\n' ' ' < "$index" \
+    | sed -n "s/.*data-site-statement=\"$name\"[^>]*>\([^<]*\)<.*/\1/p" \
+    | head -n 1
+}
+
+# How many elements carry one statement name. `grep` exits non-zero when a name
+# is absent, which `pipefail` would turn into an unannounced exit, so the empty
+# result is the count.
+statement_count() {
+  local matches
+  matches="$(grep -o "data-site-statement=\"$1\"" "$index" || true)"
+  if [ -z "$matches" ]; then
+    echo 0
+    return 0
+  fi
+  printf '%s\n' "$matches" | wc -l | tr -d '[:space:]'
+}
+
 for name in "${statement_names[@]}"; do
-  count="$(grep -o "data-site-statement=\"$name\"" "$index" | wc -l | tr -d '[:space:]')"
+  count="$(statement_count "$name")"
   if [ "$count" -eq 0 ]; then
     fail "the page carries no $name statement"
   fi
   if [ "$count" -gt 1 ]; then
     fail "the page carries the $name statement $count times; exactly one element per statement name is required"
+  fi
+  if ! statement_text "$name" | grep -q '[^[:space:]]'; then
+    fail "the page's $name statement carries no text"
   fi
 done
 
