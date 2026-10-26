@@ -57,7 +57,11 @@ jobs:
       - run: npm ci --prefix web/e2e
       - run: npx --prefix web/e2e playwright install --with-deps chromium
       - name: Install reuse
-        run: pipx install reuse
+        run: |
+          set -euo pipefail
+          pipx install reuse
+          # pipx installs into ~/.local/bin; the gate resolves `reuse` by name.
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Install the pinned wasm-pack
         run: |
           set -euo pipefail
@@ -73,6 +77,11 @@ jobs:
           printf '%s\n' "$PAGES_DEPLOY_KEY" > "$key"
           chmod 600 "$key"
           echo "PAGES_DEPLOY_KEY_FILE=$key" >> "$GITHUB_ENV"
+      - name: Trust the hosting host key
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.ssh"
+          ssh-keyscan -t ed25519 github.com >> "$HOME/.ssh/known_hosts"
       - name: Publish the Site output
         env:
           REVISION: ${{ inputs.revision }}
