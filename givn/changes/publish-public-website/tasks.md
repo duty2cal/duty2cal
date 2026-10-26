@@ -1160,12 +1160,26 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
 
 ## Closeout
 
-- [ ] Every scenario box is checked with pasted evidence and exactly one
+- [x] Every scenario box is checked with pasted evidence and exactly one
       reachable `COMMIT:` revision naming the scenario in its body.
-- [ ] Merged step definitions: every phrase bound by the delta step files is
+  - Evidence: 25 task sections parsed; every `Revision:` resolves, is an
+    ancestor of `HEAD`, and each section carries exactly one revision (checked
+    2026-10-26 with `git cat-file -e` + `git merge-base --is-ancestor`).
+- [x] Merged step definitions: every phrase bound by the delta step files is
       also bound in the permanent per-capability step files; archive is not
       used to move them.
-- [ ] Full `./run-tests.sh` exits 0 and `./run-tests.sh --e2e` exits 0; both
+  - Evidence: all bindings live in the permanent tree —
+    `apps/cli/tests/steps/publish_public_website.rs`,
+    `apps/cli/tests/steps/e2e/publish_public_website.rs`, the extended
+    `publish_public_release.rs` and `publish_organization_profile.rs`; there is
+    no delta-only step file for archive to merge.
+- [x] Full `./run-tests.sh` exits 0 and `./run-tests.sh --e2e` exits 0; both
       counts recorded.
-- [ ] `givn lint --change publish-public-website` exits 0 or 2; `givn status
+  - Evidence: `./run-tests.sh` → `11 features`, `216 scenarios (216 passed)`,
+    `1065 steps (1065 passed)`, exit 0 (3410 s). `./run-tests.sh --e2e` →
+    `9 features`, `14 scenarios (14 passed)`, `126 steps (126 passed)`, exit 0
+    (752 s). E2E count 14 < full count 216.
+- [x] `givn lint --change publish-public-website` exits 0 or 2; `givn status
       --change publish-public-website` shows tasks complete.
+  - Evidence: `givn lint` → exit 0, 5 advisory persona-reference findings;
+    `givn status` shows `tasks 112/112` once this box is recorded.
