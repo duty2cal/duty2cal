@@ -802,14 +802,37 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   enforces it; no archive for another platform is named.
 - Domain constraints: truthful public copy; the profile copy is applied only
   after the site is live (T22).
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — public text sources and the checker.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-release): state the browser route beside the published archive`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "The public text states the browser route beside the downloadable archive platform"`
+    → `✘ Given the repository's public text` / `Step doesn't match any
+    function`, `1 scenario (1 failed)`, `1 step (1 failed)`; exit 101.
+- [x] GREEN — public text sources and the checker.
+  - Production files: `README.md` (the download section states Windows x86_64
+    as the only published archive platform, the browser conversion route on the
+    Public website at `https://duty2cal.github.io/`, builds for other operating
+    systems available on request from a Rust toolchain, no archive for another
+    platform, and that a platform may be added back on request);
+    `org/profile/README.md` (the same statements beside the download link, with
+    the stale "does not host the converter today" description corrected);
+    `scripts/public-text-check.sh` (requires the Windows-only, no-other-archive,
+    on-request, browser-route and address statements and keeps the existing
+    checksum, provenance, licence, Unicode and immutability promises; still
+    forbids a Linux or macOS archive name and download row);
+    `apps/cli/tests/steps/publish_public_release.rs` (the scenario's four
+    assertions over both public text files, with whitespace folded so a wrapped
+    sentence reads as one).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `6 steps (6 passed)`,
+    exit 0; `bash scripts/public-text-check.sh` printed
+    `public-text-check: clean - all 18 public-text promises present in
+    /home/dan/dev/PRIVATE/duty2cal/README.md`, exit 0. Both files carry
+    `https://duty2cal.github.io/` and name no `linux-`, `macos-` or `freebsd-`
+    archive.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: the two public text files are read through one `public_text`
+    helper and every assertion folds whitespace through one
+    `public_text_folded`, so no step re-implements the read; scoped re-run
+    `1 scenario (1 passed)`, `6 steps (6 passed)`, exit 0.
+- [x] COMMIT — `feat(publish-public-release): state the browser route beside the published archive`
       (body: the scenario title).
   - Revision:
 

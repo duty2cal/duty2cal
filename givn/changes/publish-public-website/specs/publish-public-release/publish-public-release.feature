@@ -17,7 +17,7 @@ Feature: Publish a public release
     Then the notes for version 0.2.0 name the change to the public website
     And the notes for version 0.2.0 name no revision that changed only the project's documents
 
-  @givn.added @wip
+  @givn.added
   Scenario: The public text states the browser route beside the downloadable archive platform
     Given the repository's public text
     When a reader reads the public text

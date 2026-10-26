@@ -68,8 +68,9 @@ cargo run --release -p duty2cal -- <duty-plan.pdf>
 
 Every version tag publishes one release at the stable address
 <https://github.com/duty2cal/duty2cal/releases/latest>, and every release
-holds exactly one archive with its checksum file beside it. The only
-supported platform is Windows x86_64:
+holds exactly one archive with its checksum file beside it.
+Windows x86_64 is the only published archive platform.
+The table names the one archive:
 
 | Your machine | Archive |
 |---|---|
@@ -77,14 +78,17 @@ supported platform is Windows x86_64:
 
 Replace `<version>` with the released version, for example `0.1.0`. The
 archive is a `.tar.gz` holding only `duty2cal.exe`, so one extraction route
-serves the one supported platform:
+serves the one published archive platform:
 
 ```powershell
 tar -xzf duty2cal-0.1.0-windows-x86_64.tar.gz
 .\duty2cal.exe .\2026-06.pdf
 ```
 
-Other platforms are not supported or distributed; the source can be built with a Rust toolchain. A platform may be added back when users request it.
+A current browser converts a plan on the [Public website](https://duty2cal.github.io/), so no download is needed for that route.
+Builds for other operating systems are available on request; their source can be built with a Rust toolchain.
+No archive is published for any other platform.
+A platform may be added back when users request it.
 
 ### Verify what you received
 

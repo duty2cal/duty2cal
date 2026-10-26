@@ -1010,6 +1010,129 @@ async fn a_history_grouping(w: &mut DutyWorld) {
     build_history(w, &CHANGE_LOG_HISTORY);
 }
 
+/// The canonical Public website address the public text names.
+const PUBLIC_WEBSITE_ADDRESS: &str = "https://duty2cal.github.io/";
+
+/// The files a reader lands on: the repository's README and the profile copy.
+const PUBLIC_TEXT_FILES: [&str; 2] = ["README.md", "org/profile/README.md"];
+
+/// One public text file's bytes.
+fn public_text(name: &str) -> String {
+    let path = repository_root().join(name);
+    std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no public text at {}: {error}", path.display()))
+}
+
+/// A public text file's words on one line, so a wrapped sentence reads as one.
+fn public_text_folded(name: &str) -> String {
+    public_text(name)
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Refuse a public text that names an archive for a platform other than the
+/// one published platform.
+fn assert_no_foreign_archive(name: &str) {
+    let folded = public_text_folded(name).to_lowercase();
+    for foreign in [
+        "linux-x86_64",
+        "linux-arm64",
+        "macos-x86_64",
+        "macos-arm64",
+        "freebsd-x86_64",
+    ] {
+        assert!(
+            !folded.contains(foreign),
+            "{name} names an archive for another platform: {foreign}"
+        );
+    }
+}
+
+#[given("the repository's public text")]
+async fn the_repositorys_public_text(_w: &mut DutyWorld) {
+    for name in PUBLIC_TEXT_FILES {
+        assert!(
+            !public_text(name).trim().is_empty(),
+            "the public text {name} is empty"
+        );
+    }
+}
+
+#[when("a reader reads the public text")]
+async fn a_reader_reads_the_public_text(w: &mut DutyWorld) {
+    let mut command = Command::new("scripts/public-text-check.sh");
+    command.current_dir(repository_root());
+    run_command(w, &mut command);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the public-text checker refused the text: {}",
+        w.command_transcript
+    );
+}
+
+#[then(
+    regex = r#"^the public text states that a current browser converts a plan on the public website at "([^"]+)"$"#
+)]
+async fn public_text_states_the_browser_route(w: &mut DutyWorld, address: String) {
+    assert_eq!(
+        address, PUBLIC_WEBSITE_ADDRESS,
+        "the step names the canonical Public website address"
+    );
+    for name in PUBLIC_TEXT_FILES {
+        let folded = public_text_folded(name);
+        assert!(
+            folded.contains("current browser converts a plan on the"),
+            "{name} states no browser conversion route: {folded}"
+        );
+        assert!(
+            folded.contains(&address),
+            "{name} names no Public website address: {folded}"
+        );
+    }
+    assert_eq!(w.exit_status, Some(0), "the checker did not accept the text");
+}
+
+#[then("the public text names Windows x86_64 as the only published archive platform")]
+async fn public_text_names_windows_as_the_only_published_archive(_w: &mut DutyWorld) {
+    for name in PUBLIC_TEXT_FILES {
+        let folded = public_text_folded(name);
+        assert!(
+            folded.contains("Windows x86_64 is the only published archive platform."),
+            "{name} names no single published archive platform: {folded}"
+        );
+        assert!(
+            folded.contains("Windows x86_64"),
+            "{name} names no published platform: {folded}"
+        );
+        assert_no_foreign_archive(name);
+    }
+}
+
+#[then(
+    "the public text states that builds for other operating systems are available on request and that their source can be built with a Rust toolchain"
+)]
+async fn public_text_states_the_other_platforms_route(_w: &mut DutyWorld) {
+    for name in PUBLIC_TEXT_FILES {
+        let folded = public_text_folded(name);
+        assert!(
+            folded.contains(
+                "Builds for other operating systems are available on request; \
+                 their source can be built with a Rust toolchain."
+            ),
+            "{name} states no route for another operating system: {folded}"
+        );
+    }
+}
+
+#[then("the public text names no archive for a platform other than Windows x86_64")]
+async fn public_text_names_no_foreign_archive(_w: &mut DutyWorld) {
+    for name in PUBLIC_TEXT_FILES {
+        assert_no_foreign_archive(name);
+    }
+}
+
 /// The subject of the revision that changes the public website: a released
 /// change scoped to the capability the fixture holds.
 const PUBLIC_WEBSITE_CHANGE: &str = "Serve the public website from the repository";

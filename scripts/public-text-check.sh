@@ -8,13 +8,19 @@
 #
 # The promises checked:
 #   - the repository's own clone address
-#   - the one supported platform's archive name
+#   - the one published archive platform's archive name
+#   - the statements that Windows x86_64 is the only published archive
+#     platform, that no archive is published for another platform, and that
+#     builds for other operating systems are available on request from a Rust
+#     toolchain
+#   - the browser conversion route on the Public website at its canonical
+#     address, so a reader does not read "Windows x86_64 only" as "no route
+#     without Windows"
 #   - the command that verifies an archive's checksum, on Windows and in a
 #     POSIX shell
 #   - the command that verifies an archive's build provenance
 #   - the licence statement with a link to its text
 #   - the third-party Unicode data licence, kept attributed
-#   - the unsupported-source-build and platform-request statements
 #   - the immutability of already-published releases
 # Forbidden:
 #   - a Linux or macOS archive name
@@ -68,8 +74,12 @@ require 'licence-statement' 'MPL-2\.0'
 require 'licence-text-link' 'LICENSES/MPL-2\.0\.txt'
 require 'unicode-data-licence' 'Unicode-3\.0'
 require 'unicode-data-licence-link' 'LICENSES/Unicode-3\.0\.txt'
-require_fixed 'source-route-statement' 'Other platforms are not supported or distributed; the source can be built with a Rust toolchain.'
-require_fixed 'platform-request-statement' 'A platform may be added back when users request it.'
+require_fixed 'windows-only-archive-statement' 'Windows x86_64 is the only published archive platform.'
+require_fixed 'no-other-archive-statement' 'No archive is published for any other platform.'
+require_fixed 'platform-request-statement' 'Builds for other operating systems are available on request; their source can be built with a Rust toolchain.'
+require_fixed 'platform-readdition-statement' 'A platform may be added back when users request it.'
+require_fixed 'browser-route-statement' 'A current browser converts a plan on the [Public website](https://duty2cal.github.io/)'
+require_fixed 'public-website-address' 'https://duty2cal.github.io/'
 require_fixed 'published-history-statement' 'Already-published releases keep their original assets and links; only future releases are Windows-only.'
 forbid 'non-windows-archive' 'duty2cal-[^[:space:]]*-(linux-x86_64|linux-arm64|macos-arm64|macos-x86_64)\.tar\.gz'
 forbid 'non-windows-download-row' '^\|[[:space:]]*(Linux x86_64|Linux arm64|macOS arm64( \([^)]*\))?|macOS x86_64( \([^)]*\))?)[[:space:]]*\|'
