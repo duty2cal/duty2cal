@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: MPL-2.0
+name: web
+
+# The trigger workflow (design.md "The workflow triggers"): every
+# default-branch push starts a run and the command decides whether the revision
+# changes a site input. There is no `paths:` filter — that would be a second
+# copy of the site-input list — and no `v*` tag trigger: a tag reaches the site
+# through the release workflow, which is the only caller that publishes one.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: The revision to publish; the dispatched ref when empty.
+        type: string
+        required: false
+      since:
+        description: The base revision whose diff decides whether to publish.
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  site:
+    name: site
+    permissions:
+      contents: read
+    uses: ./.github/workflows/site.yml
+    # `github.event.before` is the pushed revision's base. An all-zero base (a
+    # first push or an unknown one) and a manual dispatch fall back to the
+    # optional `since`, which an empty value turns into a publication that
+    # always builds.
+    with:
+      revision: ${{ inputs.revision }}
+      since: ${{ github.event.before != '0000000000000000000000000000000000000000' && github.event.before || inputs.since }}
+    secrets:
+      PAGES_DEPLOY_KEY: ${{ secrets.PAGES_DEPLOY_KEY }}

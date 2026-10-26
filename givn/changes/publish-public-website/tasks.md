@@ -952,13 +952,54 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
 - Domain constraints: one publication per tag; a failed site deploy publishes
   no archive; the only workflow holding the secret is the reusable one, with
   `web.yml` and the release's `site` job as its callers.
-- [ ] Create the four workflow files/edits above.
-  - Evidence:
-- [ ] Run `actionlint` over `.github/workflows/*.yml` and confirm exit 0; grep
+- [x] Create the four workflow files/edits above.
+  - Evidence: `.github/workflows/site.yml` (new; `on: workflow_call` with
+    string inputs `revision` and `since` and a required `PAGES_DEPLOY_KEY`
+    secret, `concurrency: group: site-publication`, `permissions: contents:
+    read`, one job that checks out the caller's revision with `fetch-depth: 0`
+    and installs in order the Rust toolchain with `wasm32-unknown-unknown`, Node
+    from `web/e2e/.nvmrc`, `npm ci --prefix web/e2e`, Playwright Chromium,
+    `reuse`, and the pinned `wasm-pack` from `web/.wasm-pack-version`; writes
+    the secret to `$RUNNER_TEMP/pages-deploy-key` under `umask 077` plus
+    `chmod 600`; runs `scripts/publish-site.sh --repo . --target
+    git@github.com:duty2cal/duty2cal.github.io.git --key <file> --out dist/site
+    --verify-url https://duty2cal.github.io/` and adds the caller's
+    `revision`/`since` only when non-empty). `.github/workflows/web.yml` (new;
+    `push: branches: [main]` with **no** `paths:` filter and no `tags:`
+    trigger, `workflow_dispatch` with optional `revision` and `since`, one bare
+    `uses: ./.github/workflows/site.yml` job whose `since` is
+    `github.event.before` unless it is the all-zero SHA, and
+    `PAGES_DEPLOY_KEY` passed through). `.github/workflows/release.yml` (a
+    `site` job calls `site.yml` with `revision: ${{ github.ref_name }}` and no
+    `since`; `publish` declares `needs: [prepare, site]`, checks out the
+    project and the hosting target beside it with `fetch-depth: 0`, keeps the
+    green-checks wait, SBOM and both attestation steps before running
+    `scripts/publish-release.sh --version … --tag … --staged staged --repo
+    … --site-repo site-target --target
+    https://github.com/duty2cal/duty2cal.github.io.git`).
+    `.github/workflows/ci.yml` (the actionlint step names `ci.yml`,
+    `release.yml`, `site.yml` and `web.yml` explicitly instead of relying on a
+    shell glob).
+  - Note: `web.yml` has no checkout of its own — its job is a bare reusable-
+    workflow call — so `fetch-depth: 0` is the checkout in `site.yml` it calls
+    (and the release's publish checkouts carry it too).
+- [x] Run `actionlint` over `.github/workflows/*.yml` and confirm exit 0; grep
       that `site.yml` declares `workflow_call`, `web.yml` has no `tags:` trigger,
       and `release.yml`'s publish job has `needs: site`.
-  - Evidence:
-- [ ] COMMIT — `ci(publish-public-website): publish the site from one reusable workflow`
+  - Evidence: `/tmp/duty2cal-tools/run actionlint -color .github/workflows/*.yml`
+    → no output, exit 0 (actionlint 1.7.12, the CI pin).
+    `grep -n "workflow_call" .github/workflows/site.yml` → `9:  workflow_call:`;
+    `grep -nE '^\s*tags:' .github/workflows/web.yml` → no match
+    (`web.yml: no tags: trigger`);
+    `awk '/^  publish:/{inside=1} inside&&/needs:/{print; exit}'
+    .github/workflows/release.yml` → `    needs: [prepare, site]`;
+    `grep -n "fetch-depth: 0" .github/workflows/release.yml
+    .github/workflows/site.yml` → `release.yml:97,170,175` and `site.yml:46`;
+    `grep -n "uses: ./.github/workflows/site.yml\|revision: \${{ github.ref_name
+    }}\|publish-release.sh" .github/workflows/release.yml` →
+    `148: uses: ./.github/workflows/site.yml`, `150: revision:
+    ${{ github.ref_name }}`, `236: scripts/publish-release.sh`.
+- [x] COMMIT — `ci(publish-public-website): publish the site from one reusable workflow`
       (body: CI workflows).
   - Revision:
 

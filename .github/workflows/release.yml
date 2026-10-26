@@ -138,9 +138,22 @@ jobs:
           path: staged/
           if-no-files-found: error
 
+  site:
+    name: site
+    # A bare call to the one build-and-deploy definition. A tag publication
+    # always builds (no `since`), so the footer names the tag and the release
+    # announces the page of its own revision.
+    permissions:
+      contents: read
+    uses: ./.github/workflows/site.yml
+    with:
+      revision: ${{ github.ref_name }}
+    secrets:
+      PAGES_DEPLOY_KEY: ${{ secrets.PAGES_DEPLOY_KEY }}
+
   publish:
     name: publish
-    needs: [prepare]
+    needs: [prepare, site]
     runs-on: ubuntu-latest
     permissions:
       # Write the release; read this run's own check suite; attest the archives.
@@ -151,6 +164,15 @@ jobs:
       attestations: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          # `git describe` and the target's history must be readable: the
+          # publication verifies the hosting target against the tag.
+          fetch-depth: 0
+      - uses: actions/checkout@v7
+        with:
+          repository: duty2cal/duty2cal.github.io
+          path: site-target
+          fetch-depth: 0
       - name: Wait for every check on the tagged revision to conclude green
         timeout-minutes: 40
         env:
@@ -206,33 +228,18 @@ jobs:
         with:
           subject-path: staged/duty2cal-${{ env.version }}-*.tar.gz
           sbom-path: sbom/duty2cal-${{ env.version }}.spdx.json
-      - name: Create the draft release with every archive attached
+      - name: Verify the hosting target and publish the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          gh release create "$GITHUB_REF_NAME" \
+          scripts/publish-release.sh \
+            --version "${GITHUB_REF_NAME#v}" \
+            --tag "$GITHUB_REF_NAME" \
+            --staged staged \
             --repo "$GITHUB_REPOSITORY" \
-            --verify-tag \
-            --draft \
-            --notes-file staged/release-notes.md \
-            staged/*.tar.gz staged/*.tar.gz.sha256 staged/CHANGELOG.md
-      - name: Verify the draft's asset set against the staged set
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
-            --json assets --jq '.assets[].name' | sort > draft-assets.txt
-          find staged -maxdepth 1 -type f -printf '%f\n' | grep -v '^release-notes\.md$' | sort > staged-assets.txt
-          echo "staged:"; cat staged-assets.txt
-          echo "draft:"; cat draft-assets.txt
-          diff -u staged-assets.txt draft-assets.txt
-          echo "the draft holds exactly the staged set"
-      - name: Publish the release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false
+            --site-repo site-target \
+            --target https://github.com/duty2cal/duty2cal.github.io.git
 
   verify:
     name: verify

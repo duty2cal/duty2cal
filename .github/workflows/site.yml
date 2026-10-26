@@ -1,0 +1,91 @@
+# SPDX-License-Identifier: MPL-2.0
+name: site
+
+# The one build-and-deploy definition both callers share (design.md "The
+# workflow triggers"): `web.yml` publishes a default-branch revision and the
+# release's `site` job publishes a tag. The decision whether a revision changes
+# a site input stays in `scripts/publish-site.sh`, which receives `since`.
+on:
+  workflow_call:
+    inputs:
+      revision:
+        description: The revision to publish; the caller's ref when empty.
+        type: string
+        required: false
+      since:
+        description: The base revision whose diff decides whether to publish.
+        type: string
+        required: false
+    secrets:
+      PAGES_DEPLOY_KEY:
+        description: The deploy key that may push to the hosting target.
+        required: true
+
+# One publication at a time, shared by every caller: a tag publication and a
+# default-branch publication serialize against each other, not only against
+# their own run.
+concurrency:
+  group: site-publication
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The diff, `git describe` and the detached worktree need history and
+          # tags, so the shallow default is not enough.
+          ref: ${{ inputs.revision || github.ref }}
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: web/e2e/.nvmrc
+          cache: npm
+          cache-dependency-path: web/e2e/package-lock.json
+      # The gate runs the revision's own suite, so its driver packages and
+      # Chromium are part of the toolchain it needs.
+      - run: npm ci --prefix web/e2e
+      - run: npx --prefix web/e2e playwright install --with-deps chromium
+      - name: Install reuse
+        run: pipx install reuse
+      - name: Install the pinned wasm-pack
+        run: |
+          set -euo pipefail
+          pin="$(tr -d '[:space:]' < web/.wasm-pack-version)"
+          cargo install wasm-pack --version "$pin" --locked
+      - name: Write the deploy key to a private file
+        env:
+          PAGES_DEPLOY_KEY: ${{ secrets.PAGES_DEPLOY_KEY }}
+        run: |
+          set -euo pipefail
+          key="$RUNNER_TEMP/pages-deploy-key"
+          umask 077
+          printf '%s\n' "$PAGES_DEPLOY_KEY" > "$key"
+          chmod 600 "$key"
+          echo "PAGES_DEPLOY_KEY_FILE=$key" >> "$GITHUB_ENV"
+      - name: Publish the Site output
+        env:
+          REVISION: ${{ inputs.revision }}
+          SINCE: ${{ inputs.since }}
+        run: |
+          set -euo pipefail
+          args=(
+            --repo .
+            --target git@github.com:duty2cal/duty2cal.github.io.git
+            --key "$PAGES_DEPLOY_KEY_FILE"
+            --out dist/site
+            --verify-url https://duty2cal.github.io/
+          )
+          if [ -n "${REVISION:-}" ]; then args+=(--revision "$REVISION"); fi
+          if [ -n "${SINCE:-}" ]; then args+=(--since "$SINCE"); fi
+          scripts/publish-site.sh "${args[@]}"

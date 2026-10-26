@@ -246,7 +246,11 @@ jobs:
             -v "$GITHUB_WORKSPACE:/repo" \
             -w /repo \
             rhysd/actionlint:1.7.12 \
-            -color .github/workflows/*.yml
+            -color \
+            .github/workflows/ci.yml \
+            .github/workflows/release.yml \
+            .github/workflows/site.yml \
+            .github/workflows/web.yml
 
   dco:
     # Pull requests only: the requirement is that a contribution carries its
