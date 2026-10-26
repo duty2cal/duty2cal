@@ -1154,7 +1154,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     `{"scope":"e2e","total":1,"passed":1,"failed":0,"skipped":0}`.
 - [x] COMMIT — `test(e2e): publish the site and observe the built page`
       (body: the scenario title).
-  - Revision:
+  - Revision: e35aaa0be8c63e5719e03ab57116f6883d161166
 
 ---
 
