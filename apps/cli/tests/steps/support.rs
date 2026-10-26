@@ -993,6 +993,17 @@ pub fn site_target_tip(w: &mut DutyWorld) -> String {
     git_bare(&target, &["rev-parse", "refs/heads/main"])
 }
 
+/// The hosting target's branch history, newest first.
+pub fn site_target_history(w: &mut DutyWorld) -> Vec<String> {
+    let target = site_target(w);
+    git_bare(&target, &["rev-list", "main"])
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_string)
+        .collect()
+}
+
 /// Read the page the serving address returns.
 pub fn site_served_page(w: &mut DutyWorld) -> String {
     let url = site_verify_url(w);

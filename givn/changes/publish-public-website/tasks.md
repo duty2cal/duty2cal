@@ -490,7 +490,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     `1 scenario (1 passed)`, `6 steps (6 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): refuse an unresolvable comparison base`
       (body: the scenario title).
-  - Revision:
+  - Revision: 7a00099
 
 ### T12 — A driver package tree installed from a different lockfile is refused and the lockfile is named
 
@@ -569,14 +569,30 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   commit nothing, push nothing. Assert the target history holds no new commit.
 - Domain constraints: a maintainer re-running the publication must not create a
   second identical commit; manual dispatch is a supported trigger.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — idempotent comparison and exit.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): report an unchanged target as current`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "Republishing an unchanged revision reports the target as current and writes nothing"`
+    → `✘ Given a hosting target holding the Site output built from "abc1234"` /
+    `Step panicked. Captured output: not implemented: a hosting target holding
+    the Site output built from a revision`, `1 scenario (1 failed)`; exit 101.
+- [x] GREEN — idempotent comparison and exit.
+  - Production files: `scripts/publish-site.sh` (the fetched tip's tree is
+    compared with the assembled output through `target_holds_output`; on
+    equality the command stages, commits and pushes nothing, still re-reads the
+    address through one `verify_served` — so a re-run of a served revision
+    re-verifies the host — and prints `already current`, exit 0),
+    `apps/cli/tests/steps/support.rs` (`site_target_history`),
+    `apps/cli/tests/steps/publish_public_website.rs` (the scenario's steps; the
+    fixture target's history is recorded before the re-run).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `4 steps (4 passed)`,
+    exit 0; the publication printed `already current`, the target's tip and
+    its whole `rev-list` were unchanged, and the rebuilt output compared equal
+    to the target's tree.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: the idempotent decision and the serving check are single
+    functions (`target_holds_output`, `verify_served`) shared by both outcomes,
+    so the re-run path cannot skip the address; scoped re-run
+    `1 scenario (1 passed)`, `4 steps (4 passed)`, exit 0.
+- [x] COMMIT — `feat(publish-public-website): report an unchanged target as current`
       (body: the scenario title).
   - Revision:
 

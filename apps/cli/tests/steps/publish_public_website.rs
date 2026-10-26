@@ -745,3 +745,57 @@ async fn refused_naming_the_earlier_revision(w: &mut DutyWorld) {
         "the refused publication changed the hosting target"
     );
 }
+
+#[given(regex = r#"^a hosting target holding the Site output built from "([^"]+)"$"#)]
+async fn a_hosting_target_holding(w: &mut DutyWorld, revision: String) {
+    let url = support::site_set_up_target(w, &revision);
+    assert!(
+        url.starts_with("http://127.0.0.1:"),
+        "the fixture's serving address is not loopback: {url}"
+    );
+    assert_eq!(
+        support::site_target_members(w),
+        support::SITE_MEMBERS.to_vec(),
+        "the hosting target holds another member list"
+    );
+    let history = support::site_target_history(w);
+    assert!(!history.is_empty(), "the hosting target holds no history");
+    support::site_set(w, "target-history", &history.join("\n"));
+}
+
+#[when(regex = r#"^the release maintainer publishes the site from the revision "([^"]+)" again$"#)]
+async fn publish_from_the_revision_again(w: &mut DutyWorld, revision: String) {
+    let resolved = support::site_label(w, &revision);
+    support::site_set(w, "revision", &resolved);
+    support::site_publish(w);
+}
+
+#[then("the Site publication reports that the hosting target is already current")]
+async fn reports_the_target_as_current(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the republication failed:\n{}",
+        w.command_transcript
+    );
+    assert!(
+        w.stdout.lines().any(|line| line.trim() == "already current"),
+        "the publication did not report the target as current:\n{}",
+        w.command_transcript
+    );
+    assert_eq!(
+        support::site_get(w, "target-tip"),
+        Some(support::site_target_tip(w)),
+        "the republication wrote a commit into the hosting target"
+    );
+}
+
+#[then("the hosting target's history holds no new commit")]
+async fn the_target_history_holds_no_new_commit(w: &mut DutyWorld) {
+    let recorded = support::site_get(w, "target-history").expect("the fixture recorded no history");
+    let current = support::site_target_history(w).join("\n");
+    assert_eq!(
+        current, recorded,
+        "the hosting target's history grew without a changed publication"
+    );
+}

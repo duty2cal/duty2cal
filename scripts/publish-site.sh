@@ -217,50 +217,56 @@ if git -C "$stage" fetch -q origin "$branch" 2>/dev/null; then
 fi
 
 # Report an unchanged target as current: compare the fetched tip's tree with
-# the assembled output member by member.
-if [ -n "$tip" ]; then
+# the assembled output member by member. The footer carries the Built revision
+# text, so an equal tree is the same output for the same Built revision.
+target_holds_output() {
   mkdir -p "$scratch/tip"
-  if git -C "$stage" archive "$tip" | tar -x -C "$scratch/tip" 2>/dev/null \
-      && diff -r "$out" "$scratch/tip" >/dev/null 2>&1; then
-    echo "already current"
-    exit 0
+  git -C "$stage" archive "$tip" | tar -x -C "$scratch/tip" 2>/dev/null \
+    && diff -r "$out" "$scratch/tip" >/dev/null 2>&1
+}
+
+current=0
+if [ -n "$tip" ] && target_holds_output; then
+  current=1
+fi
+
+if [ "$current" -eq 0 ]; then
+  if [ -n "$tip" ]; then
+    git -C "$stage" checkout -q -B "$branch" "$tip"
+  else
+    git -C "$stage" checkout -q --orphan "$branch"
+  fi
+  find "$stage" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+  cp -R "$out"/. "$stage"/
+  git -C "$stage" add -A
+  git -C "$stage" \
+    -c user.name="duty2cal site publication" \
+    -c user.email="site-publication@duty2cal.invalid" \
+    commit -q -m "publish-site: publish the Site output built from $describe ($commit)"
+
+  if ! git -C "$stage" push -q origin "HEAD:refs/heads/$branch" 2>"$scratch/push.err"; then
+    cat "$scratch/push.err" >&2
+    refuse "the hosting target '$target' refused the publication"
+  fi
+
+  # Read the pushed tree back and compare the member list with the output.
+  pushed="$(git -C "$stage" rev-parse HEAD)"
+  git -C "$stage" fetch -q origin "$branch"
+  if [ "$(git -C "$stage" rev-parse FETCH_HEAD)" != "$pushed" ]; then
+    refuse "the hosting target '$target' does not hold the revision that was pushed"
+  fi
+  expected="$(cd "$out" && find . -type f | sed 's|^\./||' | LC_ALL=C sort)"
+  actual="$(git -C "$stage" ls-tree -r --name-only "$pushed" | LC_ALL=C sort)"
+  if [ "$expected" != "$actual" ]; then
+    printf 'publish-site: the Site output holds:\n%s\n' "$expected" >&2
+    printf 'publish-site: the hosting target holds:\n%s\n' "$actual" >&2
+    refuse "the hosting target '$target' holds a different member list than the Site output"
   fi
 fi
 
-if [ -n "$tip" ]; then
-  git -C "$stage" checkout -q -B "$branch" "$tip"
-else
-  git -C "$stage" checkout -q --orphan "$branch"
-fi
-find "$stage" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
-cp -R "$out"/. "$stage"/
-git -C "$stage" add -A
-git -C "$stage" \
-  -c user.name="duty2cal site publication" \
-  -c user.email="site-publication@duty2cal.invalid" \
-  commit -q -m "publish-site: publish the Site output built from $describe ($commit)"
-
-if ! git -C "$stage" push -q origin "HEAD:refs/heads/$branch" 2>"$scratch/push.err"; then
-  cat "$scratch/push.err" >&2
-  refuse "the hosting target '$target' refused the publication"
-fi
-
-# Read the pushed tree back and compare the member list with the output.
-pushed="$(git -C "$stage" rev-parse HEAD)"
-git -C "$stage" fetch -q origin "$branch"
-if [ "$(git -C "$stage" rev-parse FETCH_HEAD)" != "$pushed" ]; then
-  refuse "the hosting target '$target' does not hold the revision that was pushed"
-fi
-expected="$(cd "$out" && find . -type f | sed 's|^\./||' | LC_ALL=C sort)"
-actual="$(git -C "$stage" ls-tree -r --name-only "$pushed" | LC_ALL=C sort)"
-if [ "$expected" != "$actual" ]; then
-  printf 'publish-site: the Site output holds:\n%s\n' "$expected" >&2
-  printf 'publish-site: the hosting target holds:\n%s\n' "$actual" >&2
-  refuse "the hosting target '$target' holds a different member list than the Site output"
-fi
-
-# Verify the served page. Bounded reads: a fixed attempt count with a short
-# wait, never an unbounded loop.
+# Verify the served page, whether the target was replaced or was already
+# current: a re-run of the same revision re-reads the address. Bounded reads: a
+# fixed attempt count with a short wait, never an unbounded loop.
 fetch_page() {
   python3 - "$1" <<'PY' 2>/dev/null
 import sys
@@ -274,24 +280,33 @@ except Exception:
 PY
 }
 
-served=""
-attempt=0
-while [ "$attempt" -lt 20 ]; do
-  attempt=$((attempt + 1))
-  body="$(fetch_page "$verify_url" || true)"
-  if [ -n "$body" ]; then
-    served="$(printf '%s\n' "$body" \
-      | sed -n 's/.*data-site-statement="built-revision">\([^<]*\)<.*/\1/p' \
-      | head -n 1)"
-    if [ "$served" = "$describe" ]; then
-      break
+verify_served() {
+  served=""
+  attempt=0
+  while [ "$attempt" -lt 20 ]; do
+    attempt=$((attempt + 1))
+    body="$(fetch_page "$verify_url" || true)"
+    if [ -n "$body" ]; then
+      served="$(printf '%s\n' "$body" \
+        | sed -n 's/.*data-site-statement="built-revision">\([^<]*\)<.*/\1/p' \
+        | head -n 1)"
+      if [ "$served" = "$describe" ]; then
+        break
+      fi
     fi
-  fi
-  sleep 0.25
-done
+    sleep 0.25
+  done
 
-if [ "$served" != "$describe" ]; then
-  refuse "the address '$verify_url' serves the Built revision '${served:-nothing}' instead of '$describe'; the target holds the complete output built from $describe"
+  if [ "$served" != "$describe" ]; then
+    refuse "the address '$verify_url' serves the Built revision '${served:-nothing}' instead of '$describe'; the target holds the complete output built from $describe"
+  fi
+}
+
+verify_served
+
+if [ "$current" -eq 1 ]; then
+  echo "already current"
+  exit 0
 fi
 
 echo "publish-site: published $describe ($commit) to $target; $verify_url serves it"

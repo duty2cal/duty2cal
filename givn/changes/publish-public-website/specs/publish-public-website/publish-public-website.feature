@@ -138,7 +138,7 @@ Feature: Publish the public website
     Then the publication is refused and names the licensing check and the asset
     And the hosting target still serves the Site output built from "abc1234"
 
-  @givn.added @site-publication @wip
+  @givn.added @site-publication
   Scenario: Republishing an unchanged revision reports the target as current and writes nothing
     Given a hosting target holding the Site output built from "abc1234"
     When the release maintainer publishes the site from the revision "abc1234" again
