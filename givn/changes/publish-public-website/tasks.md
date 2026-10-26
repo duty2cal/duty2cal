@@ -790,7 +790,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-release): announce public website changes`
       (body: the scenario title).
-  - Revision:
+  - Revision: e13103be24b89bda6334866ead81058c3399d53a
 
 ### T20 — The public text states the browser route beside the downloadable archive platform
 
@@ -834,7 +834,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     `1 scenario (1 passed)`, `6 steps (6 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-release): state the browser route beside the published archive`
       (body: the scenario title).
-  - Revision:
+  - Revision: 2f0557c7ff63692f487108dce5ca9c8dfb79ef0f
 
 ### T21 — A release whose hosting target does not hold the tagged site revision is refused and publishes no release
 
@@ -883,7 +883,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     `1 scenario (1 passed)`, `6 steps (6 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-release): publish no release when the site target is stale`
       (body: the scenario title).
-  - Revision:
+  - Revision: f5309fb817b8a1cecf13ac749db88cc89b09be3c
 
 ### T22 — The published profile content states only supported claims and requests no third-party resource
 
@@ -925,7 +925,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     scoped re-run `1 scenario (1 passed)`, `13 steps (13 passed)`, exit 0.
 - [x] COMMIT — `feat(apply-configuration-change): state the browser route in the organization profile`
       (body: the scenario title).
-  - Revision:
+  - Revision: ba98451d6f2753a0ff1e4601f941b033bd764a53
 
 ### T22b — CI workflows: the reusable site publication, its callers, and the release dependency
 
@@ -1001,7 +1001,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     ${{ github.ref_name }}`, `236: scripts/publish-release.sh`.
 - [x] COMMIT — `ci(publish-public-website): publish the site from one reusable workflow`
       (body: CI workflows).
-  - Revision:
+  - Revision: 6b9e4c505d6a3b2499cd7b2cdc222ef3ca13055e
 
 ---
 
