@@ -58,7 +58,7 @@ Evidence:
   ```
   $ cargo check -p duty2cal --tests
       Checking cucumber v0.23.0
-      Checking duty2cal v0.1.0 (/home/dan/dev/PRIVATE/duty2cal/apps/cli)
+      Checking duty2cal v0.1.0 (<repo>/apps/cli)
       Finished `dev` profile [unoptimized + debuginfo] target(s) in 17.55s
   ```
 - [x] Fixture proof: one import per object and the no-op refresh; commands and
@@ -70,9 +70,9 @@ Evidence:
   tofu 1.13.1 (/etc/profiles/per-user/dan/bin/tofu)
   Python 3.14.7
   provider integrations/github 6.13.0 for linux_amd64
-  mirror /home/dan/.cache/duty2cal/terraform-provider-mirror
-  terraformrc /home/dan/.cache/duty2cal/terraformrc
-  export TF_CLI_CONFIG_FILE=/home/dan/.cache/duty2cal/terraformrc
+  mirror <cache>/terraform-provider-mirror
+  terraformrc <cache>/terraformrc
+  export TF_CLI_CONFIG_FILE=<cache>/terraformrc
   import ok github_organization_settings.org 343978778
   import ok github_repository.mono duty2cal
   import ok github_repository.pages duty2cal.github.io

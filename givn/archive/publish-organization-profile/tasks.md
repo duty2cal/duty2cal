@@ -557,8 +557,8 @@ Design constraints:
       $ ./scripts/setup-infra-tests.sh
       jq-1.8.2
       provider integrations/github 6.13.0 for linux_amd64
-      mirror /home/dan/.cache/duty2cal/terraform-provider-mirror
-      terraformrc /home/dan/.cache/duty2cal/terraformrc
+      mirror <cache>/terraform-provider-mirror
+      terraformrc <cache>/terraformrc
       ...
       refresh-only plan (adopt-all) on the unchanged fake: No changes.
       unknown paths served: 0
@@ -900,7 +900,7 @@ Design constraints:
       EXIT:0
 
       $ bash scripts/public-text-check.sh
-      public-text-check: clean - all 14 public-text promises present in /home/dan/dev/PRIVATE/duty2cal/README.md
+      public-text-check: clean - all 14 public-text promises present in <repo>/README.md
       EXIT:0
 
       $ bash scripts/pii-guard.sh

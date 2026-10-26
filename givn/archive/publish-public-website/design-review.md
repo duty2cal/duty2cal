@@ -4,7 +4,7 @@
 - Reviewed: 2026-10-25, after the plan (proposal, specs, design, arc42 docs) and before `tasks.md`.
 - Grilling: a fresh read-only subagent (`PlanGrillA1`) walked every required branch against the artifacts and the harness source; the orchestrator verified each material claim against the repository before presenting a question.
 - Outcome: **PASS**. Every grilling question is answered, every operator decision is recorded below, and the hardening edits are applied.
-- Inputs: `givn/changes/publish-public-website/{proposal.md,specs/**,design.md,arc42.md}`, `givn/ideation/public-website/**`, `docs/arc42/**`, `docs/design/**`, the harness at `/home/dan/dev/PRIVATE/givn`.
+- Inputs: `givn/changes/publish-public-website/{proposal.md,specs/**,design.md,arc42.md}`, `givn/ideation/public-website/**`, `docs/arc42/**`, `docs/design/**`, the harness at `<givn>`.
 - Verification at sign-off: `givn lint --change publish-public-website` → **exit 2** (28 findings: 23 `@wip`, 5 pre-existing `PERS` advisories); no `UCDOC`, overlap, long-scenario or interaction finding. Every `@e2e` tag is intact. The approved reference renders at 360×780 and 1920×1080 with the icon loaded (natural size 1044 px) and nine statement elements.
 
 ## Grilling findings and dispositions

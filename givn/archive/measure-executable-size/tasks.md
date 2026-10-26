@@ -387,7 +387,7 @@ repository, a real cross-build and the real generator.
   target, `mingw-w64` and `cargo-bloat` are available. Paste output.
   - Evidence: `rustc --print target-list | grep x86_64-pc-windows-gnu` →
     `target-present`; `command -v cargo-bloat` →
-    `/home/dan/.cargo/bin/cargo-bloat`; `command -v x86_64-w64-mingw32-gcc` →
+    `<cargo-home>/bin/cargo-bloat`; `command -v x86_64-w64-mingw32-gcc` →
     the Nix mingw wrapper. The local Nix toolchain needs
     `CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS='-L <empty-libpthread-dir>'`
     because its mingw package omits `libpthread.a`; CI installs the Ubuntu

@@ -13,7 +13,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-duty2cal-pdf = { path = "/home/dan/dev/PRIVATE/duty2cal/crates/duty2cal-pdf" }
+duty2cal-pdf = { path = "<repo>/crates/duty2cal-pdf" }
 getrandom = { version = "0.4", features = ["wasm_js"] }
 ```
 
@@ -93,13 +93,13 @@ CARGO_TARGET_DIR=/tmp/wasmprobe-target cargo check --manifest-path /tmp/wasmprob
     Checking deranged v0.5.9
     Checking time-core v0.1.9
     Checking time v0.3.55
-    Checking duty2cal-core v0.1.0 (/home/dan/dev/PRIVATE/duty2cal/crates/duty2cal-core)
+    Checking duty2cal-core v0.1.0 (<repo>/crates/duty2cal-core)
    Compiling wasm-bindgen-macro v0.2.129
     Checking rand v0.10.3
     Checking lopdf v0.44.0
     Checking pdfplumber-parse v0.4.1
     Checking pdfplumber v0.4.1
-    Checking duty2cal-pdf v0.1.0 (/home/dan/dev/PRIVATE/duty2cal/crates/duty2cal-pdf)
+    Checking duty2cal-pdf v0.1.0 (<repo>/crates/duty2cal-pdf)
     Checking wasmprobe v0.1.0 (/tmp/wasmprobe)
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 52.75s
 ```

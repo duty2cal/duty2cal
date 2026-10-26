@@ -573,7 +573,7 @@ $ grep -nE 'chmod \+x|shasum|Gatekeeper|all five platforms' README.md
 
 ```
 $ scripts/public-text-check.sh
-public-text-check: clean - all 14 public-text promises present in /home/dan/dev/PRIVATE/duty2ical/README.md
+public-text-check: clean - all 14 public-text promises present in <repo>/README.md
 $ grep -nE 'duty2cal-[^[:space:]]*-(linux-x86_64|linux-arm64|macos-arm64|macos-x86_64)\.tar\.gz' README.md
 (no output, exit 1)
 $ grep -nE '^\|[[:space:]]*(Linux x86_64|Linux arm64|macOS arm64|macOS x86_64)' README.md

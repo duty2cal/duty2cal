@@ -803,7 +803,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   - Evidence: scoped run → `1 scenario (1 passed)`, `6 steps (6 passed)`,
     exit 0; `bash scripts/public-text-check.sh` printed
     `public-text-check: clean - all 18 public-text promises present in
-    /home/dan/dev/PRIVATE/duty2cal/README.md`, exit 0. Both files carry
+    <repo>/README.md`, exit 0. Both files carry
     `https://duty2cal.github.io/` and name no `linux-`, `macos-` or `freebsd-`
     archive.
 - [x] REFACTOR — re-run scoped; exit 0.

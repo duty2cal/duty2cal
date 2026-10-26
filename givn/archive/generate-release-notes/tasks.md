@@ -628,7 +628,7 @@ Not observable through a Gherkin scenario; each is verified by running it or by 
   README check: OK
   readme_check=0
   $ bash scripts/public-text-check.sh
-  public-text-check: clean - all 12 public-text promises present in /home/dan/dev/PRIVATE/duty2ical/README.md
+  public-text-check: clean - all 12 public-text promises present in <repo>/README.md
   public_text=0
   ```
   Committed as `7447a57`. The subsection `### Releasing a version` sits immediately after `<!-- givn:end:development -->`, outside the managed markers, so it reads as part of the Development section without editing it; the givn-managed blocks are untouched and `givn readme check` stays OK. The procedure inside it was corrected by the review (see F2 below): the renderer can run before the tag exists, the change log commit carries the tagged revision's own committer date, and the push sends the branch and the tag.
@@ -669,7 +669,7 @@ Not observable through a Gherkin scenario; each is verified by running it or by 
 - [x] Public text and private data — `bash scripts/public-text-check.sh` and `bash scripts/pii-guard.sh`:
   ```
   $ bash scripts/public-text-check.sh
-  public-text-check: clean - all 12 public-text promises present in /home/dan/dev/PRIVATE/duty2ical/README.md
+  public-text-check: clean - all 12 public-text promises present in <repo>/README.md
   public_text=0
   $ bash scripts/pii-guard.sh
   pii-guard: clean
@@ -808,8 +808,8 @@ Each item below was found by the review phase and is ticked with the evidence th
   ```
   [00:30:54] ✓ development managed block refreshed
   [00:30:54] ✓ run managed block refreshed
-  [00:30:54] ✓ Archived 'generate-release-notes' to /home/dan/dev/PRIVATE/duty2ical/givn/archive/generate-release-notes
-  Verification receipt: /home/dan/dev/PRIVATE/duty2ical/givn/archive/generate-release-notes/verification.json
+  [00:30:54] ✓ Archived 'generate-release-notes' to <repo>/givn/archive/generate-release-notes
+  Verification receipt: <repo>/givn/archive/generate-release-notes/verification.json
 
   Change archived successfully.
   The delta specs have been merged into givn/specs/.

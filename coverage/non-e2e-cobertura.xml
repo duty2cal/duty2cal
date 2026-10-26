@@ -2,7 +2,7 @@
 <!DOCTYPE coverage SYSTEM "https://cobertura.sourceforge.net/xml/coverage-04.dtd">
 <coverage branch-rate="0" branches-covered="0" branches-valid="0" complexity="0" line-rate="0.9843400447427293" lines-covered="880" lines-valid="894" timestamp="1793013750" version="2.0.3">
     <sources>
-        <source>/home/dan/dev/PRIVATE/duty2cal</source>
+        <source><repo></source>
     </sources>
     <packages>
         <package line-rate="0.9803921568627451" branch-rate="0" name="crates.duty2cal-core.src.domain" complexity="0">
