@@ -549,6 +549,37 @@ fn path_str(path: &Path) -> &str {
     path.to_str().expect("the fixture path is valid UTF-8")
 }
 
+/// Assemble the Site output from one fixture revision, using the project's
+/// already-built browser bundle. The revision's own tree supplies the page, so
+/// the output carries that revision's Built revision text.
+pub fn site_output_at_revision(w: &mut DutyWorld, revision: &str) -> PathBuf {
+    let repo = site_repository(w);
+    let dir = site_directory(w).join("earlier-site");
+    let work = dir.join("tree");
+    let output = dir.join("output");
+    let _ = fs::remove_dir_all(&dir);
+    fs::create_dir_all(&dir).expect("create the earlier Site directory");
+    git_ok(
+        &repo,
+        &["worktree", "add", "--detach", path_str(&work), revision],
+    );
+    copy_tree(&repository_root().join("web/pkg"), &work.join("web/pkg"));
+    let mut command = Command::new(work.join("scripts/build-site.sh"));
+    command
+        .arg("--repo")
+        .arg(&work)
+        .arg("--revision")
+        .arg(revision)
+        .arg("--out")
+        .arg(&output);
+    run_command(&mut command, "assemble the fixture's earlier Site output");
+    git_ok(
+        &repo,
+        &["worktree", "remove", "--force", path_str(&work)],
+    );
+    output
+}
+
 /// Fresh per-scenario directory, so concurrently executed scenarios never
 /// share a fixture.
 fn fresh_site_directory() -> PathBuf {
@@ -595,6 +626,11 @@ fn site_repository(w: &mut DutyWorld) -> PathBuf {
             .expect("link the driver tree into the fixture");
     }
     repo
+}
+
+/// The scenario's fixture clone, for a step that reads its history directly.
+pub fn site_repository_path(w: &mut DutyWorld) -> PathBuf {
+    site_repository(w)
 }
 
 /// The bare hosting target.
@@ -822,6 +858,22 @@ pub fn site_set_up_target(w: &mut DutyWorld, label: &str) -> String {
     );
     let revision = site_label(w, label);
     let populated = site_base_output();
+    site_set_up_target_with_output(w, &revision, &populated)
+}
+
+/// Populate the bare hosting target with the page built from `revision`, which
+/// the `@e2e` scenario uses as the earlier page a publication replaces.
+pub fn site_set_up_target_from(w: &mut DutyWorld, revision: &str) -> String {
+    let revision = site_resolve(w, revision);
+    let populated = site_output_at_revision(w, &revision);
+    site_set_up_target_with_output(w, &revision, &populated)
+}
+
+fn site_set_up_target_with_output(
+    w: &mut DutyWorld,
+    revision: &str,
+    populated: &Path,
+) -> String {
     let target = site_target(w);
     fs::create_dir_all(site_directory(w)).expect("create the fixture directory");
     let mut init = Command::new("git");
@@ -835,7 +887,7 @@ pub fn site_set_up_target(w: &mut DutyWorld, label: &str) -> String {
     init.arg("init").arg("-q").arg(&stage);
     fixture_env(&mut init);
     run_command(&mut init, "create the fixture target staging tree");
-    copy_tree(&populated, &stage);
+    copy_tree(populated, &stage);
     git_ok(&stage, &["add", "-A"]);
     git_ok(
         &stage,
@@ -845,9 +897,9 @@ pub fn site_set_up_target(w: &mut DutyWorld, label: &str) -> String {
     git_ok(&stage, &["push", "-q", "origin", "HEAD:refs/heads/main"]);
 
     let tip = git_bare(&target, &["rev-parse", "refs/heads/main"]);
-    let describe = site_describe(w, &revision);
+    let describe = site_describe(w, revision);
     site_set(w, "target-tip", &tip);
-    site_set(w, "base-revision", &revision);
+    site_set(w, "base-revision", revision);
     site_set(w, "base-describe", &describe);
 
     let port = site_server_port(w, &[]);
@@ -855,6 +907,24 @@ pub fn site_set_up_target(w: &mut DutyWorld, label: &str) -> String {
     let url = format!("http://127.0.0.1:{port}/");
     site_set(w, "verify-url", &url);
     url
+}
+
+/// Check the hosting target's branch tip out into a directory, so the browser
+/// driver can serve exactly the tree the target holds.
+pub fn site_target_checkout(w: &mut DutyWorld) -> PathBuf {
+    let target = site_target(w);
+    let dir = site_directory(w).join("target-tree");
+    let _ = fs::remove_dir_all(&dir);
+    git_bare(
+        &target,
+        &["worktree", "add", "--detach", path_str(&dir), "main"],
+    );
+    assert!(
+        dir.join("index.html").is_file(),
+        "the hosting target's checkout holds no page: {}",
+        dir.display()
+    );
+    dir
 }
 
 /// Start the fixture's loopback static server over the hosting target's branch

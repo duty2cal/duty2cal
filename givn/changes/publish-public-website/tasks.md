@@ -1009,27 +1009,85 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
 
 ### T23 — E2E environment, driver, and strict-subset proof
 
-- [ ] Configure the e2e run: `verify.e2e_command: ./run-tests.sh --e2e`
+- [x] Configure the e2e run: `verify.e2e_command: ./run-tests.sh --e2e`
       (distinct from `verify.command: ./run-tests.sh`), driver served through
       `DUTY2CAL_SITE_ROOT`, Chromium from the Playwright package (or
       `CHROMIUM_PATH` on NixOS), Node from `web/e2e/.nvmrc`, `web/e2e/node_modules`
       installed from the lockfile.
-- [ ] Bring up the local environment: a fixture repository clone with a real
+      - Evidence: `givn/commands.yaml:32` `command: "./run-tests.sh"` and
+        `:37` `e2e_command: "./run-tests.sh --e2e"` (distinct);
+        `web/e2e/driver.mjs:24-27` serves
+        `process.env.DUTY2CAL_SITE_ROOT` (falling back to `web/`), and the new
+        `BrowserDriver::start_serving` (in `apps/cli/tests/steps/browser.rs`)
+        sets `DUTY2CAL_SITE_ROOT` on the driver child only, so the `@e2e`
+        step points the driver at the hosting target's checked-out tree
+        (`support::site_target_checkout`). `node --version` → `v24.21.0`
+        against `web/e2e/.nvmrc` → `24`; `web/e2e/node_modules` is installed
+        from `web/e2e/package-lock.json`. Every run used
+        `CHROMIUM_PATH=/nix/store/r0f9i35n3r7rng8162xih4c1dag0s1vw-chromium-156.0.8078.47/bin/chromium`.
+        `run-tests.sh` now keeps `--name` usable with `--e2e` (cucumber-rs
+        refuses `--tags` together with `--name`); the named run drops only the
+        tag filter and still records the `e2e` scope.
+- [x] Bring up the local environment: a fixture repository clone with a real
       `v0.5.0` tag and three commits after it; a local bare target; loopback
       static servers over the target tree and over the earlier tree; the
       recording `gh` stand-in on `PATH`.
-- [ ] Prove strict mode for the e2e runner: one deliberately undefined e2e step
+      - Evidence: the scoped run created the scenario's fixture clone (a clone
+        of the project template with the real `v0.5.0` tag and three commits
+        after it: the `@e2e` Given asserts
+        `git rev-list --count v0.5.0..HEAD` = `3` and `git describe` =
+        `v0.5.0-3-g…`), the bare `…/site/target.git` (two commits after the
+        publication), the earlier `v0.5.0` page, and the loopback
+        `apps/cli/tests/support/site_server.py` over the target's branch tip
+        (`verify-url` = `http://127.0.0.1:<port>/`; the earlier tree twin is
+        the same server's `--earlier` mount used by the serving-refusal
+        scenario). The recording `gh` stand-in is `support::gh_stand_in`, put
+        on `PATH` for the release `@e2e` (`apps/cli/tests/steps/publish_public_release.rs:836,861`);
+        the site publication reaches no GitHub.
+- [x] Prove strict mode for the e2e runner: one deliberately undefined e2e step
       → scoped e2e run exits non-zero; paste it, remove the probe, re-run to 0.
-      - Evidence:
-- [ ] Prove the e2e filter is a strict subset: run `./run-tests.sh` and record
+      - Evidence: with the scenario's first `@e2e` step left pending
+        (`unimplemented!()`),
+        `CHROMIUM_PATH=… DUTY2CAL_SKIP_WEB_BUILD=1 /tmp/duty2cal-tools/run ./run-tests.sh --e2e --name "Release maintainer publishes the site and the hosting target holds the built page"`
+        → `✘ Given a hosting target whose default branch serves an earlier page` /
+        `Step panicked. Captured output: not implemented: a hosting target whose default branch serves an earlier page` /
+        `1 scenario (1 failed)`, `1 step (1 failed)`, exit 101. The probe was
+        that stub body; replaced by the implementation, the same scoped command
+        → `1 scenario (1 passed)`, `14 steps (14 passed)`, exit 0.
+- [x] Prove the e2e filter is a strict subset: run `./run-tests.sh` and record
       its scenario count; run `./run-tests.sh --e2e` and record its count; the
       e2e count must be strictly less.
-      - Full count:
-      - E2E count:
-- [ ] Confirm the driver reaches the loopback environment with a smoke
+      - Full count: 216 scenarios (205 passed, 11 failed). The 11 failures are
+        confined to the two size capabilities, whose host limitation is
+        pre-existing and unrelated: `Measure the distributed executable's size`
+        (7 scenarios) and `Reduce the distributed executable's size`
+        (3 scenarios) build for `x86_64-pc-windows-gnu`, but this host carries
+        only the `x86_64-unknown-linux-musl` target standard library (the
+        fixture template already excludes those features for the same reason).
+        Exact failures: the attribution reports `- Status: unreadable` instead
+        of `## By crate` (e.g. `the report carries no "## By crate" section`)
+        and the lever reports `left: "failed"`, `right: "applied"`. Every
+        `publish-public-website` scenario passed, including the new `@e2e`
+        (`1 scenario (1 passed)`, `14 steps (14 passed)`).
+      - E2E count: 14 scenarios (12 passed, 2 failed). The two failures are the
+        `@e2e` scenarios of the same two size capabilities
+        (`Maintainer requests an attribution for a revision and reads the
+        report`, `Maintainer measures the panic-abort lever and the landed
+        executable is smaller`), for the same host limitation. 14 < 216, so
+        the e2e filter is a strict subset. Scoped `@e2e` result file:
+        `{"scope":"e2e","total":1,"passed":1,"failed":0,"skipped":0}`.
+- [x] Confirm the driver reaches the loopback environment with a smoke
       navigation before any scenario step is written.
       - Evidence:
-- [ ] COMMIT — `test(e2e): prepare the site publication browser environment`
+        `scripts/build-site.sh --repo . --revision HEAD --out /tmp/duty2cal-smoke-site`
+        → `build-site: assembled the Site output for v0.4.0-100-gb14bf00 (b14bf005ff17a6696d402f1fff897e7f255eaf45) into /tmp/duty2cal-smoke-site`;
+        then feeding `start` / `read_state` / `stop` to
+        `web/e2e/driver.mjs` with
+        `DUTY2CAL_SITE_ROOT=/tmp/duty2cal-smoke-site` and `CHROMIUM_PATH=…` →
+        `{"ok":true,"url":"http://127.0.0.1:32851/index.html","origin":"http://127.0.0.1:32851"}`,
+        `{"ok":true,"state":"empty","status":"No plan selected.","visibleText":"Duty plan to calendar … Before you choose a plan …"}`,
+        `{"ok":true}`.
+- [x] COMMIT — `test(e2e): prepare the site publication browser environment`
       (body: e2e setup).
       - Revision:
 

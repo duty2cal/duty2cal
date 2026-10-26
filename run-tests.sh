@@ -32,13 +32,28 @@ fi
 
 filter=()
 args=()
+has_name=0
+want_e2e=0
 for a in "$@"; do
   if [ "$a" = "--e2e" ]; then
     filter+=(--tags "@e2e")
+    want_e2e=1
   else
     args+=("$a")
   fi
+  if [ "$a" = "--name" ]; then
+    has_name=1
+  fi
 done
+
+# cucumber-rs rejects `--tags` together with `--name`. A named targeted run is
+# already scoped to the single scenario the operator named, so the tag filter
+# is dropped for it (the count proof and the full @e2e run keep the filter).
+# The scope recorded for the gate stays "e2e" when the operator asked for the
+# e2e run, even though the name, not the tag, selected the scenario.
+if [ "$has_name" = 1 ]; then
+  filter=()
+fi
 
 root="$(scripts/assemble-features.sh)"
 transcript="$(mktemp)"
@@ -51,9 +66,10 @@ cargo test -p duty2cal --test features_runner -- \
   ${filter[@]+"${filter[@]}"} ${args[@]+"${args[@]}"} 2>&1 | tee "$transcript" || status=$?
 
 if [ -n "${GIVN_RESULT_FILE:-}" ]; then
-  # The scope the gate asked for: "e2e" when the run is the @e2e filter.
+  # The scope the gate asked for: "e2e" when the run is the @e2e filter or the
+  # operator asked for the e2e run by name.
   scope="regular"
-  [ "${#filter[@]}" -gt 0 ] && scope="e2e"
+  [ "$want_e2e" = 1 ] && scope="e2e"
 
   summary="$(grep -E '^[0-9]+ scenarios?' "$transcript" | tail -1 || true)"
   total="${summary%% *}"

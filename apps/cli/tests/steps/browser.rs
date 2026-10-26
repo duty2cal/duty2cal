@@ -9,7 +9,7 @@
 //! unperformed action as success.
 
 use std::io::{BufRead, BufReader, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 
 use serde_json::{Map, Value};
@@ -41,16 +41,31 @@ pub struct BrowserDriver {
 impl BrowserDriver {
     /// Start one driver process for the current scenario.
     pub fn start() -> Self {
+        Self::spawn(None)
+    }
+
+    /// Start one driver process whose loopback server serves `root`, named to
+    /// the driver through `DUTY2CAL_SITE_ROOT`. The environment is set on the
+    /// driver child only, so a concurrently running scenario's driver keeps
+    /// serving its own tree.
+    pub fn start_serving(root: &Path) -> Self {
+        Self::spawn(Some(root))
+    }
+
+    fn spawn(root: Option<&Path>) -> Self {
         let script = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../web/e2e/driver.mjs");
-        let mut child = Command::new("node")
+        let mut command = Command::new("node");
+        command
             .arg(&script)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::inherit())
-            .spawn()
-            .unwrap_or_else(|error| {
-                panic!("start the browser driver {}: {error}", script.display())
-            });
+            .stderr(Stdio::inherit());
+        if let Some(root) = root {
+            command.env("DUTY2CAL_SITE_ROOT", root);
+        }
+        let mut child = command.spawn().unwrap_or_else(|error| {
+            panic!("start the browser driver {}: {error}", script.display())
+        });
         let stdin = child.stdin.take().expect("the driver owns a stdin pipe");
         let stdout = child.stdout.take().expect("the driver owns a stdout pipe");
         Self {
