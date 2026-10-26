@@ -52,8 +52,8 @@ fn evidence_dir() -> PathBuf {
 /// The published revision the scenario recorded, and the text the fixture's
 /// own history yields for it.
 fn published_revision(w: &mut DutyWorld) -> (String, String) {
-    let revision = support::site_get(w, "revision")
-        .expect("the scenario recorded no revision to publish");
+    let revision =
+        support::site_get(w, "revision").expect("the scenario recorded no revision to publish");
     let describe = support::site_describe(w, &revision);
     (revision, describe)
 }
@@ -366,7 +366,11 @@ fn assert_visual_baseline(state: &Value, displayed: &str) {
         "the {displayed} page does not have exactly one h1: {state}"
     );
     assert!(
-        !baseline["h1"].as_str().unwrap_or_default().trim().is_empty(),
+        !baseline["h1"]
+            .as_str()
+            .unwrap_or_default()
+            .trim()
+            .is_empty(),
         "the {displayed} page has no visible h1: {state}"
     );
     assert_eq!(
@@ -486,7 +490,10 @@ async fn a_hosting_target_with_an_earlier_page(w: &mut DutyWorld) {
     );
     let mut earlier = support::site_target_members(w);
     earlier.sort();
-    let mut expected: Vec<String> = SITE_MEMBERS.iter().map(|member| member.to_string()).collect();
+    let mut expected: Vec<String> = SITE_MEMBERS
+        .iter()
+        .map(|member| member.to_string())
+        .collect();
     expected.sort();
     assert_eq!(
         earlier, expected,
@@ -548,7 +555,9 @@ async fn the_target_holds_the_output(w: &mut DutyWorld) {
     );
     let page = support::site_target_file(w, "index.html");
     assert!(
-        page.contains(&format!("data-site-statement=\"built-revision\">{describe}<")),
+        page.contains(&format!(
+            "data-site-statement=\"built-revision\">{describe}<"
+        )),
         "the hosting target's page does not carry the Built revision {describe:?}"
     );
     assert!(
@@ -560,10 +569,18 @@ async fn the_target_holds_the_output(w: &mut DutyWorld) {
 #[then(
     regex = r#"^the hosting target holds exactly the page, the capability gate, the script, the stylesheet, the icon, "([^"]+)", "([^"]+)" and "([^"]+)"$"#
 )]
-async fn the_target_holds_exactly_the_members(w: &mut DutyWorld, first: String, second: String, third: String) {
+async fn the_target_holds_exactly_the_members(
+    w: &mut DutyWorld,
+    first: String,
+    second: String,
+    third: String,
+) {
     let mut members = support::site_target_members(w);
     members.sort();
-    let mut expected: Vec<String> = SITE_MEMBERS.iter().map(|member| member.to_string()).collect();
+    let mut expected: Vec<String> = SITE_MEMBERS
+        .iter()
+        .map(|member| member.to_string())
+        .collect();
     expected.sort();
     assert_eq!(
         members, expected,
@@ -608,9 +625,12 @@ async fn the_earlier_page_was_replaced(w: &mut DutyWorld) {
     let earlier_revision =
         support::site_get(w, "base-revision").expect("the scenario recorded no earlier revision");
     let earlier_describe = support::site_describe(w, &earlier_revision);
-    let earlier_page = support::site_target_git(w, &["show", &format!("{}:index.html", history[1])]);
+    let earlier_page =
+        support::site_target_git(w, &["show", &format!("{}:index.html", history[1])]);
     assert!(
-        earlier_page.contains(&format!("data-site-statement=\"built-revision\">{earlier_describe}<")),
+        earlier_page.contains(&format!(
+            "data-site-statement=\"built-revision\">{earlier_describe}<"
+        )),
         "the earlier page does not carry its own Built revision"
     );
 
@@ -621,7 +641,9 @@ async fn the_earlier_page_was_replaced(w: &mut DutyWorld) {
     );
     let page = support::site_target_file(w, "index.html");
     assert!(
-        !page.contains(&format!("data-site-statement=\"built-revision\">{earlier_describe}<")),
+        !page.contains(&format!(
+            "data-site-statement=\"built-revision\">{earlier_describe}<"
+        )),
         "the earlier page's Built revision survives in the hosting target"
     );
 }
@@ -769,11 +791,15 @@ async fn the_page_shows_its_ready_state(w: &mut DutyWorld) {
             .contains("Your calendar is ready to save."),
         "the ready status is not visible: {state}"
     );
-    let offers = state["offers"].as_array().expect("read_state returns offers");
+    let offers = state["offers"]
+        .as_array()
+        .expect("read_state returns offers");
     assert!(
         offers.iter().any(|offer| {
             offer["kind"].as_str() == Some("calendar")
-                && offer["name"].as_str().is_some_and(|name| name.ends_with(".ics"))
+                && offer["name"]
+                    .as_str()
+                    .is_some_and(|name| name.ends_with(".ics"))
         }),
         "the ready state offers no calendar download: {state}"
     );

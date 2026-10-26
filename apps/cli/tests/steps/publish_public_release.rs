@@ -17,8 +17,8 @@ use std::time::SystemTime;
 use cucumber::gherkin::Step;
 use cucumber::{given, then, when};
 
-use crate::DutyWorld;
 use crate::steps::support;
+use crate::DutyWorld;
 
 /// The supported platforms and the executable name each one uses, in release
 /// order. The script owns the canonical set; the steps speak it.
@@ -785,10 +785,7 @@ fn clone_hosting_target(source: &str, destination: &Path) {
 
 #[given(regex = r#"^a prepared release for the version "([^"]+)"$"#)]
 async fn a_prepared_release_for_the_version(w: &mut DutyWorld, tag: String) {
-    assert!(
-        tag.starts_with('v'),
-        "the step names a version tag: {tag}"
-    );
+    assert!(tag.starts_with('v'), "the step names a version tag: {tag}");
     let version = tag.trim_start_matches('v').to_string();
     build_history(
         w,
@@ -1266,7 +1263,11 @@ async fn public_text_states_the_browser_route(w: &mut DutyWorld, address: String
             "{name} names no Public website address: {folded}"
         );
     }
-    assert_eq!(w.exit_status, Some(0), "the checker did not accept the text");
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the checker did not accept the text"
+    );
 }
 
 #[then("the public text names Windows x86_64 as the only published archive platform")]
@@ -1381,7 +1382,10 @@ async fn a_released_revision_that_changed_only_the_documents(w: &mut DutyWorld) 
         "the document-only revision carries a released scope"
     );
     assert_eq!(
-        git_text(&repo, &["describe", "--tags", "--abbrev=0", "--match", "v*"]),
+        git_text(
+            &repo,
+            &["describe", "--tags", "--abbrev=0", "--match", "v*"]
+        ),
         "v0.2.0",
         "the history releases version 0.2.0"
     );

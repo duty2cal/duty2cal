@@ -1,3 +1,4 @@
+@export-duty-plan-calendar
 
 Feature: Export a duty-plan calendar
 

@@ -135,12 +135,13 @@ if ! run_revision_suite "$browser_result" \
 fi
 require_selection "browser check" "$browser_result" exactly-one
 
-# 4. The conversion suite: every non-browser scenario the revision holds. The
-#    @site-publication tag keeps a publication's own scenarios out of the suite
-#    it runs, so the gate can never re-enter itself.
+# 4. The conversion suite: the conversion capability's non-browser scenarios.
+#    Scoping to the capability keeps unrelated use cases (and their extra
+#    toolchain) out of the publication's gate, and the tag filters keep the
+#    browser scenario and the nested-build scenarios separate.
 conversion_result="$results/conversion.json"
 if ! run_revision_suite "$conversion_result" \
-    --tags "not @e2e and not @site-publication"; then
+    --tags "@export-duty-plan-calendar and not @e2e and not @nested-build"; then
   refuse "the conversion suite failed"
 fi
 require_selection "conversion suite" "$conversion_result" at-least-one

@@ -15,9 +15,6 @@ use crate::DutyWorld;
 /// The fixture's default-branch revision label the scenarios name.
 pub(crate) const BASE_REVISION: &str = "abc1234";
 
-/// The fixture's second revision label the scenarios name.
-pub(crate) const NEXT_REVISION: &str = "def5678";
-
 #[given(regex = r#"^a hosting target serving the Site output built from "([^"]+)"$"#)]
 async fn a_hosting_target_serving(w: &mut DutyWorld, revision: String) {
     let url = support::site_set_up_target(w, &revision);
@@ -37,7 +34,9 @@ async fn the_previous_revision(w: &mut DutyWorld, revision: String) {
     support::site_set(w, "since", &resolved);
 }
 
-#[given(regex = r#"^a default-branch revision "([^"]+)" that changes only the project's documents$"#)]
+#[given(
+    regex = r#"^a default-branch revision "([^"]+)" that changes only the project's documents$"#
+)]
 async fn a_documents_only_revision(w: &mut DutyWorld, revision: String) {
     let committed = support::site_commit_file(
         w,
@@ -50,7 +49,9 @@ async fn a_documents_only_revision(w: &mut DutyWorld, revision: String) {
     support::site_set(w, "revision", &committed);
 }
 
-#[given(regex = r#"^the release tag "([^"]+)" pushed on a revision "([^"]+)" that changes none of the site's inputs$"#)]
+#[given(
+    regex = r#"^the release tag "([^"]+)" pushed on a revision "([^"]+)" that changes none of the site's inputs$"#
+)]
 async fn a_release_tag_on_a_revision(w: &mut DutyWorld, tag: String, revision: String) {
     let resolved = support::site_label(w, &revision);
     let changed = support::site_changed_paths(w, "v0.5.0", &resolved);
@@ -84,11 +85,17 @@ async fn a_revision_the_repository_lacks(w: &mut DutyWorld) {
     support::site_set(w, "revision", "9999999");
 }
 
-#[given(regex = r#"^a working tree at the revision "([^"]+)" carrying edits to files the revision tracks$"#)]
+#[given(
+    regex = r#"^a working tree at the revision "([^"]+)" carrying edits to files the revision tracks$"#
+)]
 async fn an_unclean_working_tree(w: &mut DutyWorld, revision: String) {
     let resolved = support::site_label(w, &revision);
     support::site_checkout(w, &resolved);
-    support::site_append(w, "web/styles.css", "\n/* fixture edit: never committed */\n");
+    support::site_append(
+        w,
+        "web/styles.css",
+        "\n/* fixture edit: never committed */\n",
+    );
     // An untracked file cannot reach the Site output, so it must not refuse.
     support::site_write_untracked(
         w,
@@ -204,8 +211,8 @@ async fn the_target_still_serves(w: &mut DutyWorld, revision: String) {
     let page = support::site_served_page(w);
     let served = support::served_revision(&page)
         .unwrap_or_else(|| panic!("the served page carries no Built revision: {page}"));
-    let expected = support::site_get(w, "base-describe")
-        .expect("the fixture recorded no base revision text");
+    let expected =
+        support::site_get(w, "base-describe").expect("the fixture recorded no base revision text");
     assert_eq!(
         served, expected,
         "the address serves another Built revision than {revision}"
@@ -412,7 +419,8 @@ async fn refused_naming_the_missing_statement(w: &mut DutyWorld) {
 
 #[given("a source revision whose page's script attempts a request to another origin after the page loads")]
 async fn a_revision_whose_page_requests_another_origin(w: &mut DutyWorld) {
-    let script = "\n// The fixture revision asks another origin for a beacon once the page has loaded.\n\
+    let script =
+        "\n// The fixture revision asks another origin for a beacon once the page has loaded.\n\
                   window.addEventListener('load', () => {\n\
                     fetch('https://beacon.example/fixture-request').catch(() => {});\n\
                   });\n";
@@ -627,8 +635,8 @@ async fn an_address_serving_the_earlier_page(w: &mut DutyWorld) {
     let page = support::site_served_page(w);
     let served = support::served_revision(&page)
         .unwrap_or_else(|| panic!("the earlier page carries no Built revision: {page}"));
-    let expected = support::site_get(w, "base-describe")
-        .expect("the fixture recorded no base revision text");
+    let expected =
+        support::site_get(w, "base-describe").expect("the fixture recorded no base revision text");
     assert_eq!(
         served, expected,
         "the earlier address does not serve the page built from {BASE_REVISION}"
@@ -654,8 +662,8 @@ async fn refused_naming_the_address(w: &mut DutyWorld) {
         w.command_transcript
     );
     let url = support::site_verify_url(w);
-    let served = support::site_get(w, "base-describe")
-        .expect("the fixture recorded no base revision text");
+    let served =
+        support::site_get(w, "base-describe").expect("the fixture recorded no base revision text");
     let text = support::site_publication_text(w);
     assert!(
         text.contains(&url),
@@ -771,7 +779,9 @@ async fn reports_the_target_as_current(w: &mut DutyWorld) {
         w.command_transcript
     );
     assert!(
-        w.stdout.lines().any(|line| line.trim() == "already current"),
+        w.stdout
+            .lines()
+            .any(|line| line.trim() == "already current"),
         "the publication did not report the target as current:\n{}",
         w.command_transcript
     );
@@ -845,7 +855,9 @@ async fn the_earlier_page_is_in_the_history(w: &mut DutyWorld, revision: String)
     );
     let page = support::site_target_git(w, &["show", &format!("{base}:index.html")]);
     assert!(
-        page.contains(&format!("data-site-statement=\"built-revision\">{expected}<")),
+        page.contains(&format!(
+            "data-site-statement=\"built-revision\">{expected}<"
+        )),
         "the earlier page in the history does not carry its Built revision text: {page}"
     );
 }
@@ -931,7 +943,12 @@ async fn neither_publication_was_refused(w: &mut DutyWorld) {
             .unwrap_or_else(|| panic!("publication {index} recorded no exit status"));
         let log = support::site_publication_log(w, index);
         assert_eq!(status, 0, "publication {index} was refused:\n{log}");
-        for marker in ["non-fast-forward", "fetch first", "failed to push", "[rejected]"] {
+        for marker in [
+            "non-fast-forward",
+            "fetch first",
+            "failed to push",
+            "[rejected]",
+        ] {
             assert!(
                 !log.contains(marker),
                 "publication {index} reports a refused push ({marker}):\n{log}"
