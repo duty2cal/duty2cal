@@ -537,7 +537,7 @@ stored data.
 ## Step Definitions
 
 One file per capability; the delta steps are authored in the permanent tree, so
-each phrase's binding is already durable when the archive gate runs. Column 1 is
+each phrase's binding is already durable when the archive gate runs. Column 2 is
 the single path the integrity hook resolves.
 
 | Capability | Step definition file | Role | Permanent merge target |
