@@ -12,6 +12,10 @@ mod steps;
 
 #[derive(Debug, Default, cucumber::World)]
 pub struct DutyWorld {
+    /// Held for the duration of a site-publication scenario: the scenarios
+    /// build and gate nested checkouts, and running several of those at once
+    /// starves a small CI runner.
+    pub site_lock: Option<tokio::sync::MutexGuard<'static, ()>>,
     /// Per-scenario working directory.
     pub dir: Option<PathBuf>,
     /// The source file supplied for conversion.

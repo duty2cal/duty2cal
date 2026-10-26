@@ -12,6 +12,17 @@ use cucumber::{given, then, when};
 use crate::steps::support;
 use crate::DutyWorld;
 
+/// One site-publication scenario at a time. Each scenario builds and gates a
+/// nested checkout; a CI runner cannot carry several of those concurrently.
+static SITE_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+/// Take the site-publication slot for this scenario, once.
+pub(crate) async fn serialize(w: &mut DutyWorld) {
+    if w.site_lock.is_none() {
+        w.site_lock = Some(SITE_LOCK.lock().await);
+    }
+}
+
 /// The fixture's default-branch revision label the scenarios name.
 pub(crate) const BASE_REVISION: &str = "abc1234";
 
@@ -149,6 +160,7 @@ async fn a_revision_whose_browser_build_fails(w: &mut DutyWorld) {
 
 #[when("the release maintainer publishes the site from that revision, compared with the previous revision")]
 async fn publish_compared_with_the_previous_revision(w: &mut DutyWorld) {
+    serialize(w).await;
     assert!(
         support::site_get(w, "since").is_some(),
         "the scenario named no comparison base"
@@ -158,6 +170,7 @@ async fn publish_compared_with_the_previous_revision(w: &mut DutyWorld) {
 
 #[when("the release maintainer publishes the site from the tagged revision")]
 async fn publish_from_the_tagged_revision(w: &mut DutyWorld) {
+    serialize(w).await;
     let tag = support::site_get(w, "tag").expect("the scenario named no release tag");
     support::site_set(w, "revision", &tag);
     support::site_publish(w);
@@ -165,6 +178,7 @@ async fn publish_from_the_tagged_revision(w: &mut DutyWorld) {
 
 #[when("the release maintainer publishes the site from that revision")]
 async fn publish_from_that_revision(w: &mut DutyWorld) {
+    serialize(w).await;
     assert!(
         support::site_get(w, "revision").is_some(),
         "the scenario named no revision to publish"
@@ -706,6 +720,7 @@ async fn an_earlier_revision_the_repository_lacks(w: &mut DutyWorld, revision: S
 
 #[when("the release maintainer publishes the site from that revision, compared with that earlier revision")]
 async fn publish_compared_with_that_earlier_revision(w: &mut DutyWorld) {
+    serialize(w).await;
     assert!(
         support::site_get(w, "revision").is_some(),
         "the scenario named no revision to publish"
@@ -920,6 +935,7 @@ async fn two_publications_that_begin_together(w: &mut DutyWorld, revision: Strin
 
 #[when("both publications run to completion")]
 async fn both_publications_run_to_completion(w: &mut DutyWorld) {
+    serialize(w).await;
     assert_eq!(
         support::site_get(w, "publications").as_deref(),
         Some("2"),
