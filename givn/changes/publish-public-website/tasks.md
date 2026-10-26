@@ -662,7 +662,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): replace the hosting target's content as a whole`
       (body: the scenario title).
-  - Revision:
+  - Revision: 13eda8a
 
 ### T17 — A refused publication into the hosting target leaves the previous page
 
@@ -671,14 +671,30 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   `abc1234` page. No force push, no retry that bypasses the hook.
 - Domain constraints: minimal guarantee; the ruleset forbids non-fast-forward
   pushes.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — push failure propagation and named refusal.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): name a refused push and keep the previous page`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A refused publication into the hosting target leaves the previous page"`
+    → `✘ And a hosting target that refuses the incoming content` /
+    `Step panicked. Captured output: not implemented: a hosting target that
+    refuses the incoming content`, `1 scenario (1 failed)`; exit 101.
+- [x] GREEN — push failure propagation and named refusal.
+  - Production files: `apps/cli/tests/steps/support.rs`
+    (`site_refuse_pushes` now returns the hook it installed so the scenario can
+    assert it, `site_page_revision` commits the page-changing revision under a
+    scenario label, `site_target_url` names the target),
+    `apps/cli/tests/steps/publish_public_website.rs` (the scenario's steps).
+    `scripts/publish-site.sh` needed no change: step 6 already propagates the
+    push failure, prints the target's own rejection log and refuses with `the
+    hosting target '<target>' refused the publication`; this scenario is that
+    behaviour's regression test.
+  - Evidence: scoped run → `1 scenario (1 passed)`, `5 steps (5 passed)`,
+    exit 0; the refusal carried the target's path and the hook's message
+    `the hosting target refuses the incoming content`, and the target still
+    served the `abc1234` page with its history unchanged.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: the page-changing revision is one `site_page_revision` helper
+    used by the given step and the publication step, so the two fixtures cannot
+    drift; scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
+- [x] COMMIT — `feat(publish-public-website): name a refused push and keep the previous page`
       (body: the scenario title).
   - Revision:
 

@@ -164,7 +164,7 @@ Feature: Publish the public website
     And the hosting target holds no file the Site output does not contain
     And the page built from "abc1234" is in the hosting target's history
 
-  @givn.added @site-publication @wip
+  @givn.added @site-publication
   Scenario: A refused publication into the hosting target leaves the previous page
     Given a hosting target serving the Site output built from "abc1234"
     And a hosting target that refuses the incoming content

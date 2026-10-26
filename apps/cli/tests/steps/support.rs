@@ -986,6 +986,28 @@ pub fn site_target_members(w: &mut DutyWorld) -> Vec<String> {
         .collect()
 }
 
+/// Commit a revision that changes the page under `label` and return its
+/// commit. A comment inside the body is a different tree and a different Built
+/// revision, while every rendered statement and the visual baseline stay as
+/// they were, so the evidence gate passes.
+pub fn site_page_revision(w: &mut DutyWorld, label: &str) -> String {
+    let committed = site_commit_replace(
+        w,
+        "web/index.html",
+        "</body>",
+        "  <!-- fixture revision: republished page -->\n</body>",
+        "docs: fixture page revision",
+    );
+    let recorded = site_record_label(w, label);
+    assert_eq!(recorded, committed, "the fixture recorded another revision");
+    committed
+}
+
+/// The fixture's bare hosting target path, as a publication names it.
+pub fn site_target_url(w: &mut DutyWorld) -> String {
+    site_target(w).to_string_lossy().into_owned()
+}
+
 /// The hosting target's branch tip.
 pub fn site_target_tip(w: &mut DutyWorld) -> String {
     site_target_git(w, &["rev-parse", "refs/heads/main"])
@@ -1131,8 +1153,9 @@ pub fn installed_driver_tree() -> PathBuf {
 }
 
 /// Install a `pre-receive` hook that refuses every push into the fixture's
-/// hosting target, so a scenario can prove a refused replacement.
-pub fn site_refuse_pushes(w: &mut DutyWorld) {
+/// hosting target, so a scenario can prove a refused replacement. Returns the
+/// hook, so the scenario can assert it is in place.
+pub fn site_refuse_pushes(w: &mut DutyWorld) -> PathBuf {
     let target = site_target(w);
     let hooks = target.join("hooks");
     fs::create_dir_all(&hooks).expect("create the hosting target's hooks directory");
@@ -1148,6 +1171,7 @@ pub fn site_refuse_pushes(w: &mut DutyWorld) {
     fs::write(&hook, body).expect("write the hosting target's pre-receive hook");
     fs::set_permissions(&hook, fs::Permissions::from_mode(0o755))
         .expect("make the pre-receive hook executable");
+    hook
 }
 
 /// A scratch path the publication cannot create its worktree under.

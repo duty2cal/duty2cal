@@ -641,15 +641,7 @@ async fn a_revision_that_changes_the_page(w: &mut DutyWorld, revision: String) {
     // Built revision, while every rendered statement and the visual baseline
     // stay exactly as they were, so the gate passes and the serving check is
     // what refuses.
-    let committed = support::site_commit_replace(
-        w,
-        "web/index.html",
-        "</body>",
-        "  <!-- fixture revision: republished page -->\n</body>",
-        "docs: fixture page revision",
-    );
-    let recorded = support::site_record_label(w, &revision);
-    assert_eq!(recorded, committed, "the fixture recorded another revision");
+    let committed = support::site_page_revision(w, &revision);
     support::site_set(w, "revision", &committed);
 }
 
@@ -855,5 +847,48 @@ async fn the_earlier_page_is_in_the_history(w: &mut DutyWorld, revision: String)
     assert!(
         page.contains(&format!("data-site-statement=\"built-revision\">{expected}<")),
         "the earlier page in the history does not carry its Built revision text: {page}"
+    );
+}
+
+#[given("a hosting target that refuses the incoming content")]
+async fn a_target_that_refuses_the_incoming_content(w: &mut DutyWorld) {
+    let hook = support::site_refuse_pushes(w);
+    assert!(
+        hook.is_file(),
+        "the hosting target's refusing hook is not in place: {}",
+        hook.display()
+    );
+}
+
+#[when(regex = r#"^the release maintainer publishes the site from the revision "([^"]+)"$"#)]
+async fn publish_from_the_named_revision(w: &mut DutyWorld, revision: String) {
+    let resolved = support::site_page_revision(w, &revision);
+    support::site_set(w, "revision", &resolved);
+    support::site_publish(w);
+}
+
+#[then("the publication is refused and names the hosting target")]
+async fn refused_naming_the_hosting_target(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the publication was not refused:\n{}",
+        w.command_transcript
+    );
+    let target = support::site_target_url(w);
+    let text = support::site_publication_text(w);
+    assert!(
+        text.contains(&target),
+        "the refusal does not name the hosting target {target}:\n{text}"
+    );
+    assert!(
+        text.contains("refused the publication"),
+        "the refusal does not say the hosting target refused the publication:\n{text}"
+    );
+    // The refusal carries the target's own hook message, so the failure came
+    // from the hosting target and no retry bypassed the hook.
+    assert!(
+        text.contains("the hosting target refuses the incoming content"),
+        "the refusal does not carry the hosting target's own reason:\n{text}"
     );
 }
