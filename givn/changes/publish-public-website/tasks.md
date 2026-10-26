@@ -896,14 +896,34 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   (D6); this task changes the copy and the step, not the live apply.
 - Domain constraints: the profile copy is applied only after the site is live;
   the organization owner is a supporting lens, not an actor of the site change.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — profile copy and step replacement.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(apply-configuration-change): state the browser route in the organization profile`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "The published profile content states only supported claims and requests no third-party resource"`
+    → the published copy and converter step passed, then
+    `✘ And the profile content names Windows x86_64 as the only published
+    archive platform` / `Step doesn't match any function`,
+    `1 scenario (1 failed)`, `4 steps (3 passed, 1 failed)`; exit 101.
+- [x] GREEN — profile copy and step replacement.
+  - Production files: `org/profile/README.md` (the profile copy states the
+    browser route on the Public website at `https://duty2cal.github.io/`, names
+    Windows x86_64 as the only published archive platform, says builds for
+    other operating systems are available on request from a Rust toolchain,
+    keeps every link absolute and links the site repository);
+    `apps/cli/tests/steps/publish_organization_profile.rs` (the browser-claim
+    step and the platform step are replaced in place with the published-copy
+    assertions, and the steps for the other-platforms request and the Public
+    website link are added; the no-third-party-resource step now accepts the
+    project's own `duty2cal.github.io` host beside `github.com`, so the Public
+    website link is not mistaken for a foreign embed).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `13 steps (13 passed)`,
+    exit 0; the published copy carried the browser route, the canonical
+    address, the Windows-only published archive statement, the on-request
+    statement, absolute links to the project's own hosts and no image, badge
+    or third-party resource.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: every multi-line assertion reads the published copy through one
+    `folded` helper, so a wrapped sentence is asserted as the sentence it is;
+    scoped re-run `1 scenario (1 passed)`, `13 steps (13 passed)`, exit 0.
+- [x] COMMIT — `feat(apply-configuration-change): state the browser route in the organization profile`
       (body: the scenario title).
   - Revision:
 

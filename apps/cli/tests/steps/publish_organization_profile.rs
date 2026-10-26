@@ -438,6 +438,11 @@ fn assert_contains(text: &str, needle: &str) {
     );
 }
 
+/// A published copy's words on one line, so a wrapped sentence reads as one.
+fn folded(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
 /// A `jq` read that preserves the string's own bytes (no trailing-newline
 /// trimming), for content comparisons.
 fn jq_raw(w: &DutyWorld, filter: &str, report: &Path) -> String {
@@ -665,12 +670,14 @@ async fn the_profile_content_describes_the_local_converter(w: &mut DutyWorld) {
     assert_contains(&text, "no file leaves your device");
 }
 
-#[then("the profile content names Windows x86_64 as the only distributed platform")]
+#[then("the profile content names Windows x86_64 as the only published archive platform")]
 async fn the_profile_content_names_windows_only(w: &mut DutyWorld) {
     let text = published_profile(w);
     assert_contains(&text, "Windows x86_64");
-    assert_contains(&text, "Other platforms are not");
-    assert_contains(&text, "supported or distributed");
+    assert!(
+        folded(&text).contains("Windows x86_64 is the only published archive platform."),
+        "the profile content names no single published archive platform; content was:\n{text}"
+    );
     for other in ["macOS", "MacOS", "Linux", "linux", "three platforms"] {
         assert!(
             !text.contains(other),
@@ -679,15 +686,49 @@ async fn the_profile_content_names_windows_only(w: &mut DutyWorld) {
     }
 }
 
-#[then("the profile content makes no claim that the converter runs in a browser")]
-async fn the_profile_content_makes_no_browser_claim(w: &mut DutyWorld) {
-    let text = published_profile(w).to_lowercase();
-    for claim in ["browser", "wasm", "web app", "web ui", "web application"] {
-        assert!(
-            !text.contains(claim),
-            "the profile content makes no {claim} claim"
-        );
-    }
+#[then(
+    "the profile content states that builds for other operating systems are available on request"
+)]
+async fn the_profile_content_states_the_other_platforms_route(w: &mut DutyWorld) {
+    let text = published_profile(w);
+    assert!(
+        folded(&text).contains(
+            "Builds for other operating systems are available on request; \
+             their source can be built with a Rust toolchain."
+        ),
+        "the profile content states no route for another operating system; content was:\n{text}"
+    );
+}
+
+#[then(
+    regex = r#"^the profile content states that a current browser converts a plan on the public website at "([^"]+)"$"#
+)]
+async fn the_profile_content_states_the_browser_route(w: &mut DutyWorld, address: String) {
+    assert_eq!(
+        address, "https://duty2cal.github.io/",
+        "the step names the canonical Public website address"
+    );
+    let text = published_profile(w);
+    let folded = folded(&text);
+    assert!(
+        folded.contains("current browser converts a plan on the"),
+        "the profile content states no browser conversion route; content was:\n{text}"
+    );
+    assert_contains(&folded, &format!("[Public website]({address})"));
+    assert_contains(&folded, &address);
+}
+
+#[then(regex = r#"^the profile content links the public website at "([^"]+)"$"#)]
+async fn the_profile_content_links_the_public_website(w: &mut DutyWorld, address: String) {
+    assert_eq!(
+        address, "https://duty2cal.github.io/",
+        "the step names the canonical Public website address"
+    );
+    let text = published_profile(w);
+    assert!(
+        markdown_links(&text).iter().any(|link| link == &address),
+        "the profile content links no Public website; content was:\n{text}"
+    );
 }
 
 #[then(regex = r#"^the profile content links the stable latest-release address "([^"]+)"$"#)]
@@ -759,8 +800,9 @@ async fn the_profile_content_embeds_no_third_party_resource(w: &mut DutyWorld) {
     }
     for link in markdown_links(&text) {
         assert!(
-            link.starts_with("https://github.com/"),
-            "the profile content links only github.com; found {link:?}"
+            link.starts_with("https://github.com/")
+                || link.starts_with("https://duty2cal.github.io/"),
+            "the profile content links only the project's own hosts; found {link:?}"
         );
     }
 }

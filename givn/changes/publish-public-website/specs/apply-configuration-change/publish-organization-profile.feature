@@ -7,7 +7,7 @@ Feature: Publish the organization profile
   This delta replaces one scenario so the published copy stops denying the
   browser route the Public website now serves.
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The published profile content states only supported claims and requests no third-party resource
     Given the organization profile repository is published
     When a reader reads the published profile content

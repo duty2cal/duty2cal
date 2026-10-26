@@ -20,7 +20,9 @@ Rust toolchain. No archive is published for any other platform, and a platform
 may be added back when users request it.
 
 The source, the conversion rules, the tests and the release automation live in
-[duty2cal](https://github.com/duty2cal/duty2cal).
+[duty2cal](https://github.com/duty2cal/duty2cal); the Public website's generated
+output lives in
+[duty2cal.github.io](https://github.com/duty2cal/duty2cal.github.io).
 
 | Repository | Purpose |
 |---|---|
