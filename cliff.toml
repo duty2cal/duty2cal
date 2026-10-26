@@ -45,7 +45,7 @@ render_always = true
 [git]
 # The capability allow-list, read by the renderer and compared against the
 # use-case ids under `givn/specs/`.
-# <!-- capability-allow-list: export-duty-plan-calendar publish-public-release adopt-existing-configuration apply-configuration-change measure-distributed-executable-size reduce-distributed-executable-size -->
+# <!-- capability-allow-list: export-duty-plan-calendar publish-public-release publish-public-website adopt-existing-configuration apply-configuration-change measure-distributed-executable-size reduce-distributed-executable-size -->
 # The paths a user receives: the converter's crates and command-line
 # application, the browser bundle and its WebAssembly FFI, the build inputs that
 # decide what the executable contains, and the packaging and the release
