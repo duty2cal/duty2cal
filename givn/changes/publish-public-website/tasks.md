@@ -122,9 +122,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
         → `2 scenarios (2 passed)`, `13 steps (13 passed)`, exit 0.
 - [x] Confirm `givn lint --change publish-public-website` exits 0 or 2.
       - Evidence: `givn lint --change publish-public-website` → `3 file(s) checked, 28 finding(s)` (advisory persona references and `@wip` notes), exit 2.
-- [x] COMMIT — `chore(publish-public-website): prepare the site publication steps`
+- [x] COMMIT: b09405664342e9da4c6104aafcfbbbae74f6e3d0 -- chore(publish-public-website): prepare the site publication steps
       (body: setup task).
-      - Revision: b09405664342e9da4c6104aafcfbbbae74f6e3d0
 
 ---
 
@@ -160,9 +159,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
       exit 0.
   - Evidence: the site inputs are one list iterated by `site_input()`;
     scoped re-run `1 scenario (1 passed)`, `6 steps (6 passed)`, exit 0.
-- [x] COMMIT — `feat(publish-public-website): skip publication when a revision changes no site input`
+- [x] COMMIT: ed51e5db4f0ea9be9fb9f9a8ca8f6d322faf2a28 -- feat(publish-public-website): skip publication when a revision changes no site input
       (body: the scenario title).
-  - Revision: ed51e5db4f0ea9be9fb9f9a8ca8f6d322faf2a28
 
 ### T02 — A release tag republishes the site from the tagged revision and the footer names the tag
 
@@ -199,9 +197,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
 - [x] REFACTOR — re-run scoped; exit 0.
   - Evidence: the three logged build/gate failures share `fail_with_log`;
     scoped re-run `1 scenario (1 passed)`, `8 steps (8 passed)`, exit 0.
-- [x] COMMIT — `feat(publish-public-website): build a tagged publication from the tagged revision`
+- [x] COMMIT: 605f7be9ff5d9d3ddc44c06e7f5cd81b5cb0bbbc -- feat(publish-public-website): build a tagged publication from the tagged revision
       (body: the scenario title).
-  - Revision: 605f7be9ff5d9d3ddc44c06e7f5cd81b5cb0bbbc
 
 ### T03 — A Built revision that cannot be resolved refuses the publication
 
@@ -227,9 +224,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
 - [x] REFACTOR — re-run scoped; exit 0.
   - Evidence: scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`,
     exit 0.
-- [x] COMMIT — `feat(publish-public-website): refuse an unresolvable Built revision`
+- [x] COMMIT: 7a22d40607a877fadbb87bcbc397c28aac610388 -- feat(publish-public-website): refuse an unresolvable Built revision
       (body: the scenario title).
-  - Revision: 7a22d40607a877fadbb87bcbc397c28aac610388
 
 ### T04 — A source revision whose working tree carries changes it does not hold is refused
 
@@ -255,9 +251,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
 - [x] REFACTOR — re-run scoped; exit 0.
   - Evidence: scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`,
     exit 0.
-- [x] COMMIT — `feat(publish-public-website): refuse an unclean caller tree`
+- [x] COMMIT: 84ac95a3e5099d0ebdecfb18eee0314cc72ea752 -- feat(publish-public-website): refuse an unclean caller tree
       (body: the scenario title).
-  - Revision: 84ac95a3e5099d0ebdecfb18eee0314cc72ea752
 
 ### T05 — A revision whose tree cannot be checked out is refused and the worktree is named
 
@@ -281,9 +276,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
 - [x] REFACTOR — re-run scoped; exit 0.
   - Evidence: scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`,
     exit 0.
-- [x] COMMIT — `feat(publish-public-website): name a worktree that cannot be created`
+- [x] COMMIT: 4b4f8e55081593a20a00be9615d4041464786dc0 -- feat(publish-public-website): name a worktree that cannot be created
       (body: the scenario title).
-  - Revision: 4b4f8e55081593a20a00be9615d4041464786dc0
 
 ### T06 — A browser build that fails refuses the publication and names the build step
 
@@ -309,9 +303,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
 - [x] REFACTOR — re-run scoped; exit 0.
   - Evidence: scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`,
     exit 0.
-- [x] COMMIT — `feat(publish-public-website): name the browser build step when it fails`
+- [x] COMMIT: 58cecd3d18157a7753e557cbf351b37594e5ed25 -- feat(publish-public-website): name the browser build step when it fails
       (body: the scenario title).
-  - Revision: 58cecd3d18157a7753e557cbf351b37594e5ed25
 
 ### T07 — A page missing a public statement is refused and the statement is named
 
@@ -345,9 +338,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     `statement_count`/`statement_text`, and the absent-name exit is handled in
     `statement_count` instead of aborting under `pipefail`; scoped re-run
     `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
-- [x] COMMIT — `feat(publish-public-website): name a missing public statement`
+- [x] COMMIT: bc5ab02149e2ab5c72ea3e1c6f22197f2f98093a -- feat(publish-public-website): name a missing public statement
       (body: the scenario title).
-  - Revision: bc5ab02149e2ab5c72ea3e1c6f22197f2f98093a
 
 ### T08 — A page whose script requests another origin after it loads is refused and the browser check is named
 
@@ -393,9 +385,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   - Evidence: checks 3–4 share one `run_revision_suite` helper that owns
     `GIVN_RESULT_FILE`, `DUTY2CAL_SITE_ROOT` and `DUTY2CAL_SKIP_WEB_BUILD=1`;
     scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
-- [x] COMMIT — `feat(publish-public-website): refuse a page that requests another origin`
+- [x] COMMIT: 391a59d25d45a92d0ce1c3811a4e1e708186050c -- feat(publish-public-website): refuse a page that requests another origin
       (body: the scenario title).
-  - Revision: 391a59d25d45a92d0ce1c3811a4e1e708186050c
 
 ### T09 — A page that loads a third-party asset is refused and the page-content check is named
 
@@ -423,9 +414,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   - Evidence: the two foreign-asset patterns are one `foreign_asset_patterns`
     list read by one loop; scoped re-run `1 scenario (1 passed)`,
     `5 steps (5 passed)`, exit 0.
-- [x] COMMIT — `feat(publish-public-website): refuse a page that loads a foreign asset`
+- [x] COMMIT: 0effcaf4785775d6454226a66b3688b313f5ea6d -- feat(publish-public-website): refuse a page that loads a foreign asset
       (body: the scenario title).
-  - Revision: 0effcaf4785775d6454226a66b3688b313f5ea6d
 
 ### T10 — A failing conversion check is refused and the conversion suite is named
 
@@ -458,9 +448,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     contract (`exactly-one` for the browser check, `at-least-one` for the
     conversion suite), so `total == 0` refuses in one place; scoped re-run
     `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
-- [x] COMMIT — `feat(publish-public-website): name a failing conversion check`
+- [x] COMMIT: 22e731d6e6f49c0301790507dfd83b380d5b5996 -- feat(publish-public-website): name a failing conversion check
       (body: the scenario title).
-  - Revision: 22e731d6e6f49c0301790507dfd83b380d5b5996
 
 ### T11 — A revision the publication is asked to compare against cannot be resolved
 
@@ -488,9 +477,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   - Evidence: the comparison base and the Built revision resolve through one
     `resolve_commit` helper, so the two refusals cannot drift; scoped re-run
     `1 scenario (1 passed)`, `6 steps (6 passed)`, exit 0.
-- [x] COMMIT — `feat(publish-public-website): refuse an unresolvable comparison base`
+- [x] COMMIT: 7a000990310cfa8e4509c220f88533da7be208e8 -- feat(publish-public-website): refuse an unresolvable comparison base
       (body: the scenario title).
-  - Revision: 7a000990310cfa8e4509c220f88533da7be208e8
 
 ### T12 — A driver package tree installed from a different lockfile is refused and the lockfile is named
 
@@ -524,9 +512,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   - Evidence: both driver-tree refusals name one `prepare_driver` command, so
     the lockfile and the missing-tree paths cannot drift apart; scoped re-run
     `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
-- [x] COMMIT — `feat(publish-public-website): refuse a driver tree from a different lockfile`
+- [x] COMMIT: f23a944ea2d921109c62f04447a0e2daf3281ebe -- feat(publish-public-website): refuse a driver tree from a different lockfile
       (body: the scenario title).
-  - Revision: f23a944ea2d921109c62f04447a0e2daf3281ebe
 
 ### T13 — An asset without licence information is refused and the asset is named
 
@@ -558,9 +545,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   - Evidence: every refused check goes through one `refuse` helper, so the
     `site-evidence: …` prefix and the exit status cannot drift between the four
     checks; scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
-- [x] COMMIT — `feat(publish-public-website): name an unlicensed site asset`
+- [x] COMMIT: 699b9cca902c18233b42ddd7527b65adcd345c27 -- feat(publish-public-website): name an unlicensed site asset
       (body: the scenario title).
-  - Revision: 699b9cca902c18233b42ddd7527b65adcd345c27
 
 ### T14 — Republishing an unchanged revision reports the target as current and writes nothing
 
@@ -592,9 +578,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     functions (`target_holds_output`, `verify_served`) shared by both outcomes,
     so the re-run path cannot skip the address; scoped re-run
     `1 scenario (1 passed)`, `4 steps (4 passed)`, exit 0.
-- [x] COMMIT — `feat(publish-public-website): report an unchanged target as current`
+- [x] COMMIT: 468023861b959338b8571c527b6d244e3e0bf1b7 -- feat(publish-public-website): report an unchanged target as current
       (body: the scenario title).
-  - Revision: 468023861b959338b8571c527b6d244e3e0bf1b7
 
 ### T15 — An address that serves an earlier revision refuses the publication and is named
 
@@ -628,9 +613,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   - Evidence: both loopback servers — the target's branch tip and the earlier
     tree — start through one `site_server_port` helper; scoped re-run
     `1 scenario (1 passed)`, `6 steps (6 passed)`, exit 0.
-- [x] COMMIT — `feat(publish-public-website): name an address that serves an earlier revision`
+- [x] COMMIT: a2a79fe8d04ed9f5525c69eac46b486858dc03a4 -- feat(publish-public-website): name an address that serves an earlier revision
       (body: the scenario title).
-  - Revision: a2a79fe8d04ed9f5525c69eac46b486858dc03a4
 
 ### T16 — A hand edit in the hosting target is removed by the whole-content replacement
 
@@ -660,9 +644,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     `site_target_git` helper, so the step bodies cannot spell the bare
     repository differently; scoped re-run `1 scenario (1 passed)`, `7 steps (7
     passed)`, exit 0.
-- [x] COMMIT — `feat(publish-public-website): replace the hosting target's content as a whole`
+- [x] COMMIT: 13eda8a79f238641106f2d98e09ee33a3308c8b4 -- feat(publish-public-website): replace the hosting target's content as a whole
       (body: the scenario title).
-  - Revision: 13eda8a79f238641106f2d98e09ee33a3308c8b4
 
 ### T17 — A refused publication into the hosting target leaves the previous page
 
@@ -694,9 +677,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   - Evidence: the page-changing revision is one `site_page_revision` helper
     used by the given step and the publication step, so the two fixtures cannot
     drift; scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
-- [x] COMMIT — `feat(publish-public-website): name a refused push and keep the previous page`
+- [x] COMMIT: 692011639d042734d9241ebbe5602d226c6f36c1 -- feat(publish-public-website): name a refused push and keep the previous page
       (body: the scenario title).
-  - Revision: 692011639d042734d9241ebbe5602d226c6f36c1
 
 ### T18 — Two publications that begin together are serialized and neither is refused
 
@@ -727,19 +709,17 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     carried a non-fast-forward/rejected push, the target ended at `def5678` as
     one commit on the previous tip, and `.git/publish-site.lock` existed —
     the default path, with no `--lock` argument passed by the test.
-  - Unreconciled: `.github/workflows/site.yml` (and its caller `web.yml`) does
-    not exist in the tree and no task in this plan creates it, so the
-    `concurrency` group design.md assigns to it could not be recorded here; the
-    serialization this scenario proves is the command's `flock`. Reported to
-    the change owner rather than invented.
+  - Later resolved: T22b (`6b9e4c5`) created `.github/workflows/site.yml`
+    with the design's concurrency group and its `web.yml` caller; this
+    scenario proves the command's `flock`, and the workflow group is recorded
+    in that task.
 - [x] REFACTOR — re-run scoped; exit 0.
   - Evidence: a concurrent publication's log and exit status are read through
     one `site_publication_path` helper, and the single and concurrent runs share
     one command builder; scoped re-run `1 scenario (1 passed)`, `5 steps (5
     passed)`, exit 0.
-- [x] COMMIT — `feat(publish-public-website): serialize concurrent publications`
+- [x] COMMIT: 94f725779bf3765ee1373c3b7dda70b6f130010c -- feat(publish-public-website): serialize concurrent publications
       (body: the scenario title).
-  - Revision: 94f725779bf3765ee1373c3b7dda70b6f130010c
 
 ### T19 — A revision that changes the public website is announced in the release notes
 
@@ -788,9 +768,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     one `build_history_with` construction, so no scenario can create the
     capability without the configuration that names it; scoped re-run
     `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
-- [x] COMMIT — `feat(publish-public-release): announce public website changes`
+- [x] COMMIT: e13103be24b89bda6334866ead81058c3399d53a -- feat(publish-public-release): announce public website changes
       (body: the scenario title).
-  - Revision: e13103be24b89bda6334866ead81058c3399d53a
 
 ### T20 — The public text states the browser route beside the downloadable archive platform
 
@@ -832,9 +811,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     helper and every assertion folds whitespace through one
     `public_text_folded`, so no step re-implements the read; scoped re-run
     `1 scenario (1 passed)`, `6 steps (6 passed)`, exit 0.
-- [x] COMMIT — `feat(publish-public-release): state the browser route beside the published archive`
+- [x] COMMIT: 2f0557c7ff63692f487108dce5ca9c8dfb79ef0f -- feat(publish-public-release): state the browser route beside the published archive
       (body: the scenario title).
-  - Revision: 2f0557c7ff63692f487108dce5ca9c8dfb79ef0f
 
 ### T21 — A release whose hosting target does not hold the tagged site revision is refused and publishes no release
 
@@ -881,9 +859,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     recorded once in the Given and read through `support::site_get`, so the
     release step cannot spell a different tag or staged set; scoped re-run
     `1 scenario (1 passed)`, `6 steps (6 passed)`, exit 0.
-- [x] COMMIT — `feat(publish-public-release): publish no release when the site target is stale`
+- [x] COMMIT: f5309fb817b8a1cecf13ac749db88cc89b09be3c -- feat(publish-public-release): publish no release when the site target is stale
       (body: the scenario title).
-  - Revision: f5309fb817b8a1cecf13ac749db88cc89b09be3c
 
 ### T22 — The published profile content states only supported claims and requests no third-party resource
 
@@ -923,9 +900,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   - Evidence: every multi-line assertion reads the published copy through one
     `folded` helper, so a wrapped sentence is asserted as the sentence it is;
     scoped re-run `1 scenario (1 passed)`, `13 steps (13 passed)`, exit 0.
-- [x] COMMIT — `feat(apply-configuration-change): state the browser route in the organization profile`
+- [x] COMMIT: ba98451d6f2753a0ff1e4601f941b033bd764a53 -- feat(apply-configuration-change): state the browser route in the organization profile
       (body: the scenario title).
-  - Revision: ba98451d6f2753a0ff1e4601f941b033bd764a53
 
 ### T22b — CI workflows: the reusable site publication, its callers, and the release dependency
 
@@ -999,9 +975,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     }}\|publish-release.sh" .github/workflows/release.yml` →
     `148: uses: ./.github/workflows/site.yml`, `150: revision:
     ${{ github.ref_name }}`, `236: scripts/publish-release.sh`.
-- [x] COMMIT — `ci(publish-public-website): publish the site from one reusable workflow`
+- [x] COMMIT: 6b9e4c505d6a3b2499cd7b2cdc222ef3ca13055e -- ci(publish-public-website): publish the site from one reusable workflow
       (body: CI workflows).
-  - Revision: 6b9e4c505d6a3b2499cd7b2cdc222ef3ca13055e
 
 ---
 
@@ -1087,9 +1062,8 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
         `{"ok":true,"url":"http://127.0.0.1:32851/index.html","origin":"http://127.0.0.1:32851"}`,
         `{"ok":true,"state":"empty","status":"No plan selected.","visibleText":"Duty plan to calendar … Before you choose a plan …"}`,
         `{"ok":true}`.
-- [x] COMMIT — `test(e2e): prepare the site publication browser environment`
+- [x] COMMIT: 24d479752b518dd4b8bdae04d2a451d9935c40d7 -- test(e2e): prepare the site publication browser environment
       (body: e2e setup).
-      - Revision: 24d479752b518dd4b8bdae04d2a451d9935c40d7
 
 ---
 
@@ -1152,9 +1126,18 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     helpers were extracted →
     `1 scenario (1 passed)`, `14 steps (14 passed)`, exit 0;
     `{"scope":"e2e","total":1,"passed":1,"failed":0,"skipped":0}`.
-- [x] COMMIT — `test(e2e): publish the site and observe the built page`
+  - Visual-review follow-up (`1251699`): the per-persona vision review found
+    that the evidence captured only the scrolled viewport, so the header,
+    source/licence panel and footer were not all visible per viewport, and the
+    published footer copy differed from the approved reference. The capture now
+    passes `fullPage: true`, the footer reads "No account, email or upload is
+    needed." as the reference does, the permanent export assertion matches it,
+    and the scoped e2e re-ran green (`14 steps (14 passed)`, exit 0) with the
+    full-page evidence committed.
+- [x] COMMIT: e35aaa0be8c63e5719e03ab57116f6883d161166 -- test(e2e): publish the site and observe the built page
       (body: the scenario title).
-  - Revision: e35aaa0be8c63e5719e03ab57116f6883d161166
+      (the visual-review follow-up is `1251699`, which touches the page copy,
+      the screenshot capture and the permanent export assertion)
 
 ---
 
@@ -1162,7 +1145,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
 
 - [x] Every scenario box is checked with pasted evidence and exactly one
       reachable `COMMIT:` revision naming the scenario in its body.
-  - Evidence: 25 task sections parsed; every `Revision:` resolves, is an
+  - Evidence: 26 task sections parsed; every `COMMIT:` revision resolves, is an
     ancestor of `HEAD`, and each section carries exactly one revision (checked
     2026-10-26 with `git cat-file -e` + `git merge-base --is-ancestor`).
 - [x] Merged step definitions: every phrase bound by the delta step files is

@@ -30,6 +30,22 @@ if [ "${DUTY2CAL_SKIP_WEB_BUILD:-0}" != "1" ]; then
   scripts/build-web.sh
 fi
 
+# Every scenario drives the artifact the publication would gate. Unless the
+# caller already named a Site output (the publication's own gate does), assemble
+# `dist/site/` from the revision and hand it to the driver. A skipped build
+# reuses an existing assembly; without one the driver fails closed.
+if [ -z "${DUTY2CAL_SITE_ROOT:-}" ]; then
+  if [ "${DUTY2CAL_SKIP_WEB_BUILD:-0}" != "1" ]; then
+    scripts/build-site.sh \
+      --repo . \
+      --revision "$(git describe --tags --always --match 'v*')" \
+      --out dist/site
+  fi
+  if [ -f dist/site/index.html ]; then
+    export DUTY2CAL_SITE_ROOT="$PWD/dist/site"
+  fi
+fi
+
 filter=()
 args=()
 has_name=0

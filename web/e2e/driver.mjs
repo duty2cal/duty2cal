@@ -10,20 +10,21 @@ import { mkdir, readFile, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { createInterface } from 'node:readline';
 import { basename, dirname, extname, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import AxeBuilder from '@axe-core/playwright';
 import { chromium } from 'playwright';
 
-const WEB_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-
-// The publication's gate serves the assembled Site output, so the browser
-// check inspects the artifact it is about to publish. `DUTY2CAL_SITE_ROOT`
-// names that directory; without it the driver serves the working tree's web
-// directory, which is what a local `./run-tests.sh` run expects.
-const SERVED_ROOT = process.env.DUTY2CAL_SITE_ROOT
-  ? resolve(process.env.DUTY2CAL_SITE_ROOT)
-  : WEB_ROOT;
+// Every browser scenario serves the assembled Site output, so the check
+// inspects the artifact the publication would gate. `./run-tests.sh` assembles
+// `dist/site/` and exports it; the publication's gate points it at its own
+// output. There is no source-tree fallback: an unnamed root is a setup bug.
+const servedRoot = process.env.DUTY2CAL_SITE_ROOT;
+if (!servedRoot) {
+  throw new Error(
+    'DUTY2CAL_SITE_ROOT is required: the driver serves the assembled Site output (./run-tests.sh exports it)',
+  );
+}
+const SERVED_ROOT = resolve(servedRoot);
 
 const CONTENT_TYPES = {
   '.css': 'text/css; charset=utf-8',
