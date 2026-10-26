@@ -288,10 +288,15 @@ except Exception:
 PY
 }
 
+# Pages propagates asynchronously: a push is not a served page. The bound is
+# generous enough for a real deployment, while a test or a local twin can
+# shrink it through the two environment variables.
+verify_attempts="${DUTY2CAL_VERIFY_ATTEMPTS:-40}"
+verify_interval="${DUTY2CAL_VERIFY_INTERVAL:-5}"
 verify_served() {
   served=""
   attempt=0
-  while [ "$attempt" -lt 20 ]; do
+  while [ "$attempt" -lt "$verify_attempts" ]; do
     attempt=$((attempt + 1))
     body="$(fetch_page "$verify_url" || true)"
     if [ -n "$body" ]; then
@@ -302,7 +307,7 @@ verify_served() {
         break
       fi
     fi
-    sleep 0.25
+    sleep "$verify_interval"
   done
 
   if [ "$served" != "$describe" ]; then
