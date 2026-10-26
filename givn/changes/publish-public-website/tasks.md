@@ -594,7 +594,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     `1 scenario (1 passed)`, `4 steps (4 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): report an unchanged target as current`
       (body: the scenario title).
-  - Revision:
+  - Revision: 4680238
 
 ### T15 — An address that serves an earlier revision refuses the publication and is named
 
@@ -639,14 +639,28 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   page stays in the target's history.
 - Domain constraints: the page is never edited in the target; whole-content
   replacement is the only write path.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — tree replacement, fast-forward push.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): replace the hosting target's content as a whole`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A hand edit in the hosting target is removed by the whole-content replacement"`
+    → `✘ And a file added to the hosting target by hand` / `Step panicked.
+    Captured output: not implemented: a file added to the hosting target by
+    hand`, `1 scenario (1 failed)`; exit 101.
+- [x] GREEN — tree replacement, fast-forward push.
+  - Production files: `apps/cli/tests/steps/support.rs`
+    (`site_add_hand_file` pushes a real hand commit into the bare target,
+    `site_output_members`, `site_target_git`, `site_target_parents`),
+    `apps/cli/tests/steps/publish_public_website.rs` (the scenario's steps:
+    the hand-added file is gone, the target's members equal the output's, and
+    the new tip is one commit whose single parent is the target's previous tip)
+  - Evidence: scoped run → `1 scenario (1 passed)`, `7 steps (7 passed)`,
+    exit 0; the publication replaced the tree without a force push, the
+    hand-added file disappeared, and the commit built from `abc1234` stayed in
+    the history with its own footer text.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: every target read (`members`, `tip`, `history`) goes through one
+    `site_target_git` helper, so the step bodies cannot spell the bare
+    repository differently; scoped re-run `1 scenario (1 passed)`, `7 steps (7
+    passed)`, exit 0.
+- [x] COMMIT — `feat(publish-public-website): replace the hosting target's content as a whole`
       (body: the scenario title).
   - Revision:
 

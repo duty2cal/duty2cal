@@ -154,7 +154,7 @@ Feature: Publish the public website
     Then the publication is refused and names the address and the revision it serves
     And the hosting target holds the Site output built from "def5678"
 
-  @givn.added @site-publication @wip
+  @givn.added @site-publication
   Scenario: A hand edit in the hosting target is removed by the whole-content replacement
     Given a hosting target serving the Site output built from "abc1234"
     And a file added to the hosting target by hand

@@ -978,8 +978,7 @@ pub fn site_target_file(w: &mut DutyWorld, relative: &str) -> String {
 
 /// Every member of the hosting target's branch tip, sorted.
 pub fn site_target_members(w: &mut DutyWorld) -> Vec<String> {
-    let target = site_target(w);
-    git_bare(&target, &["ls-tree", "-r", "--name-only", "main"])
+    site_target_git(w, &["ls-tree", "-r", "--name-only", "main"])
         .lines()
         .map(str::trim)
         .filter(|line| !line.is_empty())
@@ -989,19 +988,82 @@ pub fn site_target_members(w: &mut DutyWorld) -> Vec<String> {
 
 /// The hosting target's branch tip.
 pub fn site_target_tip(w: &mut DutyWorld) -> String {
-    let target = site_target(w);
-    git_bare(&target, &["rev-parse", "refs/heads/main"])
+    site_target_git(w, &["rev-parse", "refs/heads/main"])
 }
 
 /// The hosting target's branch history, newest first.
 pub fn site_target_history(w: &mut DutyWorld) -> Vec<String> {
-    let target = site_target(w);
-    git_bare(&target, &["rev-list", "main"])
+    site_target_git(w, &["rev-list", "main"])
         .lines()
         .map(str::trim)
         .filter(|line| !line.is_empty())
         .map(str::to_string)
         .collect()
+}
+
+/// Run one git command against the hosting target and return its output.
+pub fn site_target_git(w: &mut DutyWorld, args: &[&str]) -> String {
+    let target = site_target(w);
+    git_bare(&target, args)
+}
+
+/// The parents of a revision in the hosting target.
+pub fn site_target_parents(w: &mut DutyWorld, revision: &str) -> Vec<String> {
+    site_target_git(w, &["rev-list", "--parents", "-n", "1", revision])
+        .split_whitespace()
+        .skip(1)
+        .map(str::to_string)
+        .collect()
+}
+
+/// Add a file to the hosting target by hand, as a person editing the branch
+/// would, and return the resulting tip.
+pub fn site_add_hand_file(w: &mut DutyWorld) -> String {
+    let target = site_target(w);
+    let stage = site_directory(w).join("hand-stage");
+    let _ = fs::remove_dir_all(&stage);
+    let mut clone = Command::new("git");
+    clone
+        .arg("clone")
+        .arg("-q")
+        .arg("-b")
+        .arg("main")
+        .arg(path_str(&target))
+        .arg(&stage);
+    fixture_env(&mut clone);
+    run_command(&mut clone, "clone the hosting target for the hand edit");
+    fs::write(
+        stage.join("hand-edited.html"),
+        "<!-- edited in the hosting target by hand -->\n",
+    )
+    .expect("write the hand-edited file");
+    git_ok(&stage, &["add", "hand-edited.html"]);
+    git_ok(
+        &stage,
+        &["commit", "-q", "-m", "hand edit: a page nobody published"],
+    );
+    git_ok(&stage, &["push", "-q", "origin", "HEAD:refs/heads/main"]);
+    git_bare(&target, &["rev-parse", "refs/heads/main"])
+}
+
+/// Every member of the publication's output directory, sorted.
+pub fn site_output_members(w: &mut DutyWorld) -> Vec<String> {
+    let out = site_output(w);
+    let mut members = Vec::new();
+    let mut pending = vec![out.clone()];
+    while let Some(directory) = pending.pop() {
+        for entry in fs::read_dir(&directory).expect("read the Site output directory") {
+            let path = entry.expect("read a Site output entry").path();
+            if path.is_dir() {
+                pending.push(path);
+            } else {
+                let relative = path.strip_prefix(&out).expect("a member under the output");
+                members.push(relative.to_string_lossy().into_owned());
+            }
+        }
+    }
+    members.sort();
+    members
 }
 
 /// Read the page the serving address returns.

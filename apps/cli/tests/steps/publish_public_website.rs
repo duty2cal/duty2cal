@@ -799,3 +799,61 @@ async fn the_target_history_holds_no_new_commit(w: &mut DutyWorld) {
         "the hosting target's history grew without a changed publication"
     );
 }
+
+#[given("a file added to the hosting target by hand")]
+async fn a_file_added_by_hand(w: &mut DutyWorld) {
+    let tip = support::site_add_hand_file(w);
+    let members = support::site_target_members(w);
+    assert!(
+        members.iter().any(|member| member == "hand-edited.html"),
+        "the hand edit did not reach the hosting target: {members:?}"
+    );
+    support::site_set(w, "hand-tip", &tip);
+}
+
+#[then("the hosting target holds no file the Site output does not contain")]
+async fn the_target_holds_only_output_members(w: &mut DutyWorld) {
+    let output = support::site_output_members(w);
+    let target = support::site_target_members(w);
+    assert_eq!(
+        target, output,
+        "the hosting target holds a file the Site output does not"
+    );
+    assert_eq!(
+        target,
+        support::SITE_MEMBERS.to_vec(),
+        "the hosting target holds another member list"
+    );
+    assert!(
+        !target.iter().any(|member| member == "hand-edited.html"),
+        "the hand-edited file survived the replacement: {target:?}"
+    );
+}
+
+#[then(regex = r#"^the page built from "([^"]+)" is in the hosting target's history$"#)]
+async fn the_earlier_page_is_in_the_history(w: &mut DutyWorld, revision: String) {
+    let label = support::site_label(w, &revision);
+    let expected = support::site_describe(w, &label);
+    assert_eq!(
+        support::site_get(w, "base-describe").as_deref(),
+        Some(expected.as_str()),
+        "the target's earlier page was not built from {revision}"
+    );
+    let base = support::site_get(w, "target-tip").expect("the fixture recorded no target tip");
+    let hand = support::site_get(w, "hand-tip").expect("the scenario added no hand edit");
+    let tip = support::site_target_tip(w);
+    assert_eq!(
+        support::site_target_parents(w, &tip),
+        vec![hand],
+        "the replacement is not one fast-forward commit on the target's previous tip"
+    );
+    assert!(
+        support::site_target_history(w).contains(&base),
+        "the page built from {revision} left the hosting target's history"
+    );
+    let page = support::site_target_git(w, &["show", &format!("{base}:index.html")]);
+    assert!(
+        page.contains(&format!("data-site-statement=\"built-revision\">{expected}<")),
+        "the earlier page in the history does not carry its Built revision text: {page}"
+    );
+}
