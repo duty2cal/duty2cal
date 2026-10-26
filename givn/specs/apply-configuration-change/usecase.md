@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:9d445cb118012f2e2c61ae55c4aed780a822cf7a65c001749c214f71eb41d8d1 -->
+<!-- givn:base-sha256:196bdb65dfee42513aede59f097c9b582448d784abcdf2b178cbd5ee81e8994f -->
 # Use case: apply-configuration-change
 
 ## Level

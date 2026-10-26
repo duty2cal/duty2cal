@@ -36,8 +36,10 @@ Feature: Publish the organization profile
     Given  the organization profile repository is published
     When  a reader reads the published profile content
     Then  the profile content describes the converter as a local tool that reads a crew duty plan and writes a calendar
-    And  the profile content names Windows x86_64 as the only distributed platform
-    And  the profile content makes no claim that the converter runs in a browser
+    And  the profile content names Windows x86_64 as the only published archive platform
+    And  the profile content states that builds for other operating systems are available on request
+    And  the profile content states that a current browser converts a plan on the public website at "https://duty2cal.github.io/"
+    And  the profile content links the public website at "https://duty2cal.github.io/"
     And  the profile content links the stable latest-release address "https://github.com/duty2cal/duty2cal/releases/latest"
     And  the profile content links the source repository "https://github.com/duty2cal/duty2cal" and the site repository "https://github.com/duty2cal/duty2cal.github.io"
     And  the profile content states that the project is not affiliated with any duty-plan provider or airline

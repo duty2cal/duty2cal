@@ -1,4 +1,4 @@
-<!-- givn:base-sha256: c01c72196fecabf26a00e45092a18aaa514b6dc9c55559952a8317ea3c7ae2fb -->
+<!-- givn:base-sha256: 13e7b521a19c8893f58b7899ce31ebe9464a66908f482bb75bc9618831c1cf7b -->
 # Use case: publish-public-release
 
 ## Level
@@ -24,13 +24,14 @@ The maintainer decides a version is ready and prepares its release.
 - The change log committed in the repository is current for the revision being released.
 - The Windows x86_64 executable has been built by the project's own automation and started on a Windows machine.
 - The public home exists and its owner-applied settings are in place: the gate on landing, secret scanning with push protection, the dependency alerts, code scanning, and release immutability.
+- The site publication consumes the pages publishing credential the declared configuration created; the release does not create, rotate or read it.
 
 ## Main flow
 
 1. Maintainer decides the version; System prepares one archive holding the Windows executable together with a checksum covering that archive, and renders the release text for the version as the newest section of the change log the repository keeps.
 2. Maintainer inspects what was prepared before anything is public; System stages the complete set and publishes nothing from an incomplete preparation.
-3. Maintainer publishes the version; System waits for every check on the tagged revision to conclude, refuses when the concluded set is not green, and otherwise makes the release public with the Windows archive attached at once, and the release cannot change from that moment.
-4. Crew member on Windows obtains the archive; System offers the Windows archive at a stable address, named for the platform it serves. Nothing is offered for any other platform.
+3. Maintainer publishes the version; System waits for every check on the tagged revision to conclude and refuses when the concluded set is not green; it then publishes the Public website from the tagged revision and confirms that the hosting target holds the Site output built from that revision; only then does it make the release public with the Windows archive attached at once, and the release cannot change from that moment.
+4. Crew member on Windows obtains the archive; System offers the Windows archive at a stable address, named for the platform it serves. No archive is offered for any other platform; the browser conversion route is served by the Public website, not by this release.
 5. Crew member extracts and runs the executable; System's published executable runs on Windows with no runtime installation and no companion library beyond the platform's own.
 6. Crew member, or anyone else, checks what they received; System publishes the archive's checksum, its build provenance and the bill of materials for it, so the file in hand can be traced to the revision and automation that produced it.
 7. Maintainer's release states what changed; System's release text is the newest section of the change log — the changes a user receives, grouped by kind, with dependency updates named beside them — rather than a flat list of revision subjects.
@@ -43,6 +44,8 @@ The maintainer decides a version is ready and prepares its release.
 - 1: an executable cannot be read → preparation fails and nothing is staged.
 - 1–2: the prepared set is incomplete or was not inspected → nothing is published.
 - 3: the version being published was already published → refuse; a published release's tag can never be reused, so a correction is a new version.
+- 3: the site publication for the tagged revision fails → the previous Public website stays, no archive is published for that version, and the failed site step is named; protects the release-site consistency the user requires of every release.
+- 3: the hosting target's branch tip does not hold the Site output built from the tagged revision → publication refuses and names the revision the target holds; the previous Public website stays and no archive is published, because a release must never announce a page that names another revision.
 - 5: the Windows executable does not start on Windows → the archive is not published for that version.
 - 1: a version's notes would name nothing at all — no change a user receives and no dependency update → preparation fails and nothing is published; a version whose notes name nothing at all is not releasable.
 - 1: the committed change log does not match the revision being released → preparation fails and nothing is published, naming the version whose section differs.
@@ -55,7 +58,8 @@ The maintainer decides a version is ready and prepares its release.
 ## Rules
 
 - **The supported platform set**
-  - The supported platform is Windows x86_64. Nothing else is supported, tested, distributed or offered for download. A platform may be added back only by a later change when users request it.
+  - The supported platform is Windows x86_64. Nothing else is supported, tested, distributed or offered for download as an archive. A platform may be added back only by a later change when users request it.
+  - "Supported platform" names the platforms a release offers as downloadable archives. The browser conversion route is a supported conversion route served by the Public website; it is not a platform of this release, adds no archive and changes nothing about the archive contract.
   - A release of a version offers exactly one archive — the Windows x86_64 archive — and never offers a promising platform that has no archive.
   - The archive's name states the tool, the version and the platform it serves, so a downloader selects by machine rather than by trial.
   - The archive holds the Windows executable under the name the platform uses — `duty2cal.exe` — and holds nothing else.
@@ -68,6 +72,9 @@ The maintainer decides a version is ready and prepares its release.
   - A version's release stays reachable after later versions are published, so a link to the latest release does not rot as versions change.
 - **Publication**
   - A release is prepared as a draft, inspected, and only then published; the Windows archive is attached before the release becomes public, and no asset is attached by hand.
+  - A version is published only after the Site publication for its tagged revision succeeded. A failed Site publication leaves the previous Public website in place, names the failed step and publishes no archive, so a version never lands while the page is stale or names another revision.
+  - Before any release command runs, the hosting target is confirmed: the publication reads the target's branch tip and refuses unless it carries the Site output built from the tagged revision, naming the revision the target holds. A target holding another revision blocks the release exactly as a failed Site publication does, because the release announces the page that names its tag.
+  - The checks on the tagged revision are read, then the site for the tag is published, and only then is the archive published: the order is the one a reader observes, so a site that cannot be served never leaves a public release behind it.
   - A published release is immutable: its archive cannot be replaced or deleted and its version tag cannot be moved, so a correction is the next version rather than a repair in place.
   - A version tag that has been published cannot be reused, not even after the release is deleted.
   - For a version that is the first one published, the revisions being released are all those reachable from the tagged revision, so a first release announces everything it contains.
@@ -102,8 +109,9 @@ The maintainer decides a version is ready and prepares its release.
   - The project's code and its own automation are scanned for vulnerabilities on the way in, and findings appear as reviewable alerts.
 - **The public text a reader lands on**
   - The project's README states the repository's own clone address, so the first command a reader runs works.
-  - It names the Windows x86_64 archive, states that other platforms are not supported or distributed and that their source can be built with a Rust toolchain, states that a platform may be added back when users request it, and gives the command that verifies the archive's checksum and the command that verifies its build provenance, so a downloader can act on a release without asking anyone.
-  - It states that an already-published release keeps its original assets and links, so only future releases are Windows-only.
+  - It names the Windows x86_64 archive, states that no archive is published for other platforms and that builds for them are available on request, states that a platform may be added back when users request it, and gives the command that verifies the archive's checksum and the command that verifies its build provenance, so a downloader can act on a release without asking anyone.
+  - It states the browser conversion route beside the archive: that a current browser converts a plan in the tab on the Public website at `https://duty2cal.github.io/`, so a reader does not read "Windows x86_64 only" as "no route without Windows".
+  - It states that an already-published release keeps its original assets and links, so only future releases change their published platform set.
   - It states the project's licence and links the licence text, and it keeps the third-party Unicode data file's own licence attributed rather than presenting two competing project licences.
   - The repository's description and topics, and its page's statement of the checks' state, are the host's rendering of that same text.
   - This text is checked by the project's own machinery before it is published, not merely written once.
@@ -112,6 +120,7 @@ The maintainer decides a version is ready and prepares its release.
   - No platform, gate or provenance promise is made before the evidence for it exists; the owner-applied settings are confirmed by the operator who applied them, and the remaining promises are exercised by the project's automation and recorded as the change's evidence.
 - **Where this interface ends**
   - This capability's own interface is the release preparation the maintainer runs, which the `@e2e` scenario drives through the real command and observes through its terminal output.
+  - The Site publication is the interface of `publish-public-website`: this release calls it and waits for it, and the page's content, gate and Built revision remain that use case's success.
   - Obtaining a file from the public host is the host's interface, and running the published tool is the interface of the use case to export a duty-plan calendar; neither is invented here as a second interaction.
   - The host-side promises above are exercised by the project's own publication automation and recorded as this change's evidence, and the settings only the repository owner can apply are confirmed by the operator who applied them.
 
@@ -138,7 +147,9 @@ The maintainer decides a version is ready and prepares its release.
 - Retagged unpublished version: a tag re-pushed to the same revision after an earlier release run failed -> the earlier release run's check suite is excluded along with the current one, so its failed publish check cannot block the new publication.
 - No check evidence: a tagged revision whose only check runs belong to the release workflow -> publication refuses, because the revision carries no check evidence outside that workflow.
 - Branch and tag pushed together: the default branch and the version tag pushed together while the checks are running -> publication waits for those checks and publishes only after they conclude green, so the atomic push no longer races the gate.
-- Downloading for a machine: a Windows x86_64 machine selects the Windows x86_64 archive, the one whose name matches that machine; nothing is offered for any other machine, and the source can be built with a Rust toolchain.
+- Downloading for a machine: a Windows x86_64 machine selects the Windows x86_64 archive, the one whose name matches that machine; no archive is published for any other machine, a current browser converts a plan on the Public website instead, builds for other operating systems are available on request, and the source can be built with a Rust toolchain.
+- Site publication fails for a tagged version: `v0.5.0` is tagged and the site publication refuses because the page requests a third-party asset → the previous Public website stays, the browser check is named, and no archive is published for `v0.5.0`.
+- Hosting target holds another revision: `v0.5.0` is tagged and its site publication succeeded, but the hosting target's branch tip still holds the page built from the previous revision → the release is refused, the revision the target holds is named, and no archive is published for `v0.5.0`.
 - Missing platform archive on the page: a Windows executable that failed to build stops the version from being published at all, rather than publishing it without Windows.
 - Notes grouped by kind: a history whose released revisions name a new capability, a fix, and work no user can see -> the notes for the version name the new capability before the fix, name no revision whose work no user can see, and form the newest section of the change log.
 - A change a user does not receive: a released revision that changed only the project's automation definitions, beside a released revision that changed the converter -> the notes name the converter change and no revision that changed only the automation, whatever the automation revision's subject says.
@@ -156,7 +167,7 @@ The maintainer decides a version is ready and prepares its release.
 
 ## Minimal guarantee
 
-Nothing is published that the evidence does not support: an incomplete preparation publishes nothing and never replaces an existing prepared set, and a credential or private value is blocked before it can enter the public history. A version is never published while a check on its tagged revision is still outstanding, and a concluded check that is not successful refuses it. A published release cannot be altered afterwards.
+Nothing is published that the evidence does not support: an incomplete preparation publishes nothing and never replaces an existing prepared set, and a credential or private value is blocked before it can enter the public history. A version is never published while a check on its tagged revision is still outstanding, and a concluded check that is not successful refuses it. A version is never published when the Site publication for its tagged revision failed, or when the hosting target does not hold the site revision its tag names; the previous Public website stays. A published release cannot be altered afterwards.
 
 ## Success guarantee
 
@@ -192,8 +203,9 @@ This is a changing use case: it issues a release, rather than observing one.
 
 - Changing the converter: no conversion rule, support boundary or diagnostic changes here.
 - Publishing packages: no container image, no registry publication, and no other package channel beyond the release archive.
-- Publishing Linux, macOS or any other platform: those platforms are not supported, tested or distributed, and their users may attempt a source build with a Rust toolchain; a platform returns only when users request it and a later change records it.
-- Platforms beyond Windows x86_64: Windows on ARM, 32-bit Windows, other Unixes and further Linux architectures are not supported or distributed; their users may attempt a source build with a Rust toolchain.
+- Publishing the website: the page, its gate and its Built revision are `publish-public-website`'s success. This use case waits for that publication and claims nothing about the page's content.
+- Publishing Linux, macOS or any other platform: those platforms have no published archive and are not tested by the project's automation; builds for them are available on request, and their users may attempt a source build with a Rust toolchain; a platform returns to the published set only when users request it and a later change records it. The browser conversion route is not an archive platform and is not published by a release.
+- Platforms beyond Windows x86_64: Windows on ARM, 32-bit Windows, other Unixes and further Linux architectures have no published archive; builds for them are available on request and their source can be built with a Rust toolchain.
 - Hosted documentation, discussions, a wiki, a development container, funding metadata and AI code review.
 - Repairing a published release in place, or removing or replacing an already-published Linux or macOS archive.
 - Merging dependency updates automatically, and bumping the deliberately pinned crates automatically.
