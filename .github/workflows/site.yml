@@ -97,4 +97,10 @@ jobs:
           )
           if [ -n "${REVISION:-}" ]; then args+=(--revision "$REVISION"); fi
           if [ -n "${SINCE:-}" ]; then args+=(--since "$SINCE"); fi
-          scripts/publish-site.sh "${args[@]}"
+          scripts/publish-site.sh "${args[@]}" 2>&1 | tee "$RUNNER_TEMP/site-publication.log"
+      - name: Upload the publication log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-publication-log
+          path: ${{ runner.temp }}/site-publication.log
