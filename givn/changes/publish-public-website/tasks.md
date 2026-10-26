@@ -1089,7 +1089,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
         `{"ok":true}`.
 - [x] COMMIT — `test(e2e): prepare the site publication browser environment`
       (body: e2e setup).
-      - Revision:
+      - Revision: 24d479752b518dd4b8bdae04d2a451d9935c40d7
 
 ---
 
@@ -1115,16 +1115,44 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
 - Domain constraints: success guarantee; K3, K4, K5; the crew member receives
   the calendar through the published page unchanged; the visitor reads the
   terms before the picker.
-- [ ] RED — remove `@wip` from this scenario only; run
+- [x] RED — remove `@wip` from this scenario only; run
       `./run-tests.sh --e2e --name "Release maintainer publishes the site and the hosting target holds the built page"`;
       must exit non-zero.
-  - Evidence:
-- [ ] GREEN — the e2e steps, driver root, assertions and screenshots.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped e2e; exit 0.
-  - Evidence:
-- [ ] COMMIT — `test(e2e): publish the site and observe the built page`
+  - Evidence: with `@wip` removed and the `@e2e` steps still pending,
+    `CHROMIUM_PATH=… DUTY2CAL_SKIP_WEB_BUILD=1 /tmp/duty2cal-tools/run ./run-tests.sh --e2e --name "Release maintainer publishes the site and the hosting target holds the built page"`
+    → `✘ Given a hosting target whose default branch serves an earlier page` /
+    `Step panicked. Captured output: not implemented: a hosting target whose default branch serves an earlier page` /
+    `1 scenario (1 failed)`, `1 step (1 failed)`, exit 101.
+- [x] GREEN — the e2e steps, driver root, assertions and screenshots.
+  - Production files: `apps/cli/tests/steps/e2e/publish_public_website.rs` (the
+    seven new step bodies plus the shared surface/visual-baseline assertions),
+    `apps/cli/tests/steps/support.rs` (the earlier-revision output builder, the
+    target set-up from an earlier revision, and the target checkout the driver
+    serves), `apps/cli/tests/steps/browser.rs`
+    (`BrowserDriver::start_serving`), `web/e2e/driver.mjs` (the `site`
+    observation: header mark and tab icon, both statement panels, footer
+    revision and link, statement attributes and computed tokens),
+    `givn/changes/publish-public-website/specs/publish-public-website/publish-public-website.feature`
+    (`@wip` removed).
+  - Evidence: scoped run →
+    `1 scenario (1 passed)`, `14 steps (14 passed)`, exit 0. The publication
+    wrote the eight members into the bare target and replaced the `v0.5.0`
+    page in one fast-forward commit; the driver served the target's checked-out
+    tree on loopback and Chromium asserted the Built revision
+    (`v0.5.0-3-g…`, the fixture's own `git describe`), the header icon and tab
+    icon, the six-statement terms panel with the operator's archive-route
+    wording before the picker, the source/licence panel and footer prose with
+    one statement attribute, no foreign-origin request, the empty → ready state
+    change, and the visual baseline (axe clean, `--motion-duration: 0ms`,
+    `--radius: 8px`, `--space: 1rem`) in both traversed states. Captured
+    `mobile.png` (360×780), `mobile--empty.png`, `desktop.png` (1920×1080) and
+    `desktop--empty.png` under the evidence directory above.
+- [x] REFACTOR — re-run scoped e2e; exit 0.
+  - Evidence: re-ran the same scoped command after the shared assertion
+    helpers were extracted →
+    `1 scenario (1 passed)`, `14 steps (14 passed)`, exit 0;
+    `{"scope":"e2e","total":1,"passed":1,"failed":0,"skipped":0}`.
+- [x] COMMIT — `test(e2e): publish the site and observe the built page`
       (body: the scenario title).
   - Revision:
 

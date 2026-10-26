@@ -146,11 +146,12 @@ async function waitUntilSettled() {
  * Read the visible state and the observations the steps assert on. With
  * `withBaseline`, also collect the rendered-state facts the visual baseline
  * asserts (labels, language, keyboard focus, reduced motion and the elements
- * that would ask for an account). This is observation only: it asserts
- * nothing and restores focus afterwards.
+ * that would ask for an account). With `withSite`, collect the published
+ * page's surfaces (header mark, statement panels, footer revision and tokens).
+ * This is observation only: it asserts nothing and restores focus afterwards.
  */
-async function readState(withBaseline = false) {
-  return page.evaluate(async (baseline) => {
+async function readState(withBaseline = false, withSite = false) {
+  return page.evaluate(async ({ baseline, site }) => {
     const statusText =
       document.getElementById('status')?.textContent?.trim() || '';
     const failure = document.getElementById('failure');
@@ -320,8 +321,125 @@ async function readState(withBaseline = false) {
         ].filter((input) => input.form !== null).length,
       };
     }
+    if (site) {
+      const tidy = (value) => (value || '').replace(/\s+/g, ' ').trim();
+      const sections = [...document.querySelectorAll('main > section')];
+      const sectionHeading = (section) =>
+        tidy(section.querySelector('h2')?.textContent);
+      const terms = sections.find(
+        (section) => sectionHeading(section) === 'Before you choose a plan',
+      );
+      const licence = sections.find(
+        (section) => sectionHeading(section) === 'Source and licence',
+      );
+      const picker = document.getElementById('plan-actions');
+      const footer = document.querySelector('footer');
+      const header = document.querySelector('header');
+      const icon = header?.querySelector('img');
+      const pageHeading = header?.querySelector('h1');
+      const subheadline = header?.querySelector('.lede');
+      const box = (element) => {
+        if (!element) {
+          return null;
+        }
+        const bounds = element.getBoundingClientRect();
+        return {
+          left: bounds.left,
+          right: bounds.right,
+          top: bounds.top,
+          bottom: bounds.bottom,
+          width: bounds.width,
+          height: bounds.height,
+        };
+      };
+      const statementsIn = (scope) =>
+        [...(scope?.querySelectorAll('[data-site-statement]') || [])].map(
+          (element) => ({
+            name: element.getAttribute('data-site-statement'),
+            tag: element.tagName.toLowerCase(),
+            text: tidy(element.textContent),
+            links: [...element.querySelectorAll('a[href]')].map((link) => ({
+              text: tidy(link.textContent),
+              href: link.href,
+            })),
+          }),
+        );
+      const tab = document.querySelector('link[rel="icon"]');
+      const revision = footer?.querySelector(
+        '[data-site-statement="built-revision"]',
+      );
+      const revisionLink = revision?.closest('a[href]');
+      const follows = (first, second) =>
+        Boolean(
+          first &&
+            second &&
+            (first.compareDocumentPosition(second) &
+              Node.DOCUMENT_POSITION_FOLLOWING) !==
+              0,
+        );
+      const tokens = getComputedStyle(document.documentElement);
+      const iconBox = box(icon);
+      const headingBox = box(pageHeading);
+      const subheadlineBox = box(subheadline);
+      observation.site = {
+        documentStatements: [
+          ...document.querySelectorAll('[data-site-statement]'),
+        ].map((element) => element.getAttribute('data-site-statement')),
+        terms: terms
+          ? {
+              heading: sectionHeading(terms),
+              statements: statementsIn(terms),
+              abovePicker: follows(terms, picker),
+            }
+          : null,
+        licence: licence
+          ? {
+              heading: sectionHeading(licence),
+              statements: statementsIn(licence),
+              belowPicker: follows(picker, licence),
+              aboveFooter: follows(licence, footer),
+            }
+          : null,
+        footer: footer
+          ? {
+              text: tidy(footer.innerText),
+              statements: statementsIn(footer).map(
+                (statement) => statement.name,
+              ),
+              revisionText: tidy(revision?.textContent),
+              revisionHref: revisionLink?.href || null,
+            }
+          : null,
+        header: {
+          iconAlt: icon?.getAttribute('alt') ?? null,
+          iconSrc: icon?.src ?? null,
+          iconBox,
+          headingBox,
+          subheadlineBox,
+          iconLeftOfHeading: Boolean(
+            iconBox && headingBox && iconBox.right <= headingBox.left,
+          ),
+          iconLeftOfSubheadline: Boolean(
+            iconBox && subheadlineBox && iconBox.right <= subheadlineBox.left,
+          ),
+          iconOverlapsHeadingRow: Boolean(
+            iconBox &&
+              headingBox &&
+              subheadlineBox &&
+              iconBox.top < subheadlineBox.bottom &&
+              iconBox.bottom > headingBox.top,
+          ),
+        },
+        tabIcon: { rel: tab?.getAttribute('rel') ?? null, href: tab?.href ?? null },
+        tokens: {
+          motionDuration: tokens.getPropertyValue('--motion-duration').trim(),
+          radius: tokens.getPropertyValue('--radius').trim(),
+          space: tokens.getPropertyValue('--space').trim(),
+        },
+      };
+    }
     return observation;
-  }, withBaseline);
+  }, { baseline: withBaseline, site: withSite });
 }
 
 /** The offer link matching one kind. */
@@ -488,7 +606,10 @@ const actions = {
       () => window.__duty2calBlockedRequests || [],
     );
     return {
-      ...(await readState(Boolean(params && params.baseline))),
+      ...(await readState(
+        Boolean(params && params.baseline),
+        Boolean(params && params.site),
+      )),
       requestLog: [
         ...requestLog,
         ...blocked.map((entry) => ({

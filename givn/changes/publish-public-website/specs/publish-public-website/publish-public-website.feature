@@ -12,7 +12,7 @@ Feature: Publish the public website
   the publication's own evidence gate can exclude them and never re-enter
   itself; they run in the ordinary suite on landing.
 
-  @givn.added @e2e @site-publication @wip
+  @givn.added @e2e @site-publication
   Scenario: Release maintainer publishes the site and the hosting target holds the built page
     Given a hosting target whose default branch serves an earlier page
     And a source revision three revisions after the release tag "v0.5.0"
