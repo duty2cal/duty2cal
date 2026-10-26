@@ -490,7 +490,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     `1 scenario (1 passed)`, `6 steps (6 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): refuse an unresolvable comparison base`
       (body: the scenario title).
-  - Revision: 7a00099
+  - Revision: 7a000990310cfa8e4509c220f88533da7be208e8
 
 ### T12 — A driver package tree installed from a different lockfile is refused and the lockfile is named
 
@@ -594,7 +594,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     `1 scenario (1 passed)`, `4 steps (4 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): report an unchanged target as current`
       (body: the scenario title).
-  - Revision: 4680238
+  - Revision: 468023861b959338b8571c527b6d244e3e0bf1b7
 
 ### T15 — An address that serves an earlier revision refuses the publication and is named
 
@@ -662,7 +662,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): replace the hosting target's content as a whole`
       (body: the scenario title).
-  - Revision: 13eda8a
+  - Revision: 13eda8a79f238641106f2d98e09ee33a3308c8b4
 
 ### T17 — A refused publication into the hosting target leaves the previous page
 
@@ -696,7 +696,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     drift; scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): name a refused push and keep the previous page`
       (body: the scenario title).
-  - Revision: 6920116
+  - Revision: 692011639d042734d9241ebbe5602d226c6f36c1
 
 ### T18 — Two publications that begin together are serialized and neither is refused
 
@@ -739,7 +739,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): serialize concurrent publications`
       (body: the scenario title).
-  - Revision:
+  - Revision: 94f725779bf3765ee1373c3b7dda70b6f130010c
 
 ### T19 — A revision that changes the public website is announced in the release notes
 
