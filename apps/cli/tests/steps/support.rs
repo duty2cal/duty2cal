@@ -486,6 +486,26 @@ fn build_site_template() -> PathBuf {
         fs::copy(&source, &destination)
             .unwrap_or_else(|error| panic!("overlay {relative}: {error}"));
     }
+    // The publication scenarios exercise the publication, not a second wasm
+    // compilation. The fixture revision carries the already-built bundle and a
+    // build step that only checks it, so a nested publication stays quick.
+    let fixture_pkg = template.join("web/pkg");
+    if !fixture_pkg.join("duty2cal_wasm.js").is_file() {
+        copy_tree(&repository_root().join("web/pkg"), &fixture_pkg);
+    }
+    let fast_build = template.join("scripts/build-web.sh");
+    fs::write(
+        &fast_build,
+        "#!/usr/bin/env bash\nset -euo pipefail\ncd \"$(dirname \"$0\")/..\"\n[ -f web/pkg/duty2cal_wasm.js ] || { echo 'the fixture revision carries no converter bundle' >&2; exit 1; }\n",
+    )
+    .expect("write the fixture's fast browser build");
+    Command::new("chmod")
+        .arg("+x")
+        .arg(&fast_build)
+        .status()
+        .expect("mark the fixture's browser build executable");
+    // Ignored in the project tree, but the fixture revision must carry it.
+    git_ok(&template, &["add", "-f", "web/pkg"]);
     git_ok(&template, &["add", "-A"]);
     git_ok(
         &template,
