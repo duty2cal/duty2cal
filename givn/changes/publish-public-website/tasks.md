@@ -696,7 +696,7 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
     drift; scoped re-run `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
 - [x] COMMIT — `feat(publish-public-website): name a refused push and keep the previous page`
       (body: the scenario title).
-  - Revision:
+  - Revision: 6920116
 
 ### T18 — Two publications that begin together are serialized and neither is refused
 
@@ -706,14 +706,38 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   concurrency group in `site.yml` (recorded, exercised on the host).
 - Domain constraints: two publications must not race; a refused loser would
   break the trigger promise.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — flock and serialized publish path.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): serialize concurrent publications`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "Two publications that begin together are serialized and neither is refused"`
+    → `✘ And two publications of the revision "def5678" that begin together`
+    / `Step panicked. Captured output: not implemented: two publications of a
+    revision that begin together`, `1 scenario (1 failed)`; exit 101.
+- [x] GREEN — flock and serialized publish path.
+  - Production files: `apps/cli/tests/steps/support.rs`
+    (`site_publication_command` is the one invocation both a single run and the
+    pair use, `site_publish_together` starts two publications together with
+    their own output directories and the default lock and records both logs and
+    exit statuses, `site_default_lock` names `.git/publish-site.lock`),
+    `apps/cli/tests/steps/publish_public_website.rs` (the scenario's steps).
+    `scripts/publish-site.sh` needed no change: the exclusive `flock` already
+    spans fetch, the current-target comparison, the replacement and the push,
+    and its default path is `$(git rev-parse --absolute-git-dir)/publish-site.lock`.
+  - Evidence: scoped run → `1 scenario (1 passed)`, `5 steps (5 passed)`,
+    exit 0; the pair exited 0/0, exactly one log printed
+    `publish-site: published …` and the other `already current`, neither log
+    carried a non-fast-forward/rejected push, the target ended at `def5678` as
+    one commit on the previous tip, and `.git/publish-site.lock` existed —
+    the default path, with no `--lock` argument passed by the test.
+  - Unreconciled: `.github/workflows/site.yml` (and its caller `web.yml`) does
+    not exist in the tree and no task in this plan creates it, so the
+    `concurrency` group design.md assigns to it could not be recorded here; the
+    serialization this scenario proves is the command's `flock`. Reported to
+    the change owner rather than invented.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: a concurrent publication's log and exit status are read through
+    one `site_publication_path` helper, and the single and concurrent runs share
+    one command builder; scoped re-run `1 scenario (1 passed)`, `5 steps (5
+    passed)`, exit 0.
+- [x] COMMIT — `feat(publish-public-website): serialize concurrent publications`
       (body: the scenario title).
   - Revision:
 

@@ -892,3 +892,71 @@ async fn refused_naming_the_hosting_target(w: &mut DutyWorld) {
         "the refusal does not carry the hosting target's own reason:\n{text}"
     );
 }
+
+#[given(regex = r#"^two publications of the revision "([^"]+)" that begin together$"#)]
+async fn two_publications_that_begin_together(w: &mut DutyWorld, revision: String) {
+    let base = support::site_label(w, BASE_REVISION);
+    let committed = support::site_page_revision(w, &revision);
+    let changed = support::site_changed_paths(w, &base, &committed);
+    assert!(
+        changed.iter().any(|path| path == "web/index.html"),
+        "the revision the pair publishes changes no site input: {changed:?}"
+    );
+    support::site_set(w, "revision", &committed);
+    support::site_set(w, "publications", "2");
+}
+
+#[when("both publications run to completion")]
+async fn both_publications_run_to_completion(w: &mut DutyWorld) {
+    assert_eq!(
+        support::site_get(w, "publications").as_deref(),
+        Some("2"),
+        "the scenario prepared no pair of publications"
+    );
+    support::site_publish_together(w);
+}
+
+#[then("neither publication was refused as a non-fast-forward push")]
+async fn neither_publication_was_refused(w: &mut DutyWorld) {
+    let lock = support::site_default_lock(w);
+    assert!(
+        lock.is_file(),
+        "the publications did not use the default lock at {}",
+        lock.display()
+    );
+    let mut current = 0;
+    let mut published = 0;
+    for index in 0..2 {
+        let status = support::site_publication_status(w, index)
+            .unwrap_or_else(|| panic!("publication {index} recorded no exit status"));
+        let log = support::site_publication_log(w, index);
+        assert_eq!(status, 0, "publication {index} was refused:\n{log}");
+        for marker in ["non-fast-forward", "fetch first", "failed to push", "[rejected]"] {
+            assert!(
+                !log.contains(marker),
+                "publication {index} reports a refused push ({marker}):\n{log}"
+            );
+        }
+        if log.contains("already current") {
+            current += 1;
+        }
+        if log.contains("publish-site: published") {
+            published += 1;
+        }
+    }
+    // The lock makes the pair sequential: one replaces the target, the other
+    // then finds exactly that output and reports it current.
+    assert_eq!(
+        (published, current),
+        (1, 1),
+        "the two publications did not serialize into one replacement and one current report:\n{}",
+        w.command_transcript
+    );
+    let base = support::site_get(w, "target-tip").expect("the fixture recorded no target tip");
+    let tip = support::site_target_tip(w);
+    assert_eq!(
+        support::site_target_parents(w, &tip),
+        vec![base],
+        "the pair did not end as one fast-forward commit on the target's previous tip"
+    );
+}

@@ -172,7 +172,7 @@ Feature: Publish the public website
     Then the publication is refused and names the hosting target
     And the hosting target still serves the Site output built from "abc1234"
 
-  @givn.added @site-publication @wip
+  @givn.added @site-publication
   Scenario: Two publications that begin together are serialized and neither is refused
     Given a hosting target serving the Site output built from "abc1234"
     And two publications of the revision "def5678" that begin together

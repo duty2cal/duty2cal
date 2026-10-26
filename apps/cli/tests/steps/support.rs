@@ -910,12 +910,12 @@ pub fn site_serve_earlier(w: &mut DutyWorld) -> String {
     url
 }
 
-/// Run the publication once, recording its exit status and both streams.
-pub fn site_publish(w: &mut DutyWorld) {
+/// The publication command for one revision and one output directory. The
+/// scenario's `--since`, scratch path and incremental artifact directory are
+/// part of the invocation, so a concurrent run uses the same publication as a
+/// single run.
+fn site_publication_command(w: &mut DutyWorld, revision: &str, out: &Path) -> Command {
     let repo = site_repository(w);
-    let revision = site_get(w, "revision").expect("the scenario named no revision to publish");
-    let since = site_get(w, "since");
-    let out = site_output(w);
     let target = site_target(w);
     let url = site_verify_url(w);
     let script = repository_root().join("scripts/publish-site.sh");
@@ -925,14 +925,14 @@ pub fn site_publish(w: &mut DutyWorld) {
         .arg("--repo")
         .arg(&repo)
         .arg("--revision")
-        .arg(&revision)
+        .arg(revision)
         .arg("--target")
         .arg(&target)
         .arg("--out")
-        .arg(&out)
+        .arg(out)
         .arg("--verify-url")
         .arg(&url);
-    if let Some(since) = since.as_deref() {
+    if let Some(since) = site_get(w, "since") {
         command.arg("--since").arg(since);
     }
     if let Some(tmpdir) = site_get(w, "tmpdir") {
@@ -945,7 +945,17 @@ pub fn site_publish(w: &mut DutyWorld) {
         "CARGO_TARGET_DIR",
         repository_root().join("target/site-publication"),
     );
+    command
+}
 
+/// Run the publication once, recording its exit status and both streams.
+pub fn site_publish(w: &mut DutyWorld) {
+    let revision = site_get(w, "revision").expect("the scenario named no revision to publish");
+    let since = site_get(w, "since");
+    let out = site_output(w);
+    let script = repository_root().join("scripts/publish-site.sh");
+
+    let mut command = site_publication_command(w, &revision, &out);
     let output = command
         .output()
         .unwrap_or_else(|error| panic!("run {}: {error}", script.display()));
@@ -963,6 +973,66 @@ pub fn site_publish(w: &mut DutyWorld) {
         w.stdout,
         w.stderr
     );
+}
+
+/// One concurrent publication's recorded file: its log or its exit status.
+fn site_publication_path(w: &mut DutyWorld, index: usize, extension: &str) -> PathBuf {
+    site_directory(w).join(format!("publication-{index}.{extension}"))
+}
+
+/// Run two publications of the scenario's revision concurrently: they begin
+/// together, share the repository, the target and the default lock, and each
+/// writes its own output directory. Records both exit statuses and both logs.
+pub fn site_publish_together(w: &mut DutyWorld) {
+    let revision = site_get(w, "revision").expect("the scenario named no revision to publish");
+    let directory = site_directory(w);
+
+    let mut children = Vec::new();
+    for index in 0..2 {
+        let out = directory.join(format!("out-{index}"));
+        let log = site_publication_path(w, index, "log");
+        let mut command = site_publication_command(w, &revision, &out);
+        let file = fs::File::create(&log).expect("create the publication log");
+        let errors = file.try_clone().expect("clone the publication log");
+        command.stdout(Stdio::from(file)).stderr(Stdio::from(errors));
+        let child = command
+            .spawn()
+            .unwrap_or_else(|error| panic!("start the site publication: {error}"));
+        children.push(child);
+    }
+
+    let mut transcript = String::new();
+    for (index, mut child) in children.into_iter().enumerate() {
+        let status = child.wait().expect("wait for the site publication");
+        let path = site_publication_path(w, index, "status");
+        fs::write(&path, status.code().unwrap_or(-1).to_string())
+            .expect("write the publication's exit status");
+        transcript.push_str(&format!(
+            "$ scripts/publish-site.sh (publication {index}) --repo <fixture> --revision {revision} --target <target> --out <out-{index}> --verify-url <url>\nexit: {:?}\n{}\n",
+            status.code(),
+            site_publication_log(w, index)
+        ));
+    }
+    w.command_transcript = transcript;
+}
+
+/// One concurrent publication's recorded log, by index.
+pub fn site_publication_log(w: &mut DutyWorld, index: usize) -> String {
+    fs::read_to_string(site_publication_path(w, index, "log")).unwrap_or_default()
+}
+
+/// One concurrent publication's exit status, by index.
+pub fn site_publication_status(w: &mut DutyWorld, index: usize) -> Option<i32> {
+    fs::read_to_string(site_publication_path(w, index, "status"))
+        .ok()
+        .and_then(|text| text.trim().parse().ok())
+}
+
+/// The publication lock's default path in the fixture repository.
+pub fn site_default_lock(w: &mut DutyWorld) -> PathBuf {
+    let repo = site_repository(w);
+    let git_dir = git_ok(&repo, &["rev-parse", "--absolute-git-dir"]);
+    PathBuf::from(git_dir).join("publish-site.lock")
 }
 
 /// The publication's combined output, for a refusal's named failure.
