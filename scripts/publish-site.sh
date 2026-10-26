@@ -36,6 +36,11 @@ lock=""
 site_inputs="crates/* ffi/wasm/* web/* docs/assets/*"
 site_inputs="$site_inputs Cargo.toml Cargo.lock rust-toolchain.toml LICENSES/MPL-2.0.txt"
 site_inputs="$site_inputs .github/workflows/web.yml .github/workflows/site.yml"
+# The publication path itself builds and gates the artifact, so a change to it
+# republishes the page it produced.
+site_inputs="$site_inputs scripts/build-web.sh scripts/build-site.sh"
+site_inputs="$site_inputs scripts/check-site-content.sh scripts/site-evidence.sh"
+site_inputs="$site_inputs scripts/publish-site.sh run-tests.sh"
 
 site_input() {
   local path="$1" pattern
@@ -93,6 +98,9 @@ done
 [ -n "$out" ] || { usage; refuse "--out is required"; }
 [ -n "$verify_url" ] || { usage; refuse "--verify-url is required"; }
 [ -d "$repo" ] || refuse "the repository does not exist: $repo"
+# Absolute, so a relative --repo (CI passes `.`) cannot make a symlink or a
+# worktree path resolve against another directory.
+repo="$(cd "$repo" && pwd)" || refuse "the repository cannot be resolved: $repo"
 
 # Refuse an unclean caller tree. Untracked and ignored files cannot reach the
 # Site output, so they are not reported; a modified or deleted tracked file
