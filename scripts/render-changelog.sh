@@ -120,6 +120,13 @@ esac
 if [ ! -d "$repo" ]; then
   refuse "the repository is not a directory: $repo"
 fi
+# The renderer applies the configuration committed in the repository it
+# renders. A fixture repository carries its own copy, so its capability list
+# and path list are the ones its history is rendered against; the project's own
+# checkout carries the one configuration a local render and CI share.
+if [ -f "$repo/cliff.toml" ]; then
+  config="$repo/cliff.toml"
+fi
 if [ ! -f "$config" ]; then
   refuse "the configuration is missing: $config"
 fi

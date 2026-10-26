@@ -9,7 +9,7 @@ Feature: Publish a public release
   release whose hosting target does not hold the tagged site revision is
   refused.
 
-  @givn.added @wip
+  @givn.added
   Scenario: A revision that changes the public website is announced in the release notes
     Given a released revision of the capability "publish-public-website" that changed "web/"
     And a released revision that changed only the project's documents

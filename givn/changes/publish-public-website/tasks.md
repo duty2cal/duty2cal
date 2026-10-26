@@ -752,14 +752,43 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   The docs-only revision stays out of the notes.
 - Domain constraints: a site change is a user-receiving change; the release
   notes state what changed.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — `cliff.toml` data and the fixture's capability list.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-release): announce public website changes`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A revision that changes the public website is announced in the release notes"`
+    → `✘ Given a released revision of the capability "publish-public-website" that changed "web/"`
+    / `Step doesn't match any function`, `1 scenario (1 failed)`, `1 step (1 failed)`; exit 101.
+- [x] GREEN — `cliff.toml` data and the fixture's capability list.
+  - Production files: `cliff.toml` (`web/` and `ffi/wasm/` join the
+    `<!-- user-receiving-paths: … -->` line and its explanation; the
+    capability's `feat`/`fix`/`perf`/`xrevert` parser rows, including their
+    breaking variants, are present in every group so a revision scoped to it
+    is announced — the allow-list marker itself deliberately still omits
+    `publish-public-website` until the archive merge makes its use case
+    permanent under `givn/specs/`, because the renderer refuses an allow-list
+    naming a capability the repository does not hold);
+    `scripts/render-changelog.sh` (renders the repository it is given with that
+    repository's committed `cliff.toml`, so a fixture's own capability list is
+    the one its history is rendered against while the project checkout keeps
+    one configuration for a local render and CI);
+    `apps/cli/tests/steps/publish_public_release.rs` (`RECEIVED_PATHS` gains
+    `web/index.html` and `ffi/wasm/src/lib.rs`; the fixture capability corpus
+    gains `publish-public-website` with its `usecase.md`, and the fixture's
+    copied configuration gains the capability on its allow-list line; the
+    scenario's steps record the two released revisions and assert the rendered
+    notes).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `5 steps (5 passed)`,
+    exit 0; the rendered notes named `Serve the public website from the
+    repository` (the `feat(publish-public-website)` revision that changed
+    `web/index.html`) and carried no `Describe the download route for readers`
+    (the released `fix(export-duty-plan-calendar)` revision that changed only
+    `docs/fixture-notes.md`). The fixture holds the use case, so the renderer
+    accepted the fixture's allow-list entry; the real repository's allow-list
+    entry lands with the archive merge.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: the fixture's capability list and its allow-list extension live in
+    one `build_history_with` construction, so no scenario can create the
+    capability without the configuration that names it; scoped re-run
+    `1 scenario (1 passed)`, `5 steps (5 passed)`, exit 0.
+- [x] COMMIT — `feat(publish-public-release): announce public website changes`
       (body: the scenario title).
   - Revision:
 
@@ -826,6 +855,41 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   - Evidence:
 - [ ] COMMIT — `feat(apply-configuration-change): state the browser route in the organization profile`
       (body: the scenario title).
+  - Revision:
+
+### T22b — CI workflows: the reusable site publication, its callers, and the release dependency
+
+- Design constraints: `.github/workflows/site.yml` declares `on: workflow_call`
+  with inputs `revision` and `since`, secret `PAGES_DEPLOY_KEY`,
+  `permissions: contents: read` and a concurrency group for the site
+  publication; one job installs, in order, the Rust toolchain with
+  `wasm32-unknown-unknown`, Node from `web/e2e/.nvmrc`, `npm ci --prefix
+  web/e2e`, `npx --prefix web/e2e playwright install --with-deps chromium`,
+  `reuse` and the pinned `wasm-pack`, writes the key to a `600` file, and runs
+  `scripts/publish-site.sh --target git@github.com:duty2cal/duty2cal.github.io.git
+  --key <file> --out dist/site --verify-url https://duty2cal.github.io/` with the
+  caller's `revision`/`since`.
+  `.github/workflows/web.yml` triggers on default-branch pushes (no `paths:`
+  filter, passes `github.event.before` as `since`) and `workflow_dispatch`
+  (optional `since`); it has **no** `v*` trigger; its checkout uses
+  `fetch-depth: 0`; its job is a bare `uses: ./.github/workflows/site.yml`.
+  `.github/workflows/release.yml` gains a `site` job that calls `site.yml` with
+  `revision: ${{ github.ref_name }}` and no `since`; its `publish` job gains
+  `needs: site` and runs `scripts/publish-release.sh --site-repo <checkout>`,
+  keeping the green-checks wait, SBOM and attestation steps before the command;
+  both jobs check out with `fetch-depth: 0`.
+  `.github/workflows/ci.yml` covers both new workflows with `actionlint`.
+- Domain constraints: one publication per tag; a failed site deploy publishes
+  no archive; the only workflow holding the secret is the reusable one, with
+  `web.yml` and the release's `site` job as its callers.
+- [ ] Create the four workflow files/edits above.
+  - Evidence:
+- [ ] Run `actionlint` over `.github/workflows/*.yml` and confirm exit 0; grep
+      that `site.yml` declares `workflow_call`, `web.yml` has no `tags:` trigger,
+      and `release.yml`'s publish job has `needs: site`.
+  - Evidence:
+- [ ] COMMIT — `ci(publish-public-website): publish the site from one reusable workflow`
+      (body: CI workflows).
   - Revision:
 
 ---

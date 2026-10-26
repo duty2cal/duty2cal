@@ -47,17 +47,18 @@ render_always = true
 # use-case ids under `givn/specs/`.
 # <!-- capability-allow-list: export-duty-plan-calendar publish-public-release adopt-existing-configuration apply-configuration-change measure-distributed-executable-size reduce-distributed-executable-size -->
 # The paths a user receives: the converter's crates and command-line
-# application, the build inputs that decide what the executable contains, and
-# the packaging and the release workflow that decide what an archive holds. A
-# released revision is announced only when it changed one of them, whatever its
-# subject says; a path listed here and missing from the tree stops the render.
+# application, the browser bundle and its WebAssembly FFI, the build inputs that
+# decide what the executable contains, and the packaging and the release
+# workflow that decide what an archive holds. A released revision is announced
+# only when it changed one of them, whatever its subject says; a path listed
+# here and missing from the tree stops the render.
 # The line between the two kinds of tooling is deliberate: a path whose
 # contents decide what a downloader receives, or what those bytes do, belongs
 # here; `.github/workflows/ci.yml`, `scripts/render-changelog.sh`, `cliff.toml`,
 # `docs/`, `givn/` and test code decide only how the project works on what it
 # ships. `scripts/prepare-release.sh` and the release workflow are listed
 # because they decide what an archive holds and its file mode.
-# <!-- user-receiving-paths: crates/ apps/cli/src/ Cargo.toml Cargo.lock rust-toolchain.toml .cargo/ scripts/prepare-release.sh .github/workflows/release.yml -->
+# <!-- user-receiving-paths: crates/ apps/cli/src/ web/ ffi/wasm/ Cargo.toml Cargo.lock rust-toolchain.toml .cargo/ scripts/prepare-release.sh .github/workflows/release.yml -->
 conventional_commits = true
 filter_unconventional = true
 # Keep a breaking revision even when its type is not listed below: a breaking
@@ -116,6 +117,10 @@ commit_parsers = [
   { message = "^fix\\(reduce-distributed-executable-size\\)!:", group = "<!-- 0 -->Breaking changes" },
   { message = "^perf\\(reduce-distributed-executable-size\\)!:", group = "<!-- 0 -->Breaking changes" },
   { message = "^xrevert\\(reduce-distributed-executable-size\\)!:", group = "<!-- 0 -->Breaking changes" },
+  { message = "^feat\\(publish-public-website\\)!:", group = "<!-- 0 -->Breaking changes" },
+  { message = "^fix\\(publish-public-website\\)!:", group = "<!-- 0 -->Breaking changes" },
+  { message = "^perf\\(publish-public-website\\)!:", group = "<!-- 0 -->Breaking changes" },
+  { message = "^xrevert\\(publish-public-website\\)!:", group = "<!-- 0 -->Breaking changes" },
 
   # A new capability: a feature whose scope is a capability the repository
   # holds.
@@ -124,6 +129,7 @@ commit_parsers = [
   { message = "^feat\\(adopt-existing-configuration\\):", group = "<!-- 1 -->New capabilities" },
   { message = "^feat\\(measure-distributed-executable-size\\):", group = "<!-- 1 -->New capabilities" },
   { message = "^feat\\(reduce-distributed-executable-size\\):", group = "<!-- 1 -->New capabilities" },
+  { message = "^feat\\(publish-public-website\\):", group = "<!-- 1 -->New capabilities" },
 
   # Fixes.
   { message = "^fix\\(export-duty-plan-calendar\\):", group = "<!-- 2 -->Fixes" },
@@ -131,6 +137,7 @@ commit_parsers = [
   { message = "^fix\\(adopt-existing-configuration\\):", group = "<!-- 2 -->Fixes" },
   { message = "^fix\\(measure-distributed-executable-size\\):", group = "<!-- 2 -->Fixes" },
   { message = "^fix\\(reduce-distributed-executable-size\\):", group = "<!-- 2 -->Fixes" },
+  { message = "^fix\\(publish-public-website\\):", group = "<!-- 2 -->Fixes" },
 
   # Performance.
   { message = "^perf\\(export-duty-plan-calendar\\):", group = "<!-- 3 -->Performance" },
@@ -138,6 +145,7 @@ commit_parsers = [
   { message = "^perf\\(adopt-existing-configuration\\):", group = "<!-- 3 -->Performance" },
   { message = "^perf\\(measure-distributed-executable-size\\):", group = "<!-- 3 -->Performance" },
   { message = "^perf\\(reduce-distributed-executable-size\\):", group = "<!-- 3 -->Performance" },
+  { message = "^perf\\(publish-public-website\\):", group = "<!-- 3 -->Performance" },
 
   # Reversals.
   { message = "^xrevert\\(export-duty-plan-calendar\\):", group = "<!-- 4 -->Reversals" },
@@ -145,6 +153,7 @@ commit_parsers = [
   { message = "^xrevert\\(adopt-existing-configuration\\):", group = "<!-- 4 -->Reversals" },
   { message = "^xrevert\\(measure-distributed-executable-size\\):", group = "<!-- 4 -->Reversals" },
   { message = "^xrevert\\(reduce-distributed-executable-size\\):", group = "<!-- 4 -->Reversals" },
+  { message = "^xrevert\\(publish-public-website\\):", group = "<!-- 4 -->Reversals" },
 
   # Dependency updates a user receives: Dependabot's `chore(deps):` bump
   # changes the dependency graph, which is a user-receiving path, so the entry

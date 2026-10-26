@@ -351,9 +351,11 @@ pub(crate) const MACHINERY: &str = "scripts/render-changelog.sh";
 
 /// Every path the committed configuration lists as one a user receives, so the
 /// renderer's list check passes against a fixture repository.
-const RECEIVED_PATHS: [&str; 8] = [
+const RECEIVED_PATHS: [&str; 10] = [
     "crates/duty2cal-core/src/lib.rs",
     "apps/cli/src/main.rs",
+    "web/index.html",
+    "ffi/wasm/src/lib.rs",
     "Cargo.toml",
     "Cargo.lock",
     "rust-toolchain.toml",
@@ -407,10 +409,41 @@ pub(crate) fn build_history_with(
         "apply-configuration-change",
         "measure-distributed-executable-size",
         "reduce-distributed-executable-size",
+        "publish-public-website",
     ] {
-        std::fs::create_dir_all(repo.join("givn/specs").join(capability))
-            .expect("create a capability directory");
+        let directory = repo.join("givn/specs").join(capability);
+        std::fs::create_dir_all(&directory).expect("create a capability directory");
+        if capability == "publish-public-website" {
+            std::fs::write(
+                directory.join("usecase.md"),
+                "# Use case: publish-public-website\n\n\
+                 The fixture holds the capability's use case so the renderer can \
+                 announce a change scoped to it once the permanent corpus carries it.\n",
+            )
+            .expect("write the fixture capability's use case");
+        }
     }
+    // The committed configuration defers the capability's allow-list entry to
+    // the archive merge, because the real repository does not hold its use case
+    // until then; the fixture holds it, so the fixture's copy names it too and
+    // the renderer can announce a revision scoped to it.
+    let config_path = repo.join("cliff.toml");
+    let config = std::fs::read_to_string(&config_path).expect("read the copied configuration");
+    let marker = "<!-- capability-allow-list:";
+    let line = config
+        .lines()
+        .find(|line| line.contains(marker))
+        .expect("the configuration records the capability allow-list");
+    assert!(
+        !line.contains("publish-public-website"),
+        "the committed configuration already allows publish-public-website"
+    );
+    let updated = config.replacen(
+        line,
+        &line.replacen(" -->", " publish-public-website -->", 1),
+        1,
+    );
+    std::fs::write(&config_path, updated).expect("extend the fixture's capability allow-list");
     git(&repo, &["init", "--quiet"]);
     // The user-receiving paths the configuration lists are committed as
     // plumbing before the history starts, so a revision that changes one of
@@ -975,6 +1008,109 @@ fn change_log(w: &DutyWorld) -> String {
 )]
 async fn a_history_grouping(w: &mut DutyWorld) {
     build_history(w, &CHANGE_LOG_HISTORY);
+}
+
+/// The subject of the revision that changes the public website: a released
+/// change scoped to the capability the fixture holds.
+const PUBLIC_WEBSITE_CHANGE: &str = "Serve the public website from the repository";
+
+/// The subject of the released revision that changes only the project's
+/// documents: its scope is a capability, so only the path filter keeps it out.
+const DOCUMENT_ONLY_CHANGE: &str = "Describe the download route for readers";
+
+/// Run a git command in the fixture repository and return its trimmed stdout.
+fn git_text(repo: &Path, args: &[&str]) -> String {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(repo)
+        .args(args)
+        .output()
+        .expect("run git in the fixture repository");
+    assert!(
+        output.status.success(),
+        "git {args:?} failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout).trim().to_string()
+}
+
+#[given(regex = r#"^a released revision of the capability "([^"]+)" that changed "([^"]+)"$"#)]
+async fn a_released_revision_of_the_capability(
+    w: &mut DutyWorld,
+    capability: String,
+    path: String,
+) {
+    assert_eq!(
+        capability, "publish-public-website",
+        "the step names the capability whose change is announced"
+    );
+    assert_eq!(
+        path, "web/",
+        "the step names the public website's source directory"
+    );
+    build_history_with(
+        w,
+        &[
+            (
+                "2026-01-01",
+                "feat(publish-public-website): Serve the public website from the repository",
+                "",
+            ),
+            (
+                "2026-01-02",
+                "fix(export-duty-plan-calendar): Describe the download route for readers",
+                "v0.2.0",
+            ),
+        ],
+        &[(0, &["web/index.html"]), (1, &["docs/fixture-notes.md"])],
+    );
+}
+
+#[given("a released revision that changed only the project's documents")]
+async fn a_released_revision_that_changed_only_the_documents(w: &mut DutyWorld) {
+    let repo = w
+        .fixture_repo
+        .clone()
+        .expect("the scenario built no fixture repository");
+    assert_eq!(
+        git_text(&repo, &["diff", "--name-only", "HEAD^..HEAD"]),
+        "docs/fixture-notes.md",
+        "the released revision changes only the project's documents"
+    );
+    assert_eq!(
+        git_text(&repo, &["log", "-1", "--format=%s"]),
+        format!("fix(export-duty-plan-calendar): {DOCUMENT_ONLY_CHANGE}"),
+        "the document-only revision carries a released scope"
+    );
+    assert_eq!(
+        git_text(&repo, &["describe", "--tags", "--abbrev=0", "--match", "v*"]),
+        "v0.2.0",
+        "the history releases version 0.2.0"
+    );
+}
+
+#[then("the notes for version 0.2.0 name the change to the public website")]
+async fn notes_name_the_public_website_change(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the generation did not succeed: {}",
+        w.command_transcript
+    );
+    let notes = change_log_notes(w).join("\n");
+    assert!(
+        notes.contains(PUBLIC_WEBSITE_CHANGE),
+        "the notes name no change to the public website: {notes}"
+    );
+}
+
+#[then("the notes for version 0.2.0 name no revision that changed only the project's documents")]
+async fn notes_name_no_document_only_revision(w: &mut DutyWorld) {
+    let notes = change_log_notes(w).join("\n");
+    assert!(
+        !notes.contains(DOCUMENT_ONLY_CHANGE),
+        "the notes carry the revision that changed only the project's documents: {notes}"
+    );
 }
 
 #[when(regex = r"^the maintainer generates the change log for version (\S+)$")]
