@@ -435,15 +435,17 @@ pub(crate) fn build_history_with(
         .lines()
         .find(|line| line.contains(marker))
         .expect("the configuration records the capability allow-list");
-    assert!(
-        !line.contains("publish-public-website"),
-        "the committed configuration already allows publish-public-website"
-    );
-    let updated = config.replacen(
-        line,
-        &line.replacen(" -->", " publish-public-website -->", 1),
-        1,
-    );
+    let updated = if line.contains("publish-public-website") {
+        // The archive merge has made the capability permanent, so the
+        // committed allow-list already names it; the fixture keeps its copy.
+        config.clone()
+    } else {
+        config.replacen(
+            line,
+            &line.replacen(" -->", " publish-public-website -->", 1),
+            1,
+        )
+    };
     std::fs::write(&config_path, updated).expect("extend the fixture's capability allow-list");
     git(&repo, &["init", "--quiet"]);
     // The user-receiving paths the configuration lists are committed as
