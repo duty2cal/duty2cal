@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "publish-public-website",
+  "status": "passed",
+  "head": "cf14afa4c5699b6c61af394810660d2651a23c47",
+  "features_path": "givn/changes/publish-public-website/specs",
+  "features_digest": "b34981371e21e6b4a0daceac205e29b3995d33b0a68388b7f51f6f1cc9e408dc",
+  "command_digest": "1031237dac4a7328aa009dc5586392005a11f5408a7dc7b8a4726efc55a93a8e",
+  "command": "./run-tests.sh",
+  "tested_content_digest": "8c72b13a3d21b90a7b32154fcc194c16532f31faf1f77221de1693f40896042f",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 216,
+    "passed": 216,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1792991824
+}
