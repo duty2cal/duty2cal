@@ -65,6 +65,13 @@ fail_with_log() {
   exit 1
 }
 
+# Resolve a revision to its commit in the caller's repository. The caller names
+# the failure: the comparison base and the Built revision are refused
+# differently.
+resolve_commit() {
+  git -C "$repo" rev-parse --verify "$1^{commit}" 2>/dev/null
+}
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --repo) [ "$#" -ge 2 ] || { usage; exit 2; }; repo="$2"; shift 2 ;;
@@ -99,10 +106,16 @@ if [ -n "$status" ]; then
 fi
 
 # Decide whether the revision changes a site input. Only --since asks the
-# question; a tag publication omits it and always builds.
+# question; a tag publication omits it and always builds. A base the repository
+# does not hold refuses: an unknown base must not silently suppress a
+# publication by reading as "no change".
 if [ -n "$since" ]; then
-  base="$(git -C "$repo" rev-parse --verify "$since^{commit}" 2>/dev/null)"
-  changed="$(git -C "$repo" diff --name-only "$base..$revision" 2>/dev/null)"
+  if ! base="$(resolve_commit "$since")"; then
+    refuse "cannot resolve the comparison base '$since'; an unknown base is not 'no change'"
+  fi
+  if ! changed="$(git -C "$repo" diff --name-only "$base..$revision" 2>/dev/null)"; then
+    refuse "cannot compare revision '$revision' with the comparison base '$since'"
+  fi
   changed_site=0
   while IFS= read -r path; do
     [ -n "$path" ] || continue
@@ -120,7 +133,7 @@ fi
 # Resolve the Built revision: the commit it names and the text the footer
 # carries. A page cannot name a revision that did not build it, so an
 # unresolvable revision refuses before any build.
-commit="$(git -C "$repo" rev-parse --verify "$revision^{commit}" 2>/dev/null)" \
+commit="$(resolve_commit "$revision")" \
   || refuse "cannot resolve the Built revision '$revision'"
 describe="$(git -C "$repo" describe --tags --always --match 'v*' "$commit" 2>/dev/null)" \
   || refuse "cannot derive the Built revision text for '$revision'"

@@ -468,14 +468,27 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   hold refuses and names that base; it is never read as "no change".
 - Domain constraints: the default-branch trigger decision is a command
   argument; an unknown base must not silently suppress a publication.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — base resolution refusal.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-website): refuse an unresolvable comparison base`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A revision the publication is asked to compare against cannot be resolved"`
+    → `✘ And a revision "def5678" whose site inputs changed` /
+    `Step panicked. Captured output: not implemented: a revision whose site
+    inputs changed`, `1 scenario (1 failed)`; exit 101.
+- [x] GREEN — base resolution refusal.
+  - Production files: `scripts/publish-site.sh` (a `--since` base the
+    repository cannot resolve refuses with `cannot resolve the comparison base
+    '<base>'; an unknown base is not 'no change'` before the diff, so an
+    unknown base can never print `no site input changed`; the diff itself
+    fails closed too), `apps/cli/tests/steps/publish_public_website.rs` (the
+    scenario's steps: the fixture revision appends a stylesheet comment — a
+    site input — and records `def5678`).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `6 steps (6 passed)`,
+    exit 0; the refusal printed `cannot resolve the comparison base
+    '9999999'` and the target still served the earlier page.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: the comparison base and the Built revision resolve through one
+    `resolve_commit` helper, so the two refusals cannot drift; scoped re-run
+    `1 scenario (1 passed)`, `6 steps (6 passed)`, exit 0.
+- [x] COMMIT — `feat(publish-public-website): refuse an unresolvable comparison base`
       (body: the scenario title).
   - Revision:
 

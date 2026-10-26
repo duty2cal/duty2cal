@@ -674,3 +674,74 @@ async fn refused_naming_the_address(w: &mut DutyWorld) {
         "the refusal does not name the revision the address serves ({served}):\n{text}"
     );
 }
+
+#[given(regex = r#"^a revision "([^"]+)" whose site inputs changed$"#)]
+async fn a_revision_whose_site_inputs_changed(w: &mut DutyWorld, revision: String) {
+    // A comment in the stylesheet is a site input: the publication comparing
+    // against an unknown base must refuse instead of reporting no change.
+    let committed = support::site_commit_append(
+        w,
+        "web/styles.css",
+        "\n/* fixture revision: a site input changed */\n",
+        "fix: fixture site input revision",
+    );
+    let changed = support::site_changed_paths(w, "v0.5.0", &committed);
+    assert!(
+        changed.iter().any(|path| path == "web/styles.css"),
+        "the fixture revision changes no site input: {changed:?}"
+    );
+    let recorded = support::site_record_label(w, &revision);
+    assert_eq!(recorded, committed, "the fixture recorded another revision");
+    support::site_set(w, "revision", &committed);
+}
+
+#[given(regex = r#"^an earlier revision "([^"]+)" that the repository does not hold$"#)]
+async fn an_earlier_revision_the_repository_lacks(w: &mut DutyWorld, revision: String) {
+    assert!(
+        !support::site_resolves(w, &revision),
+        "the fixture holds the revision the scenario expects it to lack"
+    );
+    support::site_set(w, "since", &revision);
+}
+
+#[when("the release maintainer publishes the site from that revision, compared with that earlier revision")]
+async fn publish_compared_with_that_earlier_revision(w: &mut DutyWorld) {
+    assert!(
+        support::site_get(w, "revision").is_some(),
+        "the scenario named no revision to publish"
+    );
+    assert!(
+        support::site_get(w, "since").is_some(),
+        "the scenario named no revision to compare against"
+    );
+    support::site_publish(w);
+}
+
+#[then("the publication is refused and names the earlier revision")]
+async fn refused_naming_the_earlier_revision(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the publication was not refused:\n{}",
+        w.command_transcript
+    );
+    let base = support::site_get(w, "since").expect("the scenario named no comparison base");
+    let text = support::site_publication_text(w);
+    assert!(
+        !text.contains("no site input changed"),
+        "an unknown comparison base was read as 'no change':\n{text}"
+    );
+    assert!(
+        text.contains("comparison base"),
+        "the refusal does not name the comparison base:\n{text}"
+    );
+    assert!(
+        text.contains(&base),
+        "the refusal does not name the earlier revision {base}:\n{text}"
+    );
+    assert_eq!(
+        support::site_get(w, "target-tip"),
+        Some(support::site_target_tip(w)),
+        "the refused publication changed the hosting target"
+    );
+}

@@ -113,7 +113,7 @@ Feature: Publish the public website
     Then the publication is refused and names the conversion suite
     And the hosting target still serves the Site output built from "abc1234"
 
-  @givn.added @site-publication @wip
+  @givn.added @site-publication
   Scenario: A revision the publication is asked to compare against cannot be resolved
     Given a hosting target serving the Site output built from "abc1234"
     And a revision "def5678" whose site inputs changed
