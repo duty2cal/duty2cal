@@ -1026,7 +1026,7 @@ fn site_publication_command(w: &mut DutyWorld, revision: &str, out: &Path) -> Co
     // The loopback twin answers immediately; the production bound is for
     // Pages propagation and would make a refusal scenario wait minutes.
     command
-        .env("DUTY2CAL_VERIFY_ATTEMPTS", "5")
+        .env("DUTY2CAL_VERIFY_ATTEMPTS", "20")
         .env("DUTY2CAL_VERIFY_INTERVAL", "0.1");
     command
 }

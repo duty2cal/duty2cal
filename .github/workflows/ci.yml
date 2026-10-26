@@ -93,7 +93,19 @@ jobs:
       # ./run-tests.sh assembles from the permanent corpus and the archived
       # change specs; a bare `cargo test` leaves it looking for
       # tests/features, which does not exist.
-      - run: ./run-tests.sh
+      - name: Run the scenario suite
+        env:
+          DUTY2CAL_TRANSCRIPT_PATH: ${{ runner.temp }}/test-transcript.log
+        run: ./run-tests.sh
+      - name: Surface the failing scenarios
+        if: failure()
+        run: |
+          set -euo pipefail
+          log="$RUNNER_TEMP/test-transcript.log"
+          [ -f "$log" ] || exit 0
+          awk '/^  Scenario:/{s=$0} /✘/{if (s != "") {print s; s=""}}' "$log" | head -10 | while IFS= read -r line; do
+            echo "::error title=Failing scenario::${line#  Scenario: }"
+          done
       # The manual dispatch archives the change after the same suite has
       # passed, in the environment that carries the Windows cross toolchain,
       # Playwright and the pinned generators. `givn archive` runs the gate and

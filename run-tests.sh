@@ -73,7 +73,7 @@ fi
 
 root="$(scripts/assemble-features.sh)"
 transcript="$(mktemp)"
-trap 'rm -rf "$root" "$transcript"' EXIT
+trap 'if [ -n "${DUTY2CAL_TRANSCRIPT_PATH:-}" ]; then cp "$transcript" "$DUTY2CAL_TRANSCRIPT_PATH" 2>/dev/null || true; fi; rm -rf "$root" "$transcript"' EXIT
 
 export GIVN_FEATURES="$root"
 
