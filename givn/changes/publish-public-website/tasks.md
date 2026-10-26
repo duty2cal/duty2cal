@@ -847,14 +847,41 @@ review: `design-review.md` (`DESIGN-REVIEW: PASS`, stage `design-review-done`).
   of any invocation.
 - Domain constraints: a version never becomes public while the page is stale;
   the release's archive contract is otherwise unchanged.
-- [ ] RED — scoped run; exit non-zero.
-  - Evidence:
-- [ ] GREEN — target verification, `--site-repo`, gh stand-in wiring.
-  - Production files:
-  - Evidence:
-- [ ] REFACTOR — re-run scoped; exit 0.
-  - Evidence:
-- [ ] COMMIT — `feat(publish-public-release): publish no release when the site target is stale`
+- [x] RED — scoped run; exit non-zero.
+  - Evidence: `DUTY2CAL_SKIP_WEB_BUILD=1 ./run-tests.sh --name "A release whose hosting target does not hold the tagged site revision is refused and publishes no release"`
+    → `✘ Given a prepared release for the version "v0.5.0"` / `Step doesn't
+    match any function`, `1 scenario (1 failed)`, `1 step (1 failed)`; exit 101.
+- [x] GREEN — target verification, `--site-repo`, gh stand-in wiring.
+  - Production files: `scripts/publish-release.sh` (new; requires
+    `--version --tag --staged --repo --site-repo --target` and accepts
+    `--key`; reads the target's `main` tip with `git ls-remote --heads`,
+    fetches `refs/heads/main` into the `--site-repo` clone, reads the fetched
+    `index.html`'s `data-site-statement="built-revision"` text and refuses
+    before any `gh` call unless it equals the tag, naming the revision the
+    target holds; on a verified target it creates the draft release from the
+    staged archives, their checksums, `CHANGELOG.md` and the
+    `--notes-file release-notes.md`, compares `gh release view … --json assets`
+    with the staged file names with `release-notes.md` excluded, then publishes
+    the draft; `--key` exports `GIT_SSH_COMMAND` for the read and the verify),
+    `apps/cli/tests/steps/publish_public_release.rs` (the scenario's prepared
+    release snapshot and steps: the target is populated from the fixture's
+    earlier `abc1234` page, cloned for `--site-repo`, the recording `gh`
+    stand-in from `support.rs` is put on `PATH`, and the refusal, the absent
+    `gh` invocation and the unchanged staged set are asserted).
+  - Evidence: scoped run → `1 scenario (1 passed)`, `6 steps (6 passed)`,
+    exit 0; the prepared `v0.5.0` release was refused, the refusal named the
+    hosting target and the revision its branch tip's footer carries
+    (`v0.5.0-3-g<sha>`, the fixture's `abc1234` describe text, not `v0.5.0`),
+    the stand-in's log was empty so no `gh` command ran, and the staged
+    archives' names, modification times and the whole staged entry set were
+    unchanged. The asset comparison excludes `release-notes.md`, because the
+    notes file is the release body and never an asset.
+- [x] REFACTOR — re-run scoped; exit 0.
+  - Evidence: the prepared release, its staged snapshot and the release tag are
+    recorded once in the Given and read through `support::site_get`, so the
+    release step cannot spell a different tag or staged set; scoped re-run
+    `1 scenario (1 passed)`, `6 steps (6 passed)`, exit 0.
+- [x] COMMIT — `feat(publish-public-release): publish no release when the site target is stale`
       (body: the scenario title).
   - Revision:
 

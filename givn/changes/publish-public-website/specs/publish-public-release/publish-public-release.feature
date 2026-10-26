@@ -26,7 +26,7 @@ Feature: Publish a public release
     And the public text states that builds for other operating systems are available on request and that their source can be built with a Rust toolchain
     And the public text names no archive for a platform other than Windows x86_64
 
-  @givn.added @site-publication @wip
+  @givn.added @site-publication
   Scenario: A release whose hosting target does not hold the tagged site revision is refused and publishes no release
     Given a prepared release for the version "v0.5.0"
     And a hosting target whose default branch does not hold the Site output built from the tagged revision "v0.5.0"

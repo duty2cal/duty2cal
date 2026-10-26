@@ -18,6 +18,7 @@ use cucumber::gherkin::Step;
 use cucumber::{given, then, when};
 
 use crate::DutyWorld;
+use crate::steps::support;
 
 /// The supported platforms and the executable name each one uses, in release
 /// order. The script owns the canonical set; the steps speak it.
@@ -756,6 +757,178 @@ async fn a_prepared_release(w: &mut DutyWorld, version: String) {
         Some(0),
         "the preparation did not succeed: {}",
         w.command_transcript
+    );
+}
+
+/// The repository that reads the hosting target for a release publication.
+fn release_site_repo(w: &mut DutyWorld) -> PathBuf {
+    let dir = w.working_dir().join("site");
+    std::fs::create_dir_all(&dir).expect("create the site fixture directory");
+    dir.join("site-repo")
+}
+
+/// Clone the hosting target into the repository the release command reads.
+fn clone_hosting_target(source: &str, destination: &Path) {
+    let output = Command::new("git")
+        .args(["clone", "--quiet", "--no-hardlinks", source])
+        .arg(destination)
+        .output()
+        .expect("clone the hosting target");
+    assert!(
+        output.status.success(),
+        "cloning the hosting target failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[given(regex = r#"^a prepared release for the version "([^"]+)"$"#)]
+async fn a_prepared_release_for_the_version(w: &mut DutyWorld, tag: String) {
+    assert!(
+        tag.starts_with('v'),
+        "the step names a version tag: {tag}"
+    );
+    let version = tag.trim_start_matches('v').to_string();
+    build_history(
+        w,
+        &[(
+            "2026-01-01",
+            "feat(export-duty-plan-calendar): Convert a supported duty plan into a calendar",
+            &tag,
+        )],
+    );
+    run_prepare(w, &version);
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the preparation did not succeed: {}",
+        w.command_transcript
+    );
+    w.staged_snapshot = archives_with_times(&staged_dir(w));
+    support::site_set(w, "release-tag", &tag);
+    support::site_set(w, "release-version", &version);
+    support::site_set(w, "staged-entries", &entries(&staged_dir(w)).join("\n"));
+}
+
+#[given(
+    regex = r#"^a hosting target whose default branch does not hold the Site output built from the tagged revision "([^"]+)"$"#
+)]
+async fn a_target_not_holding_the_tagged_revision(w: &mut DutyWorld, tag: String) {
+    assert_eq!(
+        support::site_get(w, "release-tag").as_deref(),
+        Some(tag.as_str()),
+        "the step names the prepared release's tag"
+    );
+    support::site_set_up_target(w, "abc1234");
+    let held = support::served_revision(&support::site_served_page(w))
+        .expect("the hosting target's page carries a Built revision");
+    assert_ne!(
+        held, tag,
+        "the hosting target holds the tagged revision already"
+    );
+    support::site_set(w, "held-revision", &held);
+
+    let target = support::site_target_url(w);
+    let clone = release_site_repo(w);
+    let _ = std::fs::remove_dir_all(&clone);
+    clone_hosting_target(&target, &clone);
+    support::site_set(w, "site-repo", clone.to_str().expect("a UTF-8 path"));
+
+    let bin = support::gh_stand_in(w);
+    support::site_set(w, "gh-bin", bin.to_str().expect("a UTF-8 path"));
+    let log = support::site_get(w, "gh-log").expect("the gh stand-in records a log path");
+    let _ = std::fs::remove_file(log);
+}
+
+#[when(regex = r#"^the maintainer publishes the release for "([^"]+)"$"#)]
+async fn the_maintainer_publishes_the_release(w: &mut DutyWorld, tag: String) {
+    assert_eq!(
+        support::site_get(w, "release-tag").as_deref(),
+        Some(tag.as_str()),
+        "the step names the prepared release's tag"
+    );
+    let version = support::site_get(w, "release-version").expect("the prepared version");
+    let site_repo = PathBuf::from(support::site_get(w, "site-repo").expect("the target clone"));
+    let gh_bin = support::site_get(w, "gh-bin").expect("the gh stand-in directory");
+    let target = support::site_target_url(w);
+    let out = staged_dir(w);
+    let log = support::site_get(w, "gh-log").expect("the gh stand-in records a log path");
+    let _ = std::fs::remove_file(&log);
+
+    let mut command = Command::new("scripts/publish-release.sh");
+    command
+        .current_dir(repository_root())
+        .env(
+            "PATH",
+            format!("{gh_bin}:{}", std::env::var("PATH").unwrap_or_default()),
+        )
+        .arg("--version")
+        .arg(&version)
+        .arg("--tag")
+        .arg(&tag)
+        .arg("--staged")
+        .arg(&out)
+        .arg("--repo")
+        .arg("duty2cal/duty2cal")
+        .arg("--site-repo")
+        .arg(&site_repo)
+        .arg("--target")
+        .arg(&target);
+    run_command(w, &mut command);
+}
+
+/// The arguments every `gh` invocation recorded, one invocation per line.
+fn published_release_commands(w: &mut DutyWorld) -> String {
+    support::site_get(w, "gh-log")
+        .and_then(|path| std::fs::read_to_string(path).ok())
+        .unwrap_or_default()
+}
+
+#[then("the release is refused and names the site revision the hosting target holds")]
+async fn the_release_is_refused_naming_the_held_revision(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the release was not refused: {}",
+        w.command_transcript
+    );
+    assert!(
+        w.command_transcript.contains("hosting target"),
+        "the refusal names no hosting target: {}",
+        w.command_transcript
+    );
+    let held = support::site_get(w, "held-revision").expect("the target's held revision");
+    assert!(
+        w.command_transcript.contains(&held),
+        "the refusal does not name the revision the target holds ({held}): {}",
+        w.command_transcript
+    );
+}
+
+#[then(regex = r#"^no release is published for "([^"]+)"$"#)]
+async fn no_release_is_published(w: &mut DutyWorld, tag: String) {
+    assert_eq!(
+        support::site_get(w, "release-tag").as_deref(),
+        Some(tag.as_str()),
+        "the step names the prepared release's tag"
+    );
+    let commands = published_release_commands(w);
+    assert!(
+        commands.is_empty(),
+        "the release command ran gh before verifying the target: {commands}"
+    );
+}
+
+#[then("the prepared release's staged archive is unchanged")]
+async fn the_staged_set_is_unchanged(w: &mut DutyWorld) {
+    assert_eq!(
+        archives_with_times(&staged_dir(w)),
+        w.staged_snapshot,
+        "the refused release changed the staged archives"
+    );
+    assert_eq!(
+        entries(&staged_dir(w)).join("\n"),
+        support::site_get(w, "staged-entries").expect("the staged set recorded before the release"),
+        "the refused release changed the staged set"
     );
 }
 
