@@ -394,7 +394,7 @@ async fn the_page_asks_for_no_account(w: &mut DutyWorld) {
         .as_str()
         .expect("read_state returns visible text");
     assert!(
-        text.contains("No account, email, or upload is used."),
+        text.contains("No account, email or upload is needed."),
         "the page does not state that it asks for no account, email, or upload: {text}"
     );
     let lower = text.to_lowercase();

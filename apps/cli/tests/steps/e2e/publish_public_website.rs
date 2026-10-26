@@ -300,7 +300,7 @@ fn assert_licence_and_footer(site: &Value) {
     for prose in [
         "Not affiliated with any duty-plan provider or airline",
         "Provided as is, without warranty",
-        "No account, email, or upload is used",
+        "No account, email or upload is needed",
         "sends no request after it loads",
     ] {
         assert!(
@@ -456,6 +456,7 @@ fn capture_screenshots(w: &mut DutyWorld, empty: bool) {
         );
         params.insert("width".to_string(), Value::from(width));
         params.insert("height".to_string(), Value::from(height));
+        params.insert("fullPage".to_string(), Value::Bool(true));
         let result = browser(w).send("screenshot", params);
         let saved_to = path.display().to_string();
         assert_eq!(
