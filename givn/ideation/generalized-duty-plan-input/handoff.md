@@ -61,7 +61,7 @@ reading fills, not a domain noun.
 |---|---|---|---|
 | `generalize-duty-plan-intake` (withdrawn 2026-10-27) | `export-duty-plan-calendar` (extended) | — | — |
 | `document-the-publication-evidence-route` (superseded by `state-the-supported-duty-plan`) | `make-a-further-published-duty-plan-convertible`, `state-the-converter-support-statement` | — | withdrawn with the intake |
-| `state-the-supported-duty-plan` | `state-the-converter-support-statement`, `publish-public-website` (extended), `apply-configuration-change` (extended) | 1 | — |
+| `state-the-supported-duty-plan` (implemented in `state-the-supported-duty-plan`) | `state-the-converter-support-statement`, `publish-public-website` (extended), `apply-configuration-change` (extended) | 1 | — |
 
 The general intake and its further-publication route were withdrawn by the
 operator on 2026-10-27: too many converters already exist, and a broader
