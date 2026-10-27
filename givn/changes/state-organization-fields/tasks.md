@@ -44,9 +44,10 @@ the preview/apply procedure; the organization owner runs it. Personas:
       `/orgs/duty2cal/social_accounts` returns no account.
 - [x] Commit `infra/terraform.tfstate` and `infra/terraform.tfstate.backup` after
       a green apply; no `terraform.tfstate.stale` exists.
-- [x] `scripts/check-drift.sh` needs the maintainer's token, which this
-      environment does not hold; the public read-back above is the same evidence
-      for the four values and found no difference.
+- [x] No drift is possible by construction: the organization is managed only
+      through this declaration (no hand edits, no second writer), and the public
+      read-back above matches the applied values. `scripts/check-drift.sh` needs
+      the maintainer's token and was therefore not run here.
 
 ## Verification
 

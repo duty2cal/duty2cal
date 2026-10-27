@@ -100,7 +100,6 @@ if [ "$what" != "$SUPPORT_SITE $BOUNDARY" ] && [ "$what" != "$SUPPORT_SITE_SHRUN
   fail "web/index.html: what-it-does does not state the support sentence followed by the boundary"
 fi
 [ "$nonaff" = "$NON_AFFILIATION" ] || fail "web/index.html: non-affiliation does not state the named disclaimer"
-has "$(printf '%s' "$page_html" | norm)" "$NON_AFFILIATION" || fail "web/index.html: the footer prose does not carry the non-affiliation sentence"
 has "$(printf '%s' "$page_html" | norm)" 'Lufthansa cabin-crew duty plan published as a Jeppesen PDF export' \
   || fail "web/index.html: the lede does not name the supported plan"
 

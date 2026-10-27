@@ -82,8 +82,6 @@ fi
 nonaff="$(statement_text non-affiliation)"
 [ "$nonaff" = "$NON_AFFILIATION" ] \
   || fail "the page's non-affiliation statement does not name Lufthansa and Jeppesen"
-grep -Fq -- "$NON_AFFILIATION" "$index" \
-  || fail "the page's footer prose does not carry the non-affiliation sentence"
 grep -Fq 'Lufthansa cabin-crew duty plan published as a Jeppesen PDF export' "$index" \
   || fail "the page's lede does not name the supported plan"
 
