@@ -62,17 +62,8 @@ async fn the_converter_reports_the_path(w: &mut DutyWorld) {
         text.contains("Written: ") && text.contains(&expected.display().to_string()),
         "the converter did not report the new calendar path: {text}"
     );
-}
-
-#[then("the invocation reports success through its process exit status")]
-async fn success_exit_status(w: &mut DutyWorld) {
-    assert_eq!(
-        w.exit_status,
-        Some(0),
-        "the invocation did not report success: {}",
-        transcript(w)
-    );
-    // Commit the terminal transcript as this scenario's evidence.
+    // Commit the terminal transcript as this scenario's evidence. The success
+    // assertion itself is the shared step in the capability's step file.
     let path = transcript_path();
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).expect("create the evidence directory");

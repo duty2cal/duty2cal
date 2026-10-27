@@ -8,7 +8,10 @@ use std::path::Path;
 use std::process::ExitCode;
 
 use duty2cal_core::adapters::ics::IcsSink;
-use duty2cal_core::application::{Clock, ConvertRoster};
+use duty2cal_core::application::{
+    diagnostic_line, diagnostic_text, failure_report_text, warning_report_text, Clock,
+    ConversionOutcome, ConvertError, ConvertRoster, Severity,
+};
 use duty2cal_pdf::PdfRosterSource;
 use time::OffsetDateTime;
 
@@ -51,48 +54,100 @@ fn main() -> ExitCode {
 
     let bytes = match std::fs::read(&source) {
         Ok(bytes) => bytes,
-        Err(error) => return reject(&source, &format!("cannot read the source: {error}")),
+        Err(error) => return reject_reason(&source, &format!("cannot read the source: {error}")),
     };
 
     match ConvertRoster::new(PdfRosterSource, IcsSink, SystemClock).execute(&bytes) {
-        Ok(outcome) => publish(&source, &outcome.calendar),
-        Err(error) => reject(&source, &error.to_string()),
+        Ok(outcome) => publish_success(&source, &outcome),
+        Err(error) => reject(&source, &error),
     }
 }
 
-/// Write the complete calendar beside the source under an unused name.
+/// Write the complete calendar and, when there are warnings, the warning
+/// report beside the source under unused names.
 ///
 /// The write creates the file, so a name taken since the check is skipped
 /// rather than overwritten.
-fn publish(source: &Path, calendar: &str) -> ExitCode {
-    match fs::publish(source, fs::Kind::Calendar, calendar) {
+fn publish_success(source: &Path, outcome: &ConversionOutcome) -> ExitCode {
+    // The warnings reach the screen before publication, so a later publication
+    // failure cannot hide the fallbacks the run used.
+    for warning in &outcome.warnings {
+        println!("Warning: {}", diagnostic_line(warning));
+    }
+
+    match fs::publish(source, fs::Kind::Calendar, &outcome.calendar) {
         Ok(Some(path)) => {
             println!("Written: {}", path.display());
+            if !outcome.warnings.is_empty() {
+                publish_warnings(source, &outcome.warnings);
+            }
             ExitCode::SUCCESS
         }
-        Ok(None) => reject(source, "no unused calendar name is available"),
-        Err(error) => reject(
+        Ok(None) => reject_reason(source, "no unused calendar name is available"),
+        Err(error) => reject_reason(
             source,
             &format!("the calendar could not be written: {error}"),
         ),
     }
 }
 
-/// Report a failure, attempt a numbered diagnostic, and exit non-zero.
-fn reject(source: &Path, reason: &str) -> ExitCode {
-    report(source, reason);
-    ExitCode::FAILURE
+/// Write the warning report, or say why it was not saved.
+///
+/// A warning report that cannot be saved does not withdraw the published
+/// calendar or hide the warnings already printed.
+fn publish_warnings(source: &Path, warnings: &[duty2cal_core::application::Diagnostic]) {
+    let body = warning_report_text(&source_name(source), warnings);
+    match fs::publish(source, fs::Kind::Warning, &body) {
+        Ok(Some(path)) => println!("Warning report: {}", path.display()),
+        Ok(None) => println!("Warning report: no unused report name is available"),
+        Err(error) => println!("Warning report: no new report was saved: {error}"),
+    }
 }
 
-fn report(source: &Path, reason: &str) {
+/// Report a converted failure, attempt the matching numbered report, and exit
+/// non-zero.
+fn reject(source: &Path, error: &ConvertError) -> ExitCode {
+    let reason = error.to_string();
     let message = format!("conversion failed for {}: {reason}", source.display());
-    let body = duty2cal_core::application::diagnostic_text(
-        &source.file_name().unwrap_or_default().to_string_lossy(),
-        reason,
-    );
-    match fs::publish(source, fs::Kind::Diagnostic, &body) {
+    let name = source_name(source);
+    let body = match error {
+        ConvertError::Rows(diagnostics) => {
+            for diagnostic in diagnostics {
+                let severity = match diagnostic.severity {
+                    Severity::Error => "Error",
+                    Severity::Warning => "Warning",
+                };
+                println!("{severity}: {}", diagnostic_line(diagnostic));
+            }
+            failure_report_text(&name, diagnostics)
+        }
+        ConvertError::Source(_) | ConvertError::Table(_) => diagnostic_text(&name, &reason),
+    };
+    report(source, &message, &body)
+}
+
+/// Report a failure that is not about a row, attempt a numbered report, and
+/// exit non-zero.
+fn reject_reason(source: &Path, reason: &str) -> ExitCode {
+    let message = format!("conversion failed for {}: {reason}", source.display());
+    let body = diagnostic_text(&source_name(source), reason);
+    report(source, &message, &body)
+}
+
+fn report(source: &Path, message: &str, body: &str) -> ExitCode {
+    match fs::publish(source, fs::Kind::Diagnostic, body) {
         Ok(Some(path)) => println!("{message}\nDiagnostic: {}", path.display()),
         Err(error) => println!("{message}\nDiagnostic: no new report was saved: {error}"),
         Ok(None) => println!("{message}\nDiagnostic: no unused report name is available"),
     }
+    ExitCode::FAILURE
+}
+
+/// The source's filename, as the reports spell it.
+fn source_name(source: &Path) -> String {
+    source
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned()
 }

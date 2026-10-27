@@ -174,6 +174,19 @@ pub enum DutyEntry {
         /// Layover station.
         station: String,
     },
+    /// An activity represented from a row whose code the converter does not
+    /// know. The kind comes from the printed evidence, never from the code's
+    /// letters: both printed endpoints make it timed, none makes it all-day.
+    UnrecognizedActivity {
+        /// Duty-plan date.
+        date: Date,
+        /// The printed activity code, verbatim.
+        code: String,
+        /// The printed station, when the row prints one.
+        station: Option<String>,
+        /// The printed UTC window; `None` means all-day.
+        interval: Option<UtcInterval>,
+    },
 }
 
 impl DutyEntry {
@@ -184,7 +197,8 @@ impl DutyEntry {
             | Self::Travel { date, .. }
             | Self::Availability { date, .. }
             | Self::NonFlightDuty { date, .. }
-            | Self::Layover { date, .. } => *date,
+            | Self::Layover { date, .. }
+            | Self::UnrecognizedActivity { date, .. } => *date,
         }
     }
 
@@ -195,6 +209,7 @@ impl DutyEntry {
             Self::Travel { interval, .. }
             | Self::Availability { interval, .. }
             | Self::NonFlightDuty { interval, .. } => Some(*interval),
+            Self::UnrecognizedActivity { interval, .. } => *interval,
         }
     }
 
@@ -219,7 +234,9 @@ impl DutyEntry {
                     None | Some(FieldValue::Differing { .. }) => title,
                 }
             }
-            Self::Availability { code, .. } | Self::NonFlightDuty { code, .. } => code.clone(),
+            Self::Availability { code, .. }
+            | Self::NonFlightDuty { code, .. }
+            | Self::UnrecognizedActivity { code, .. } => code.clone(),
             Self::Layover { station, .. } => format!("Layover {station}"),
         }
     }
@@ -255,9 +272,9 @@ impl DutyEntry {
         match self {
             Self::AllDay { .. } => None,
             Self::Travel { from, to, .. } => Some(format!("{from}-{to}")),
-            Self::Availability { station, .. } | Self::NonFlightDuty { station, .. } => {
-                station.clone()
-            }
+            Self::Availability { station, .. }
+            | Self::NonFlightDuty { station, .. }
+            | Self::UnrecognizedActivity { station, .. } => station.clone(),
             Self::Layover { station, .. } => Some(station.clone()),
         }
     }

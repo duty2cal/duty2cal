@@ -59,28 +59,151 @@ pub trait Clock {
     fn now_utc(&self) -> OffsetDateTime;
 }
 
-/// Why a conversion could not be completed.
-#[derive(Debug, thiserror::Error)]
-pub enum ConvertError {
-    /// The source could not be read as a supported plan.
-    #[error(transparent)]
-    Source(#[from] SourceError),
-    /// A required source activity could not be resolved.
-    #[error("a required activity could not be resolved: {0}")]
-    UnresolvedRequiredActivity(String),
-    /// A required timing could not be resolved.
-    #[error("a required timing could not be resolved: {0}")]
-    UnresolvedTiming(String),
-    /// A timed interval was not strictly positive.
-    #[error("a timed interval must end after it starts")]
-    NonPositiveInterval,
+/// How a diagnostic affects publication.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Severity {
+    /// The row cannot be represented; any error prevents publication.
+    Error,
+    /// The row was represented by a documented fallback.
+    Warning,
 }
 
-/// A completed conversion: the calendar text to publish.
+/// One reported finding about one detail row.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Diagnostic {
+    /// Which severity a reader must apply.
+    pub severity: Severity,
+    /// 1-based position of the row among the rows the adapter yielded for the
+    /// detail table, counting silent layout rows.
+    pub row: usize,
+    /// The row's own duty-plan date, or the carried date of its date block.
+    pub date: Option<Date>,
+    /// The complete sentence a reader sees.
+    pub message: String,
+}
+
+impl Diagnostic {
+    /// An error about one detail row.
+    fn error(row: usize, date: Option<Date>, message: impl Into<String>) -> Self {
+        Self {
+            severity: Severity::Error,
+            row,
+            date,
+            message: message.into(),
+        }
+    }
+
+    /// A warning about one detail row.
+    fn warning(row: usize, date: Option<Date>, message: impl Into<String>) -> Self {
+        Self {
+            severity: Severity::Warning,
+            row,
+            date,
+            message: message.into(),
+        }
+    }
+}
+
+/// The single spelling of one diagnostic in a report, a transcript, or a page.
+pub fn diagnostic_line(diagnostic: &Diagnostic) -> String {
+    match diagnostic.date {
+        Some(date) => format!("row {} ({}): {}", diagnostic.row, date, diagnostic.message),
+        None => format!("row {}: {}", diagnostic.row, diagnostic.message),
+    }
+}
+
+/// The complete failure report for row-level errors.
+pub fn failure_report_text(source_name: &str, diagnostics: &[Diagnostic]) -> String {
+    let reason = diagnostics
+        .iter()
+        .find(|diagnostic| diagnostic.severity == Severity::Error)
+        .map(|diagnostic| diagnostic.message.as_str())
+        .unwrap_or("the conversion failed");
+    let mut report = format!("Source PDF: {source_name}\nReason: {reason}\n");
+    append_section(&mut report, "Errors", diagnostics, Severity::Error);
+    append_section(&mut report, "Warnings", diagnostics, Severity::Warning);
+    report
+}
+
+/// The complete warning report for a conversion that published a calendar.
+pub fn warning_report_text(source_name: &str, warnings: &[Diagnostic]) -> String {
+    let mut report = format!("Source PDF: {source_name}\n");
+    append_section(&mut report, "Warnings", warnings, Severity::Warning);
+    report
+}
+
+/// Append one severity section with its entries, or nothing when it is empty.
+fn append_section(report: &mut String, title: &str, diagnostics: &[Diagnostic], severity: Severity) {
+    let matching: Vec<&Diagnostic> = diagnostics
+        .iter()
+        .filter(|diagnostic| diagnostic.severity == severity)
+        .collect();
+    if matching.is_empty() {
+        return;
+    }
+    report.push_str(title);
+    report.push_str(":\n");
+    for diagnostic in matching {
+        report.push_str("- ");
+        report.push_str(&diagnostic_line(diagnostic));
+        report.push('\n');
+    }
+}
+
+/// Why a conversion could not be completed.
+#[derive(Debug)]
+pub enum ConvertError {
+    /// The source could not be read as a supported plan.
+    Source(SourceError),
+    /// The detail table itself is unusable (a required column is missing).
+    Table(String),
+    /// Row-level errors; carries every error and warning of the run.
+    Rows(Vec<Diagnostic>),
+}
+
+impl std::fmt::Display for ConvertError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Source(error) => write!(formatter, "{error}"),
+            Self::Table(message) => {
+                write!(
+                    formatter,
+                    "a required activity could not be resolved: {message}"
+                )
+            }
+            Self::Rows(diagnostics) => match diagnostics
+                .iter()
+                .find(|diagnostic| diagnostic.severity == Severity::Error)
+            {
+                Some(diagnostic) => write!(formatter, "{}", diagnostic.message),
+                None => write!(formatter, "the conversion failed"),
+            },
+        }
+    }
+}
+
+impl std::error::Error for ConvertError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Source(error) => Some(error),
+            Self::Table(_) | Self::Rows(_) => None,
+        }
+    }
+}
+
+impl From<SourceError> for ConvertError {
+    fn from(error: SourceError) -> Self {
+        Self::Source(error)
+    }
+}
+
+/// A completed conversion: the calendar text and every fallback it used.
 #[derive(Debug, Clone)]
 pub struct ConversionOutcome {
     /// Calendar text ready to be written beside the source.
     pub calendar: String,
+    /// Every fallback the run used, in plan order.
+    pub warnings: Vec<Diagnostic>,
 }
 
 /// The activity codes the supported family treats as all-day.
@@ -92,6 +215,9 @@ const NON_FLIGHT_CODES: [&str; 3] = ["TK", "DTUSA", "EM"];
 
 /// One detail row with its cells resolved by column label.
 struct Row {
+    /// 1-based position in the adapter's raw table, counting silent rows.
+    raw: usize,
+    /// Position in the filtered row list used for pairing.
     index: usize,
     date: Date,
     /// The plan's `Activity` cell, as printed.
@@ -131,6 +257,16 @@ enum Classified {
     Departure(usize),
     /// An arrival fragment of a travel leg.
     Arrival(usize),
+    /// A complete activity represented by a documented fallback.
+    Warning(DutyEntry, String),
+    /// A row that cannot be represented, with its complete sentence.
+    Error(String),
+}
+
+/// The resolved rows and the row-level findings collected while reading them.
+struct Interpretation {
+    entries: Vec<DutyEntry>,
+    diagnostics: Vec<Diagnostic>,
 }
 
 /// Turn the raw detail rows into the whole-plan roster.
@@ -138,21 +274,21 @@ enum Classified {
 /// Overview, statistics and footer material never reaches this function: the
 /// adapter yields only rows inside the detail table. A row that carries neither
 /// an activity code nor a route (a date-only row) contributes nothing.
-fn interpret(table: &RawRosterTable, snapshot: SnapshotId) -> Result<Roster, ConvertError> {
+fn interpret(table: &RawRosterTable) -> Result<Interpretation, ConvertError> {
     for label in ["Date", "From", "To"] {
         if column(table, label).is_none() {
-            return Err(ConvertError::UnresolvedRequiredActivity(format!(
+            return Err(ConvertError::Table(format!(
                 "the detail table carries no {label} column"
             )));
         }
     }
 
-    let rows = collect_rows(table)?;
+    let (rows, mut diagnostics) = collect_rows(table);
     let mut entries: Vec<(usize, DutyEntry)> = Vec::new();
     let mut pending: Vec<usize> = Vec::new();
 
     for row in &rows {
-        match classify(table, row)? {
+        match classify(table, row) {
             Classified::Entry(entry) => entries.push((row.index, entry)),
             Classified::Departure(index) => pending.push(index),
             Classified::Arrival(index) => {
@@ -162,57 +298,92 @@ fn interpret(table: &RawRosterTable, snapshot: SnapshotId) -> Result<Roster, Con
                     departure.activity == arrival.activity && departure.position == arrival.position
                 });
                 let Some(position) = partner else {
-                    return Err(unmatched_fragment(
-                        arrival.position.clone(),
-                        &arrival.activity,
+                    diagnostics.push(Diagnostic::error(
+                        arrival.raw,
+                        Some(arrival.date),
+                        unmatched_fragment(arrival.position.as_deref(), &arrival.activity),
                     ));
+                    continue;
                 };
                 let departure = pending.remove(position);
                 let trip = rows[departure]
                     .trip
                     .clone()
                     .or_else(|| rows[departure].carried_trip.clone());
-                entries.push((
-                    rows[departure].index,
-                    merge_travel(&rows[departure], arrival, trip)?,
-                ));
+                match merge_travel(&rows[departure], arrival, trip) {
+                    Ok(entry) => entries.push((rows[departure].index, entry)),
+                    Err(message) => diagnostics.push(Diagnostic::error(
+                        rows[departure].raw,
+                        Some(rows[departure].date),
+                        message,
+                    )),
+                }
             }
+            Classified::Warning(entry, message) => {
+                entries.push((row.index, entry));
+                diagnostics.push(Diagnostic::warning(row.raw, Some(row.date), message));
+            }
+            Classified::Error(message) => diagnostics.push(Diagnostic::error(
+                row.raw,
+                Some(row.date),
+                message,
+            )),
         }
     }
 
-    if let Some(unmatched) = pending.first() {
-        let row = &rows[*unmatched];
-        return Err(unmatched_fragment(row.position.clone(), &row.activity));
+    // Every departure that never found its arrival is a row that cannot be
+    // represented; report all of them, not only the first.
+    for departure in pending {
+        let row = &rows[departure];
+        diagnostics.push(Diagnostic::error(
+            row.raw,
+            Some(row.date),
+            unmatched_fragment(row.position.as_deref(), &row.activity),
+        ));
     }
 
     // A split leg belongs where it departs, whatever order the fragments appear.
     entries.sort_by_key(|(index, _)| *index);
-    Ok(Roster {
-        snapshot,
+    diagnostics.sort_by_key(|diagnostic| diagnostic.row);
+
+    if diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic.severity == Severity::Error)
+    {
+        return Err(ConvertError::Rows(diagnostics));
+    }
+
+    Ok(Interpretation {
         entries: entries.into_iter().map(|(_, entry)| entry).collect(),
+        diagnostics,
     })
 }
 
-/// The failure for a travel fragment whose partner is missing.
+/// The failure sentence for a travel fragment whose partner is missing.
 ///
 /// The fragment is named through the same rule the title uses, so a crew
 /// member reads the leg the same way in the calendar and in the failure.
-fn unmatched_fragment(position: Option<String>, activity: &str) -> ConvertError {
-    ConvertError::UnresolvedRequiredActivity(format!(
-        "no unique compatible partner for travel fragment {:?}",
-        printed_identification(position.as_deref(), activity)
-    ))
+fn unmatched_fragment(position: Option<&str>, activity: &str) -> String {
+    format!(
+        "a required activity could not be resolved: no unique compatible partner for travel fragment {:?}",
+        printed_identification(position, activity)
+    )
 }
 
 /// Build one `Row` per detail row that carries reachable activity data.
-fn collect_rows(table: &RawRosterTable) -> Result<Vec<Row>, ConvertError> {
+///
+/// A row whose date cannot be resolved contributes an error and no row; the
+/// carried date is not advanced by it.
+fn collect_rows(table: &RawRosterTable) -> (Vec<Row>, Vec<Diagnostic>) {
     let mut rows = Vec::new();
+    let mut diagnostics = Vec::new();
     let mut carried_trip: Option<String> = None;
     let mut carried_date: Option<Date> = None;
-    for cells in table.rows.iter() {
+    for (position, cells) in table.rows.iter().enumerate() {
+        let raw = position + 1;
         let layover = layover_station(cells);
         let mut activity = value(table, cells, "Activity");
-        let position = optional(table, cells, "Pos");
+        let position_in_table = optional(table, cells, "Pos");
         let mut from = value(table, cells, "From");
         let to = value(table, cells, "To");
         if let Some(station) = &layover {
@@ -226,15 +397,31 @@ fn collect_rows(table: &RawRosterTable) -> Result<Vec<Row>, ConvertError> {
         let date = if date_cell.is_empty() {
             // A continuation row prints no date of its own: the local date it
             // belongs to is the one the row above carries.
-            carried_date.ok_or_else(|| {
-                ConvertError::UnresolvedRequiredActivity(
-                    "a detail row prints no date and no earlier row supplies one".to_string(),
-                )
-            })?
+            match carried_date {
+                Some(date) => date,
+                None => {
+                    diagnostics.push(Diagnostic::error(
+                        raw,
+                        None,
+                        "a required activity could not be resolved: a detail row prints no date and no earlier row supplies one",
+                    ));
+                    continue;
+                }
+            }
         } else {
-            timing::parse_iso_date(&date_cell).ok_or_else(|| {
-                ConvertError::UnresolvedRequiredActivity(format!("unresolved date: {date_cell:?}"))
-            })?
+            match timing::parse_iso_date(&date_cell) {
+                Some(date) => date,
+                None => {
+                    diagnostics.push(Diagnostic::error(
+                        raw,
+                        None,
+                        format!(
+                            "a required activity could not be resolved: unresolved date: {date_cell:?}"
+                        ),
+                    ));
+                    continue;
+                }
+            }
         };
         carried_date = Some(date);
         let own_trip = optional(table, cells, "Trip");
@@ -245,6 +432,7 @@ fn collect_rows(table: &RawRosterTable) -> Result<Vec<Row>, ConvertError> {
         // not its position among every row the table prints.
         let index = rows.len();
         rows.push(Row {
+            raw,
             index,
             date,
             activity,
@@ -252,7 +440,7 @@ fn collect_rows(table: &RawRosterTable) -> Result<Vec<Row>, ConvertError> {
             to,
             start: value(table, cells, "Start"),
             end: value(table, cells, "End"),
-            position,
+            position: position_in_table,
             trip: own_trip,
             carried_trip: carried_trip.clone(),
             report_lt: optional(table, cells, "Report"),
@@ -263,7 +451,7 @@ fn collect_rows(table: &RawRosterTable) -> Result<Vec<Row>, ConvertError> {
             tags: tags(table, cells),
         });
     }
-    Ok(rows)
+    (rows, diagnostics)
 }
 
 /// The station of a row that prints the family's `Layover:` marker.
@@ -304,81 +492,137 @@ fn tags(table: &RawRosterTable, cells: &[String]) -> Option<String> {
 }
 
 /// Classify one detail row into the activity it represents.
-fn classify(table: &RawRosterTable, row: &Row) -> Result<Classified, ConvertError> {
+///
+/// Known codes win over the route branch, so a known timed code that also
+/// prints a route keeps its known kind. A route wins over the fallback, so a
+/// flight number never warns. The final arm is exhaustive: no row leaves
+/// classification without an entry or a diagnostic.
+fn classify(table: &RawRosterTable, row: &Row) -> Classified {
     let code = row.activity.as_str();
     let _ = table;
 
     if ALL_DAY_CODES.contains(&code) {
-        return Ok(Classified::Entry(DutyEntry::AllDay {
+        return Classified::Entry(DutyEntry::AllDay {
             date: row.date,
             code: row.activity.clone(),
             tags: row.tags.clone(),
-        }));
+        });
     }
 
     if AVAILABILITY_CODES.contains(&code) {
-        return Ok(Classified::Entry(DutyEntry::Availability {
-            date: row.date,
-            code: row.activity.clone(),
-            station: station(row),
-            interval: row_interval(row)?,
-            tags: row.tags.clone(),
-        }));
+        return match row_interval(row) {
+            Ok(interval) => Classified::Entry(DutyEntry::Availability {
+                date: row.date,
+                code: row.activity.clone(),
+                station: station(row),
+                interval,
+                tags: row.tags.clone(),
+            }),
+            Err(message) => Classified::Error(message),
+        };
     }
 
     if NON_FLIGHT_CODES.contains(&code) {
-        return Ok(Classified::Entry(DutyEntry::NonFlightDuty {
-            date: row.date,
-            code: row.activity.clone(),
-            station: station(row),
-            trip: row.trip.clone(),
-            interval: row_interval(row)?,
-            tags: row.tags.clone(),
-        }));
+        return match row_interval(row) {
+            Ok(interval) => Classified::Entry(DutyEntry::NonFlightDuty {
+                date: row.date,
+                code: row.activity.clone(),
+                station: station(row),
+                trip: row.trip.clone(),
+                interval,
+                tags: row.tags.clone(),
+            }),
+            Err(message) => Classified::Error(message),
+        };
     }
 
     if code.eq_ignore_ascii_case("Layover") {
         // A row carries this code only when its marker named a station, which is
         // why the station needs no second check here.
-        return Ok(Classified::Entry(DutyEntry::Layover {
+        return Classified::Entry(DutyEntry::Layover {
             date: row.date,
             station: row.from.clone(),
-        }));
+        });
     }
 
     let has_route = !row.from.is_empty() && !row.to.is_empty();
     let has_endpoints = !row.start.is_empty() && !row.end.is_empty();
     if has_route && has_endpoints {
-        return Ok(Classified::Entry(DutyEntry::Travel {
-            date: row.date,
-            activity: row.activity.clone(),
-            position: row.position.clone(),
-            from: row.from.clone(),
-            to: row.to.clone(),
-            interval: row_interval(row)?,
-            trip: row.trip.clone().or_else(|| row.carried_trip.clone()),
-            report_lt: single(row.report_lt.clone()),
-            aircraft: single(row.aircraft.clone()),
-            blocktime: single(row.blocktime.clone()),
-            tz_diff: single(row.tz_diff.clone()),
-            layover: single(row.layover.clone()),
-            tags: single(row.tags.clone()),
-        }));
+        return match row_interval(row) {
+            Ok(interval) => Classified::Entry(DutyEntry::Travel {
+                date: row.date,
+                activity: row.activity.clone(),
+                position: row.position.clone(),
+                from: row.from.clone(),
+                to: row.to.clone(),
+                interval,
+                trip: row.trip.clone().or_else(|| row.carried_trip.clone()),
+                report_lt: single(row.report_lt.clone()),
+                aircraft: single(row.aircraft.clone()),
+                blocktime: single(row.blocktime.clone()),
+                tz_diff: single(row.tz_diff.clone()),
+                layover: single(row.layover.clone()),
+                tags: single(row.tags.clone()),
+            }),
+            Err(message) => Classified::Error(message),
+        };
     }
     if !row.from.is_empty() && !row.start.is_empty() && row.to.is_empty() && row.end.is_empty() {
-        return Ok(Classified::Departure(row.index));
+        return Classified::Departure(row.index);
     }
     if !row.to.is_empty() && !row.end.is_empty() && row.from.is_empty() && row.start.is_empty() {
-        return Ok(Classified::Arrival(row.index));
+        return Classified::Arrival(row.index);
     }
 
-    Err(ConvertError::UnresolvedRequiredActivity(
-        if code.is_empty() {
-            "a detail row carries neither an activity code nor a route".to_string()
-        } else {
-            row.activity.clone()
-        },
-    ))
+    if !has_route {
+        if has_endpoints {
+            return match row_interval(row) {
+                Ok(interval) => Classified::Warning(
+                    DutyEntry::UnrecognizedActivity {
+                        date: row.date,
+                        code: row.activity.clone(),
+                        station: station(row),
+                        interval: Some(interval),
+                    },
+                    format!(
+                        "unrecognized activity code {:?}; converted as a timed activity using its printed UTC window {}-{}",
+                        row.activity, row.start, row.end
+                    ),
+                ),
+                Err(message) => Classified::Error(message),
+            };
+        }
+        let has_one_endpoint = !row.start.is_empty() || !row.end.is_empty();
+        if has_one_endpoint {
+            return Classified::Error(format!(
+                "a required activity could not be resolved: unrecognized activity code {:?} with only one printed UTC endpoint",
+                row.activity
+            ));
+        }
+        if !row.activity.is_empty() {
+            return Classified::Warning(
+                DutyEntry::UnrecognizedActivity {
+                    date: row.date,
+                    code: row.activity.clone(),
+                    station: station(row),
+                    interval: None,
+                },
+                format!(
+                    "unrecognized activity code {:?}; converted as an all-day activity",
+                    row.activity
+                ),
+            );
+        }
+        return Classified::Error(
+            "a required activity could not be resolved: a detail row carries neither an activity code nor a route"
+                .to_string(),
+        );
+    }
+
+    Classified::Error(
+        "a required activity could not be resolved: a route row carries an incomplete printed interval"
+            .to_string(),
+    )
 }
 
 /// A value supplied by one fragment.
@@ -410,7 +654,7 @@ fn merge_travel(
     departure: &Row,
     arrival: &Row,
     trip: Option<String>,
-) -> Result<DutyEntry, ConvertError> {
+) -> Result<DutyEntry, String> {
     let start = resolve(departure.date, &departure.start)?;
     let end = resolve(arrival.date, &arrival.end)?;
     Ok(DutyEntry::Travel {
@@ -419,7 +663,8 @@ fn merge_travel(
         position: departure.position.clone(),
         from: departure.from.clone(),
         to: arrival.to.clone(),
-        interval: UtcInterval::new(start, end).map_err(|_| ConvertError::NonPositiveInterval)?,
+        interval: UtcInterval::new(start, end)
+            .map_err(|_| "a timed interval must end after it starts".to_string())?,
         trip,
         report_lt: combine(departure.report_lt.clone(), arrival.report_lt.clone()),
         aircraft: combine(departure.aircraft.clone(), arrival.aircraft.clone()),
@@ -431,7 +676,7 @@ fn merge_travel(
 }
 
 /// The interval of a row that carries both of its own endpoints.
-fn row_interval(row: &Row) -> Result<UtcInterval, ConvertError> {
+fn row_interval(row: &Row) -> Result<UtcInterval, String> {
     let start = resolve(row.date, &row.start)?;
     let mut end = resolve(row.date, &row.end)?;
 
@@ -442,12 +687,12 @@ fn row_interval(row: &Row) -> Result<UtcInterval, ConvertError> {
         end += Duration::days(1);
     }
 
-    UtcInterval::new(start, end).map_err(|_| ConvertError::NonPositiveInterval)
+    UtcInterval::new(start, end).map_err(|_| "a timed interval must end after it starts".to_string())
 }
 
-fn resolve(local_date: Date, cell: &str) -> Result<OffsetDateTime, ConvertError> {
+fn resolve(local_date: Date, cell: &str) -> Result<OffsetDateTime, String> {
     timing::resolve_endpoint(local_date, cell)
-        .map_err(|error| ConvertError::UnresolvedTiming(error.to_string()))
+        .map_err(|error| format!("a required timing could not be resolved: {error}"))
 }
 
 /// A column's index, matched by its derived header label.
@@ -528,12 +773,17 @@ impl<S: RosterSource, K: CalendarSink, C: Clock> ConvertRoster<S, K, C> {
     /// Convert one supplied plan, or explain why it could not be converted.
     pub fn execute(&self, input: &[u8]) -> Result<ConversionOutcome, ConvertError> {
         let document = self.source.read(input)?;
-        let roster = interpret(&document.table, SnapshotId(fingerprint(input)))?;
+        let interpretation = interpret(&document.table)?;
+        let roster = Roster {
+            snapshot: SnapshotId(fingerprint(input)),
+            entries: interpretation.entries,
+        };
         // The source's own revision metadata is preferred; the constructed
         // representation's clock is the fallback.
         let revision = document.revision.unwrap_or_else(|| self.clock.now_utc());
         Ok(ConversionOutcome {
             calendar: self.sink.write(&roster, revision),
+            warnings: interpretation.diagnostics,
         })
     }
 }

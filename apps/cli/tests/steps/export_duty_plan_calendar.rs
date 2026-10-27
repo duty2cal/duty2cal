@@ -1746,6 +1746,7 @@ async fn a_plan_with_a_failure_and_an_older_diagnostic(w: &mut DutyWorld) {
             (DATE_X, "2099-06-07"),
             (ACTIVITY_X, "ZZ999"),
             (FROM_X, "ABC"),
+            (START_X, "08:00"),
         ],
     );
     std::fs::write(
@@ -1861,6 +1862,7 @@ async fn a_failure_without_a_writable_report(w: &mut DutyWorld) {
             (DATE_X, "2099-06-07"),
             (ACTIVITY_X, "ZZ999"),
             (FROM_X, "ABC"),
+            (START_X, "08:00"),
         ],
     );
     let dir = w.working_dir();
@@ -1916,6 +1918,7 @@ async fn a_failure_beside_two_reports(w: &mut DutyWorld) {
             (DATE_X, "2099-06-07"),
             (ACTIVITY_X, "ZZ999"),
             (FROM_X, "ABC"),
+            (START_X, "08:00"),
         ],
     );
     let dir = w.working_dir();
@@ -2713,6 +2716,167 @@ async fn a_plan_with_an_unusable_footer_stamp(w: &mut DutyWorld) {
 }
 
 // ---------------------------------------------------------------------------
+// Row diagnostics: warnings, warning reports and the failure report.
+// ---------------------------------------------------------------------------
+
+/// The warning lines the executable printed, without their prefix.
+fn warning_lines(w: &DutyWorld) -> Vec<String> {
+    transcript(w)
+        .lines()
+        .filter_map(|line| line.strip_prefix("Warning: "))
+        .map(str::to_string)
+        .collect()
+}
+
+/// The error lines the executable printed, without their prefix.
+fn error_lines(w: &DutyWorld) -> Vec<String> {
+    transcript(w)
+        .lines()
+        .filter_map(|line| line.strip_prefix("Error: "))
+        .map(str::to_string)
+        .collect()
+}
+
+/// The entries under one report section, in file order.
+///
+/// A section runs from its `Title:` line to the first line that is not an
+/// entry, so `Errors:` and `Warnings:` can be told apart.
+fn report_section(report: &str, title: &str) -> Vec<String> {
+    let heading = format!("{title}:");
+    let mut entries = Vec::new();
+    let mut inside = false;
+    for line in report.lines() {
+        if line == heading {
+            inside = true;
+            continue;
+        }
+        if !inside {
+            continue;
+        }
+        match line.strip_prefix("- ") {
+            Some(entry) => entries.push(entry.to_string()),
+            None => break,
+        }
+    }
+    entries
+}
+
+/// The warning report beside the source.
+fn warning_report(w: &DutyWorld) -> String {
+    let path = w.working_dir().join("roster.parse-warnings.txt");
+    std::fs::read_to_string(&path).unwrap_or_else(|error| {
+        panic!(
+            "no warning report at {}: {error}\nconverter transcript: {}",
+            path.display(),
+            transcript(w)
+        )
+    })
+}
+
+/// The failure report beside the source.
+fn failure_report(w: &DutyWorld) -> String {
+    let path = w.working_dir().join("roster.parse-error.txt");
+    std::fs::read_to_string(&path).unwrap_or_else(|error| {
+        panic!(
+            "no failure report at {}: {error}\nconverter transcript: {}",
+            path.display(),
+            transcript(w)
+        )
+    })
+}
+
+#[given(
+    "a supported duty plan dated 2099-06-07 with activity code ZZ_M_CF at station ABC and printed UTC start 08:00 and end 15:30"
+)]
+async fn a_plan_with_an_unrecognized_stationed_window(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "ZZ_M_CF"),
+            (FROM_X, "ABC"),
+            (START_X, "08:00"),
+            (END_X, "15:30"),
+        ],
+    );
+}
+
+#[then(
+    regex = r#"^the calendar contains one timed activity titled "([^"]+)" from (\d{2}:\d{2}) to (\d{2}:\d{2}) UTC on (\d{4}-\d{2}-\d{2}) at (\w+)$"#
+)]
+async fn one_stationed_timed_activity(
+    w: &mut DutyWorld,
+    title: String,
+    start: String,
+    end: String,
+    date: String,
+    station: String,
+) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 1);
+    for expected in [
+        format!("SUMMARY:{title}"),
+        format!("DTSTART:{}", instant(&date, &start)),
+        format!("DTEND:{}", instant(&date, &end)),
+        format!("LOCATION:{station}"),
+    ] {
+        assert!(
+            calendar.contains(&expected),
+            "the timed activity does not carry {expected:?}: {calendar}"
+        );
+    }
+}
+
+#[then(
+    regex = r"^the converter reports one conversion warning naming detail row (\d+) and the date (\d{4}-\d{2}-\d{2})$"
+)]
+async fn one_warning_naming_row_and_date(w: &mut DutyWorld, row: u32, date: String) {
+    let warnings = warning_lines(w);
+    assert_eq!(warnings.len(), 1, "expected one warning: {warnings:?}");
+    let expected = format!("row {row} ({date})");
+    assert!(
+        warnings[0].contains(&expected),
+        "the warning does not name {expected:?}: {warnings:?}"
+    );
+}
+
+#[then(regex = r#"^the warning names the activity code "([^"]+)"$"#)]
+async fn the_warning_names_the_code(w: &mut DutyWorld, code: String) {
+    let warnings = warning_lines(w);
+    assert!(
+        warnings.iter().any(|warning| warning.contains(&format!("\"{code}\""))),
+        "no warning names the code {code:?}: {warnings:?}"
+    );
+}
+
+#[then("the converter publishes a warning report beside the source")]
+async fn a_warning_report_is_published(w: &mut DutyWorld) {
+    let report = warning_report(w);
+    assert!(
+        report.starts_with("Source PDF: roster.pdf\n"),
+        "the warning report does not identify the source: {report}"
+    );
+    let entries = report_section(&report, "Warnings");
+    assert_eq!(
+        entries,
+        warning_lines(w),
+        "the report entries and the printed warnings differ: {report}"
+    );
+}
+
+#[then("the converter reports no conversion error")]
+async fn no_conversion_error(w: &mut DutyWorld) {
+    let errors = error_lines(w);
+    assert!(errors.is_empty(), "conversion errors were reported: {errors:?}");
+}
+
+#[then("the invocation reports success through its process exit status")]
+async fn reports_a_zero_exit_status(w: &mut DutyWorld) {
+    let code = w.exit_status.expect("the converter did not run");
+    assert_eq!(code, 0, "expected a zero process exit status");
+}
+
+// ---------------------------------------------------------------------------
 // Browser variants of the capability (design.md "Step definition locations").
 //
 // The bodies are the RED stubs: each panics with its own step name, so no
@@ -2935,7 +3099,11 @@ async fn supplies_an_unresolvable_plan(w: &mut DutyWorld, name: String) {
     let mut items = support::detail_header_row(600.0);
     items.extend(support::at(
         585.0,
-        &[(DATE_X, "2099-06-08"), (ACTIVITY_X, "ZZ999")],
+        &[
+            (DATE_X, "2099-06-08"),
+            (ACTIVITY_X, "ZZ999"),
+            (START_X, "08:00"),
+        ],
     ));
     named_source(w, &name, support::build_pdf(&items));
     supply_through_picker(w);

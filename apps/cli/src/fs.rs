@@ -61,6 +61,8 @@ pub enum Kind {
     Calendar,
     /// The failure report: `<stem>.parse-error.txt`, `<stem>.parse-error-1.txt`, ….
     Diagnostic,
+    /// The warning report: `<stem>.parse-warnings.txt`, `<stem>.parse-warnings-1.txt`, ….
+    Warning,
 }
 
 impl Kind {
@@ -69,6 +71,7 @@ impl Kind {
         match self {
             Self::Calendar => ("", "ics"),
             Self::Diagnostic => (".parse-error", "txt"),
+            Self::Warning => (".parse-warnings", "txt"),
         }
     }
 }

@@ -10,7 +10,7 @@ Feature: Export a duty-plan calendar
   Scenario: An unknown activity code with no route rejects the conversion
     Given the scenario is retired by the row-diagnostics change
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unrecognized activity code with a printed window becomes a timed activity with a warning
     Given a supported duty plan dated 2099-06-07 with activity code ZZ_M_CF at station ABC and printed UTC start 08:00 and end 15:30
     When the crew member converts it
