@@ -4369,12 +4369,21 @@ async fn the_failure_names_the_file(w: &mut DutyWorld, name: String) {
 
 #[then("the page shows a failure heading and the reason")]
 async fn the_failure_shows_the_reason(w: &mut DutyWorld) {
-    assert_failure_containing(w, "a required activity could not be resolved");
+    // The reason is the count-based page sentence; the unresolved activity is
+    // named by its `Errors` entry, never by the reason.
+    assert_failure_containing(w, "one row that cannot be represented");
     let state = page_state(w);
-    let reason = state["failureReason"].as_str().unwrap_or_default();
+    let errors = observed_list(&state, "errors");
+    assert_eq!(
+        errors.len(),
+        1,
+        "the failure lists no single error: {state}"
+    );
     assert!(
-        reason.contains("ZZ999"),
-        "the visible reason does not name the unresolved activity: {reason:?}"
+        errors[0].contains("ZZ999")
+            && errors[0].contains("a required activity could not be resolved"),
+        "the error does not name the unresolved activity: {:?}",
+        errors[0]
     );
 }
 
@@ -4597,25 +4606,37 @@ async fn the_diagnostic_names_the_unsupported_family(w: &mut DutyWorld, name: St
 
 #[then(regex = r#"^the diagnostic text identifies "([^"]+)" and the reason$"#)]
 async fn the_diagnostic_names_the_reason(w: &mut DutyWorld, name: String) {
+    // The diagnostic's `Reason:` line is the first error's message, the same
+    // finding the page lists under `Errors`.
     let state = page_state(w);
-    let visible = state["failureReason"]
-        .as_str()
-        .unwrap_or_default()
-        .to_string();
-    let reason = visible
-        .strip_prefix(&format!("{name}: "))
-        .unwrap_or_else(|| panic!("the visible reason does not name {name}: {visible:?}"))
+    let errors = observed_list(&state, "errors");
+    assert_eq!(
+        errors.len(),
+        1,
+        "the failure lists no single error: {state}"
+    );
+    let message = errors[0]
+        .split_once("): ")
+        .map(|(_, message)| message)
+        .unwrap_or_else(|| panic!("the error entry has no message: {:?}", errors[0]))
         .to_string();
     assert!(
-        reason.contains("a required activity could not be resolved"),
-        "the visible reason is not the conversion failure: {reason:?}"
+        message.contains("a required activity could not be resolved"),
+        "the listed error is not the conversion failure: {message:?}"
     );
 
+    // The failure report opens with the source and the first error's message
+    // and then lists every finding, so the reader gets both the reason and the
+    // row the reason came from.
     let text = captured_diagnostic(w);
-    assert_eq!(
-        text,
-        format!("Source PDF: {name}\nReason: {reason}\n"),
-        "the diagnostic does not carry the source and the visible reason"
+    let expected = format!("Source PDF: {name}\nReason: {message}\n");
+    assert!(
+        text.starts_with(&expected),
+        "the diagnostic does not open with the source and the listed error: {text:?}"
+    );
+    assert!(
+        text.contains(&format!("Errors:\n- {}\n", errors[0])),
+        "the diagnostic does not list the failed row under Errors: {text:?}"
     );
 }
 
