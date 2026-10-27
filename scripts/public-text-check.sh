@@ -92,6 +92,9 @@ if [ "$(cd "$(dirname "$readme")" && pwd)/$(basename "$readme")" != "$(cd "$here
   exit 2
 fi
 "$here/support-statement-check.sh"
+# The legal notices are public text too: the site's two notice pages and the
+# links the profile and this README carry are checked against the same tree.
+"$here/legal-notices-check.sh" --root "$(cd "$here/.." && pwd)"
 
 if [ "$missing" -ne 0 ]; then
   printf 'public-text-check: FAILED - %d of %d promise(s) violated in %s\n' \

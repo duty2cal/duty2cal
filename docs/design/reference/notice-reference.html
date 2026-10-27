@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Legal notice screen design reference — variant A (site shell)</title>
+<link rel="icon" type="image/svg+xml" href="../../assets/duty2cal.svg">
+<style>
+  :root {
+    --color-bg: #ffffff;
+    --color-surface: #f5f7fa;
+    --color-text: #14181f;
+    --color-muted: #4b5563;
+    --color-border: #d6dbe3;
+    --color-accent: #0b5fd7;
+    --color-focus: #0b5fd7;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --radius-control: 4px;
+    --radius-panel: 8px;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: light; }
+  body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font); font-size: 16px; line-height: 1.5; }
+  .page-header { padding: var(--space-5) var(--space-4) var(--space-4); border-bottom: 1px solid var(--color-border); }
+  .brand { display: flex; align-items: center; gap: var(--space-3); max-width: 720px; margin: 0 auto; }
+  .brand img { width: 48px; height: 48px; }
+  .brand h1 { margin: 0; font-size: 28px; line-height: 1.2; }
+  .brand p { margin: var(--space-1) 0 0; color: var(--color-muted); font-size: 14px; }
+  main { padding: var(--space-6) var(--space-4); }
+  .notice { max-width: 720px; margin: 0 auto var(--space-7); padding: var(--space-5); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-panel); }
+  .notice h1 { margin: 0 0 var(--space-2); font-size: 32px; line-height: 1.2; }
+  .notice h2 { margin: var(--space-5) 0 var(--space-2); font-size: 20px; line-height: 1.2; }
+  .notice p, .notice li { margin: 0 0 var(--space-3); }
+  address { font-style: normal; margin: 0 0 var(--space-3); }
+  .muted { color: var(--color-muted); font-size: 14px; }
+  .summary { margin-top: var(--space-6); padding-top: var(--space-4); border-top: 1px solid var(--color-border); }
+  .summary h2 { font-size: 16px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-muted); }
+  a { color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; border-radius: var(--radius-control); }
+  .page-footer { padding: var(--space-5) var(--space-4); border-top: 1px solid var(--color-border); color: var(--color-muted); font-size: 14px; }
+  .page-footer p { max-width: 720px; margin: 0 auto var(--space-2); }
+  .reference-note { max-width: 720px; margin: 0 auto var(--space-6); padding: var(--space-3) var(--space-4); border: 1px dashed var(--color-border); border-radius: var(--radius-panel); color: var(--color-muted); font-size: 14px; }
+</style>
+</head>
+<body>
+  <header class="page-header">
+    <div class="brand">
+      <img src="../../assets/duty2cal.svg" alt="duty2cal" width="48" height="48">
+      <div>
+        <h1>Duty plan to calendar</h1>
+        <p>Turn one Lufthansa cabin-crew duty plan into a calendar file. The plan stays in this tab.</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <p class="reference-note">Design reference, not a published page. The notice screens inherit the site's header, panel and footer. Contact data is sample data.</p>
+
+    <section class="notice" id="impressum">
+      <h1>Impressum</h1>
+      <p class="muted">Angaben gemäß § 18 Abs. 1 MStV und § 5 DDG</p>
+      <address>
+        Daniel Kressner<br>
+        c/o Musterfirma GmbH<br>
+        Musterstraße 1<br>
+        12345 Musterstadt<br>
+        Deutschland
+      </address>
+      <p>E-Mail: <a href="mailto:kontakt@example.invalid">kontakt@example.invalid</a></p>
+      <p>Diese Anschrift ist eine Zustellanschrift für dieses private, nicht-kommerzielle Open-Source-Projekt. Sie ist keine Anschrift des Arbeitgebers und begründet keine Verbindung zwischen dem Projekt und dem Unternehmen.</p>
+      <p>duty2cal ist ein privates, nicht-kommerzielles Open-Source-Projekt. Es besteht keine Verbindung zu Lufthansa, Jeppesen, Boeing oder einer Fluggesellschaft. Genannte Marken gehören ihren jeweiligen Inhabern.</p>
+      <p>Quellcode: <a href="https://github.com/duty2cal/duty2cal">github.com/duty2cal/duty2cal</a> (Lizenz: MPL-2.0). Die Software wird ohne Gewähr bereitgestellt; erzeugte Kalender sind gegen den offiziellen Dienstplan zu prüfen.</p>
+      <div class="summary" lang="en">
+        <h2>English summary</h2>
+        <p>Operator: Daniel Kressner, c/o Musterfirma GmbH, Musterstraße 1, 12345 Musterstadt, Germany. The address is a service address for this private, non-commercial open-source project; it is not the employer's address and implies no association with that company. duty2cal is not affiliated with Lufthansa, Jeppesen, Boeing or any airline. Source code: MPL-2.0; provided as is. The German version is the legally binding one.</p>
+      </div>
+    </section>
+
+    <section class="notice" id="datenschutz">
+      <h1>Datenschutzerklärung</h1>
+      <p class="muted">Stand: 27.10.2026</p>
+      <h2>1. Verantwortlicher</h2>
+      <address>
+        Daniel Kressner<br>
+        c/o Musterfirma GmbH, Musterstraße 1, 12345 Musterstadt<br>
+        E-Mail: <a href="mailto:kontakt@example.invalid">kontakt@example.invalid</a>
+      </address>
+
+      <h2>2. Hosting</h2>
+      <p>Diese Website wird von GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA, über den Dienst GitHub Pages bereitgestellt. Beim Aufruf einer Seite protokolliert GitHub die IP-Adresse des Besuchers und speichert sie zu Sicherheitszwecken; das gilt unabhängig davon, ob ein GitHub-Konto besteht. Weitere verarbeitete Daten sind der Zeitpunkt der Anfrage, die aufgerufene Seite, die verweisende Seite, Browser- und Geräteinformationen. Der Betreiber dieser Website hat keinen Zugriff auf diese Protokolle. Eine feste Speicherdauer veröffentlicht GitHub nicht.</p>
+      <p>Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an sicherer und stabiler Bereitstellung).</p>
+
+      <h2>3. Übermittlung in Drittländer</h2>
+      <p>Die Verarbeitung erfolgt in den USA und weiteren Ländern. GitHub ist unter dem EU-U.S. Data Privacy Framework zertifiziert; daneben stützt GitHub Übermittlungen auf die Standardvertragsklauseln der EU-Kommission. Für die Auslieferung der Seiten setzt GitHub Unterauftragsverarbeiter ein (Content Delivery Network).</p>
+
+      <h2>4. Verarbeitung im Browser</h2>
+      <p>Der gewählte Dienstplan wird ausschließlich in Ihrem Browser verarbeitet. Es findet keine Übertragung an einen Server und keine Speicherung statt; nach dem Laden der Seite löst sie keine Netzwerkanfrage mehr aus. Technisch abgesichert ist dies durch die Content-Security-Policy der Seite.</p>
+
+      <h2>5. Cookies und Drittinhalte</h2>
+      <p>Die Seite setzt keine Cookies und lädt keine Inhalte Dritter. Ein Einwilligungsbanner ist deshalb nicht erforderlich.</p>
+
+      <h2>6. Kontaktaufnahme per E-Mail</h2>
+      <p>Schreiben Sie an die oben genannte Adresse, verarbeite ich die Angaben aus der Nachricht (E-Mail-Adresse, Name, Inhalt) zur Bearbeitung der Anfrage; Rechtsgrundlage ist Art. 6 Abs. 1 lit. b beziehungsweise lit. f DSGVO. Die Nachricht wird gelöscht, sobald die Anfrage erledigt ist und keine Aufbewahrungspflicht entgegensteht. Für die Zustellung nutze ich einen Weiterleitungsdienst (SimpleLogin, Proton AG, Schweiz) und ein Postfach bei Google Ireland Limited; beide verarbeiten die Nachricht in meinem Auftrag.</p>
+
+      <h2>7. Ihre Rechte</h2>
+      <p>Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch. Sie können sich bei einer Datenschutz-Aufsichtsbehörde beschweren.</p>
+
+      <div class="summary" lang="en">
+        <h2>English summary</h2>
+        <p>Controller: Daniel Kressner, c/o Musterfirma GmbH, Musterstraße 1, 12345 Musterstadt, Germany. This site is hosted by GitHub, Inc. (GitHub Pages), which logs the visitor's IP address for security purposes, along with the time, page, referrer and browser or device information; the operator cannot read those logs and GitHub publishes no fixed retention period. The legal basis is Art. 6(1)(f) GDPR. Processing takes place in the United States and other countries; GitHub is certified under the EU-U.S. Data Privacy Framework and also relies on the EU Standard Contractual Clauses. The duty plan is processed only in your browser: no upload, no storage, no request after the page loads. The site sets no cookie and loads no third-party content. You have the rights under Art. 15–21 GDPR and the right to complain to a supervisory authority. The German version is the legally binding one.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="page-footer">
+    <p><a href="#">Startseite</a> · <a href="#datenschutz">Datenschutz</a></p>
+    <p>Not affiliated with Lufthansa, Jeppesen, or any duty-plan provider or airline. Provided as is, without warranty.</p>
+  </footer>
+</body>
+</html>

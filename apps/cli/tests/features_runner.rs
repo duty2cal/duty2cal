@@ -29,6 +29,10 @@ pub struct DutyWorld {
     pub env: Vec<(String, String)>,
     /// The Playwright driver child; killed when the scenario ends.
     pub browser: Option<steps::browser::BrowserDriver>,
+    /// The heading a notice scenario read before it activated a footer link.
+    pub heading_before: String,
+    /// The heading the same scenario read on the notice it reached.
+    pub heading_after: String,
 }
 
 impl Drop for DutyWorld {

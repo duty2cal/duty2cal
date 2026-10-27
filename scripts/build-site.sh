@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MPL-2.0
 # Assemble the Site output from one revision of the repository (design.md
-# "The assembled Site output"). The output holds exactly nine members:
+# "The assembled Site output"). The output holds exactly eleven members:
 #
-#   index.html app.js capability.js styles.css
+#   index.html impressum.html privacy.html  (the page and the two notices)
+#   app.js capability.js styles.css
 #   icon.svg                                (docs/assets/duty2cal.svg)
 #   icon.png                                (docs/assets/duty2cal.png)
 #   pkg/duty2cal_wasm.js pkg/wasm-inline.js (from scripts/build-web.sh)
 #   LICENSE.txt                             (LICENSES/MPL-2.0.txt)
+#
+# The two notice pages are not stamped: they carry a written standing date
+# instead of the Built revision, so a build cannot change a legal text.
 #
 # `icon.svg` is the header mark and the tab's primary icon; `icon.png` is the
 # raster alternate for a browser that cannot use an SVG tab icon.
@@ -48,7 +52,7 @@ done
 [ -d "$repo" ] || die "the checkout does not exist: $repo"
 
 web="$repo/web"
-for member in index.html app.js capability.js styles.css; do
+for member in index.html impressum.html privacy.html app.js capability.js styles.css; do
   [ -f "$web/$member" ] || die "the checkout holds no web/$member: $repo"
 done
 
@@ -78,6 +82,8 @@ grep -q '__BUILT_COMMIT__' "$web/index.html" \
 rm -rf "$out"
 mkdir -p "$out/pkg"
 
+cp "$web/impressum.html" "$out/impressum.html"
+cp "$web/privacy.html" "$out/privacy.html"
 cp "$web/app.js" "$out/app.js"
 cp "$web/capability.js" "$out/capability.js"
 cp "$web/styles.css" "$out/styles.css"

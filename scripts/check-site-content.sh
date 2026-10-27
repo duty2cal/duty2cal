@@ -155,6 +155,114 @@ for element in root.iter():
                 sys.exit(f"{attribute}={value!r} is outside the palette")
 PY
 
+# The output's members are exactly the eleven the assembler produces: a page
+# set that grew or lost a member is never published silently.
+expected_members="$(printf '%s\n' \
+  index.html impressum.html privacy.html app.js capability.js styles.css \
+  icon.svg icon.png pkg/duty2cal_wasm.js pkg/wasm-inline.js LICENSE.txt | sort)"
+for member in $expected_members; do
+  [ -s "$out/$member" ] || fail "the output holds no $member"
+done
+actual_members="$(cd "$out" && find . -type f | sed 's|^\./||' | sort)"
+if [ "$actual_members" != "$expected_members" ]; then
+  fail "the output members differ from the eleven the assembler produces: $(printf '%s ' $actual_members)"
+fi
+
+# The two legal notices are members, complete, and linked both ways.
+# shellcheck source=legal-notices.env
+. "$(dirname "$0")/legal-notices.env"
+
+impressum="$out/impressum.html"
+privacy="$out/privacy.html"
+[ -f "$impressum" ] || fail "the output holds no impressum.html"
+[ -f "$privacy" ] || fail "the output holds no privacy.html"
+grep -Eq '<h1[ >]' "$index" || fail "index.html carries no page heading"
+# The notices are documents: no script and no inline handler. The converter
+# page runs the bundle and is exempt by design.
+for page in "$impressum" "$privacy"; do
+  name="$(basename "$page")"
+  grep -Eq '<h1[ >]' "$page" || fail "$name carries no page heading"
+  if grep -Eq '<script' "$page"; then
+    fail "$name carries a script element"
+  fi
+  if grep -Eqi '<[^>]+ on[a-z]+=' "$page"; then
+    fail "$name carries an inline event handler"
+  fi
+done
+grep -Fq 'href="./impressum.html"' "$index" \
+  || fail "the converter page's footer links no Impressum"
+grep -Fq 'href="./privacy.html"' "$index" \
+  || fail "the converter page's footer links no Datenschutzerklärung"
+grep -Fq 'href="./privacy.html"' "$impressum" \
+  || fail "the Impressum links no Datenschutzerklärung"
+grep -Fq 'href="./impressum.html"' "$privacy" \
+  || fail "the Datenschutzerklärung links no Impressum"
+
+for page in "$impressum" "$privacy"; do
+  name="$(basename "$page")"
+  grep -Fq -- "$NOTICE_CSP" "$page" \
+    || fail "$name carries no notice content security policy"
+  grep -Fq -- "$NOTICE_DOCUMENT_LANG" "$page" \
+    || fail "$name declares no German document language"
+  grep -Fq -- "$NOTICE_SUMMARY_LANG" "$page" \
+    || fail "$name carries no English summary language"
+  grep -Fq -- "$NOTICE_SUMMARY_BINDING" "$page" \
+    || fail "$name carries no binding-version sentence"
+  for marker in "${NOTICE_FORBIDDEN[@]}"; do
+    if grep -Fq -- "$marker" "$page"; then
+      fail "$name carries the forbidden marker '$marker'"
+    fi
+  done
+done
+
+require_notice() { # page, literal, name
+  grep -Fq -- "$2" "$1" || fail "$(basename "$1") carries no $3"
+}
+require_notice "$impressum" "$IMP_NAME" "operator name"
+require_notice "$impressum" "$IMP_SERVICE_ADDRESS" "service-address sentence"
+require_notice "$impressum" "$IMP_NON_AFFILIATION" "non-affiliation sentence"
+require_notice "$impressum" "$IMP_TRADEMARK" "trademark sentence"
+require_notice "$impressum" "$IMP_LICENCE" "licence sentence"
+require_notice "$impressum" "$IMP_AS_IS" "as-is sentence"
+require_notice "$impressum" "$IMP_SOURCE" "source repository"
+if ! tr '\n' ' ' < "$impressum" | sed -n 's:.*<address>\(.*\)</address>.*:\1:p' \
+  | grep -Eq '[0-9]{5}[[:space:]]+[A-ZÄÖÜ][[:alpha:]äöüß]'; then
+  fail "the Impressum carries no postal address with a postal code and a city"
+fi
+grep -Eq 'href="mailto:[^"]+"' "$impressum" \
+  || fail "the Impressum offers no electronic mail address"
+
+require_notice "$privacy" "$PRIV_CONTROLLER" "controller section"
+require_notice "$privacy" "$PRIV_HOST" "hosting provider"
+require_notice "$privacy" "$PRIV_IP" "IP-address disclosure"
+require_notice "$privacy" "$PRIV_PURPOSE" "purpose of the logging"
+require_notice "$privacy" "$PRIV_FURTHER_DATA" "further processed data"
+require_notice "$privacy" "$PRIV_BASIS" "legal basis"
+require_notice "$privacy" "$PRIV_TRANSFER" "third-country transfer"
+require_notice "$privacy" "$PRIV_SCC" "standard contractual clauses"
+require_notice "$privacy" "$PRIV_SUBPROCESSORS" "sub-processors"
+require_notice "$privacy" "$PRIV_RETENTION" "retention statement"
+require_notice "$privacy" "$PRIV_LOCAL_PROCESSING" "browser-local conversion"
+require_notice "$privacy" "$PRIV_COOKIES" "no-cookie statement"
+require_notice "$privacy" "$PRIV_RIGHTS" "rights and supervisory authority"
+require_notice "$privacy" "$PRIV_MAIL_PROVIDER" "mail handling"
+grep -Eq 'Stand: [0-9]{2}\.[0-9]{2}\.[0-9]{4}' "$privacy" \
+  || fail "the Datenschutzerklärung carries no standing date"
+
+# Every relative link in every page resolves inside the output: a notice that
+# points at a page the output does not carry is refused before publication.
+for page in "$out"/*.html; do
+  while IFS= read -r href; do
+    [ -n "$href" ] || continue
+    case "$href" in
+      http://*|https://*|mailto:*|\#*|data:*) continue ;;
+    esac
+    target="$out/${href#./}"
+    [ -e "$target" ] \
+      || fail "$(basename "$page") links $href, which the output does not hold"
+  done < <(grep -oE 'href="[^"]+"' "$page" | sed 's/^href="//; s/"$//' || true)
+done
+
 # No asset may be loaded from another origin; the CSP forbids it and the
 # content check refuses the markup that would ask. `<a href>` links are
 # navigation and stay allowed: the release page and the source live elsewhere
@@ -163,10 +271,12 @@ foreign_asset_patterns=(
   '(src|srcset|poster)="(https?:)?//[^"]*"'
   '<link[^>]+href="(https?:)?//[^"]*"'
 )
-for pattern in "${foreign_asset_patterns[@]}"; do
-  foreign="$(grep -Eo "$pattern" "$index" || true)"
-  [ -z "$foreign" ] \
-    || fail "the page content loads an asset from another origin: $foreign"
+for page in "$out"/*.html; do
+  for pattern in "${foreign_asset_patterns[@]}"; do
+    foreign="$(grep -Eo "$pattern" "$page" || true)"
+    [ -z "$foreign" ] \
+      || fail "the page content of $(basename "$page") loads an asset from another origin: $foreign"
+  done
 done
 
-echo "check-site-content: the page carries the required statements and assets"
+echo "check-site-content: the page set carries the required statements, notices and assets"

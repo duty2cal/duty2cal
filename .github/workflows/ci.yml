@@ -101,9 +101,13 @@ jobs:
           cache-dependency-path: web/e2e/package-lock.json
       - run: npm ci --prefix web/e2e
       - run: npx --prefix web/e2e playwright install --with-deps chromium
-      # The one browser smoke: the existing end-to-end scenario, run by name.
+      # The browser scenarios, each run by name so a failing one names itself.
       - name: Run the browser smoke
         run: ./run-tests.sh --browser --name "Crew member converts a supported duty plan in the browser and saves the offered calendar"
+      - name: Run the Impressum browser scenario
+        run: ./run-tests.sh --browser --name "Reader opens the Impressum from the site footer and reads who publishes the site"
+      - name: Run the Datenschutzerklärung browser scenario
+        run: ./run-tests.sh --browser --name "Reader opens the Datenschutzerklärung from the footer and reads what a page request processes"
 
   changelog:
     runs-on: ubuntu-latest

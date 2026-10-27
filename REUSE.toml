@@ -27,3 +27,13 @@ path = ["docs/assets/**"]
 precedence = "override"
 SPDX-FileCopyrightText = "2026 Daniel Kressner"
 SPDX-License-Identifier = "CC0-1.0"
+
+# The two legal notice pages are prose written for this site, meant to be quoted
+# like the other public text, so they are CC0-1.0. `override` replaces the
+# aggregate MPL-2.0 annotation for exactly these paths; the converter page
+# `web/index.html` stays under the aggregate annotation.
+[[annotations]]
+path = ["web/impressum.html", "web/privacy.html"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Daniel Kressner"
+SPDX-License-Identifier = "CC0-1.0"

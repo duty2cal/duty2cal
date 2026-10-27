@@ -63,22 +63,28 @@ async function serve(request, response) {
     response.end('outside the served root');
     return;
   }
-  try {
-    const info = await stat(filePath);
-    if (!info.isFile()) {
-      throw new Error('not a file');
-    }
-    response.writeHead(200, {
-      'content-type':
-        CONTENT_TYPES[extname(filePath)] || 'application/octet-stream',
-      'content-length': info.size,
-      'cache-control': 'no-store',
-    });
-    createReadStream(filePath).pipe(response);
-  } catch {
-    response.writeHead(404, { 'content-type': 'text/plain' });
-    response.end('not found');
+  // GitHub Pages serves `/impressum` for `impressum.html`; the loopback server
+  // resolves an extensionless path the same way, so the published address the
+  // profile and the README link is the address the steps exercise.
+  const candidates = [filePath];
+  if (extname(pathname) === '') {
+    candidates.push(`${filePath}.html`);
   }
+  for (const candidate of candidates) {
+    const info = await stat(candidate).catch(() => null);
+    if (info?.isFile()) {
+      response.writeHead(200, {
+        'content-type':
+          CONTENT_TYPES[extname(candidate)] || 'application/octet-stream',
+        'content-length': info.size,
+        'cache-control': 'no-store',
+      });
+      createReadStream(candidate).pipe(response);
+      return;
+    }
+  }
+  response.writeHead(404, { 'content-type': 'text/plain' });
+  response.end('not found');
 }
 
 /** Fail closed when the directory to serve does not exist. */
@@ -749,6 +755,64 @@ const actions = {
     ]);
     await download.cancel();
     return { dismissed: true, suggestedFilename };
+  },
+
+  async navigate(params) {
+    if (!page) {
+      throw new Error('the page is not started');
+    }
+    if (!params.path) {
+      throw new Error('navigate needs a path');
+    }
+    await page.goto(`${baseUrl}${params.path}`, { waitUntil: 'load' });
+    return { url: page.url(), title: await page.title() };
+  },
+
+  async click(params) {
+    if (!page) {
+      throw new Error('the page is not started');
+    }
+    if (!params.text) {
+      throw new Error('click needs the visible text of the link');
+    }
+    const link = page.getByRole('link', { name: params.text, exact: true });
+    if ((await link.count()) === 0) {
+      throw new Error(`no link "${params.text}" is present`);
+    }
+    await Promise.all([page.waitForLoadState('load'), link.first().click()]);
+    return { url: page.url(), title: await page.title() };
+  },
+
+  async read_text() {
+    if (!page) {
+      throw new Error('the page is not started');
+    }
+    return page.evaluate(() => {
+      const tidy = (value) => (value || '').replace(/\s+/g, ' ').trim();
+      return {
+        url: location.href,
+        title: document.title,
+        lang: document.documentElement.lang,
+        h1: tidy(document.querySelector('h1')?.innerText),
+        text: document.body.innerText,
+        links: [...document.querySelectorAll('a[href]')].map((link) => ({
+          text: tidy(link.textContent),
+          href: link.href,
+          scheme: (() => {
+            try {
+              return new URL(link.href).protocol;
+            } catch {
+              return '';
+            }
+          })(),
+        })),
+        cookies: document.cookie,
+        storage: {
+          local: Object.keys(localStorage),
+          session: Object.keys(sessionStorage),
+        },
+      };
+    });
   },
 
   async stop() {

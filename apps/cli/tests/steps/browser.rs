@@ -16,8 +16,11 @@ use serde_json::{Map, Value};
 
 /// The actions the driver protocol serves. An action outside this list is a
 /// step bug, not a driver failure.
-const ACTIONS: [&str; 10] = [
+const ACTIONS: [&str; 13] = [
     "start",
+    "navigate",
+    "click",
+    "read_text",
     "set_file",
     "drop_file",
     "read_state",
