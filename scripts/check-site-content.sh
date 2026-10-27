@@ -81,12 +81,14 @@ grep -Eq '<span data-site-statement="built-revision">[^<]+</span>' "$index" \
 [ -s "$out/LICENSE.txt" ] || fail "the output holds no LICENSE.txt"
 [ -s "$out/icon.png" ] || fail "the output holds no icon.png"
 
-# The tab icon and the header mark come from the page's own origin.
-grep -Eq '<link[^>]+rel="icon"[^>]+href="\./icon\.png"' "$index" \
-  || fail "the page's tab icon does not point at ./icon.png"
-grep -Eq '<img[^>]+src="\./icon\.png"[^>]*>' "$index" \
-  || fail "the page's header icon does not point at ./icon.png"
-grep -Eq '<img[^>]+src="\./icon\.png"[^>]+alt="duty2cal"' "$index" \
+# The tab icon and the header mark come from the page's own origin; the vector
+# is the icon and the mark. The raster alternate is asserted below.
+svg_line="$(grep -nE '<link[^>]+rel="icon"[^>]+type="image/svg[+]xml"[^>]+href="\./icon\.svg"' "$index" | head -n 1 | cut -d: -f1 || true)"
+[ -n "$svg_line" ] \
+  || fail "the page's tab declares no vector icon at ./icon.svg with type=\"image/svg+xml\""
+grep -Eq '<img[^>]+src="\./icon\.svg"[^>]*>' "$index" \
+  || fail "the page's header mark does not point at ./icon.svg"
+grep -Eq '<img[^>]+src="\./icon\.svg"[^>]+alt="duty2cal"' "$index" \
   || fail "the page's header icon carries no alt text naming the project"
 grep -Eq '<img[^>]+width="48"[^>]+height="48"' "$index" \
   || fail "the page's header icon is not declared at 48 by 48"

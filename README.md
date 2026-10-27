@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/duty2cal.png" alt="duty2cal app icon" width="160">
+  <img src="docs/assets/duty2cal.svg" alt="duty2cal app icon" width="160">
 </p>
 
 # duty2cal

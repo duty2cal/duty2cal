@@ -93,8 +93,13 @@ async fn success_exit_status(w: &mut DutyWorld) {
 /// The committed per-viewport visual evidence directory for this scenario.
 fn evidence_dir() -> PathBuf {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let active = root.join("givn/changes/build-browser-converter");
-    let archived = root.join("givn/archive/build-browser-converter");
+    // The override names a change id. The active/archived resolution below still
+    // decides which tree the gate is testing, so an archived change's evidence
+    // never lands outside the candidate.
+    let change = std::env::var("DUTY2CAL_VISUAL_EVIDENCE_DIR")
+        .unwrap_or_else(|_| "build-browser-converter".to_string());
+    let active = root.join("givn/changes").join(&change);
+    let archived = root.join("givn/archive").join(&change);
     // The archive gate moves the change before it runs the suite. Write the
     // evidence to the archived copy in that phase so the tested tree stays
     // inside the candidate; the active change uses its own directory.

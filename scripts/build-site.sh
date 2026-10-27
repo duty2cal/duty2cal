@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MPL-2.0
 # Assemble the Site output from one revision of the repository (design.md
-# "The assembled Site output"). The output holds exactly eight members:
+# "The assembled Site output"). The output holds exactly nine members:
 #
 #   index.html app.js capability.js styles.css
+#   icon.svg                                (docs/assets/duty2cal.svg)
 #   icon.png                                (docs/assets/duty2cal.png)
 #   pkg/duty2cal_wasm.js pkg/wasm-inline.js (from scripts/build-web.sh)
 #   LICENSE.txt                             (LICENSES/MPL-2.0.txt)
+#
+# `icon.svg` is the header mark and the tab's primary icon; `icon.png` is the
+# raster alternate for a browser that cannot use an SVG tab icon.
 #
 # The page's footer anchor is stamped with the Built revision text and the
 # commit link, both derived from `--revision`, so the string the page carries
@@ -54,8 +58,10 @@ if [ ! -f "$web/pkg/duty2cal_wasm.js" ] || [ ! -f "$web/pkg/wasm-inline.js" ]; t
   die "the checkout holds no browser bundle under $web/pkg; run scripts/build-web.sh first"
 fi
 
-icon_source="$repo/docs/assets/duty2cal.png"
-[ -f "$icon_source" ] || die "the project icon is missing: $icon_source"
+vector_source="$repo/docs/assets/duty2cal.svg"
+[ -f "$vector_source" ] || die "the project's vector mark is missing: $vector_source"
+raster_source="$repo/docs/assets/duty2cal.png"
+[ -f "$raster_source" ] || die "the project's raster mark is missing: $raster_source"
 licence_source="$repo/LICENSES/MPL-2.0.txt"
 [ -f "$licence_source" ] || die "the licence text is missing: $licence_source"
 
@@ -77,7 +83,8 @@ cp "$web/capability.js" "$out/capability.js"
 cp "$web/styles.css" "$out/styles.css"
 cp "$web/pkg/duty2cal_wasm.js" "$out/pkg/duty2cal_wasm.js"
 cp "$web/pkg/wasm-inline.js" "$out/pkg/wasm-inline.js"
-cp "$icon_source" "$out/icon.png"
+cp "$vector_source" "$out/icon.svg"
+cp "$raster_source" "$out/icon.png"
 cp "$licence_source" "$out/LICENSE.txt"
 
 # The revision text and the commit link are the only build-derived visible

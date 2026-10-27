@@ -209,9 +209,17 @@ def main() -> None:
         retained = [block for block in blocks if block.title not in remove]
         sources.append((str(path), filtered_text(lines, blocks, retained)))
 
-    # Emit every delta without its retired placeholder scenarios.
+    # Emit every delta without its retired placeholder scenarios. A delta for a
+    # @documentation capability is not executed, exactly like its permanent
+    # feature; emitting it unbound would turn strict mode into a false failure.
     for path, _key in sorted(delta_files):
         lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+        if is_documentation(lines):
+            print(
+                f"assemble_features: {path} is @documentation; not executed",
+                file=sys.stderr,
+            )
+            continue
         blocks = scenario_blocks(lines)
         retained = [block for block in blocks if "@givn.removed" not in block.tags]
         sources.append((str(path), filtered_text(lines, blocks, retained)))
