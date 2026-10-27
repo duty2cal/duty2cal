@@ -81,7 +81,7 @@ Feature: Export a duty-plan calendar
     And the transcript carries one warning line for each warned row
     And the transcript names the warning report
 
-  @givn.added @wip
+  @givn.added
   Scenario: A conversion without warnings publishes no warning report
     Given a supported duty plan whose every dated activity carries a recognized activity code
     When the crew member converts it

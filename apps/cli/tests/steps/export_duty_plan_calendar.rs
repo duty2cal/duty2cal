@@ -3230,6 +3230,55 @@ async fn transcript_names_the_warning_report(w: &mut DutyWorld) {
     );
 }
 
+#[given("a supported duty plan whose every dated activity carries a recognized activity code")]
+async fn every_activity_is_recognized(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "TK"),
+            (START_X, "08:00"),
+            (END_X, "12:00"),
+        ],
+    ));
+    items.extend(support::at(
+        570.0,
+        &[(DATE_X, "2099-06-08"), (ACTIVITY_X, "U")],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then("a complete calendar is published")]
+async fn a_complete_calendar_is_published(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    assert!(
+        calendar.contains("BEGIN:VCALENDAR") && calendar.contains("END:VCALENDAR"),
+        "the published calendar is not complete: {calendar}"
+    );
+    assert_event_count(&calendar, 2);
+}
+
+#[then("no warning report is published")]
+async fn no_warning_report(w: &mut DutyWorld) {
+    let reports: Vec<String> = std::fs::read_dir(w.working_dir())
+        .expect("read the scenario directory")
+        .filter_map(Result::ok)
+        .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .filter(|name| name.contains("parse-warnings"))
+        .collect();
+    assert!(
+        reports.is_empty(),
+        "a warning report was published: {reports:?}"
+    );
+}
+
+#[then("the transcript reports no conversion warning")]
+async fn no_conversion_warning(w: &mut DutyWorld) {
+    let warnings = warning_lines(w);
+    assert!(warnings.is_empty(), "warnings were reported: {warnings:?}");
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);
