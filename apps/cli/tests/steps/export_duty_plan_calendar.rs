@@ -4109,6 +4109,15 @@ async fn the_page_states_no_warning_report(w: &mut DutyWorld) {
         offers_of_kind(&state, "warnings").is_empty(),
         "the page offers a warning report although its creation failed: {state}"
     );
+    assert_eq!(
+        state["state"].as_str(),
+        Some("ready-with-warnings"),
+        "a failed warning-report offer turned the ready state into a failure: {state}"
+    );
+    assert!(
+        !text.contains("Conversion failed"),
+        "a failed warning-report offer showed the failure state: {text}"
+    );
 }
 
 #[given("the converter page served from the built Site output that cannot create a download offer for the warning report")]
