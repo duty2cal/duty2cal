@@ -73,7 +73,7 @@ Feature: Export a duty-plan calendar
     Then the warning report is written as roster.parse-warnings-2.txt
     And roster.parse-warnings.txt and roster.parse-warnings-1.txt are unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: The executable prints each warning beside the new calendar path
     Given a supported duty plan with two detail rows carrying unrecognized activity codes
     When the crew member converts it

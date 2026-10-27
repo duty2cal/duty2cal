@@ -3170,6 +3170,66 @@ async fn both_older_warning_reports_unchanged(w: &mut DutyWorld) {
     }
 }
 
+#[given("a supported duty plan with two detail rows carrying unrecognized activity codes")]
+async fn two_unrecognized_rows(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    for (offset, (date, code, start, end)) in [
+        ("2099-06-07", "ZZ_M_CF", "08:00", "15:30"),
+        ("2099-06-08", "ZZ_M_AB", "06:00", "12:00"),
+    ]
+    .iter()
+    .enumerate()
+    {
+        items.extend(support::at(
+            585.0 - offset as f64 * 15.0,
+            &[
+                (DATE_X, *date),
+                (ACTIVITY_X, *code),
+                (START_X, *start),
+                (END_X, *end),
+            ],
+        ));
+    }
+    write_fixture(w, &items);
+}
+
+#[then("the transcript names the newly published calendar")]
+async fn transcript_names_the_calendar(w: &mut DutyWorld) {
+    let text = transcript(w);
+    let expected = w.working_dir().join("roster.ics");
+    assert!(
+        text.contains("Written: ") && text.contains(&expected.display().to_string()),
+        "the transcript does not name the new calendar: {text}"
+    );
+}
+
+#[then("the transcript carries one warning line for each warned row")]
+async fn one_warning_line_per_row(w: &mut DutyWorld) {
+    let warnings = warning_lines(w);
+    assert_eq!(warnings.len(), 2, "expected one warning per row: {warnings:?}");
+    for warning in &warnings {
+        assert!(
+            warning.starts_with("row ") && warning.contains('('),
+            "a warning line does not name its row and date: {warning}"
+        );
+    }
+}
+
+#[then("the transcript names the warning report")]
+async fn transcript_names_the_warning_report(w: &mut DutyWorld) {
+    let text = transcript(w);
+    let expected = w.working_dir().join("roster.parse-warnings.txt");
+    assert!(
+        text.contains("Warning report: ") && text.contains(&expected.display().to_string()),
+        "the transcript does not name the warning report: {text}"
+    );
+    assert!(
+        expected.is_file(),
+        "the named warning report does not exist: {}",
+        expected.display()
+    );
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);
