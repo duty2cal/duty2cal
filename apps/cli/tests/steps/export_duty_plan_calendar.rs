@@ -428,7 +428,10 @@ async fn a_plan_with_a_stationed_code_and_no_times(
     code: String,
     station: String,
 ) {
-    plan_with_row(w, &[(DATE_X, &date), (ACTIVITY_X, &code), (FROM_X, &station)]);
+    plan_with_row(
+        w,
+        &[(DATE_X, &date), (ACTIVITY_X, &code), (FROM_X, &station)],
+    );
 }
 
 #[given(
@@ -3017,14 +3020,11 @@ async fn the_warning_names_the_code(w: &mut DutyWorld, code: String) {
 #[then(
     regex = r"^the warning states that the row was converted as a timed activity using its printed UTC window (\d{2}:\d{2})-(\d{2}:\d{2})$"
 )]
-async fn the_warning_states_the_fallback_window(
-    w: &mut DutyWorld,
-    start: String,
-    end: String,
-) {
+async fn the_warning_states_the_fallback_window(w: &mut DutyWorld, start: String, end: String) {
     let warnings = warning_lines(w);
     assert_eq!(warnings.len(), 1, "expected one warning: {warnings:?}");
-    let phrase = format!("converted as a timed activity using its printed UTC window {start}-{end}");
+    let phrase =
+        format!("converted as a timed activity using its printed UTC window {start}-{end}");
     assert!(
         warnings[0].contains(&phrase),
         "the warning does not state {phrase:?}: {warnings:?}"

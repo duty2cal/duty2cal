@@ -2,7 +2,7 @@
 
 Release note (commit subject): Standby shift assignments printed as SB_F_CF, SB_M_CF or SB_S_CF are recognized as standby availability windows, so a supported duty plan that contains them converts without warnings for those rows.
 
-Owning use case: [Export a duty-plan calendar](specs/export-duty-plan-calendar/usecase.md) (`export-duty-plan-calendar`). Confirmed Persona: `crew-member--personal-calendar-owner` (accuracy/privacy lens). `contributor--web-reviewer` is not affected (no page code, copy, state or interaction changes); `project-maintainer--release-owner` is unaffected (no release-evidence change).
+Owning use case: [Export a duty-plan calendar](specs/export-duty-plan-calendar/usecase.md) (`export-duty-plan-calendar`). Confirmed Persona: `crew-member--personal-calendar-owner` (accuracy/privacy lens). `contributor--web-reviewer` is not affected (no page code, copy, state or interaction changes); `project-maintainer--release-owner` is not materially affected: the support statement and release claim are unchanged, and the support-evidence record's accepted-code sentence gains the three codes so it stays truthful.
 
 Single-scenario command (used by every RED/GREEN/REFACTOR below): `./run-tests.sh --name "<scenario title>"`. Full suite: `./run-tests.sh`. E2E-only suite: `./run-tests.sh --e2e`. The delta adds no `@e2e` scenario and no browser scenario.
 
@@ -30,7 +30,7 @@ Interaction coverage (checked before writing tasks): the permanent inventory hol
 
 ## Setup task — environment, runner, strict mode
 
-- [ ] Confirm the toolchain, runner, strict mode, and the pre-implementation baseline.
+- [x] Confirm the toolchain, runner, strict mode, and the pre-implementation baseline.
   - Runner: `apps/cli/tests/features_runner.rs` calls `DutyWorld::cucumber().fail_on_skipped().run_and_exit(root)`. A missing or skipped step fails the run.
   - `verify.command: "./run-tests.sh"`; `verify.e2e_command: "./run-tests.sh --e2e"` (strict subset). No new environment, digital twin or framework is introduced.
   - Strictness proof against the new delta, before any scenario work: a single-scenario run selected one scenario and failed on the undefined step, exit non-zero.
@@ -228,13 +228,41 @@ Design constraints (this scenario):
   ```
 - [x] COMMIT: one revision, release note as subject, scenario title in the body.
   ```
-  COMMIT: <pending>
+  COMMIT: 120bef3
   ```
 
 ## Closeout
 
-- [ ] Remove `@wip` from every delta scenario and run the full suite `./run-tests.sh`; paste the summary.
-- [ ] Run `./run-tests.sh --e2e`; paste the summary (no delta `@e2e` scenario, so the permanent set is unchanged).
-- [ ] Run `cargo fmt --check`, `cargo clippy --workspace -- -D warnings`, `givn lint --change recognize-standby-shift-codes`, and `scripts/support-statement-check.sh`; paste results.
-- [ ] Confirm every step phrase bound by the delta is also bound in the permanent test tree (`givn archive` re-checks).
-- [ ] Real-plan smoke: convert `private/MLP-2026-11.pdf` with a fixed construction clock; confirm the six shift warnings are gone, the `.ics` events are byte-identical to the pre-change capture, no warning report is written, and exit status is zero. Record the comparison.
+- [x] Remove `@wip` from every delta scenario (`grep @wip` finds none) and run the full suite `./run-tests.sh`.
+  ```
+  [Summary]
+  3 features
+  118 scenarios (118 passed)
+  485 steps (485 passed)
+  EXIT=0
+  ```
+- [x] Run `./run-tests.sh --e2e` (no delta `@e2e` scenario, so the permanent set is unchanged).
+  ```
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  5 steps (5 passed)
+  EXIT=0
+  ```
+- [x] Run the gates.
+  ```
+  cargo fmt --check            EXIT=0
+  cargo clippy --workspace --all-targets -- -D warnings   EXIT=0
+  givn lint --change recognize-standby-shift-codes        EXIT=0 — clean (two [SUBST] advisories)
+  scripts/support-statement-check.sh                      EXIT=0 — clean, 5 carriers agree
+  ```
+- [x] Confirm every step phrase bound by the delta is also bound in the permanent test tree (`givn archive` re-checks). All four new definitions live in `apps/cli/tests/steps/export_duty_plan_calendar.rs`, the permanent per-capability file; no delta step copy exists.
+- [x] Real-plan smoke: convert `private/MLP-2026-11.pdf` with `DUTY2CAL_CONSTRUCTION_CLOCK=2026-10-27T00:00:00Z`.
+  ```
+  Written: /tmp/d2c-after/MLP-2026-11.ics
+  EXIT=0
+  $ cmp /tmp/d2c-baseline/MLP-2026-11.ics /tmp/d2c-after/MLP-2026-11.ics
+  ICS_IDENTICAL
+  no parse-warnings.txt written
+  ```
+  The six shift warnings are gone; the calendar bytes are identical to the pre-change capture; no warning report is written.

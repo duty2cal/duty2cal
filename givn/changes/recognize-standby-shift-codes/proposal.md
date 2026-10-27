@@ -9,7 +9,7 @@ Standby shift assignments printed as SB_F_CF, SB_M_CF or SB_S_CF are recognized 
 - Use-case ID: export-duty-plan-calendar
 - Ideation topic: duty-plan-calendar-conversion
 - Seed path: none — this change originates from the operator's confirmed statement about the printed codes, not from an ideation change seed.
-- Confirmed Personas: crew-member--personal-calendar-owner — accuracy/privacy lens: the calendar must show the crew member's actual availability windows and must not raise a finding about a row whose meaning is confirmed. The `contributor--web-reviewer` Persona is not affected: this change touches no browser surface — no page copy, no CSP, no no-network proof, no WASM bundle — so its lens has nothing to review here. The confirmed operator statement of 2026-10-27 is the source of the meaning; the maintainer Persona's release evidence is unchanged by a recognition widening.
+- Confirmed Personas: crew-member--personal-calendar-owner — accuracy/privacy lens: the calendar must show the crew member's actual availability windows and must not raise a finding about a row whose meaning is confirmed. The `contributor--web-reviewer` Persona is not affected: this change touches no browser surface — no page copy, no CSP, no no-network proof, no WASM bundle — so its lens has nothing to review here. The confirmed operator statement of 2026-10-27 is the source of the meaning; the maintainer Persona's support statement and release claim are unchanged; the support-evidence record's accepted-code sentence gains the three codes so the evidence stays truthful.
 
 ## Problem / Opportunity
 
