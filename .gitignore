@@ -28,6 +28,7 @@ infra/.adoption-staging/
 # Transient OpenTofu plan files: encrypted, never committed
 infra/plan.bin
 infra/*.tfplan
+infra/*.bin
 
 # A partial apply's stale marker: refuses the preview and the apply until a
 # green apply removes it; never committed

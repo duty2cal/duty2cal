@@ -7,6 +7,7 @@
 # TF_VAR_state_passphrase, TF_VAR_billing_email and GITHUB_TOKEN (or GH_TOKEN)
 # in the environment. It reads the live configuration and the applied state and
 # refuses when they differ; it never writes GitHub and never writes a plan.
+# The prompt/export sequence for bash and fish is in infra/README.md.
 #
 # Usage: scripts/check-drift.sh [--repo DIR]
 set -euo pipefail

@@ -221,6 +221,14 @@ loses the material behind the live deploy key; the state cannot be rebuilt from
 GitHub, so recovery is a credential rotation — a separate decision (Q11),
 recorded as a chapter-11 risk.
 
+### Operator runbook
+
+The copy-paste apply sequence — the environment-only passphrase, billing address
+and token, the secure prompts for bash and fish, the targeted or full
+plan/apply, the encrypted plan file, the state commit and the read-back — is in
+[the infrastructure operator runbook](../../infra/README.md). Chapter 2 records
+the credential constraint; the manual prerequisites follow.
+
 ### Manual operator prerequisite: private vulnerability reporting
 
 The default security policy names the private vulnerability reporting route
