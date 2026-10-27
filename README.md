@@ -5,7 +5,7 @@
 # duty2cal
 
 <!-- givn:begin:coverage-badge -->
-[![Line Coverage: 98%](https://img.shields.io/badge/line%20coverage-98%25-brightgreen)](coverage/cobertura-coverage.xml)
+[![Line Coverage: 97%](https://img.shields.io/badge/line%20coverage-97%25-brightgreen)](coverage/cobertura-coverage.xml)
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
 
@@ -52,6 +52,7 @@ cargo run --release -p duty2cal -- <duty-plan.pdf>
 ```
 
 <!-- givn:end:run -->
+
 
 
 
@@ -217,6 +218,7 @@ Add lint, build, and other project commands alongside these scripts.
 
 
 
+
 ### Releasing a version
 
 A version's notes are the release-note words of its released revisions, filtered
@@ -309,7 +311,7 @@ address.
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 98% (880/894)
+Line coverage: 97% (1073/1101)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:
