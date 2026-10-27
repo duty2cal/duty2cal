@@ -3432,6 +3432,24 @@ async fn no_absence_or_layover(w: &mut DutyWorld) {
     }
 }
 
+#[given(
+    "a supported duty plan whose first detail row is a silent layout row carrying only a date and whose second detail row carries the unrecognized activity code ZZ_M_CF with printed UTC times 08:00 and 15:30"
+)]
+async fn a_silent_row_before_a_warned_row(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(585.0, &[(DATE_X, "2099-06-07")]));
+    items.extend(support::at(
+        570.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "ZZ_M_CF"),
+            (START_X, "08:00"),
+            (END_X, "15:30"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);

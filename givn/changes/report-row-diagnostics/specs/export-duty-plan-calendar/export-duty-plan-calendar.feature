@@ -176,7 +176,7 @@ Feature: Export a duty-plan calendar
     And the converter reports no conversion warning
     And no warning report is published
 
-  @givn.added @wip
+  @givn.added
   Scenario: A silent layout row before a warned row keeps its place in the row numbering
     Given a supported duty plan whose first detail row is a silent layout row carrying only a date and whose second detail row carries the unrecognized activity code ZZ_M_CF with printed UTC times 08:00 and 15:30
     When the crew member converts it
