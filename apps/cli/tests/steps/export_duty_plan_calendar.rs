@@ -3128,6 +3128,48 @@ async fn failure_report_identifies_source_and_reason(w: &mut DutyWorld) {
     );
 }
 
+/// A warning report that must survive a later conversion.
+const EXISTING_WARNING_REPORT: &str = "Source PDF: earlier.pdf\nWarnings:\n- row 1 (2099-01-01): an earlier fallback\n";
+
+#[given(
+    "a supported duty plan with an unrecognized activity code beside existing reports roster.parse-warnings.txt and roster.parse-warnings-1.txt"
+)]
+async fn a_plan_beside_two_warning_reports(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "ZZ_M_CF"),
+            (START_X, "08:00"),
+            (END_X, "15:30"),
+        ],
+    );
+    for name in ["roster.parse-warnings.txt", "roster.parse-warnings-1.txt"] {
+        std::fs::write(w.working_dir().join(name), EXISTING_WARNING_REPORT)
+            .expect("write the earlier warning report");
+    }
+}
+
+#[then("the warning report is written as roster.parse-warnings-2.txt")]
+async fn warning_report_is_the_third_name(w: &mut DutyWorld) {
+    let path = w.working_dir().join("roster.parse-warnings-2.txt");
+    let report = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("no warning report at {}: {error}", path.display()));
+    assert!(
+        report.starts_with("Source PDF: roster.pdf\nWarnings:\n"),
+        "the new warning report is not the current one: {report}"
+    );
+}
+
+#[then("roster.parse-warnings.txt and roster.parse-warnings-1.txt are unchanged")]
+async fn both_older_warning_reports_unchanged(w: &mut DutyWorld) {
+    for name in ["roster.parse-warnings.txt", "roster.parse-warnings-1.txt"] {
+        let content = std::fs::read_to_string(w.working_dir().join(name))
+            .unwrap_or_else(|error| panic!("{name} disappeared: {error}"));
+        assert_eq!(content, EXISTING_WARNING_REPORT, "{name} was modified");
+    }
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);

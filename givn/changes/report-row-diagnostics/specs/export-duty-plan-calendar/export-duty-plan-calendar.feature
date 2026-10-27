@@ -66,7 +66,7 @@ Feature: Export a duty-plan calendar
     And the failure report carries a "Warnings:" section listing one entry
     And the failure report identifies the source PDF and the primary reason
 
-  @givn.added @wip
+  @givn.added
   Scenario: A second conversion with warnings uses the next unused warning-report name
     Given a supported duty plan with an unrecognized activity code beside existing reports roster.parse-warnings.txt and roster.parse-warnings-1.txt
     When the crew member converts it
