@@ -232,7 +232,7 @@ Feature: Export a duty-plan calendar
     And the warning report carries a "Warnings:" section listing one entry
     And that entry names detail row 1 and the date 2099-06-07
 
-  @givn.added @browser @wip
+  @givn.added @browser
   Scenario: The page states how many rows were converted with warnings
     Given  the converter page served from the built Site output
     When  the crew member supplies the supported duty plan "2026-06.pdf" containing two rows with unrecognized activity codes and printed windows
