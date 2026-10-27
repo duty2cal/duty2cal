@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "recognize-standby-shift-codes",
+  "status": "passed",
+  "head": "da598cce24133b9b5518c98654d5b567cc63f6d1",
+  "features_path": "givn/changes/recognize-standby-shift-codes/specs",
+  "features_digest": "1948222805a0862ff42a0ec6323956e19db924c46a6b5292713e492dcf21499e",
+  "command_digest": "1031237dac4a7328aa009dc5586392005a11f5408a7dc7b8a4726efc55a93a8e",
+  "command": "./run-tests.sh",
+  "tested_content_digest": "013ec8b20bb182bc4acd3cacad0e53564f290a93ffb92735b85cf622e9c996cf",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 118,
+    "passed": 118,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1793142001
+}
