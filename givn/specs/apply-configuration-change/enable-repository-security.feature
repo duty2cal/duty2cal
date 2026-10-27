@@ -1,3 +1,4 @@
+@documentation
 Feature: Enable repository security
 
   @e2e

@@ -1,14 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 //! End-to-end step definitions: these drive the built binary as a subprocess,
-//! so they live apart from the in-process steps (design.md "Step definition
-//! locations").
+//! or the rendered page through the browser driver, so they live apart from
+//! the in-process steps (design.md "Step definition locations").
 
-pub mod adopt_existing_configuration;
-pub mod enable_repository_security;
 pub mod export_duty_plan_calendar;
-pub mod measure_distributed_executable_size;
-pub mod publish_organization_profile;
-pub mod publish_public_release;
-pub mod publish_public_website;
-pub mod publish_site_plumbing;
-pub mod reduce_distributed_executable_size;

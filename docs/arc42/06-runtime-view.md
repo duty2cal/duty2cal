@@ -1,5 +1,13 @@
 # 6. Runtime View
 
+> **Test-scope amendment (reduce-test-runtime).** The operational capability
+> feature files remain as `@documentation`; their cucumber step definitions were
+> deleted. Where this chapter names a scenario, a suite or a fake-API proof for
+> an operational behaviour, the executable evidence is the owning workflow, the
+> `bats` tests, or the maintainer's preview/apply. `scripts/setup-infra-tests.sh`
+> covers only the provider/import/base setup. The product scenario suite is the
+> conversion capability only.
+
 ## Scenario: Successful conversion
 
 **Trigger:** A crew member supplies a supported duty plan.
@@ -479,7 +487,7 @@ flowchart TB
 5. A refresh-only plan over the staged state compares the imported objects with GitHub again; a non-no-op change means a live object changed after it was read, so the batch is refused and the object named. With no change, the staged state and the live objects agree.
 6. The staged state is moved over `infra/terraform.tfstate`; on the first adoption `<state>.backup` is created as a copy of the new state, and on later runs the previous state is kept as the backup. The command prints one `adopted` line per object.
 
-**Notes:** Adoption is read-only against GitHub by construction; the suite proves it from the fake API's request journal: a refused write or a GraphQL mutation would be the evidence of a write, while a query-only POST is a read. Every refusal step also asserts that the journal holds no unknown-path entry, so a refusal is never the fake's own missing fixture. The declaration revision is the repository commit, so the command never edits the declaration.
+**Notes:** Adoption is read-only against GitHub by construction. The feature file documents the proof the deleted cucumber suite performed; `scripts/setup-infra-tests.sh` exercises the provider's import and refresh-only shape against the fake, not the adoption command itself. The maintainer's real adoption is the operational evidence, and R-067 records that no automated scenario drives it. The declaration revision is the repository commit, so the command never edits the declaration.
 
 ## Scenario: The declared security settings are previewed and applied
 
@@ -544,12 +552,7 @@ flowchart TB
    The full preview still names the pre-existing organization billing drift, a
    separate issue outside this change; the full configuration is not clean.
 
-**Notes:** The suite drives steps 2–4 against the fake with a write sandbox and
-asserts the journal's single applied write and its body keys; the live API's
-acceptance of push protection is proven only by the operator's real apply,
-which is a required step after GREEN. A partial failure is reported by resource
-address, writes the stale marker beside the state, and the state is
-deliberately not committed.
+**Notes:** The feature file documents this flow; no cucumber scenario drives it after this change. `scripts/setup-infra-tests.sh` prepares a security-applied base state against the fake, but it does not drive the targeted preview or apply. The maintainer's real preview and apply are the operational evidence, and the live API's acceptance of push protection is proven only by that apply. A partial failure is reported by resource address, writes the stale marker beside the state, and the state is deliberately not committed (R-067).
 
 ## Scenario: The pages publishing plumbing is previewed and created
 
@@ -619,20 +622,7 @@ flowchart TB
    Pages repository's default branch and replaces the stock page with the Site
    output.
 
-**Notes:** The suite drives steps 2–6 against the fake in `--writes` mode and
-asserts the guard's verdicts, the changed set (the four declared addresses on
-the first preview; only the missing ones on a recovery preview), the apply's
-outcome, the journal's single secret write (the sealed ciphertext and the key
-id), the created rule set's bypass actor and rules, and the state's four
-addresses. A failure after the first write saves the failed state, restores the
-pre-apply state, compares the two with live per address, and marks the state
-stale only for a create that landed; the operator then reads the report and
-deliberately removes the marker, and the next run creates only the missing
-objects and completes the revision. A post-apply read-back failure after every
-write keeps the applied state, writes the same marker and names the unreadable
-object and the reason; the fault in the suite targets that routine read, not
-the provider's create. GitHub's acceptance of the key, the secret and the
-bypass actor is proven only by the operator's real apply after GREEN.
+**Notes:** The feature file documents this flow; no cucumber scenario drives it after this change, and `scripts/setup-infra-tests.sh` only prepares the inherited base state. The maintainer's real preview and apply are the operational evidence: they exercise the guard's verdicts, the four declared addresses, the apply's outcome, the secret write, the rule set's bypass actor and rules, and the state's four addresses. GitHub's acceptance of the key, the secret and the bypass actor is proven only by that apply. The failure and read-back rules above remain the documented contract; R-067 records that no automated scenario drives them.
 
 ## Scenario: The organization profile is previewed, applied and published
 
@@ -670,12 +660,10 @@ flowchart TB
    creates and no update or delete; a declaration that cannot be read is
    refused. The preview writes nothing. The plan is targeted to the revision's
    scope — the three objects it adds — matching the sibling capability's
-   preview rule. The apply `@e2e` scenario primes from the unchanged
-   `security-applied` fixture, whose organization body carries
-   `billing@example.test`. The preview `@e2e` scenario reuses the sibling's
-   base priming, which introduces the known organization billing drift after
-   its base apply; that drift is outside the three targets, so the targeted
-   plan names no unrelated difference.
+   preview rule. The deleted scenario primed a `security-applied` fixture whose
+   base apply introduced the known organization billing drift; that drift is
+   outside the three targets, so the targeted plan names no unrelated
+   difference.
 3. The read-only refresh-only preflight, targeted at the same three objects,
    compares them with live and refuses a manual edit by address; the saved plan
    is not applied.
@@ -698,17 +686,5 @@ flowchart TB
    declaration, preview or drift check covers either step; chapter 7 records
    both.
 
-**Notes:** The suite drives steps 2–5 against the fake in `--writes` mode and
-asserts the API responses, the journal's applied-write set and the state; the
-real GitHub acceptance and rendering are proven only by the operator's apply
-after GREEN. The state is primed by adopting both existing batches and applying
-the inherited pre-security base tree; that base apply performs the security
-change's scanning write, and the scenario takes the journal offset after it, so
-only the three profile creations are asserted. The apply scenario's base
-omits `org_profile.tf` and copies `org/` beside its `infra/`; the preview
-scenario reuses the sibling's base priming and writes its own 404 descriptors
-before the targeted plan, which excludes the introduced billing drift.
-A write failure after the repository creation is reported as a partial outcome
-and the state is not committed; the stale marker rules are the shared
-configuration-change rules, not re-asserted by this capability.
+**Notes:** The feature file documents this flow; no cucumber scenario drives it after this change. The deleted scenario primed an inherited base tree and asserted the API responses, the journal and the state; `scripts/setup-infra-tests.sh` prepares only the imports and the base apply and does not inspect `org/` or drive the profile preview. The maintainer's real preview and apply are the operational evidence, and the real GitHub acceptance and rendering are proven only there. A write failure after the repository creation is reported as a partial outcome and the state is not committed; the stale marker rules are the shared configuration-change rules, not re-asserted by this capability (R-067).
 

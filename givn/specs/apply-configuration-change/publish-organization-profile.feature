@@ -1,3 +1,4 @@
+@documentation
 Feature: Publish the organization profile
 
   @e2e

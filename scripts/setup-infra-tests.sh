@@ -13,7 +13,7 @@
 #     mirror, so the suite runs offline.
 #
 # Nothing is installed silently and nothing is written inside the repository.
-# Run this once per workstation; CI runs it before ./run-tests.sh.
+# Run this once per workstation as the local planning proof; CI does not run it.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

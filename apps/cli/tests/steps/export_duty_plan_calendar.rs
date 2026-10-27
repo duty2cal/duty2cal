@@ -2805,38 +2805,6 @@ fn assert_no_calendar_offer(w: &mut DutyWorld) {
     assert!(!calendar, "the page offered a calendar: {state}");
 }
 
-/// A generated fictional June 2099 plan whose Created footer supplies the
-/// revision. The committed fixture keeps the source stem `2026-06`; only the
-/// calendar's own dates use the project's fictional-year convention.
-fn equivalence_plan() -> Vec<(f64, f64, String)> {
-    let mut items = support::detail_header_row(600.0);
-    items.extend(support::at(
-        585.0,
-        &[
-            (DATE_X, "2099-06-07"),
-            (ACTIVITY_X, "LU742"),
-            (FROM_X, "Tychon"),
-            (TO_X, "Mareum"),
-            (START_X, "09:25"),
-            (END_X, "15:45"),
-        ],
-    ));
-    items.extend(support::at(
-        570.0,
-        &[(DATE_X, "2099-06-08"), (ACTIVITY_X, "U")],
-    ));
-    items.extend(support::at(
-        520.0,
-        &[
-            (DATE_X, "Created"),
-            (support::TRIP_X, "2099-05-21"),
-            (support::REPORT_X, "15:52"),
-            (support::POS_X, "UTC"),
-        ],
-    ));
-    items
-}
-
 #[given("the converter page served from the built Site output")]
 async fn the_converter_page(w: &mut DutyWorld) {
     driver(w).send("start", Map::new());
@@ -2895,7 +2863,7 @@ async fn the_converter_page_with_a_broken_module(w: &mut DutyWorld) {
     regex = r#"^the supported duty plan "([^"]+)" whose Created footer supplies its revision timestamp$"#
 )]
 async fn the_plan_with_a_created_footer(w: &mut DutyWorld, name: String) {
-    named_source(w, &name, support::build_pdf(&equivalence_plan()));
+    named_source(w, &name, support::build_pdf(&support::equivalence_plan()));
 }
 
 #[given("the executable has published the calendar for that plan")]
@@ -2925,7 +2893,7 @@ async fn the_executable_has_published_the_calendar(w: &mut DutyWorld) {
 async fn supplies_the_supported_plan(w: &mut DutyWorld, name: String) {
     // The canonical `2026-06` plan is the one the committed reference calendar
     // describes; the `@e2e` scenario compares its captured download with it.
-    named_source(w, &name, support::build_pdf(&equivalence_plan()));
+    named_source(w, &name, support::build_pdf(&support::equivalence_plan()));
     supply_through_picker(w);
 }
 
@@ -2952,7 +2920,7 @@ async fn supplies_an_unsupported_file(w: &mut DutyWorld, name: String) {
 async fn supplies_an_oversized_plan(w: &mut DutyWorld, name: String, size: String) {
     // The page refuses this before reading it, so the fixture only has to have
     // the size; it is still a readable plan.
-    let bytes = support::build_pdf_at_size(&equivalence_plan(), mebibytes(&size));
+    let bytes = support::build_pdf_at_size(&support::equivalence_plan(), mebibytes(&size));
     assert_eq!(bytes.len(), mebibytes(&size));
     named_source(w, &name, bytes);
     supply_through_picker(w);
@@ -2985,7 +2953,7 @@ fn mebibytes(size: &str) -> usize {
     regex = r#"^the crew member supplies the supported duty plan "([^"]+)" of exactly (\d+) MiB$"#
 )]
 async fn supplies_a_plan_at_the_size_bound(w: &mut DutyWorld, name: String, size: String) {
-    let bytes = support::build_pdf_at_size(&equivalence_plan(), mebibytes(&size));
+    let bytes = support::build_pdf_at_size(&support::equivalence_plan(), mebibytes(&size));
     assert_eq!(bytes.len(), mebibytes(&size));
 
     // Builder-to-reader check: the reader must still recognize the padded

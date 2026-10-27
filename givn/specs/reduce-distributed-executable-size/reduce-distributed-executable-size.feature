@@ -1,4 +1,4 @@
-@nested-build
+@documentation @nested-build
 Feature: Reduce the distributed executable's size
 
   @e2e

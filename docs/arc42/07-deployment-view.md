@@ -1,5 +1,13 @@
 # 7. Deployment View
 
+> **Test-scope amendment (reduce-test-runtime).** The operational capability
+> feature files remain as `@documentation`; their cucumber step definitions were
+> deleted. Where this chapter names a scenario, a suite or a fake-API proof for
+> an operational behaviour, the executable evidence is the owning workflow, the
+> `bats` tests, or the maintainer's preview/apply. `scripts/setup-infra-tests.sh`
+> covers only the provider/import/base setup. The product scenario suite is the
+> conversion capability only.
+
 ## Infrastructure level 1
 
 The project publishes one self-contained Windows x86_64 executable, cross-built by its own automation on a GitHub-hosted Linux runner, started on a Windows runner and published as an immutable release from the public repository. A crew member on Windows downloads the archive from the stable latest-release address and runs the executable on their own machine; it touches only the local filesystem. Other platforms receive no published archive; builds for them are available on request, and the source can be built with a Rust toolchain.
@@ -15,8 +23,8 @@ target, which is how it is tested.
 ```mermaid
 flowchart TB
   subgraph host["GitHub-hosted runners"]
-    b1["ubuntu-latest — Windows x86_64 cross-build"]
-    attr["ubuntu-latest — size attribution for the revision it built"]
+    b1["ubuntu-latest — Windows x86_64 cross-build + byte budget"]
+    attr["ubuntu-latest — per-push size attribution"]
     sm["windows-latest — Windows smoke"]
     prep["ubuntu-latest — prepare-release.sh over the one Windows binary"]
     sitejob["ubuntu-latest — release site job: calls the reusable site workflow for the tag"]
@@ -49,7 +57,7 @@ flowchart TB
 
 | Node / Environment | Description |
 |---|---|
-| `ubuntu-latest` | Cross-builds the Windows (`x86_64-pc-windows-gnu`) executable and also runs the single packaging, site, publish and verify jobs; the release's `site` job publishes and verifies the page for the tag, and the `publish` job (`needs: site`) waits for the tagged revision's checks and then publishes the archive only when the hosting target's branch tip carries the tagged Built revision. The Windows cross-build also produces the size attribution for the revision it built and uploads it beside the run. The same runner class hosts `web.yml`, the trigger workflow that calls the reusable `site.yml` for default-branch pushes and manual dispatch, and `site.yml`'s single publication job builds and gates `dist/site`, publishes it and verifies the served page. It remains the CI, coverage and local test host. |
+| `ubuntu-latest` | Cross-builds the Windows (`x86_64-pc-windows-gnu`) executable, enforces the 2,097,152-byte budget, and also runs the packaging, site, publish and verify jobs; the release's `site` job publishes and verifies the page for the tag, and the `publish` job (`needs: site`) waits for the tagged revision's checks and then publishes the archive only when the hosting target's branch tip carries the tagged Built revision. The same runner class hosts the `test`, `browser`, `coverage`, `scripts`, `deny`, `changelog` and `actionlint` jobs. The size attribution stays in `windows-gnu-build`. The same runner class hosts `web.yml`, the trigger workflow that calls the reusable `site.yml` for default-branch pushes and manual dispatch, and `site.yml`'s single publication job builds and gates `dist/site`, publishes it and verifies the served page. It remains the CI, coverage and local test host. |
 | `windows-latest` | Starts the cross-built Windows executable: the "started on a machine of that kind" evidence. |
 | GitHub Releases | Serves the published Windows archive, its checksum, its provenance and bill of materials, the release text, and the change log (`CHANGELOG.md`) at a stable latest-release address. |
 | Crew member's machine | Runs the downloaded executable; supplies the plan and receives the calendar or a diagnostic. |
@@ -114,11 +122,11 @@ The Windows executable is built from `[profile.release]` with `panic = "abort"`:
 
 Beside the one Windows archive and its checksum (and the archive's provenance and bill of materials), a release carries the change log and its newest section: `CHANGELOG.md` is published as an asset, so a downloader reads what changed without visiting the repository, and the release page's text is that same file's newest section. Both come from one render of the released revision, so the page and the published file cannot state different things about what a version contains.
 
-### The size attribution beside the run
+### The executable size budget
 
-The Windows cross-build job runs `scripts/measure_executable_size.py` after it has built and inspected the executable, so the report describes the revision that job built, and uploads the report as the run's `size-attribution` artifact beside the step summary. The measurement step is evidence, not a gate: it exits zero whatever the command reported, always appends the report (or a note that none was written) to the step summary, and uploads the artifact with `if: always()`, so an unreadable report is published and the job continues; no revision or release is refused because of it. The report is not a release asset, not committed, and not attached to the change: it belongs to the run for the revision it names, which is what lets a reviewer compare two revisions before either lands.
+The Windows cross-build job enforces a byte budget: after `cargo build --release --target x86_64-pc-windows-gnu`, it runs `stat -c %s` on the executable and fails when the file size exceeds 2,097,152 bytes. The ceiling is the last published executable's file size; a local cross-build of this revision measured 2,013,696 B, and the landed panic=abort build measured 2,014,208 B. A fresh CI measurement tightens it.
 
-The same command runs on the maintainer's Linux host once the Windows target, `mingw-w64` and the pinned generator are installed; the suite's `test` and `coverage` jobs install the same three so the `@e2e` scenario drives the real command. A host without them runs the suite in a container that provides them (the local deployment path recorded in the change's design).
+The size attribution remains in the `windows-gnu-build` job: the job installs `cargo-bloat@0.12.1` with the install action, runs `scripts/measure_executable_size.py` for the revision it built, appends the report to the step summary and uploads it as the `size-attribution` artifact. The `test` and `coverage` jobs no longer install the generator. `scripts/measure_size_lever.py` remains a local tool for evaluating a lever. The release executable is still started by the Windows smoke job.
 
 ### The crew member's machine
 
@@ -167,7 +175,7 @@ flowchart TB
 | Maintainer's workstation | Runs the guard, the adoption and later the preview, apply and local drift check; holds the passphrase and the token, and is now the only place the publishing private key can be recovered. |
 | `infra/` | The declaration, the batch, the provider lock entries and the encrypted state; committed, reviewed and public — but the state is ciphertext. |
 | GitHub | The only owner of the live settings; receives a write only from a later, separately reviewed apply, and holds the deploy key's public half and the sealed secret. |
-| CI | Runs the same suite against a local fake API; holds no GitHub token and no passphrase, so it can neither apply nor report drift. |
+| CI | Runs the product suite and the browser smoke; holds no GitHub administer token and no passphrase, so it can neither apply nor report drift. |
 
 ### The organization profile repository
 
@@ -229,10 +237,10 @@ the route exists:
 3. Confirm the repository's "Security" tab offers "Report a vulnerability".
 
 The setting remains outside the declaration, the applied state and the drift
-check; chapter 11's R-030 records the gap. The default-security scenario asserts
-only that the published policy names the route; neither the fake nor the suite
-can prove the live setting, and the operator's confirmation is the acceptance
-evidence that the route exists.
+check; chapter 11's R-030 records the gap. The feature file documents that the
+published policy names the route; no automated scenario drives the profile
+publication after this change, and the operator's confirmation is the
+acceptance evidence that the route exists.
 
 ### Manual operator prerequisite: organization deploy-key policy (satisfied)
 
@@ -298,7 +306,7 @@ repeating the step. Chapter 11 records the limitation.
 - The trigger decision is the command's `--since` comparison against the site-input list it owns; `web.yml` runs on every default-branch push and on manual dispatch, with no `v*` tag trigger, and passes `github.event.before`, so a documentation-only revision starts a job that exits after reporting `no site input changed`. A `v*` tag's site publication is the release's `site` job, which calls the same reusable workflow with the tag and no base, so it always builds the tagged tree. Republishing content the target already holds reports the target as current and writes nothing.
 - The published page is the artifact the gate inspected: the browser check drives the assembled output, the page-content check reads it, and the commit carries exactly it. The footer names the Built revision from `git describe` and links the commit; a release tag republishes the page from the tagged revision, so the footer's tag and the release agree.
 - A release publishes its archive only after the Site publication for its tagged revision succeeded, and only when the hosting target's branch tip carries that tagged Built revision. A site failure leaves the previous page and publishes no archive, so a version never becomes public while the page is stale or names another revision. The coupling is a `site` job that calls the reusable workflow and a `publish` job (`needs: site`) whose command reads the target's branch tip with `git ls-remote` and a fetch before any `gh` call, so one tag costs one site build and gate and one target read.
-- The maintainer's workstation can run the whole publication against a local bare git repository, with no credential and no network; the scenarios do exactly that, a loopback server renders the published tree, and a second loopback server presenting an earlier tree drives the serving refusal. Only the SSH transport and the deploy key are exercised on the host.
+- The maintainer's workstation can run the whole publication against a local bare git repository, with no credential and no network. The deleted cucumber scenario did exactly that, with a loopback server rendering the published tree and a second server presenting an earlier tree for the serving refusal; the bats tests cover the early refusals and the documentation-only `--since` decision, and the workflow is the remaining automated gate. Only the SSH transport and the deploy key are exercised on the host.
 - The organization's deploy-key policy was confirmed before that apply and is true: `deploy_keys_enabled_for_repositories` is set on the organization, while the pinned provider cannot declare it. A re-created credential would need the same confirmation, and a false policy fails the deploy-key create with 422 after the rule set and TLS key have landed.
 - The creation guard runs before the preview and again immediately before the write: an object that already exists live and the state does not bind refuses, naming the address. A failure after the deploy key is created restores the pre-apply state, reads live again, marks the state stale when a write landed, and refuses a blind retry.
 - The apply that published the profile created `duty2cal/.github` and wrote its two reviewed files. The repository was not adopted: it did not exist live, so the preview named the three creations and the apply recorded them. The profile and security-policy text stays in `org/` under CC0-1.0; the profile repository is output and is never edited by hand.
@@ -306,7 +314,7 @@ repeating the step. Chapter 11 records the limitation.
 - The declaration resolves its reviewed source through `variable "org_source_dir"`; the default is `../org` beside `infra/`. The adoption command stages the declaration without `org_profile.tf`, and the setup proof and security base workspaces omit it, so no non-profile workspace evaluates the profile files.
 - The organization profile page is GitHub's rendering of that output. The site publication has replaced the stock placeholder: the live Pages site serves the Site output, and the profile copy is corrected by an apply that follows the live site, so the copy never promises a page that is absent. No three-platform archive is released. The profile page embeds no third-party resource, so opening it issues no request beyond GitHub's own.
 - Pinned repositories are a one-time manual step in the organization's web settings. They have no declared object, no state binding and no drift report; the step is recorded above and the limitation is a chapter-11 risk.
-- The test environment starts the fake in `--writes` mode only for the scenarios that apply a change; it now serves repository creation, repository contents, branches and commits from an in-memory overlay. The adoption scenarios keep the read-only server and still prove that adoption issues no write.
+- The deleted scenarios started the fake in `--writes` mode for an apply they exercised; `scripts/setup-infra-tests.sh` starts it for the import/base proof only. No automated scenario drives the profile, security or plumbing preview/apply after this change; the maintainer's real preview/apply is the evidence.
 - The administer token, the passphrase, the billing email and the transient encrypted plan file never leave the workstation; the plan file is git-ignored and deleted after the apply.
 - The administer token and the passphrase are not deployed to any service: there is no apply in Actions and no configuration drift job in CI, so divergence from the declaration is found by the maintainer's local check.
-- The test environment deploys no service: the fake GitHub API runs on loopback from the suite's step definitions, and the provider is installed from a local mirror.
+- The deleted scenarios deployed no service: the fake GitHub API ran on loopback from the step definitions. The local planning proof now starts the same fake from `scripts/setup-infra-tests.sh`, and the provider is installed from a local mirror.

@@ -56,6 +56,8 @@ jobs:
       # Chromium are part of the toolchain it needs.
       - run: npm ci --prefix web/e2e
       - run: npx --prefix web/e2e playwright install --with-deps chromium
+      - name: Run the conversion golden test
+        run: cargo test -p duty2cal --test golden
       - name: Install reuse
         run: |
           set -euo pipefail

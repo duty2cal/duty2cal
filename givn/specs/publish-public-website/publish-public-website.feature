@@ -1,4 +1,4 @@
-@nested-build
+@documentation @nested-build
 Feature: Publish the public website
 
   @e2e @site-publication

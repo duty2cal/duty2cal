@@ -1,3 +1,4 @@
+@documentation
 Feature: Publish a public release
 
   Scenario: A prepared release offers one archive for every supported platform

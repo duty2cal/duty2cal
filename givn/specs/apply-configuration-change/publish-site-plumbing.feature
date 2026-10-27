@@ -1,3 +1,4 @@
+@documentation
 Feature: Publish site plumbing
 
   @e2e

@@ -14,7 +14,7 @@
 
 ## Checks
 
-- [ ] `./run-tests.sh` passes, and `./run-tests.sh --e2e` passes
+- [ ] `./run-tests.sh` passes, `./run-tests.sh --e2e` passes, and the touched browser variants pass with `./run-tests.sh --browser` (the CI browser job runs the smoke scenario)
 - [ ] `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` pass
 - [ ] every commit carries a `Signed-off-by:` trailer (`git commit -s`; there is no CLA)
 - [ ] `bash scripts/license-headers.sh`, `bash scripts/pii-guard.sh` and `bash scripts/public-text-check.sh` are clean

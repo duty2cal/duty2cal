@@ -1,5 +1,13 @@
 # 8. Cross-cutting Concepts
 
+> **Test-scope amendment (reduce-test-runtime).** The operational capability
+> feature files remain as `@documentation`; their cucumber step definitions were
+> deleted. Where this chapter names a scenario, a suite or a fake-API proof for
+> an operational behaviour, the executable evidence is the owning workflow, the
+> `bats` tests, or the maintainer's preview/apply. `scripts/setup-infra-tests.sh`
+> covers only the provider/import/base setup. The product scenario suite is the
+> conversion capability only.
+
 ## Complete-or-explicit-failure
 
 Every conversion either produces a complete calendar or fails explicitly. The `Roster` aggregate gates publication: no side effect occurs until every required activity and field resolves, and a required-value contradiction or an unknown required code rejects the conversion. A cron-like "best effort" partial calendar is never produced, because a calendar that looks complete but omits a leg is worse than a visible failure.
@@ -66,6 +74,27 @@ Chromium through the Playwright package, `wasm-pack` in
 assets. The Rust resolution is in `Cargo.lock`, and `wasm-bindgen`, `js-sys`
 and `getrandom` are target-scoped so native builds stay clean. A setup without
 the pinned tools fails loudly rather than skipping the browser scenarios.
+
+## Test scope and phase reporting
+
+`cargo test` verifies the product, not its operation. The default suite runs the
+domain unit/property tests, the architecture tests, the golden calendar test,
+and the `export-duty-plan-calendar` Gherkin scenarios; it spawns no `cargo`,
+`git worktree`, cross-build, or network call. Operational feature files stay in
+`givn/specs` as documentation under a feature-level `@documentation` tag and are
+excluded by `scripts/assemble_features.py`; their step definitions are deleted.
+Re-binding one needs an ADR naming the defect no other mechanism would catch.
+
+The operational guarantees live with their owner: the Windows job enforces a
+byte budget, the site workflow runs the golden test then builds, gates and
+deploys, the release publication waits for the tagged revision's checks, the
+drift check is local (ADR-0006), and `publish-site.sh`'s early refusals are
+`bats` tests. The browser smoke is the one `@browser` scenario a separate CI job
+runs; the remaining browser variants run only with `--browser`.
+
+`run-tests.sh` prints `phase=<name> seconds=<n>` and the cucumber concurrency,
+and CI appends the lines to the step summary, so a regression names the class
+that caused it. `--no-fail-fast` keeps one failing class from hiding the rest.
 
 ## Classification and timing as pure rules
 
@@ -198,7 +227,7 @@ declared title. The key's own
 pushes are unreviewed, which is the accepted cost of the user's decision
 (proposal D1).
 
-The credential's consumer is the Site publication: `scripts/publish-site.sh` supplies the key through `GIT_SSH_COMMAND`, the reusable `.github/workflows/site.yml` holds `contents: read`, receives `PAGES_DEPLOY_KEY` and writes it to a `600` file, and the two callers that pass the secret to it are `.github/workflows/web.yml` and the `site` job of `.github/workflows/release.yml`. No other workflow, job or writer holds the secret; the scenarios use a local git target with no credential, and the branch the key writes is the Public website's only source.
+The credential's consumer is the Site publication: `scripts/publish-site.sh` supplies the key through `GIT_SSH_COMMAND`, the reusable `.github/workflows/site.yml` holds `contents: read`, receives `PAGES_DEPLOY_KEY` and writes it to a `600` file, and the two callers that pass the secret to it are `.github/workflows/web.yml` and the `site` job of `.github/workflows/release.yml`. No other workflow, job or writer holds the secret; the deleted publication scenario used a local git target with no credential, and the branch the key writes is the Public website's only source.
 
 ## The Site publication: gated output, whole-content replacement, named revision, verified serving
 
@@ -231,9 +260,8 @@ refuses rather than degrades.
   four real subprocess checks fail-fast — page content, licensing/REUSE, the
   browser check and the conversion suite — and names the first one that fails.
   It runs inside the revision's worktree, so the conversion suite and the
-  browser scenario are that revision's own, and the suite excludes scenarios
-  tagged `@site-publication`, so the gate cannot re-enter the publication it is
-  gating. The worktree has no driver tree of its own: the publication compares
+  browser scenario are that revision's own, and the suite excludes `@documentation` features, so the gate cannot
+  re-enter the publication it is gating. The worktree has no driver tree of its own: the publication compares
   the worktree's `web/e2e/package-lock.json` with the checkout's and symlinks
   the installed `web/e2e/node_modules` only when they are identical, refusing by
   name and naming `npm ci --prefix web/e2e` at the revision otherwise, so a
@@ -331,12 +359,15 @@ release is supported, and describes how a report is handled.
 The route exists only when the owner enables private vulnerability reporting on
 `duty2cal/duty2cal` by hand before publication, because the pinned provider has
 no resource for the setting; it remains outside the declaration, the applied
-state and the drift check (chapter 7, R-030). The suite asserts that the policy
-names the route; it cannot prove the live setting.
+state and the drift check (chapter 7, R-030). The feature file documents that the
+policy names the route; `scripts/setup-infra-tests.sh` does not inspect `org/`,
+and the maintainer's apply and publication are the evidence. No automated
+scenario can prove the live setting.
 
-The fallback itself is GitHub's behaviour, not the project's code. The
-capability proves that the file exists at the required path and carries the
-route; it does not simulate GitHub's renderer. `CONTRIBUTING.md`,
+The fallback itself is GitHub's behaviour, not the project's code. The feature
+file documents that the file exists at the required path and carries the route;
+the maintainer's apply and publication are the operational evidence, and the
+project does not simulate GitHub's renderer. `CONTRIBUTING.md`,
 `CODE_OF_CONDUCT.md` and the issue and pull-request templates remain in the
 monorepo and were not published into the profile repository by the archived
 profile change.
@@ -419,24 +450,26 @@ the expected set is the declared addresses minus the bound ones, so the plan
 carries only the missing creates; the apply completes the revision and the
 marker is gone. Chapter 11 records the residual cases (R-054).
 
-The profile scenario's test tree is the inherited pre-security base tree:
-priming adopts both existing batches and runs the base declaration's real
-apply, which performs the security change's scanning write. The scenario takes
-its journal offset after that apply, so only the three profile creations are
-asserted, and the base workspaces omit `org_profile.tf`.
+The deleted profile scenario used an inherited pre-security base tree: priming
+adopted both existing batches and ran the base declaration's real apply, which
+performed the security change's scanning write. `scripts/setup-infra-tests.sh`
+prepares the imports and base apply only; it does not drive the profile
+preview/apply. The maintainer's real preview/apply is the evidence (R-067).
 
-The plumbing scenario primes the same inherited state and then restores
-`pages_publish.tf`; its journal offset is taken after the base apply, so only
-the three plumbing creates are asserted. The base workspaces also omit
-`pages_publish.tf`, because those objects are created here, never inherited.
+The deleted plumbing scenario primed the same inherited state and restored
+`pages_publish.tf`; no automated scenario drives the plumbing preview/apply
+after this change. The base workspaces omit `org_profile.tf` and
+`pages_publish.tf`, because those objects are created, never inherited.
 
 ## Adoption is read-only against the live organization
 
 `tofu import` and `tofu plan -refresh-only` issue reads; the adoption command
-never runs `apply`. The suite asserts this at the HTTP boundary through the fake
-GitHub API's request journal: the fake refuses every write-shaped request and
-every GraphQL mutation, so the assertion is "no refused write and no mutation",
-not "no POST". A
+never runs `apply`. The deleted adoption scenario asserted this at the HTTP
+boundary through the fake GitHub API's request journal: the fake refuses every
+write-shaped request and every GraphQL mutation, so the assertion is "no
+refused write and no mutation", not "no POST". `scripts/setup-infra-tests.sh`
+exercises the provider's import and refresh-only shape, not the adoption
+command; the maintainer's real adoption is the evidence (R-067). A
 refusal that would need a write — creating a missing object, changing a value,
 removing a legacy object — is reported as belonging to a configuration change
 instead.
@@ -450,7 +483,7 @@ failures: a conversion that cannot be represented still returns the typed
 failure and attempts a numbered diagnostic naming the source PDF and the
 reason, and when no report can be saved the primary failure remains visible.
 The product uses no `unwrap()`/`expect()` outside test code. The host lever
-build is run on an unsupported source by the reduction scenario; the Windows
+build is run on an unsupported source by the local reduction measurement; the Windows
 executable is started by the release workflow's Windows smoke job.
 
 ## Measured size attribution

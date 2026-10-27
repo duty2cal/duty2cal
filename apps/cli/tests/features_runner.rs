@@ -4,7 +4,6 @@
 //! skipped step fail the run.
 
 use std::path::PathBuf;
-use std::time::SystemTime;
 
 use cucumber::World as _;
 
@@ -28,95 +27,14 @@ pub struct DutyWorld {
     pub calendars: Vec<String>,
     /// Environment variables passed to the converter subprocess.
     pub env: Vec<(String, String)>,
-    /// Executables directory the release preparation reads: one subdirectory
-    /// per supported platform.
-    pub binaries: Option<PathBuf>,
-    /// Directory the release preparation stages the release into.
-    pub staged: Option<PathBuf>,
-    /// Fixture repository whose history supplies the release text.
-    pub fixture_repo: Option<PathBuf>,
-    /// Combined output of the last command the scenario ran.
-    pub command_transcript: String,
-    /// Combined output of every command the scenario ran, in order, for the
-    /// transcript an `@e2e` scenario commits as evidence.
-    pub scenario_transcript: String,
-    /// Modification times of the staged archives, captured before a repeated
-    /// preparation.
-    pub staged_snapshot: Vec<(String, SystemTime)>,
-    /// The change log a change-log scenario rendered.
-    pub changelog: Option<PathBuf>,
-    /// The temporary declaration directory an adoption scenario prepared.
-    pub declaration: Option<PathBuf>,
-    /// The selected batch file the adoption command imports.
-    pub batch: Option<PathBuf>,
-    /// The applied state path the adoption command records.
-    pub state: Option<PathBuf>,
     /// The Playwright driver child; killed when the scenario ends.
     pub browser: Option<steps::browser::BrowserDriver>,
-    /// The local fake GitHub API child; killed when the scenario ends.
-    pub fake: Option<std::process::Child>,
-    /// The port the fake GitHub API bound on loopback.
-    pub fake_port: Option<u16>,
-    /// The fake's request journal, one JSON object per request.
-    pub journal: Option<PathBuf>,
-    /// What the adoption command printed, for the refusal assertions and the
-    /// committed transcript.
-    pub adoption_transcript: String,
-    /// The live slug a declared object scenario names but the fake does not
-    /// serve (`owner/repository`), captured across the Given steps.
-    pub missing_repository: Option<String>,
-    /// The passphrase the adoption should present, when a scenario primes the
-    /// applied state with a different one.
-    pub passphrase: Option<String>,
-    /// What the scenario expects the applied state to keep: the raw bytes for
-    /// a refused adoption, or the normalized `.values` JSON for the security
-    /// routine's failed apply (a refreshed state envelope is not a write).
-    pub applied_state_snapshot: Option<Vec<u8>>,
-    /// The saved plan the preview wrote and the apply consumes
-    /// (`infra/plan.bin` in the scenario's declaration copy).
-    pub plan_path: Option<PathBuf>,
-    /// What the preview phase printed, for its refusal assertions.
-    pub preview_transcript: String,
-    /// What the apply phase printed, for its outcome assertions.
-    pub apply_transcript: String,
-    /// Whether the scenario's fake accepted the write sandbox.
-    pub write_sandbox: bool,
-    /// The scenario's copy of `org/`, placed beside its `infra/` copy, so the
-    /// declaration's `file()` source and the published content are read from
-    /// the same tree.
-    pub source_tree: Option<PathBuf>,
-    /// Journal lines written before the scenario's preview/apply, so the
-    /// priming adoption and base apply are not mistaken for the change's
-    /// writes.
-    pub journal_offset: usize,
-    /// The output directory a size-attribution scenario used.
-    pub measurement_out: Option<PathBuf>,
-    /// The `attribution.json` inside `measurement_out`.
-    pub attribution: Option<PathBuf>,
-    /// The executable a size-attribution scenario passed with `--executable`.
-    pub measurement_executable: Option<PathBuf>,
-    /// The revision a size-attribution scenario measured.
-    pub measurement_revision: Option<String>,
-    /// The output directory a size-lever scenario used.
-    pub lever_out: Option<PathBuf>,
-    /// The `size-lever.md` inside `lever_out`.
-    pub lever_report: Option<PathBuf>,
-    /// The revision a size-lever scenario measured.
-    pub lever_revision: Option<String>,
-    /// The published binary's size a size-lever scenario reports separately.
-    pub lever_published: Option<u64>,
-    /// The repository a size-lever scenario measures; the project root when absent.
-    pub lever_repo: Option<PathBuf>,
 }
 
 impl Drop for DutyWorld {
     fn drop(&mut self) {
         // Dropping the driver kills and reaps its child.
         let _ = self.browser.take();
-        if let Some(mut child) = self.fake.take() {
-            let _ = child.kill();
-            let _ = child.wait();
-        }
     }
 }
 
@@ -136,8 +54,8 @@ impl DutyWorld {
 
 #[tokio::main]
 async fn main() {
-    // cucumber-rs takes a single feature root; `./run-tests.sh` assembles every
-    // `.feature` from `givn/specs/**` and the change's `specs/**` into this root.
+    // cucumber-rs takes a single feature root; `./run-tests.sh` assembles the
+    // runnable corpus from `givn/specs/**` and the change's `specs/**`.
     let root = std::env::var("GIVN_FEATURES").unwrap_or_else(|_| "tests/features".to_string());
     DutyWorld::cucumber()
         .fail_on_skipped()

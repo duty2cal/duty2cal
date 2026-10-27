@@ -34,7 +34,10 @@ verify:
   # --- E2E test runner --------------------------------------------------------
   # Command to run @e2e-tagged scenarios. If unconfigured, the review gate and
   # archive gate will reject any change whose specs include @e2e scenarios.
-  e2e_command: "./run-tests.sh --e2e"  # same script, @e2e filter
+  e2e_command: "./run-tests.sh --e2e"  # same script, @e2e filter (CLI)
+  # Browser e2e evidence is the @browser smoke:
+  #   ./run-tests.sh --browser --name "Crew member converts a supported duty plan in the browser and saves the offered calendar"
+  # The `browser` CI job runs it; `--e2e` deliberately excludes @browser.
 
 # --- Coverage gate (requires addons.coverage: true) ---------------------------
 # Commands that produce Cobertura XML coverage data. The measurement script

@@ -101,6 +101,19 @@ def feature_prefix(lines: list[str], blocks: list[Block]) -> list[str]:
     return lines[: blocks[0].start] if blocks else lines
 
 
+def is_documentation(lines: list[str]) -> bool:
+    """Whether a feature is documentation rather than an executable spec.
+
+    A feature-level tag line before the first scenario carries `@documentation`.
+    Such a file stays in `givn/specs` for readers but is never emitted into the
+    runner root (see design.md "Architecture impact").
+    """
+    for line in feature_prefix(lines, scenario_blocks(lines)):
+        if TAG_LINE.match(line) and "@documentation" in line.split():
+            return True
+    return False
+
+
 def filtered_text(lines: list[str], blocks: list[Block], retained: list[Block]) -> str:
     """The prefix plus the retained blocks, byte for byte."""
     parts = feature_prefix(lines, blocks)
@@ -178,6 +191,12 @@ def main() -> None:
     sources: list[tuple[str, str]] = []
     for key, path in sorted(permanent.items()):
         lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+        if is_documentation(lines):
+            print(
+                f"assemble_features: {path} is @documentation; not executed",
+                file=sys.stderr,
+            )
+            continue
         blocks = scenario_blocks(lines)
         by_title = blocks_by_title(blocks)
         remove = replacements.get(key, {})

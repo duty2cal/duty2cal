@@ -1,3 +1,4 @@
+@documentation
 Feature: Adopt the existing public-home configuration
 
   @e2e
