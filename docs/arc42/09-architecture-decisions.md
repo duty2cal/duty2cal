@@ -72,11 +72,12 @@ check was assessed in the design-review hardening of 2026-10-25:
   `CANONICAL_ARTIFACT` →
   `givn/specs/publish-public-release/publish-public-release.feature`.
 - **The publication mechanism** — one command, a reusable workflow wrapper, an
-  assembled `dist/site/` output of eight members including the header icon, a
-  build-time `git describe` stamp and a local git target as the test twin. It
-  fails `architectural_impact` and `durable_consequence`: the wrapper and the
-  command choose build-and-publish tooling inside one boundary the deployment
-  view already fixes, and reversing them costs a script and workflow edit.
+  assembled `dist/site/` output of nine members including the vector mark and
+  its raster tab alternate, a build-time `git describe` stamp and a local git
+  target as the test twin. It fails `architectural_impact` and
+  `durable_consequence`: the wrapper and the command choose build-and-publish
+  tooling inside one boundary the deployment view already fixes, and reversing
+  them costs a script and workflow edit.
   Routing: `CANONICAL_ARTIFACT` → `givn/changes/publish-public-website/design.md`.
 - **The serving check** — the publication fetches the required `--verify-url`
   address after the replacement and refuses unless the served page carries the
@@ -90,6 +91,13 @@ check was assessed in the design-review hardening of 2026-10-25:
   the same reason. Routing: `CANONICAL_ARTIFACT` →
   `givn/specs/publish-public-website/publish-public-website.feature`; the
   retry bound and the fetch are ordinary design detail in `design.md`.
+
+The change that adds the vector brand assets (add-vector-brand-assets) minted no
+ADR and amended none. The publication-mechanism summary above now counts nine
+members, including the vector mark and its raster tab alternate. Its one
+candidate — the mark's vector master with a raster tab fallback — returned
+`NOT_QUALIFIED` and routes to exactly one canonical artifact:
+`givn/changes/add-vector-brand-assets/design.md`.
 
 ## Individual ADR contract
 

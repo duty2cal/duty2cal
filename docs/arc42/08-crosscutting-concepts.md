@@ -292,11 +292,17 @@ refuses rather than degrades.
   revision that did not build it.
 - **The page's own promises hold, and it gains one local image.** `connect-src
   'none'`, no persistent storage and no navigable state are inherited from the
-  browser capability. The page adds no third-party asset: the header icon and
-  the favicon are its one image, taken from `docs/assets/duty2cal.png` and
-  copied into the Site output as `icon.png`, so the policy stays closed with
-  `img-src 'self'`. The statements panel above the converter names what the tool
-  does, the browser route, downloads for various operating systems available on
+  browser capability. The page adds no third-party asset: the header mark and
+  the tab icons are its only images, taken from `docs/assets/duty2cal.svg` and
+  `docs/assets/duty2cal.png` and copied into the Site output as `icon.svg` and
+  `icon.png`, so the policy stays closed with `img-src 'self'`. The header mark
+  is the vector; the tab declares the vector first and keeps the raster as the
+  alternate for a browser without SVG tab icons, and the page-content check
+  refuses a header mark that is the raster, a tab whose vector declaration is
+  missing, untyped or not first, and an `icon.svg` that embeds a raster,
+  references another origin or uses a colour outside the mark's three-value
+  palette. The statements panel above the converter names what the tool does,
+  the browser route, downloads for various operating systems available on
   request (linking `https://github.com/duty2cal/duty2cal/releases`), the privacy
   rule, the non-affiliation sentence and the as-is sentence; the "Source and
   licence" panel below the converter carries the source and licence statements;
@@ -340,8 +346,9 @@ reviewed pair is the **reviewed public copy**.
 The profile page is self-contained: every link is absolute and there are no
 images, badges, statistics widgets or other third-party resources. A reader
 opening the profile therefore issues no request beyond GitHub's own, which is
-the same promise the converter makes at runtime — the converter page's one
-image is its own local `icon.png`, served from the Site output itself. The content-invariant scenario compares
+the same promise the converter makes at runtime — the converter page's only
+images are its own local `icon.svg` and the raster `icon.png` tab alternate,
+served from the Site output itself. The content-invariant scenario compares
 the published bytes with the reviewed `org/` source and asserts the positive
 claims; the profile is not trusted because a reviewer once looked at it, and the
 absence of the excluded provider name is a review control rather than a stored

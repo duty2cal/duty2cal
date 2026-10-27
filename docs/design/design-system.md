@@ -19,15 +19,21 @@ direction.
   statements panel sits **above** the converter panel, a separate "Source and
   licence" panel sits **below** the converter panels and above the footer, the
   footer stays full, and the page header gains the project icon as a 48×48 mark
-  left of the heading.
+  left of the heading. An amendment on 2026-10-27 changes the rendered form of
+  that mark, not the direction: the header mark and the tab's primary icon come
+  from the project's vector mark (`docs/assets/duty2cal.svg`, copied into the
+  Site output as `icon.svg`), the tab keeps `icon.png` as the raster alternate
+  for a browser without SVG tab icons, and the box stays 48×48 with the same
+  palette and the same placement.
 - Reference: [`reference/converter-reference.html`](reference/converter-reference.html)
   is the approved design-only rendered reference for the empty, ready and
   failure states. It is static because the page source does not exist yet; the
   implementation must use the same markup roles, tokens and copy. The 2026-10-25
   approval extends it with the statements panel above the converter, the "Source
-  and licence" panel below it, the full footer and the header icon, so the
-  approved direction shows the same placement, tokens and copy the page must
-  use. The `@e2e` screenshots become the execution evidence for the states the
+  and licence" panel below it, the full footer and the header icon, and the
+  2026-10-27 amendment draws that icon from the vector mark, so the approved
+  direction shows the same placement, tokens, copy and mark the page must use.
+  The `@e2e` screenshots become the execution evidence for the states the
   scenario traverses.
 
 ## Tokens
@@ -59,7 +65,7 @@ AA; `@axe-core/playwright` checks each rendered state.
 | Privacy note | Static text: processing is local, no upload, no storage, no request after load. |
 | Public statements panel | Default only. Its own surface panel **above** the converter panel, headed "Before you choose a plan": a single-column list stating what the tool does (`what-it-does`), both conversion routes — this page in a current browser (`browser-route`) and downloads for various operating systems available on request, with the release page `https://github.com/duty2cal/duty2cal/releases` carrying the published builds (`archive-route`) — the privacy rule (`privacy`), the non-affiliation sentence (`non-affiliation`) and the as-is sentence (`as-is`). Each statement carries `data-site-statement="<name>"` with non-empty text; every link is keyboard reachable with visible focus; no disabled, loading or error state. Uses the existing panel surface, 8 px radius and body/link typography. |
 | Source and licence panel | Default only. A separate surface panel **below** the converter panels and above the footer: the source repository link (`source`) and the licence statement with its licence-text link (`license`), naming MPL-2.0 for the code, CC0-1.0 for the non-code assets and the Unicode-3.0 attribution. Each statement carries `data-site-statement="<name>"` with non-empty text; links are keyboard reachable with visible focus; no state varies. |
-| Header icon and favicon | Default only. The project icon (`docs/assets/duty2cal.png`, CC0-1.0) rendered as a 48×48 mark **left of the `h1`** in a flex row with the heading and its subheadline, with the alternative text `duty2cal`, and copied into the Site output as `icon.png`, referenced by `<link rel="icon" href="./icon.png">`; the inline `data:, ` placeholder is gone. The mark's alt text names the project and no meaning is carried by the image alone. No state varies. |
+| Header icon and favicon | Default only. The project's vector mark (`docs/assets/duty2cal.svg`, CC0-1.0, the same silhouette and palette as `docs/assets/duty2cal.png`) rendered as a 48×48 mark **left of the `h1`** in a flex row with the heading and its subheadline, with the alternative text `duty2cal`, and copied into the Site output as `icon.svg`. The tab declares the mark twice: `<link rel="icon" type="image/svg+xml" href="./icon.svg">` first, so the vector is the primary tab icon, and `<link rel="icon" type="image/png" href="./icon.png">` second, the raster alternate (`docs/assets/duty2cal.png`, CC0-1.0) for a browser that cannot use an SVG tab icon. Both paths are relative and same-origin; the inline `data:, ` placeholder is gone. The mark's alt text names the project and no meaning is carried by the image alone. No state varies. |
 | Site footer | Default only, and kept full. The Built revision ("Built from `<describe>`" linking the commit) plus plain prose: the non-affiliation sentence, the as-is sentence and the privacy note. The footer repeats no `data-site-statement` attribute from either panel — those live in the two panels — while the revision keeps the `built-revision` attribute the content check anchors on; the revision text is the only build-derived visible string. Rendered above the existing top border in the existing muted small-text treatment; no state varies. |
 
 The page never shows an internal identifier or state name (`ok`, `failure`,
@@ -90,15 +96,17 @@ contrast ratios, `lang="en"`, and reduced motion. The page honors
 `prefers-reduced-motion: reduce` and the E2E asserts the computed motion value
 is `0ms`. The failure state has a heading and a way back.
 
-The header icon is a local same-origin image and the only image on the page:
-its `alt` text is `duty2cal`, its rendered box is 48×48 px at every breakpoint,
-it sits left of the heading in a flex row, and the content security policy adds
-`img-src 'self'` beside the existing directives so the favicon and the mark
-cannot load from another origin. The icon is not the sole carrier of any
-information. The statements panel is a list in document order before the
-converter panel; the "Source and licence" panel follows the converter panels;
-the full footer stays inside the page footer landmark and its built-revision
-link is reachable with visible focus, with its prose read after the panels.
+The header icon is a local same-origin vector image and the only image on the
+page: its `alt` text is `duty2cal`, its rendered box is 48×48 px at every
+breakpoint, it sits left of the heading in a flex row, and the content security
+policy adds `img-src 'self'` beside the existing directives so the favicon and
+the mark cannot load from another origin. The raster tab alternate is browser
+chrome, not page content, and carries the same mark. The icon is not the sole
+carrier of any information. The statements panel is a list in document order
+before the converter panel; the "Source and licence" panel follows the converter
+panels; the full footer stays inside the page footer landmark and its
+built-revision link is reachable with visible focus, with its prose read after
+the panels.
 
 ## Capture and evidence
 
@@ -136,10 +144,14 @@ specification, and their wording is reviewed copy. The archive route's copy
 names downloads for various operating systems available on request and links
 the project's release page; the page does not claim a Windows-only download
 instruction, and the one-archive platform rule stays where it already is — the
-release capability and chapter 7. The icon's licence is a project fact:
-`docs/assets/duty2cal.png` and the rest of `docs/assets/**` are CC0-1.0 through
-a `REUSE.toml` override, while the published page states MPL-2.0 for the code,
-CC0-1.0 for the non-code assets and the Unicode-3.0 attribution. The
+release capability and chapter 7. The icons' licence is a project fact:
+`docs/assets/duty2cal.svg`, `docs/assets/duty2cal.png` and the rest of
+`docs/assets/**` are CC0-1.0 through a `REUSE.toml` override, the vector being
+traced from the raster and therefore derived from the same CC0-1.0 asset, while
+the published page states MPL-2.0 for the code, CC0-1.0 for the non-code assets
+and the Unicode-3.0 attribution. The site publication refuses a page whose
+header mark is not the vector or whose tab declares no raster alternate, so the
+two files travel together in the Site output as `icon.svg` and `icon.png`. The
 browser-owned save semantics, the capability gate, the input bound and the
 no-network rule are product behavior owned by the conversion capability
 specification and the archived browser change's `design.md`.
