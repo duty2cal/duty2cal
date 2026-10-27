@@ -3969,6 +3969,11 @@ async fn the_page_states(w: &mut DutyWorld, sentence: String) {
         text.contains(&sentence),
         "the page does not state {sentence:?}: {text}"
     );
+    assert_eq!(
+        state["status"].as_str(),
+        Some(sentence.as_str()),
+        "the live status region does not carry {sentence:?}: {state}"
+    );
 }
 
 #[then("the page shows a failure heading and the count-based reason sentence")]
