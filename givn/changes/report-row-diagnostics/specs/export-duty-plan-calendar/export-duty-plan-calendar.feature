@@ -58,7 +58,7 @@ Feature: Export a duty-plan calendar
     And the failure report lists both errors and the warning
     And the invocation reports failure through a non-zero process exit status
 
-  @givn.added @wip
+  @givn.added
   Scenario: Error and warning entries are distinguishable in the failure report
     Given a supported duty plan with one detail row that cannot be represented and one unrecognized row that can
     When the crew member converts it

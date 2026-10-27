@@ -3074,6 +3074,60 @@ async fn failure_report_lists_two_errors_and_the_warning(w: &mut DutyWorld) {
     );
 }
 
+#[given(
+    "a supported duty plan with one detail row that cannot be represented and one unrecognized row that can"
+)]
+async fn one_error_and_one_warning(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    // A station with neither an activity code nor a route.
+    items.extend(support::at(585.0, &[(DATE_X, "2099-06-07"), (FROM_X, "ABC")]));
+    // An unrecognized code with both endpoints: represented with a warning.
+    items.extend(support::at(
+        570.0,
+        &[
+            (DATE_X, "2099-06-08"),
+            (ACTIVITY_X, "ZZ_M_CF"),
+            (START_X, "08:00"),
+            (END_X, "15:30"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then(
+    regex = r#"^the failure report carries (?:an|a) "([^"]+)" section listing (one|two|three) entr(?:y|ies)$"#
+)]
+async fn failure_report_section(w: &mut DutyWorld, section: String, count: String) {
+    let report = failure_report(w);
+    let entries = report_section(&report, &section);
+    let expected = counted(&count).expect("a scenario count");
+    assert_eq!(
+        entries.len(),
+        expected,
+        "the {section} section does not list {expected}: {report}"
+    );
+}
+
+#[then("the failure report identifies the source PDF and the primary reason")]
+async fn failure_report_identifies_source_and_reason(w: &mut DutyWorld) {
+    let report = failure_report(w);
+    let mut lines = report.lines();
+    assert_eq!(
+        lines.next(),
+        Some("Source PDF: roster.pdf"),
+        "the report does not identify the source: {report}"
+    );
+    let reason = lines.next().unwrap_or_default();
+    assert!(
+        reason.starts_with("Reason: ") && reason.len() > "Reason: ".len(),
+        "the report states no primary reason: {report}"
+    );
+    assert!(
+        reason.contains("neither an activity code nor a route"),
+        "the reason is not the first error: {report}"
+    );
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);
