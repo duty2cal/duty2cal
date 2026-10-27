@@ -199,7 +199,7 @@ Feature: Export a duty-plan calendar
     Then the calendar contains one timed activity titled "ZZ_M_CF" from 23:10 on 2099-06-07 to 01:05 on 2099-06-08 UTC
     And the converter reports one conversion warning naming detail row 1 and the date 2099-06-07
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unrecognized activity code with an equal printed window rejects the conversion
     Given a supported duty plan dated 2099-06-07 with activity code ZZ_M_CF and equal printed UTC clocks 10:00 and 10:00
     When the crew member converts it

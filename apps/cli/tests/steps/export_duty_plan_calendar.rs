@@ -3567,6 +3567,21 @@ async fn one_overnight_timed_activity(
     }
 }
 
+#[given(
+    "a supported duty plan dated 2099-06-07 with activity code ZZ_M_CF and equal printed UTC clocks 10:00 and 10:00"
+)]
+async fn an_unrecognized_code_with_an_equal_window(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "ZZ_M_CF"),
+            (START_X, "10:00"),
+            (END_X, "10:00"),
+        ],
+    );
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);
