@@ -103,6 +103,42 @@ grep -Eq '<img[^>]+src="\./icon\.svg"[^>]+alt="duty2cal"' "$index" \
 grep -Eq '<img[^>]+width="48"[^>]+height="48"' "$index" \
   || fail "the page's header icon is not declared at 48 by 48"
 
+# The vector member is a plain path drawing in the mark's palette. A malformed
+# document is refused by the parse itself; the per-element rules refuse anything
+# that is not a plain path drawing in the mark's colours.
+python3 - "$out/icon.svg" <<'PY' \
+  || fail "icon.svg is not a plain palette vector of the mark: $out/icon.svg"
+import sys
+import xml.etree.ElementTree as ET
+
+svg_ns = "{http://www.w3.org/2000/svg}"
+palette = {"#0B1F3F", "#F4F1EA", "#FF9F1C"}
+forbidden = {
+    "image", "text", "style", "filter", "clipPath", "mask",
+    "linearGradient", "radialGradient", "use",
+}
+
+root = ET.parse(sys.argv[1]).getroot()
+if root.tag != svg_ns + "svg":
+    sys.exit("the document's root is not an SVG element")
+if root.get("viewBox") != "0 0 1044 1044":
+    sys.exit("the document does not carry the mark's 1044-unit viewBox")
+
+for element in root.iter():
+    local = element.tag.rsplit("}", 1)[-1]
+    if local in forbidden:
+        sys.exit(f"the document carries <{local}>")
+    if element.get("style"):
+        sys.exit("the document carries a style attribute")
+    for name, value in element.attrib.items():
+        attribute = name.rsplit("}", 1)[-1]
+        if attribute == "href" and "//" in value:
+            sys.exit(f"the document references another origin: {value}")
+        if attribute in {"fill", "stroke", "stop-color"} and value.lower() != "none":
+            if value.upper() not in palette:
+                sys.exit(f"{attribute}={value!r} is outside the palette")
+PY
+
 # No asset may be loaded from another origin; the CSP forbids it and the
 # content check refuses the markup that would ask. `<a href>` links are
 # navigation and stay allowed: the release page and the source live elsewhere
