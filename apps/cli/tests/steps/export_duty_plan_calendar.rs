@@ -4047,7 +4047,7 @@ async fn the_offered_warning_report_names_the_source(
         "the warning report does not begin with {first:?}: {report:?}"
     );
     assert!(
-        report.contains(&format!("\n{section}:\n")),
+        report.contains(&format!("\n{section}\n")),
         "the warning report carries no {section:?} section: {report:?}"
     );
     assert!(

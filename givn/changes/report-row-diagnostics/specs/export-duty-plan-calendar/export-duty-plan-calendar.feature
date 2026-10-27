@@ -240,7 +240,7 @@ Feature: Export a duty-plan calendar
     And  the page states "Your calendar is ready to save. 2 rows were converted with warnings."
     And  the page meets the visual baseline in the ready-with-warnings state
 
-  @givn.added @browser @wip
+  @givn.added @browser
   Scenario: The page offers a warning report that names the source and carries the warnings
     Given  the converter page served from the built Site output
     When  the crew member supplies the supported duty plan "2026-06.pdf" containing an unrecognized activity code with a printed window
