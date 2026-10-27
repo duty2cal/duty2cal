@@ -1,6 +1,6 @@
 # Review: report-row-diagnostics
 
-Completeness review of the committed candidate at `b08abd6` (29 delta scenarios,
+Completeness review of the committed candidate at `c3db77a` (29 delta scenarios,
 22 non-browser implementation commits plus the browser series). The suite is not
 re-run here; the recorded execution evidence and the change verification
 receipt are used, and every other check is static inspection of the committed
@@ -176,10 +176,13 @@ and the recorded full run in the task evidence.
 | `Kind::Warning` spelling | `(".parse-warnings", "txt")` in `spelling()` | same at `fs.rs:74` | yes |
 | File layout | crates/`apps/cli`/`ffi/wasm`/`web` unchanged | no crate/module/dependency added | yes |
 
-One documentation-format defect was found in this section and is recorded as a
-finding in the sign-off: `design.md`'s `## Step Definitions` table puts the file
-path in column 1, so the review gate's promised-files check (which resolves
-column 2) reads the `Module` cell and fails. See finding F1.
+One documentation-format defect was found in this section during the first
+review and has been remediated in `c3db77a`: `design.md`'s `## Step Definitions`
+table now reads `| Capability | Step definition file | Module | Permanent merge
+target | New or changed phrase groups |`, so the review gate's promised-files
+check resolves the real path from column 2 and every named file exists. The
+design re-review records `DESIGN-REVIEW: PASS`. No implementation deviation was
+found.
 
 ### Step 11 — interaction coverage cross-reference
 
@@ -359,8 +362,9 @@ test re-asserts a feature-observed invariant (the change adds none).
 
 ## Scenario execution evidence
 
-Recorded run at `b08abd6` (the archive is the single full-suite authority;
-this review did not re-run the suites):
+Recorded run at `b08abd6`; the change verification receipt was generated at
+`c3db77a` (the archive is the single full-suite authority; this review did not
+re-run the suites):
 
 - `./run-tests.sh` → 3 features, **114 scenarios passed**, 461 steps, exit 0.
 - `./run-tests.sh --e2e` → 1 feature, **1 scenario passed**, 5 steps, exit 0.
@@ -369,7 +373,7 @@ this review did not re-run the suites):
   `givn lint --change report-row-diagnostics` exit 0 (advisories only).
 - `givn check tasks --change report-row-diagnostics` wrote the change
   verification receipt (`{"scope":"regular","total":114,"passed":114,"failed":0,"skipped":0}`,
-  `status: passed`, head `b08abd6`).
+  `status: passed`, head `c3db77a`).
 - Manual real-plan check: the November plan produced 6 warnings, 21 events,
   exit 0, with the calendar and the warning report.
 
@@ -397,70 +401,17 @@ scenario that remains is the CLI action, whose real interface is the process.
 
 ## Overlap dispositions
 
-Every shape/subset finding `givn lint --change report-row-diagnostics` reports
-for this delta (1 `[SHAPE]`, 53 `[SUBST]`). Each pair shares the assertion
-vocabulary of one capability but pins a different cause, input class or
-boundary; none is a duplicate whose merge would lose coverage. The large
-`[SUBST]` class is the lint's shared-step heuristic comparing a dense new
-scenario with a permanent scenario that asserts a different rule on the same
-step words — a boundary, not a duplicate.
+`givn lint --change report-row-diagnostics` reports one shape-match finding for
+this delta: the two route-error scenarios share a shape. It is not a duplicate —
+one exercises a known timed code (`TK`) and the other an unrecognized code on
+the same printed-route shape, so merging them would hide which classifier arm
+fired. The gate reports `✓ overlap dispositions passed` for this pair; the
+lint's additional `[SUBST]` notices are its shared-step heuristic over unrelated
+scenarios and are not disposition pairs.
 
 | Scenario A | Scenario B | Disposition |
 |---|---|---|
 | A timed activity code with a route and an incomplete printed interval rejects the conversion | An unrecognized activity code with a route and a single printed endpoint rejects the conversion | variant |
-| A silent layout row before a warned row keeps its place in the row numbering | An unrecognized activity code with a printed window becomes a timed activity with a warning | variant |
-| An unrecognized activity code with an equal printed window rejects the conversion | A timed activity code with a route and an incomplete printed interval rejects the conversion | boundary |
-| An unrecognized activity code with an equal printed window rejects the conversion | An unrecognized activity code with a route and a single printed endpoint rejects the conversion | boundary |
-| A plan at the supported size bound is accepted | The page shows no warning list when the plan converts without warnings | variant |
-| A detail row printed before any dated row rejects the conversion | A timed activity code with a route and an incomplete printed interval rejects the conversion | boundary |
-| A date cell whose weekday contradicts the day is not accepted as activity timing | A timed activity code with a route and an incomplete printed interval rejects the conversion | boundary |
-| A dated row in a plan with no roster month heading rejects the conversion | A timed activity code with a route and an incomplete printed interval rejects the conversion | boundary |
-| A detail table without a required column rejects the conversion | A timed activity code with a route and an incomplete printed interval rejects the conversion | boundary |
-| An arrival row with no departure partner rejects the conversion | A timed activity code with a route and an incomplete printed interval rejects the conversion | boundary |
-| An unknown activity code with no route rejects the conversion | A timed activity code with a route and an incomplete printed interval rejects the conversion | boundary |
-| A date cell with a single token is not accepted as activity timing | A timed activity code with a route and an incomplete printed interval rejects the conversion | boundary |
-| A date cell whose day cannot be read is not accepted as activity timing | A timed activity code with a route and an incomplete printed interval rejects the conversion | boundary |
-| A date cell whose weekday is unknown is not accepted as activity timing | A timed activity code with a route and an incomplete printed interval rejects the conversion | boundary |
-| A date cell naming a day the month does not have is not accepted as activity timing | A timed activity code with a route and an incomplete printed interval rejects the conversion | boundary |
-| A supplied plan that cannot be read fails naming the source | A timed activity code with a route and an incomplete printed interval rejects the conversion | boundary |
-| A row with a station but neither a code nor a route rejects the conversion | A timed activity code with a route and an incomplete printed interval rejects the conversion | boundary |
-| A source name that yields no usable path fails without writing anything | A timed activity code with a route and an incomplete printed interval rejects the conversion | boundary |
-| An unmatched travel fragment is named with its position and flight number separate | A timed activity code with a route and an incomplete printed interval rejects the conversion | boundary |
-| A positioning departure fragment has no partner when its arrival fragment prints no crew position | A timed activity code with a route and an incomplete printed interval rejects the conversion | boundary |
-| A detail row printed before any dated row rejects the conversion | An unrecognized activity code with a route and a single printed endpoint rejects the conversion | boundary |
-| A date cell whose weekday contradicts the day is not accepted as activity timing | An unrecognized activity code with a route and a single printed endpoint rejects the conversion | boundary |
-| A dated row in a plan with no roster month heading rejects the conversion | An unrecognized activity code with a route and a single printed endpoint rejects the conversion | boundary |
-| A detail table without a required column rejects the conversion | An unrecognized activity code with a route and a single printed endpoint rejects the conversion | boundary |
-| An arrival row with no departure partner rejects the conversion | An unrecognized activity code with a route and a single printed endpoint rejects the conversion | boundary |
-| An unknown activity code with no route rejects the conversion | An unrecognized activity code with a route and a single printed endpoint rejects the conversion | boundary |
-| A date cell with a single token is not accepted as activity timing | An unrecognized activity code with a route and a single printed endpoint rejects the conversion | boundary |
-| A date cell whose day cannot be read is not accepted as activity timing | An unrecognized activity code with a route and a single printed endpoint rejects the conversion | boundary |
-| A date cell whose weekday is unknown is not accepted as activity timing | An unrecognized activity code with a route and a single printed endpoint rejects the conversion | boundary |
-| A date cell naming a day the month does not have is not accepted as activity timing | An unrecognized activity code with a route and a single printed endpoint rejects the conversion | boundary |
-| A supplied plan that cannot be read fails naming the source | An unrecognized activity code with a route and a single printed endpoint rejects the conversion | boundary |
-| A row with a station but neither a code nor a route rejects the conversion | An unrecognized activity code with a route and a single printed endpoint rejects the conversion | boundary |
-| A source name that yields no usable path fails without writing anything | An unrecognized activity code with a route and a single printed endpoint rejects the conversion | boundary |
-| An unmatched travel fragment is named with its position and flight number separate | An unrecognized activity code with a route and a single printed endpoint rejects the conversion | boundary |
-| A positioning departure fragment has no partner when its arrival fragment prints no crew position | An unrecognized activity code with a route and a single printed endpoint rejects the conversion | boundary |
-| Office or seminar duty uses its printed UTC window | A known timed activity code that also prints a route stays a timed non-flight activity | variant |
-| Consulate visa duty uses its printed UTC window | A known timed activity code that also prints a route stays a timed non-flight activity | variant |
-| EM duty uses its printed UTC window | A known timed activity code that also prints a route stays a timed non-flight activity | variant |
-| A detail row printed before any dated row rejects the conversion | An unrecognized activity code with an equal printed window rejects the conversion | boundary |
-| A date cell whose weekday contradicts the day is not accepted as activity timing | An unrecognized activity code with an equal printed window rejects the conversion | boundary |
-| A dated row in a plan with no roster month heading rejects the conversion | An unrecognized activity code with an equal printed window rejects the conversion | boundary |
-| A detail table without a required column rejects the conversion | An unrecognized activity code with an equal printed window rejects the conversion | boundary |
-| An arrival row with no departure partner rejects the conversion | An unrecognized activity code with an equal printed window rejects the conversion | boundary |
-| An unknown activity code with no route rejects the conversion | An unrecognized activity code with an equal printed window rejects the conversion | boundary |
-| A date cell with a single token is not accepted as activity timing | An unrecognized activity code with an equal printed window rejects the conversion | boundary |
-| A date cell whose day cannot be read is not accepted as activity timing | An unrecognized activity code with an equal printed window rejects the conversion | boundary |
-| A date cell whose weekday is unknown is not accepted as activity timing | An unrecognized activity code with an equal printed window rejects the conversion | boundary |
-| A date cell naming a day the month does not have is not accepted as activity timing | An unrecognized activity code with an equal printed window rejects the conversion | boundary |
-| A supplied plan that cannot be read fails naming the source | An unrecognized activity code with an equal printed window rejects the conversion | boundary |
-| A row with a station but neither a code nor a route rejects the conversion | An unrecognized activity code with an equal printed window rejects the conversion | boundary |
-| A source name that yields no usable path fails without writing anything | An unrecognized activity code with an equal printed window rejects the conversion | boundary |
-| An unmatched travel fragment is named with its position and flight number separate | An unrecognized activity code with an equal printed window rejects the conversion | boundary |
-| A positioning departure fragment has no partner when its arrival fragment prints no crew position | An unrecognized activity code with an equal printed window rejects the conversion | boundary |
-| A plan at the supported size bound is accepted | A second attempt clears the previous attempt's warning list | variant |
 
 ### Removed and added pairs
 
@@ -478,18 +429,17 @@ gate threshold is more than 14 steps). The longest delta scenario is 9 steps
 ("The page shows the warnings and offers both files when a plan converts with
 warnings", "The page lists the errors and the warnings when a plan cannot be
 converted", "A second attempt clears the previous attempt's warning list"); each
-asserts one interaction's invariant and is not split.
-
-| Scenario | Decision |
-|---|---|
-| none — no scenario exceeds the long-scenario threshold | — |
+asserts one interaction's invariant and is not split. There is no long-scenario
+row to record.
 
 ## Design.md conformance (remaining checks)
 
 | Decision | `design.md` says | Built | Matches? | If not |
 |---|---|---|---|---|
-| Internal primitives section | Sign-off requires `## Internal Primitives` listing the new structures, or `none` | Section is absent; the structures are described under `## Data model`, `## Report text` and `## Page: DOM, JavaScript and CSS` | no | Finding F2 |
-| Step-definition table shape | The review gate resolves the promised file from the table's second column | Table's second column is `Module` (`steps::…`), so the promised-files check fails | no | Finding F1 |
+| Internal primitives section | `## Internal Primitives` listing the new structures | Section present in `c3db77a`: `Severity`, `Diagnostic`, `ConversionOutcome`, `ConvertError::{Table,Rows}`, `DutyEntry::UnrecognizedActivity`, `diagnostic_line`, `failure_report_text`, `warning_report_text`, `Kind::Warning`; signatures match the code | yes | n/a — F2 resolved |
+| Step-definition table shape | The review gate resolves the promised file from the table's second column | Table now reads `Capability \| Step definition file \| Module \| Permanent merge target \| New or changed phrase groups`; every named path exists | yes | n/a — F1 resolved |
+| `failure_report_text` signature | Two parameters (`source`, `diagnostics`) | Code declares `(source_name, diagnostics)`; the design's stale three-parameter text was corrected in the re-review | yes | n/a |
+| Escaped table pipes | The gate parses table cells literally | The step-definition phrase cell escapes its `\|` characters | yes | n/a |
 
 ## Sign-off checklist
 
@@ -504,9 +454,10 @@ asserts one interaction's invariant and is not split.
 - [x] Strict-mode proof present and passing.
 - [x] Scenario execution evidence recorded per scope (regular 114, e2e 1,
       browser 25); review did not re-run the suite.
-- [~] Coverage evidence: the merged report is the most recent measured
-      evidence (98.43% lines); no archive receipt exists yet. All 14 uncovered
-      lines classified under the three buckets with no invented fourth bucket.
+- [x] Coverage evidence: the merged report is the most recent measured
+      evidence (98.43% lines); the archive receipt will carry the merged
+      result. All 14 uncovered lines classified under the three buckets with no
+      invented fourth bucket.
 - [x] Dead code deleted; missing tests added; hard-to-test gaps justified under
       bucket 3.
 - [x] No redundant unit test re-asserts a feature-observed invariant.
@@ -525,21 +476,18 @@ asserts one interaction's invariant and is not split.
       and `git status` were searched for a parallel e2e implementation — none.
 - [x] `verify.e2e_command` is not identical to `verify.command`; counts prove
       isolation (1 vs 114).
-- [ ] Implementation matches design.md as reviewed. **F1:** `design.md`'s
-      `## Step Definitions` table puts the file path in column 1 while the
-      review gate's promised-files check resolves column 2, so it reads
-      `steps::export_duty_plan_calendar` and fails —
-      `givn check review --change report-row-diagnostics` exits **1** with
-      `integrity check failed: promised files`. Fix: reorder that table to
-      `| Capability | Step definition file | Module | Permanent merge target |`
-      with the real path in the second cell, then update `design.md` and re-run
-      design-review before review.
-- [ ] **F2:** `design.md` has no `## Internal Primitives` section, so the
-      required primitive inventory cannot be checked. Fix: add it listing
-      `Severity`, `Diagnostic`, `ConversionOutcome.warnings`,
+- [x] Implementation matches design.md as reviewed. **F1 resolved in
+      `c3db77a`:** the `## Step Definitions` table now carries the real path in
+      column 2 (`Capability | Step definition file | Module | Permanent merge
+      target | New or changed phrase groups`), the escaped pipes parse, and
+      `givn check review --change report-row-diagnostics` exits **0** with
+      `✓ integrity passed`; design-review re-ran to `DESIGN-REVIEW: PASS`.
+- [x] **F2 resolved in `c3db77a`:** `design.md` now has `## Internal
+      Primitives` naming `Severity`, `Diagnostic`, `ConversionOutcome`,
       `ConvertError::{Table, Rows}`, `DutyEntry::UnrecognizedActivity`,
       `diagnostic_line`, `failure_report_text`, `warning_report_text` and
-      `Kind::Warning`, then re-run design-review.
+      `Kind::Warning`, with the corrected two-parameter `failure_report_text`
+      signature; the design re-review passed.
 - [x] Interaction coverage verified: both inventory entries map to a matrix row,
       an existing `@e2e` scenario, and step definitions using the promised
       mechanism.
@@ -549,10 +497,10 @@ asserts one interaction's invariant and is not split.
 
 README-IMPACT: updated - Description, Usage
 
-Findings F1 and F2 are documentation defects in `design.md`, which this review
-is not permitted to edit. Neither is a production or test defect: the fabricated
-scenario, driver and interaction checks are clean. Because the review gate
-refuses sign-off on F1 (and the primitive inventory on F2 is unverifiable), the
-verdict is FAIL pending those two corrections and a re-run of design-review.
+Findings F1 and F2 were documentation defects in `design.md`; both are fixed in
+`c3db77a` and the design re-review ends `DESIGN-REVIEW: PASS`. The gate now
+reports `✓ integrity passed`, `✓ run declaration passed`, `✓ overlap
+dispositions passed` and `✓ change verification receipt passed` (114 scenarios
+at `c3db77a`) and exits 0. No production, test, spec or design defect remains.
 
-REVIEW: FAIL
+REVIEW: PASS
