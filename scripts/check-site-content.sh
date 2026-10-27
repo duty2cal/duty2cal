@@ -79,6 +79,7 @@ grep -Eq '<span data-site-statement="built-revision">[^<]+</span>' "$index" \
 
 # The licence file is a separate built output.
 [ -s "$out/LICENSE.txt" ] || fail "the output holds no LICENSE.txt"
+[ -s "$out/icon.svg" ] || fail "the output holds no icon.svg"
 [ -s "$out/icon.png" ] || fail "the output holds no icon.png"
 
 # The tab icon and the header mark come from the page's own origin; the vector
