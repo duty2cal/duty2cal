@@ -17,16 +17,17 @@ duty2cal converts a Lufthansa cabin-crew duty plan published as a Jeppesen
 PDF export into one calendar file. One roster month of cabin crew; not cockpit
 duties, other Lufthansa duty plans, other Jeppesen exports or another operator.
 It reads the plan's PDF for one roster month and writes one RFC 5545 calendar
-file beside it, so that month's flights, standbys, non-flight duties, days off and
-layovers appear in the calendar the crew member already uses. It is built for the
-crew member who holds the plan: no account, no network, no service, one file in
-and one file out.
+file beside it, plus a warning report when a row was represented by a fallback,
+so that month's flights, standbys, non-flight duties, days off and layovers
+appear in the calendar the crew member already uses. It is built for the crew
+member who holds the plan: no account, no network, no service, one plan in and
+the calendar out.
 
 A plan it cannot read as the supported Lufthansa cabin-crew Jeppesen export is
 never half-converted. It publishes no calendar, writes a numbered diagnostic
-naming the source and the reason, and reports the failure through its exit
-status, so an unattended run can tell a failed conversion from a converted
-month.
+naming the source, the reason, and every row that could not be represented, and
+reports the failure through its exit status, so an unattended run can tell a
+failed conversion from a converted month.
 
 Not affiliated with Lufthansa, Jeppesen, or any duty-plan provider or airline.
 
@@ -151,9 +152,24 @@ $ target/release/duty2cal ./2026-06.pdf
 Written: ./2026-06.ics
 ```
 
-On failure no calendar is published, a diagnostic report is written beside the
-source under `<source>.parse-error.txt` (numbered when that name is taken), and
-the process exits non-zero:
+When a row is represented by a fallback — an activity code the converter does
+not recognize but can place from its printed times and station — the calendar
+is still published, every warning is printed, and a warning report is written
+beside it under `<source>.parse-warnings.txt` (numbered when that name is
+taken). The process exits zero:
+
+```sh
+$ target/release/duty2cal ./2026-06.pdf
+Warning: row 4 (2026-06-07): unrecognized activity code "ZZ_M_CF"; converted as a timed activity using its printed UTC window 08:00-15:30
+Written: ./2026-06.ics
+Warning report: ./2026-06.parse-warnings.txt
+```
+
+A row that cannot be represented at all still fails the conversion: no calendar
+is published, a diagnostic report is written beside the source under
+`<source>.parse-error.txt` (numbered when that name is taken), and the process
+exits non-zero. The report names the source and the first reason, then lists
+every error and every warning of the run under `Errors:` and `Warnings:`:
 
 ```sh
 $ target/release/duty2cal ./unknown.pdf
