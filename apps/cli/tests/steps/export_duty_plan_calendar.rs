@@ -3362,6 +3362,47 @@ async fn an_unrecognized_route_row_without_an_end(w: &mut DutyWorld) {
     );
 }
 
+#[given(
+    "a supported duty plan dated 2099-06-07 with activity code TK, a printed route from ABC to DEF and printed UTC times 08:00 and 12:00"
+)]
+async fn a_known_timed_code_with_a_route(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "TK"),
+            (FROM_X, "ABC"),
+            (TO_X, "DEF"),
+            (START_X, "08:00"),
+            (END_X, "12:00"),
+        ],
+    );
+}
+
+#[then(regex = r"^the calendar contains no travel activity on (\d{4}-\d{2}-\d{2})$")]
+async fn no_travel_on(w: &mut DutyWorld, date: String) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 1);
+    assert!(
+        calendar.contains("SUMMARY:TK\r\n") && !calendar.contains("SUMMARY:TK ABC-DEF"),
+        "the row was published as travel instead of non-flight duty: {calendar}"
+    );
+    assert!(
+        !calendar.contains("-DEF"),
+        "the row's route reached the calendar as travel: {calendar}"
+    );
+    assert!(
+        calendar.contains(&format!("DTSTART:{}T080000Z", compact(&date))),
+        "the non-flight duty does not keep its printed window: {calendar}"
+    );
+}
+
+#[then("the converter reports no conversion warning")]
+async fn converter_reports_no_warning(w: &mut DutyWorld) {
+    let warnings = warning_lines(w);
+    assert!(warnings.is_empty(), "warnings were reported: {warnings:?}");
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);

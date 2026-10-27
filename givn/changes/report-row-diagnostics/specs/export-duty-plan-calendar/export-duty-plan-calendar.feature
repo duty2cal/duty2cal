@@ -151,7 +151,7 @@ Feature: Export a duty-plan calendar
     And the failure report lists that row under "Errors:"
     And the invocation reports failure through a non-zero process exit status
 
-  @givn.added @wip
+  @givn.added
   Scenario: A known timed activity code that also prints a route stays a timed non-flight activity
     Given a supported duty plan dated 2099-06-07 with activity code TK, a printed route from ABC to DEF and printed UTC times 08:00 and 12:00
     When the crew member converts it
