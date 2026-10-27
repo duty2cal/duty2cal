@@ -50,6 +50,12 @@ PERSONAS: visitor--project-reader
 PERSONAS: project-maintainer--release-owner
 PERSONAS: contributor--web-reviewer
 
+## Split-or-keep
+
+| Scenario | Decision | Reason |
+|---|---|---|
+| Release maintainer publishes the site and the hosting target holds the built page | keep | the publication's one end-to-end record; the change modifies one step, and splitting the scenario would multiply publications |
+
 ## README impact decision
 
 README-IMPACT: none
