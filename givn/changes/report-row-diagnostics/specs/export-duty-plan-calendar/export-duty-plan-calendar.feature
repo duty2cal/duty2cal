@@ -133,7 +133,7 @@ Feature: Export a duty-plan calendar
     And  the page offers no warning report
     And  the page meets the visual baseline in the ready state
 
-  @givn.added @wip
+  @givn.added
   Scenario: A timed activity code with a route and an incomplete printed interval rejects the conversion
     Given a supported duty plan dated 2099-06-07 with activity code TK, a printed route from ABC to DEF, a printed UTC start 08:00 and no end
     When the crew member converts it

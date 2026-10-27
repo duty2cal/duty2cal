@@ -3330,6 +3330,22 @@ async fn transcript_states_no_warning_report(w: &mut DutyWorld) {
     );
 }
 
+#[given(
+    "a supported duty plan dated 2099-06-07 with activity code TK, a printed route from ABC to DEF, a printed UTC start 08:00 and no end"
+)]
+async fn a_known_timed_route_row_without_an_end(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "TK"),
+            (FROM_X, "ABC"),
+            (TO_X, "DEF"),
+            (START_X, "08:00"),
+        ],
+    );
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);

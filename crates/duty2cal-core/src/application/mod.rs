@@ -500,6 +500,19 @@ fn tags(table: &RawRosterTable, cells: &[String]) -> Option<String> {
 fn classify(table: &RawRosterTable, row: &Row) -> Classified {
     let code = row.activity.as_str();
     let _ = table;
+    let has_route = !row.from.is_empty() && !row.to.is_empty();
+    let has_endpoints = !row.start.is_empty() && !row.end.is_empty();
+    // A recognized timed code that also prints a route but cannot build its
+    // interval is a route row with an incomplete interval, so it reaches the
+    // same sentence as any other route row that fails the catch-all.
+    let incomplete = |message: String| {
+        Classified::Error(if has_route {
+            "a required activity could not be resolved: a route row carries an incomplete printed interval"
+                .to_string()
+        } else {
+            message
+        })
+    };
 
     if ALL_DAY_CODES.contains(&code) {
         return Classified::Entry(DutyEntry::AllDay {
@@ -518,7 +531,7 @@ fn classify(table: &RawRosterTable, row: &Row) -> Classified {
                 interval,
                 tags: row.tags.clone(),
             }),
-            Err(message) => Classified::Error(message),
+            Err(message) => incomplete(message),
         };
     }
 
@@ -532,7 +545,7 @@ fn classify(table: &RawRosterTable, row: &Row) -> Classified {
                 interval,
                 tags: row.tags.clone(),
             }),
-            Err(message) => Classified::Error(message),
+            Err(message) => incomplete(message),
         };
     }
 
@@ -545,8 +558,6 @@ fn classify(table: &RawRosterTable, row: &Row) -> Classified {
         });
     }
 
-    let has_route = !row.from.is_empty() && !row.to.is_empty();
-    let has_endpoints = !row.start.is_empty() && !row.end.is_empty();
     if has_route && has_endpoints {
         return match row_interval(row) {
             Ok(interval) => Classified::Entry(DutyEntry::Travel {
