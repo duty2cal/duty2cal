@@ -2947,6 +2947,78 @@ async fn failure_report_lists_the_row_under(w: &mut DutyWorld, section: String) 
     );
 }
 
+#[given(
+    "a supported duty plan with three detail rows carrying unrecognized activity codes, each with printed UTC start and end"
+)]
+async fn three_unrecognized_rows(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    for (offset, (date, code, start, end)) in [
+        ("2099-06-07", "ZZ_M_CF", "08:00", "15:30"),
+        ("2099-06-08", "ZZ_M_AB", "06:00", "12:00"),
+        ("2099-06-09", "ZZ_M_KQ", "10:00", "18:00"),
+    ]
+    .iter()
+    .enumerate()
+    {
+        items.extend(support::at(
+            585.0 - offset as f64 * 15.0,
+            &[
+                (DATE_X, *date),
+                (ACTIVITY_X, *code),
+                (START_X, *start),
+                (END_X, *end),
+            ],
+        ));
+    }
+    write_fixture(w, &items);
+}
+
+#[then("the calendar contains one activity for each of the three rows")]
+async fn three_fallback_activities(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 3);
+    for (date, code, start, end) in [
+        ("2099-06-07", "ZZ_M_CF", "08:00", "15:30"),
+        ("2099-06-08", "ZZ_M_AB", "06:00", "12:00"),
+        ("2099-06-09", "ZZ_M_KQ", "10:00", "18:00"),
+    ] {
+        for expected in [
+            format!("SUMMARY:{code}"),
+            format!("DTSTART:{}", instant(date, start)),
+            format!("DTEND:{}", instant(date, end)),
+        ] {
+            assert!(
+                calendar.contains(&expected),
+                "the row for {code} does not carry {expected:?}: {calendar}"
+            );
+        }
+    }
+}
+
+/// A number written as a word in the scenarios, or `None`.
+fn counted(word: &str) -> Option<usize> {
+    match word {
+        "one" => Some(1),
+        "two" => Some(2),
+        "three" => Some(3),
+        _ => None,
+    }
+}
+
+#[then(regex = r"^the converter reports (one|two|three) conversion warnings$")]
+async fn conversion_warnings(w: &mut DutyWorld, count: String) {
+    let warnings = warning_lines(w);
+    let expected = counted(&count).expect("a scenario count");
+    assert_eq!(warnings.len(), expected, "wrong warning count: {warnings:?}");
+}
+
+#[then("the warning report lists one entry for each warned row")]
+async fn one_warning_entry_per_row(w: &mut DutyWorld) {
+    let entries = report_section(&warning_report(w), "Warnings");
+    let warnings = warning_lines(w);
+    assert_eq!(entries, warnings, "the report does not mirror the warnings");
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);

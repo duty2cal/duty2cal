@@ -39,7 +39,7 @@ Feature: Export a duty-plan calendar
     And the failure report lists that row under "Errors:"
     And the invocation reports failure through a non-zero process exit status
 
-  @givn.added @wip
+  @givn.added
   Scenario: Several unrecognized rows are all reported in one conversion
     Given a supported duty plan with three detail rows carrying unrecognized activity codes, each with printed UTC start and end
     When the crew member converts it
