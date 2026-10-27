@@ -111,7 +111,7 @@ Feature: Export a duty-plan calendar
     And  the page has sent no request to another origin since it loaded
     And  the page meets the visual baseline in the ready-with-warnings state
 
-  @givn.added @browser @wip
+  @givn.added @browser
   Scenario: The page lists the errors and the warnings when a plan cannot be converted
     Given  the converter page served from the built Site output
     When  the crew member supplies the supported duty plan "2026-06.pdf" with a row that cannot be represented and a row that was converted with a warning

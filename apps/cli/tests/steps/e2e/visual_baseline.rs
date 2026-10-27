@@ -96,8 +96,18 @@ pub fn assert_visual_baseline(state: &Value, displayed: &str, lang: &str) {
         "duty2cal_wasm",
         "wasm-inline",
     ] {
+        // The downloaded file names are the page's declared vocabulary: the
+        // offer link prints the name the browser will save, so a denied token
+        // inside an offered name is not an internal identifier reaching a
+        // reader. Every other occurrence is still refused.
+        let mut without_offers = text.to_string();
+        if let Some(offers) = state["offers"].as_array() {
+            for name in offers.iter().filter_map(|offer| offer["name"].as_str()) {
+                without_offers = without_offers.replace(name, "<offered-file>");
+            }
+        }
         assert!(
-            !text.contains(denied),
+            !without_offers.contains(denied),
             "the {displayed} page shows the internal identifier {denied:?}: {text}"
         );
     }
