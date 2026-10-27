@@ -3527,6 +3527,46 @@ async fn reason_is_the_departure_error(w: &mut DutyWorld) {
     );
 }
 
+#[given(
+    "a supported duty plan dated 2099-06-07 with activity code ZZ_M_CF, one local-date block and unqualified printed UTC clocks 23:10 and 01:05"
+)]
+async fn an_unrecognized_code_across_midnight(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "ZZ_M_CF"),
+            (START_X, "23:10"),
+            (END_X, "01:05"),
+        ],
+    );
+}
+
+#[then(
+    regex = r#"^the calendar contains one timed activity titled "([^"]+)" from (\d{2}:\d{2}) on (\d{4}-\d{2}-\d{2}) to (\d{2}:\d{2}) on (\d{4}-\d{2}-\d{2}) UTC$"#
+)]
+async fn one_overnight_timed_activity(
+    w: &mut DutyWorld,
+    title: String,
+    start: String,
+    start_date: String,
+    end: String,
+    end_date: String,
+) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 1);
+    for expected in [
+        format!("SUMMARY:{title}"),
+        format!("DTSTART:{}", instant(&start_date, &start)),
+        format!("DTEND:{}", instant(&end_date, &end)),
+    ] {
+        assert!(
+            calendar.contains(&expected),
+            "the overnight activity does not carry {expected:?}: {calendar}"
+        );
+    }
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);

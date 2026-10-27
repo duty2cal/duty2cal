@@ -192,7 +192,7 @@ Feature: Export a duty-plan calendar
     And the failure report's reason line is the departure row's error
     And the invocation reports failure through a non-zero process exit status
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unrecognized activity code with an unqualified window across midnight keeps it as the following UTC day
     Given a supported duty plan dated 2099-06-07 with activity code ZZ_M_CF, one local-date block and unqualified printed UTC clocks 23:10 and 01:05
     When the crew member converts it
