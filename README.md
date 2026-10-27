@@ -65,6 +65,7 @@ cargo run --release -p duty2cal -- <duty-plan.pdf>
 
 
 
+
 ## Download a release
 
 Every version tag publishes one release at the stable address
@@ -160,9 +161,8 @@ Neither an existing calendar nor an existing report is ever overwritten.
 Run the project-owned scripts configured in `givn/commands.yaml`:
 
 ```sh
-./run-tests.sh            # product suite, no browser
-./run-tests.sh --e2e      # the CLI end-to-end scenario
-./run-tests.sh --browser  # browser variants (builds the bundle and Site output)
+./run-tests.sh
+./run-tests.sh --e2e
 ```
 
 `./measure-coverage.sh` writes the non-E2E and E2E Cobertura reports.
@@ -172,6 +172,7 @@ badges above.
 Add lint, build, and other project commands alongside these scripts.
 
 <!-- givn:end:development -->
+
 
 
 
