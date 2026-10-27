@@ -28,7 +28,7 @@ Feature: Export a duty-plan calendar
     And the converter reports no conversion warning
     And no warning report is published
 
-  @givn.added @wip
+  @givn.added
   Scenario: A standby shift row without printed times rejects the conversion
     Given a supported duty plan dated 2099-11-19 with activity code SB_F_CF at station FRA and no printed UTC times
     When the crew member converts it

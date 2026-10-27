@@ -144,7 +144,7 @@ Design constraints (this scenario):
   ```
 - [x] COMMIT: one revision, release note as subject, scenario title in the body.
   ```
-  COMMIT: <pending>
+  COMMIT: 69fbea9
   ```
 
 ### 3. Consecutive standby shift days interrupted by a day off stay separate
@@ -153,21 +153,39 @@ Design constraints (this scenario):
 - `SB_F_CF` 03:30-13:00 on 2099-11-15 and 2099-11-17 with a `FREE` row on 2099-11-16 becomes two separate timed `SB_F_CF` activities at FRA plus one all-day FREE activity on 2099-11-16; no warning, no warning report.
 - Each row keeps its own window; no continuous block, no all-day standby. The new Given step and the two-activity Then step (`the calendar contains two timed SB_F_CF activities …`, asserting three events: the two shifts plus the FREE day) are this task's test edits; no production change beyond task 1.
 
-- [ ] RED: run the single-scenario command.
+- [x] RED: run the single-scenario command; the Given step for the two shift days and the FREE row is unbound.
   ```
-  <paste output>
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  1 step (1 failed)
+  EXIT=1
   ```
-- [ ] GREEN: implement the Given step for the two shift days and the FREE row and the two-activity Then step; no production change. Compile, then run the single-scenario command.
+- [x] GREEN: bound the consecutive-day Given and the two-activity Then (event count three, per-date `SUMMARY:SB_F_CF`, window, station); no production change. Ran the single-scenario command.
   ```
-  <paste output>
+   ✔  Given a supported duty plan with SB_F_CF windows 03:30 to 13:00 on 2099-11-15 and 2099-11-17 and a FREE row on 2099-11-16
+   ✔  When the crew member converts it
+   ✔  Then the calendar contains two timed SB_F_CF activities from 03:30 to 13:00 UTC on 2099-11-15 and 2099-11-17 at FRA
+   ✔  And the calendar contains one all-day day-off activity on 2099-11-16
+   ✔  And the converter reports no conversion warning
+   ✔  And no warning report is published
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  6 steps (6 passed)
+  EXIT=0
   ```
-- [ ] REFACTOR: no behaviour change; re-run and paste.
+- [x] REFACTOR: no behaviour change; `@wip` removed from this scenario and the run repeated.
   ```
-  <paste output>
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  6 steps (6 passed)
+  EXIT=0
   ```
-- [ ] COMMIT: one revision, release note as subject, scenario title in the body; record the hash.
+- [x] COMMIT: one revision, release note as subject, scenario title in the body.
   ```
-  COMMIT: <hash>
+  COMMIT: 5181603
   ```
 
 ### 4. A standby shift row without printed times rejects the conversion
@@ -177,21 +195,40 @@ Design constraints (this scenario):
 - Before the production edit this row publishes an all-day activity plus a warning, so the scenario is RED; after recognition it takes the same error path as an SB row without a window. No all-day fallback is invented.
 - No new diagnostic wording and no new report section; the new Given step is this task's test edit. No production change beyond task 1.
 
-- [ ] RED: run the single-scenario command.
+- [x] RED: run the single-scenario command; the blank-times Given step is unbound.
   ```
-  <paste output>
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  1 step (1 failed)
+  EXIT=1
   ```
-- [ ] GREEN: implement the Given step (detail row with both UTC cells blank and a printed station); no production change. Compile, then run the single-scenario command.
+- [x] GREEN: bound the blank-times Given (detail row with both UTC cells blank and a printed station); no production change. Ran the single-scenario command.
   ```
-  <paste output>
+   ✔  Given a supported duty plan dated 2099-11-19 with activity code SB_F_CF at station FRA and no printed UTC times
+   ✔  When the crew member converts it
+   ✔  Then no calendar is published
+   ✔  And the converter reports no conversion warning
+   ✔  And the converter reports a conversion failure naming "a required timing could not be resolved"
+   ✔  And the failure report lists that row under "Errors:"
+   ✔  And the invocation reports failure through a non-zero process exit status
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  7 steps (7 passed)
+  EXIT=0
   ```
-- [ ] REFACTOR: no behaviour change; re-run and paste.
+- [x] REFACTOR: no behaviour change; `@wip` removed from this scenario and the run repeated.
   ```
-  <paste output>
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  7 steps (7 passed)
+  EXIT=0
   ```
-- [ ] COMMIT: one revision, release note as subject, scenario title in the body; record the hash.
+- [x] COMMIT: one revision, release note as subject, scenario title in the body.
   ```
-  COMMIT: <hash>
+  COMMIT: <pending>
   ```
 
 ## Closeout

@@ -420,6 +420,18 @@ async fn a_plan_with_a_stationed_timed_code(
 }
 
 #[given(
+    regex = r"^a supported duty plan dated (\d{4}-\d{2}-\d{2}) with activity code (\w+) at station (\w+) and no printed UTC times$"
+)]
+async fn a_plan_with_a_stationed_code_and_no_times(
+    w: &mut DutyWorld,
+    date: String,
+    code: String,
+    station: String,
+) {
+    plan_with_row(w, &[(DATE_X, &date), (ACTIVITY_X, &code), (FROM_X, &station)]);
+}
+
+#[given(
     regex = r"^a supported duty plan with SB_F_CF (\d{2}:\d{2}) to (\d{2}:\d{2}) on (\d{4}-\d{2}-\d{2}), SB_M_CF (\d{2}:\d{2}) to (\d{2}:\d{2}) on (\d{4}-\d{2}-\d{2}), and SB_S_CF (\d{2}:\d{2}) to (\d{2}:\d{2}) on (\d{4}-\d{2}-\d{2}) at station (\w+)$"
 )]
 async fn three_standby_shift_days(
