@@ -12,10 +12,13 @@ durable direction.
   Datenschutzerklärung.
 - Interface: web (three documents, no client-side routing).
 - Viewports: mobile 360x780; desktop 1920x1080.
-- States: for the converter screen, empty, ready, failure, and the separate
-  `cannot-run` startup state (WebAssembly/ES-module/module-instantiation failure,
-  before the picker); "Converting" is a transient status, not a declared screen
-  state. The notice screens declare the default state only.
+- States: for the converter screen, empty, ready, ready-with-warnings, failure, and
+  the separate `cannot-run` startup state (WebAssembly/ES-module/module-instantiation
+  failure, before the picker); "Converting" is a transient status, not a declared
+  screen state. `ready-with-warnings` is the ready state with one or more rows
+  that were represented by a documented fallback; it shows the same calendar
+  offer, the warnings, and the warning-report offer. The failure state carries
+  the error and warning lists. The notice screens declare the default state only.
 - Approval: the operator approved this direction on 2026-10-19 (design review);
   the same decision created the change's `docs/design/design-system.md`. The
   operator approved an amendment on 2026-10-25 for the site publication: the
@@ -28,6 +31,23 @@ durable direction.
   Site output as `icon.svg`), the tab keeps `icon.png` as the raster alternate
   for a browser without SVG tab icons, and the box stays 48×48 with the same
   palette and the same placement.
+- Amendment 2026-10-27 (`report-row-diagnostics`): the converter screen declares
+  the `ready-with-warnings` state and the `Diagnostic list` primitive. The
+  operator's brief for that change requires every row's errors and warnings to
+  be visible on the page and requires the matching report to be offered, so the
+  ready state shows its warnings beside the calendar and the failure state shows
+  both severity lists. No token changes: the lists use the existing border, ink,
+  muted, danger, spacing and type tokens. **The operator approved this amendment
+  as drawn on 2026-10-27**, choosing the rendered reference literally over a
+  reconciled variant: the ready state keeps the drawn `Choose another duty plan`
+  button and the copy `Your complete calendar is ready. The browser chooses
+  where the file is saved.` with the status `Calendar ready for <name>.`, the
+  ready-with-warnings state uses the plural copy and
+  `Your calendar is ready to save. <n> rows were converted with warnings.`, and
+  the failure state keeps `Conversion failed`, a count-based reason sentence,
+  the two lists, the report offer, the note and `Choose another plan`. The
+  approval covers only these page states and controls; it authorizes no token,
+  layout, breakpoint or script change.
 - Reference: [`reference/converter-reference.html`](reference/converter-reference.html)
   is the approved design-only rendered reference for the empty, ready and
   failure states. It is static because the page source does not exist yet; the
@@ -37,7 +57,14 @@ durable direction.
   2026-10-27 amendment draws that icon from the vector mark, so the approved
   direction shows the same placement, tokens, copy and mark the page must use.
   The `@e2e` screenshots become the execution evidence for the states the
-  scenario traverses.
+  scenario traverses. The 2026-10-27 `report-row-diagnostics` amendment adds the
+  `ready-with-warnings` view, the ready state's `Choose another duty plan`
+  button and the failure view's `Errors`/`Warnings` lists; those two states are
+  exercised by regular `@browser` scenarios, whose screenshots are the
+  change-local execution evidence, not new `@e2e` evidence, and which run in the
+  nightly `--browser` job (R-070/R-071) rather than the per-push gate. The
+  reference's ready, ready-with-warnings and failure views are authoritative for
+  copy and controls, as the operator approved on 2026-10-27.
 - Amendment 2026-10-27 (legal notices): the two notice screens inherit the
   approved shell — the header with the 48x48 vector mark and the page title, the
   surface panel, the 720 px column and the footer — and add no token, no image
@@ -67,10 +94,12 @@ AA; `@axe-core/playwright` checks each rendered state.
 | Page shell (`header`, `main`, `footer`) | Default only; one `h1`; landmarks; `<html lang="en">`. |
 | Drop zone | Default, dragover/hover, focus-within, disabled while converting; accepts one file; visible instruction text. |
 | Picker button and labelled file input | Default, hover, focus-visible, disabled/loading while converting; visible label; minimum 44 px touch target below 720 px. |
-| Status region | Empty, converting, ready; `role="status"` and `aria-live="polite"`; the converting status is transient. |
-| Offer link | Default, hover, focus-visible; text `Save <name>`; no disabled state. |
-| Failure panel | Error `h2`, reason, optional diagnostic offer, `Choose another plan`; `role="alert"`; no calendar offer. |
-| Reset button | Default, hover, focus-visible. |
+| Status region | Empty, converting, ready, ready-with-warnings; `role="status"` and `aria-live="polite"`; the converting status is transient. The ready status reads `Calendar ready for <name>.`; the ready-with-warnings status reads `Your calendar is ready to save. <n> rows were converted with warnings.` (`1 row was converted with a warning.`), so it states how many rows were converted without naming an internal state. |
+| Offer link | Default, hover, focus-visible; text `Save <name>`; no disabled state. The ready-with-warnings state offers the calendar and the warning report as two offer links. |
+| Diagnostic list | Default (visible with entries) and empty (hidden). A block with a 3 px `--color-border` left rule, a 16 px heading, and a real `<ul>` whose items wrap with `overflow-wrap: anywhere` so a long activity code cannot clip at 360 px. In the ready state the block is headed `Warnings` and uses the panel's text colors; in the failure state two blocks are headed `Errors` and `Warnings`, and their list markers use `--color-danger`. Not interactive: no hover, focus or disabled state. The visible words carry the meaning; the marker color never does. |
+| Failure panel | Error `h2`, a count-based reason sentence naming the source and how many rows cannot be represented and how many were converted with warnings, optional `Errors` and `Warnings` diagnostic lists, optional report offer, `Choose another plan`; `role="alert"`; no calendar offer. The first error sentence appears only as the first `Errors:` entry, never also as the reason. |
+| Reset button (`#reset`) | Default, hover, focus-visible; labelled `Choose another plan`; the failure state's way back. |
+| Ready reset button (`#ready-reset`) | Default, hover, focus-visible; labelled `Choose another duty plan`; shown in the ready and ready-with-warnings states as the reference draws them; returns the screen to `empty` and clears the attempt. No disabled state. |
 | Privacy note | Static text: processing is local, no upload, no storage, no request after load. |
 | Public statements panel | Default only. Its own surface panel **above** the converter panel, headed "Before you choose a plan": a single-column list stating what the tool does (`what-it-does`) — the one supported plan, a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export, with its boundary — both conversion routes — this page in a current browser (`browser-route`) and downloads for various operating systems available on request, with the release page `https://github.com/duty2cal/duty2cal/releases` carrying the published builds (`archive-route`) — the privacy rule (`privacy`), the non-affiliation sentence naming Lufthansa and Jeppesen (`non-affiliation`) and the as-is sentence (`as-is`). Each statement carries `data-site-statement="<name>"` with non-empty text; every link is keyboard reachable with visible focus; no disabled, loading or error state. Uses the existing panel surface, 8 px radius and body/link typography. |
 | Source and licence panel | Default only. A separate surface panel **below** the converter panels and above the footer: the source repository link (`source`) and the licence statement with its licence-text link (`license`), naming MPL-2.0 for the code, CC0-1.0 for the non-code assets and the Unicode-3.0 attribution. Each statement carries `data-site-statement="<name>"` with non-empty text; links are keyboard reachable with visible focus; no state varies. |
@@ -104,7 +133,10 @@ the notice text is a single column with the same 720 px maximum measure.
 
 WCAG 2.2 AA. Landmarks, one `h1`, a failure `h2`, a visible label on every
 control, `role="status"`/`role="alert"`, visible keyboard focus, the token
-contrast ratios, `lang="en"`, and reduced motion. Each document declares its own
+contrast ratios, `lang="en"`, and reduced motion. The diagnostic lists are real
+lists with a heading: an `h3` under the state's `h2` in both the ready and the
+failure state, so the heading order stays valid, and no meaning is carried by
+the marker colour alone. Each document declares its own
 language: the converter screen `lang="en"`, the notice screens `lang="de"` with
 `lang="en"` on their English summary, and their contact data sits in an
 `<address>` element. The page honors
@@ -135,6 +167,13 @@ calls `page.screenshot({ animations: 'disabled' })`.
   viewport: `<viewport>.png` for the ready state and `<viewport>--empty.png`
   for the empty state it traverses. Evidence filenames use the contract
   viewport labels `mobile` and `desktop`.
+- The regular `@browser` scenarios "The page shows the warnings and offers both
+  files when a plan converts with warnings" and "The page lists the errors and
+  the warnings when a plan cannot be converted" commit
+  `<viewport>--ready-with-warnings.png` and `<viewport>--failure.png`
+  respectively, under
+  `givn/changes/report-row-diagnostics/evidence/visual/<scenario-slug>/`, because
+  the change declares those two states and adds no `@e2e` scenario.
 - Intermediate captures go to `reports/visual/` and are not review evidence.
 - The `@e2e` scenario "Release maintainer publishes the site and the hosting
   target holds the built page" commits the final state of the published page —

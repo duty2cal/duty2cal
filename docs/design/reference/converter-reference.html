@@ -85,6 +85,15 @@
   .failure h2 { color: var(--color-danger); }
   a { color: var(--color-accent); }
   .offer { display: inline-block; margin-right: var(--space-4); font-weight: 600; }
+  .diagnostics {
+    margin: var(--space-4) 0;
+    padding-left: var(--space-4);
+    border-left: 3px solid var(--color-border);
+  }
+  .diagnostics h2, .diagnostics h3 { margin: 0 0 var(--space-2); font-size: 16px; line-height: 1.2; }
+  .diagnostics__list { margin: 0; padding-left: var(--space-5); }
+  .diagnostics__list li { overflow-wrap: anywhere; }
+  .failure .diagnostics__list li::marker { color: var(--color-danger); }
   .muted { color: var(--color-muted); }
   .reference-label { font-size: 14px; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.04em; }
   @media (min-width: 480px) { header, main, footer { padding-inline: var(--space-5); } }
@@ -142,6 +151,25 @@
     <button class="picker" type="button">Choose another duty plan</button>
   </section>
 
+  <section class="panel ready" aria-labelledby="warnings-heading">
+    <p class="reference-label">Reference: ready-with-warnings state</p>
+    <h2 id="warnings-heading">Calendar ready</h2>
+    <p>Your complete calendar is ready. The browser chooses where the files are saved.</p>
+    <p>
+      <a class="offer" href="#warnings-heading">Save 2026-06.ics</a>
+      <a class="offer" href="#warnings-heading">Save 2026-06.parse-warnings.txt</a>
+    </p>
+    <div class="diagnostics">
+      <h3>Warnings</h3>
+      <ul class="diagnostics__list">
+        <li>row 4 (2099-06-07): unrecognized activity code "ZZ_M_CF"; converted as a timed activity using its printed UTC window 08:00-15:30</li>
+        <li>row 5 (2099-06-08): unrecognized activity code "ZZ_M_CF"; converted as an all-day activity</li>
+      </ul>
+    </div>
+    <p class="muted" role="status" aria-live="polite">Your calendar is ready to save. 2 rows were converted with warnings.</p>
+    <button class="picker" type="button">Choose another duty plan</button>
+  </section>
+
   <section class="panel failure" aria-labelledby="startup-heading">
     <p class="reference-label">Reference: startup cannot-run state</p>
     <h2 id="startup-heading">This browser cannot run the converter</h2>
@@ -151,9 +179,21 @@
   <section class="panel failure" aria-labelledby="failure-heading">
     <p class="reference-label">Reference: failure state</p>
     <h2 id="failure-heading">Conversion failed</h2>
-    <p>The file notes.pdf is not a supported duty plan.</p>
-    <p><a class="offer" href="#failure-heading">Save notes.parse-error.txt</a></p>
-    <p class="muted">The diagnostic names the source and the reason.</p>
+    <p>roster.pdf: the plan has one row that cannot be represented and one row that was converted with a warning.</p>
+    <div class="diagnostics">
+      <h3>Errors</h3>
+      <ul class="diagnostics__list">
+        <li>row 3 (2099-06-06): a required activity could not be resolved: unrecognized activity code "ZZ_M_CF" with only one printed UTC endpoint</li>
+      </ul>
+    </div>
+    <div class="diagnostics">
+      <h3>Warnings</h3>
+      <ul class="diagnostics__list">
+        <li>row 4 (2099-06-07): unrecognized activity code "ZZ_M_CF"; converted as a timed activity using its printed UTC window 08:00-15:30</li>
+      </ul>
+    </div>
+    <p><a class="offer" href="#failure-heading">Save roster.parse-error.txt</a></p>
+    <p class="muted">The report names the source, the reason, and every error and warning.</p>
     <button class="picker" type="button">Choose another plan</button>
   </section>
   <section class="panel" aria-labelledby="source-heading">

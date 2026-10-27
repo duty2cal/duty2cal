@@ -8,13 +8,14 @@ The converter itself is a local tool used by one crew member at a time. It has n
 flowchart LR
   crew["Crew member"] -->|"Lufthansa cabin-crew duty-plan PDF (Jeppesen export)"| conv["duty2cal converter"]
   conv -->|"complete calendar beside the source under an unused name"| crew
-  conv -->|"explicit failure + numbered diagnostic report"| crew
+  conv -->|"warning report beside a calendar published with warnings"| crew
+  conv -->|"explicit failure + numbered failure report listing every error and warning"| crew
 ```
 
 | Partner / User | Input to system | Output from system |
 |---|---|---|
-| Crew member running the executable | One Lufthansa cabin-crew duty-plan PDF published as a Jeppesen PDF export (path or drag-and-drop) | A complete RFC 5545 calendar file beside the source; or an explicit failure with a numbered diagnostic report naming the source and reason |
-| Crew member using the browser conversion page | One Lufthansa cabin-crew duty-plan PDF published as a Jeppesen PDF export, selected or dropped in the tab, at most 20 MiB | The offered `<source-stem>.ics` download for the browser to save; or an explicit failure with an offered `<source-stem>.parse-error.txt` diagnostic; the page writes nothing |
+| Crew member running the executable | One Lufthansa cabin-crew duty-plan PDF published as a Jeppesen PDF export (path or drag-and-drop) | A complete RFC 5545 calendar file beside the source, with a warning report when rows were represented by a fallback; or an explicit failure with a numbered failure report naming the source, the reason, and every error and warning |
+| Crew member using the browser conversion page | One Lufthansa cabin-crew duty-plan PDF published as a Jeppesen PDF export, selected or dropped in the tab, at most 20 MiB | The offered `<source-stem>.ics` download for the browser to save, the warnings listed when there are any and `<source-stem>.parse-warnings.txt` offered; or an explicit failure listing the errors and warnings and offering `<source-stem>.parse-error.txt`; the page writes nothing |
 
 ### The supported duty plan and the support statement
 
@@ -35,8 +36,8 @@ stops holding.
 ### The browser conversion route and the Public website
 
 The page is served from the Site output. It runs the same conversion inside the
-tab, offers the calendar or diagnostic, and never contacts another origin after
-it loads. The plan is never uploaded, and the page stores nothing in persistent
+tab, offers the calendar, the warning report or the failure report, and never
+contacts another origin after it loads. The plan is never uploaded, and the page stores nothing in persistent
 storage or a navigable address. The Site publication publishes that output at
 the Public website: a gated command builds the Site output from a named Built
 revision, refuses it unless the page-content, licensing, browser and conversion
@@ -194,7 +195,8 @@ maintainer's workstation.
 flowchart LR
   pdf["Input PDF (local path)"] --> conv["duty2cal converter"]
   conv --> ics["Calendar .ics (beside source, unused name)"]
-  conv --> diag["Diagnostic .txt (beside source, unused numbered name)"]
+  conv --> warn["Warning report .txt (beside source, unused numbered name)"]
+  conv --> diag["Failure report .txt (beside source, unused numbered name)"]
   crypto["Process clock (construction timestamp)"] --> conv
 ```
 
@@ -203,9 +205,11 @@ flowchart LR
 | Input duty plan (executable) | Local file read (PDF) | In |
 | Input duty plan (browser) | File API read inside the tab; never a request | In |
 | Published calendar (executable) | Local file write (RFC 5545 text, CRLF, UTF-8) | Out |
-| Diagnostic report (executable) | Local file write (plain text, numbered) | Out |
+| Warning report (executable) | Local file write (plain text, numbered) | Out |
+| Failure report (executable) | Local file write (plain text, numbered) | Out |
 | Offered calendar (browser) | In-memory Blob and `<a download>`; the browser performs the save | Out |
-| Offered diagnostic (browser) | In-memory Blob and `<a download>`; the browser performs the save | Out |
+| Offered warning report (browser) | In-memory Blob and `<a download>`; the browser performs the save | Out |
+| Offered failure report (browser) | In-memory Blob and `<a download>`; the browser performs the save | Out |
 | Construction clock | Operating-system clock (UTC) in the executable; `js_sys::Date` in the browser | In |
 | Browser runtime | Chromium, Firefox or Safari with WebAssembly and ES modules; no other-origin request after load | In |
 | Site publication target | Git push over SSH with the deploy key (or a local git target in the test twin), admitted by the pages rule set; one fast-forward commit | Out |
@@ -216,6 +220,6 @@ flowchart LR
 
 ## Scope boundary
 
-Inside: reading one Lufthansa cabin-crew duty plan published as a Jeppesen PDF export, resolving its activities and dates, composing one calendar, publishing it without clobbering (executable) or offering it for a browser-owned save (browser), and reporting failures with diagnostics. The support statement that names this plan is a public record of the project rather than a converter behaviour: it is owned by the use case to state the converter's support statement and carried by the website, the README, the organization profile, this chapter and both issue forms. The browser route also owns the capability gate, the 20 MiB input bound, the no-network/no-storage page behavior and the inline WASM build. The legal notices are a project record rather than a converter behaviour in the same way: they state who publishes the site and what the host processes when a page is requested, and the conversion, its statements and its refusals are unchanged by their presence in the Site output.
+Inside: reading one Lufthansa cabin-crew duty plan published as a Jeppesen PDF export, resolving every detail row's activity and date, composing one calendar, publishing it without clobbering (executable) or offering it for a browser-owned save (browser), and reporting every row's conversion errors and warnings in the matching report. The support statement that names this plan is a public record of the project rather than a converter behaviour: it is owned by the use case to state the converter's support statement and carried by the website, the README, the organization profile, this chapter and both issue forms. The browser route also owns the capability gate, the 20 MiB input bound, the no-network/no-storage page behavior and the inline WASM build. The legal notices are a project record rather than a converter behaviour in the same way: they state who publishes the site and what the host processes when a page is requested, and the conversion, its statements and its refusals are unchanged by their presence in the Site output.
 
 Outside: importing the calendar into a client, reconciling revised plans, editing the official schedule, entitlement/legality calculations, visa or booking actions, standby activation, and release approval. The public home and release channel — the repository, its automation, its release pages, the organization profile and the default security policy — belong to separate capabilities; the converter neither uses nor reaches them. Publishing the page at the Public website — its Site output, gate, Built revision, hosting target and release coupling — is the site publication capability of the `publish-public-website` use case; the deploy key and its secret are a prerequisite created by the declared configuration, and the profile copy that describes the site is a configuration change. See the use case's out-of-scope list for the full boundary.

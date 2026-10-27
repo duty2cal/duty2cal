@@ -34,38 +34,71 @@ sequenceDiagram
 
 1. The CLI reads the source path and calls the orchestrator.
 2. The orchestrator recognizes the family, builds the source snapshot, and extracts positioned content and the revision footer.
-3. The domain classifies activities, resolves each UTC endpoint's date, composes descriptions and events, and enforces completeness.
-4. On completeness, the orchestrator asks the publication port for an unused calendar path and writes the calendar.
-5. The CLI prints the actual new path and exits zero.
+3. The domain classifies activities, resolves each UTC endpoint's date, composes descriptions and events, and collects every conversion error and warning; an unrecognized code with printed evidence is represented with a warning.
+4. On no error, the orchestrator asks the publication port for an unused calendar path and writes the calendar.
+5. The CLI prints the actual new path and exits zero, and publishes a warning report when warnings were collected.
 
 **Notes:** No side effect occurs before completeness; the source file is never modified.
 
-## Scenario: Interpretation failure with a diagnostic
+## Scenario: Conversion with warnings publishes a warning report
 
-**Trigger:** A required activity, date, fragment, or source family cannot be resolved.
+**Trigger:** Every row can be represented, but one or more rows carry an activity code the converter does not recognize.
 
 ```mermaid
 sequenceDiagram
   participant CLI
   participant App as ConvertRoster
   participant Dom as Domain
-  participant Diag as Diagnostic writer
+  participant FS as Filesystem publication
   CLI->>App: convert(source path)
-  App->>Dom: resolve
-  Dom-->>App: rejection reason
-  App->>Diag: allocate unused numbered report + write
-  Diag-->>App: report path (or failure)
-  App-->>CLI: Rejected { reason, diagnostic }
-  CLI-->>CLI: print failure, exit non-zero
+  App->>Dom: interpret every row, collect diagnostics
+  Dom-->>App: entries + warnings (no error)
+  App-->>CLI: Ok { calendar, warnings }
+  CLI->>CLI: print one "Warning:" line per warning
+  CLI->>FS: allocate unused calendar path + write
+  FS-->>CLI: calendar path
+  CLI->>FS: allocate unused warning-report path + write
+  FS-->>CLI: report path (or why none was saved)
+  CLI-->>CLI: print the paths, exit 0
 ```
 
 **Steps:**
 
-1. The orchestrator reaches a rule that cannot be resolved.
-2. It returns the primary reason and attempts a numbered diagnostic naming the source and reason.
-3. The CLI prints the failure; when a report could not be saved, it states that no new report was written and never presents an older report as current.
+1. The orchestrator processes every detail row. A row with an unrecognized activity code and a station becomes a timed activity using its printed UTC window; the same row without printed times becomes an all-day activity. Each contributes a warning naming its row and date.
+2. With no error, the orchestrator composes and publishes the calendar exactly as before.
+3. The CLI prints every warning line, publishes the warning report beside the calendar, and prints both paths. The exit status is zero; a warning is not an error.
+4. If the warning report cannot be saved, the calendar stays published, the warnings were already printed, and the output says no new warning report was saved.
 
-**Notes:** Existing calendars and reports are unchanged. The diagnostic path is reported only after a successful write.
+**Notes:** Known-only plans publish no warning report. The page shows the same warnings and offers the same report.
+
+## Scenario: Interpretation failure with a failure report
+
+**Trigger:** One or more detail rows cannot be represented, or the detail table itself is unusable.
+
+```mermaid
+sequenceDiagram
+  participant CLI
+  participant App as ConvertRoster
+  participant Dom as Domain
+  participant Diag as Failure-report writer
+  CLI->>App: convert(source path)
+  App->>Dom: interpret every row, collect diagnostics
+  Dom-->>App: every error and warning (rows) or a table failure
+  App-->>CLI: Err(Rows) or Err(Table/Source)
+  CLI->>CLI: print the primary reason and every diagnostic line
+  CLI->>Diag: allocate unused numbered report + write
+  Diag-->>App: report path (or failure)
+  CLI-->>CLI: print the report path or why none was saved, exit non-zero
+```
+
+**Steps:**
+
+1. The orchestrator does not stop at the first failing row: it records an error for each row that cannot be represented and keeps processing, so warnings from other rows are collected too.
+2. Any recorded error prevents calendar composition. The failure's primary reason is the first error in plan order.
+3. A row-level failure writes the sectioned report (`Source PDF:`, `Reason:`, `Errors:`, `Warnings:`); a source, table-structure or publication failure keeps the two-line report.
+4. The CLI prints every error and warning line and the report path it actually wrote; when no report could be saved it says so and never presents an older report as current.
+
+**Notes:** Existing calendars and reports are unchanged. The report path is reported only after a successful write.
 
 ## Scenario: Publication failure
 
@@ -76,11 +109,11 @@ sequenceDiagram
   participant CLI
   participant App as ConvertRoster
   participant FS as Filesystem publication
-  participant Diag as Diagnostic writer
+  participant Diag as Failure-report writer
   CLI->>App: convert(source path)
   App->>FS: publish complete calendar
   FS-->>App: write failure
-  App->>Diag: attempt numbered diagnostic
+  App->>Diag: attempt numbered report
   Diag-->>App: report path or failure
   App-->>CLI: Rejected { reason, diagnostic }
   CLI-->>CLI: print failure, exit non-zero
@@ -89,8 +122,8 @@ sequenceDiagram
 **Steps:**
 
 1. The calendar is composed but cannot be published.
-2. The orchestrator exposes the failure and independently attempts a diagnostic.
-3. The CLI reports the failure and the diagnostic outcome; existing files are untouched.
+2. The orchestrator exposes the failure and independently attempts a numbered report. This is not a row-level failure, so the report keeps the two-line form.
+3. The CLI reports the failure and the report outcome; existing files are untouched.
 
 **Notes:** Completeness and publication are distinct: a completed composition that fails to publish is not a success.
 
@@ -121,12 +154,12 @@ sequenceDiagram
 
 1. The page clears any offer and status from the previous attempt, then refuses a file larger than 20 MiB by name before reading it.
 2. The page reads the file in the tab and calls the facade with the filename and bytes. No request is made.
-3. The facade runs the unchanged use case with the browser clock and returns the calendar text or a structured failure.
-4. On success the page offers `<stem>.ics` through an object URL and an `<a download>`; the browser owns the save location and any collision, and the page never claims a save it did not observe.
+3. The facade runs the unchanged use case with the browser clock and returns the calendar text plus its warnings, or a structured failure with the errors and warnings.
+4. On success the page offers `<stem>.ics` through an object URL and an `<a download>`; when warnings exist it also lists them, offers `<stem>.parse-warnings.txt`, and shows the ready-with-warnings state. The browser owns the save location and any collision, and the page never claims a save it did not observe.
 
-**Notes:** A failed attempt withdraws an earlier offer because the attempt clears it first. The page sends no request to another origin after load and stores nothing persistent.
+**Notes:** A failed attempt withdraws an earlier offer because the attempt clears its offer and its lists first. The page sends no request to another origin after load and stores nothing persistent.
 
-## Scenario: Browser failure offers the diagnostic
+## Scenario: Browser failure shows the error and warning lists and offers the failure report
 
 **Trigger:** A supported plan cannot be converted, or the page cannot create the calendar offer.
 
@@ -136,23 +169,23 @@ sequenceDiagram
   participant Page as web/ page
   participant Wasm as ffi/wasm facade
   Crew->>Page: plan selected or dropped
-  Page->>Page: clear prior offer/state
+  Page->>Page: clear prior offer, lists and state
   Page->>Wasm: convert(filename, bytes)
-  Wasm-->>Page: failure reason (or a trap/abort is caught)
-  Page->>Page: failure panel: heading, reason, no calendar
-  Page->>Page: offer <stem>.parse-error.txt with the two-line diagnostic
-  alt diagnostic offer throws
-    Page->>Page: keep primary failure; state "No diagnostic was offered."
+  Wasm-->>Page: reason, errors, warnings, report (or a trap/abort is caught)
+  Page->>Page: failure panel: heading, reason, Errors and Warnings lists, no calendar
+  Page->>Page: offer <stem>.parse-error.txt
+  alt report offer throws
+    Page->>Page: keep primary failure and lists; state no report was offered
   end
-  Page-->>Crew: visible reason and way to choose another plan
+  Page-->>Crew: visible reason, lists and way to choose another plan
 ```
 
 **Steps:**
 
-1. The attempt clears any earlier offer, so a previously offered calendar is not left visible.
-2. A conversion failure or a caught trap becomes a generic or specific failure; no partial calendar is offered.
-3. The page attempts the diagnostic offer. If that offer cannot be created, the primary failure remains visible and the page says no diagnostic was offered.
-4. The diagnostic content is read from the captured download, not fetched from the Blob under `connect-src 'none'`.
+1. The attempt clears any earlier offer and lists, so a previously offered calendar or an earlier warning is not left visible.
+2. A conversion failure or a caught trap becomes a generic or specific failure; no partial calendar is offered. The failures carry the error and warning lists the facade returned.
+3. The page attempts the failure-report offer. If that offer cannot be created, the primary failure and both lists remain visible and the page says no report was offered.
+4. The report content is read from the captured download, not fetched from the Blob under `connect-src 'none'`.
 
 ## Scenario: Browser capability or startup failure
 

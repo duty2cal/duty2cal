@@ -239,9 +239,9 @@ flowchart TB
 
 | Element | Responsibility |
 |---|---|
-| `domain` | `Roster` aggregate, `DutyEntry` values, the one rule that reads a travel leg's printed crew position and activity together and composes the travel title (including the conditional ` Report <value> LT` report suffix), and the pure timing rules (`timing`). No I/O, no clock. |
-| `application` | Ports (`RosterSource`, `CalendarSink`, `Clock`), the `ConvertRoster` use case, `RawRosterTable` as the anti-corruption intermediate, and the row interpretation that classifies activities and pairs travel fragments by their two printed fields. |
-| `adapters/ics` | RFC 5545 serializer — the `CalendarSink` used by every facade. |
+| `domain` | `Roster` aggregate, `DutyEntry` values including `UnrecognizedActivity` for a row represented from printed evidence without a recognized code, the one rule that reads a travel leg's printed crew position and activity together and composes the travel title (including the conditional ` Report <value> LT` report suffix), and the pure timing rules (`timing`). No I/O, no clock. |
+| `application` | Ports (`RosterSource`, `CalendarSink`, `Clock`), the `ConvertRoster` use case, `RawRosterTable` as the anti-corruption intermediate, the row interpretation that classifies activities and pairs travel fragments by their two printed fields, the `Diagnostic`/`Severity` model it collects, and the report builders (`failure_report_text`, `warning_report_text`, `diagnostic_text`). |
+| `adapters/ics` | RFC 5545 serializer — the `CalendarSink` used by every facade; it renders a timed or all-day `UnrecognizedActivity` through the existing event shape. |
 
 ### `duty2cal-pdf`
 
@@ -253,8 +253,8 @@ flowchart TB
 
 | Element | Responsibility |
 |---|---|
-| `main` | argv handling, wiring, exit status. |
-| `fs` | unused-path allocation for calendars and numbered diagnostics. |
+| `main` | argv handling, wiring, exit status, printing every conversion error and warning line, and publishing the warning report after a calendar with warnings. |
+| `fs` | unused-path allocation for calendars, numbered warning reports and numbered failure reports. |
 
 ### `ffi/wasm`
 
@@ -262,7 +262,7 @@ flowchart TB
 
 | Element | Responsibility |
 |---|---|
-| `convert(filename, bytes)` (wasm export) | Wire `ConvertRoster::new(PdfRosterSource, IcsSink, BrowserClock).execute(bytes)` and return `{ status: "ok", calendar }` or `{ status: "failure", reason, diagnostic }`. |
+| `convert(filename, bytes)` (wasm export) | Wire `ConvertRoster::new(PdfRosterSource, IcsSink, BrowserClock).execute(bytes)` and return `{ status: "ok", calendar, warnings, warningReport }` or `{ status: "failure", reason, diagnostic, errors, warnings }`. |
 | `diagnostic_text(filename, reason)` (wasm export) | Call the shared `duty2cal_core::application::diagnostic_text`, so the page's pre-conversion size failure uses the same two lines as the executable. |
 | `BrowserClock` / `NativeClock` | Implement the existing `Clock` port with `js_sys::Date` or `OffsetDateTime::now_utc`, so the crate lints natively and the source's Created footer stays preferred. |
 
@@ -276,12 +276,12 @@ workspace build.
 
 | Element | Responsibility |
 |---|---|
-| `index.html` | Title, a flex header row carrying the project's vector mark as a 48×48 mark left of the `h1` and subheadline with the alt text `duty2cal` and `src="./icon.svg"`, two tab declarations — `<link rel="icon" type="image/svg+xml" href="./icon.svg">` first and `<link rel="icon" type="image/png" href="./icon.png">` as the raster alternate — the statements panel above the converter panel (the named plan and its boundary, the browser route, downloads for various operating systems on request with `https://github.com/duty2cal/duty2cal/releases` linked, privacy, the non-affiliation sentence naming Lufthansa and Jeppesen, as-is), drop zone and picker markup hidden until ready, status and failure panels, a "Source and licence" panel below the converter panels, and a full footer carrying the Built revision and the plain-prose statements; meta CSP including `img-src 'self'`. |
+| `index.html` | Title, a flex header row carrying the project's vector mark as a 48×48 mark left of the `h1` and subheadline with the alt text `duty2cal` and `src="./icon.svg"`, two tab declarations — `<link rel="icon" type="image/svg+xml" href="./icon.svg">` first and `<link rel="icon" type="image/png" href="./icon.png">` as the raster alternate — the statements panel above the converter panel (the named plan and its boundary, the browser route, downloads for various operating systems on request with `https://github.com/duty2cal/duty2cal/releases` linked, privacy, the non-affiliation sentence naming Lufthansa and Jeppesen, as-is), drop zone and picker markup hidden until ready, status and failure panels, a warning list for the ready-with-warnings state and error and warning lists inside the failure panel, a "Source and licence" panel below the converter panels, and a full footer carrying the Built revision and the plain-prose statements; meta CSP including `img-src 'self'`. |
 | `impressum.html` | The Impressum notice: one `h1`, the operator's `<address>` block carrying the postal address and a `mailto:` link, the sentence that the employer address is a service address for this private project and not the employer's offering, the non-affiliation, licence and as-is sentences, the German text followed by an English summary with the sentence that the German version is binding, and a footer linking the converter page and the Datenschutzerklärung; no script, the stricter notice CSP, no Built revision and no standing date. |
 | `privacy.html` | The Datenschutzerklärung notice: the controller and its contact block, the hosting by GitHub, Inc., the IP address it logs for security purposes and the further data it processes (time, page, referrer, browser and device information), the legal basis, the third-country transfer, the sub-processors that deliver the pages, the mail handling with its provider, role, location and basis, the browser-local conversion, the absence of cookies and third-party content, the reader's rights and the standing date, with the English summary and the binding sentence; no script and the same stricter CSP. |
 | `capability.js` | Classic deferred check for WebAssembly and ES modules; renders the cannot-run message and leaves the picker hidden. |
-| `app.js` | ES module: `init(bytes)` from the inline bundle, `acceptFile` (clear prior offer, size bound, read, convert), state machine, offer/object-URL lifecycle, failure/diagnostic fallback, no storage or network. |
-| `styles.css` | Design tokens, layout, breakpoints, states and reduced-motion rules. |
+| `app.js` | ES module: `init(bytes)` from the inline bundle, `acceptFile` (clear prior offer, lists and size bound, read, convert), state machine including `ready-with-warnings`, offer/object-URL lifecycle, warning and error list rendering, warning-report offer, failure/report fallback, no storage or network. |
+| `styles.css` | Design tokens, layout, breakpoints, states, the diagnostic-list primitive and reduced-motion rules. |
 | `pkg/` (generated, ignored) | `wasm-pack` output plus the base64 `wasm-inline.js`; never committed. |
 
 ### Deferred (roadmap)

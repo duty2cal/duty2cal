@@ -159,6 +159,31 @@ The register, `docs/arc42/adr/README.md` and the ADR files are unchanged; no
 existing ADR is amended or superseded, because none covers page-level content
 policy or a second output gate.
 
+The change that reports every row's diagnostics (report-row-diagnostics) minted
+no ADR and amended none. One candidate was assessed and returned
+`NOT_QUALIFIED`:
+
+- **The severity model and the two report kinds** — an error means the row
+  cannot be represented and prevents publication; a warning means a documented
+  fallback and the calendar is published with a warning report. Alternatives
+  exist (one fatal severity, or one always-published severity), so
+  `alternatives` passes. `architectural_impact` fails: the change keeps the
+  same ports, crates, facades and publication boundary, and moves no authority
+  or deployment boundary — the WASM facade still wraps the same application
+  boundary, and the page still writes nothing. `durable_consequence` fails:
+  reversal is one change's interpretation, report builders and page states
+  inside that same boundary, and the existing calendar and report names remain.
+  `lower_level_artifact` fails: the severity meanings, the fallback rule, the
+  report sections and the visibility on both realizations are observable
+  workflow behaviour owned by the `export-duty-plan-calendar` use case and its
+  Gherkin; the aggregation mechanics, the exact report text and the page markup
+  are `design.md`. The product-behaviour falsification test applies for the same
+  reason. `existing_adr_check` passes: ADR-0001 … ADR-0007 were searched and
+  none covers conversion interpretation, severity or report format. Routing:
+  `CANONICAL_ARTIFACT` → `givn/specs/export-duty-plan-calendar/usecase.md`, with
+  the mechanics in `givn/changes/report-row-diagnostics/design.md`. The register,
+  `docs/arc42/adr/README.md` and the ADR files are unchanged.
+
 ## Individual ADR contract
 
 Written and tailored from `docs/arc42/adr/adr-template.md`; MADR sections,
