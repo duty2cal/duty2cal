@@ -15,7 +15,7 @@ Feature: Publish the public website
     And  a panel above the converter panel states what the tool does, the browser route, the archive route, the privacy rule, the non-affiliation statement and the as-is statement before the page asks for a file, the archive route saying that downloads for various operating systems are available on request and that the release page carries the published builds
     And  the what-it-does statement names a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export, one roster month of cabin crew, and the limits that cockpit duties, other Lufthansa duty plans, other Jeppesen exports and another operator are not covered
     And  the non-affiliation statement names Lufthansa, Jeppesen and any duty-plan provider or airline
-    And  a panel below the converter panels states the source and the licence, and the footer repeats the non-affiliation, as-is and privacy terms in prose without repeating any statement the panels make
+    And  a panel below the converter panels states the source and the licence, and the footer names the Built revision, states the page's local-processing note and links both notices without repeating any sentence the panels make
     And  the page's footer links "Impressum" and "Datenschutz" to the two notice pages of the same output
     And  the served Impressum and Datenschutzerklärung each link the other notice from their own footer
     And  the served page has sent no request to another origin since it loaded
