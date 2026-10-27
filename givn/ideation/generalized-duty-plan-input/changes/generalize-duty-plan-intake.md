@@ -1,6 +1,6 @@
 # Change seed: generalize-duty-plan-intake
 
-Status: ready
+Status: withdrawn — on 2026-10-27 the operator rejected the general/NetLine-style intake: too many such converters already exist, and a broader converter would need duty-plan examples beyond the Lufthansa cabin plans.
 
 - Use-case IDs: `export-duty-plan-calendar` (extended; its permanent leaf
   exists and is not duplicated)

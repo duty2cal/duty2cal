@@ -1,3 +1,12 @@
+## [1.0.0] - 2026-10-27
+
+### New capabilities
+- A crew member can convert one supported duty plan to a complete calendar in a current browser, with the plan never leaving the tab, or receive an explicit failure with an offered diagnostic.
+- The public website stays as it is when a revision changes none of its inputs, instead of republishing an unchanged page
+- A release tag publishes the site from the tagged revision, so the page and the release name the same source
+- A page that requests another origin is refused before it can replace the published one
+- The public website and the project's README show the duty2cal mark as a scalable vector icon, and the site's tab declares that vector icon with the existing PNG as its fallback for browsers that cannot use it.
+[0.4.0...1.0.0](https://github.com/duty2cal/duty2cal/compare/v0.4.0...v1.0.0)
 ## [0.5.0] - 2026-10-19
 
 ### New capabilities
