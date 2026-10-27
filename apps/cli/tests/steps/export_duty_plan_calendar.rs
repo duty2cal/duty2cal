@@ -3279,6 +3279,57 @@ async fn no_conversion_warning(w: &mut DutyWorld) {
     assert!(warnings.is_empty(), "warnings were reported: {warnings:?}");
 }
 
+#[given(
+    "a supported duty plan with an unrecognized activity code and no writable destination for a new warning report"
+)]
+async fn an_unrecognized_row_without_a_warning_destination(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "ZZ_M_CF"),
+            (START_X, "08:00"),
+            (END_X, "15:30"),
+        ],
+    );
+    let dir = w.working_dir();
+    // The ordinary warning-report name is a dangling link into a directory that
+    // does not exist: the name looks free and writing it fails.
+    std::os::unix::fs::symlink(
+        dir.join("missing-dir").join("roster.parse-warnings.txt"),
+        dir.join("roster.parse-warnings.txt"),
+    )
+    .expect("create the dangling warning-report candidate");
+}
+
+#[then("the calendar is published")]
+async fn the_calendar_is_published(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    assert!(
+        calendar.contains("BEGIN:VCALENDAR") && calendar.contains("BEGIN:VEVENT"),
+        "the published calendar is not complete: {calendar}"
+    );
+}
+
+#[then("the transcript carries the warning line")]
+async fn transcript_carries_the_warning(w: &mut DutyWorld) {
+    let warnings = warning_lines(w);
+    assert_eq!(warnings.len(), 1, "expected one warning line: {warnings:?}");
+    assert!(
+        warnings[0].starts_with("row 1 ("),
+        "the warning line does not name its row and date: {warnings:?}"
+    );
+}
+
+#[then("the transcript states that no new warning report was saved")]
+async fn transcript_states_no_warning_report(w: &mut DutyWorld) {
+    let text = transcript(w);
+    assert!(
+        text.contains("Warning report: no new report was saved"),
+        "the transcript does not state the unsaved warning report: {text}"
+    );
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);

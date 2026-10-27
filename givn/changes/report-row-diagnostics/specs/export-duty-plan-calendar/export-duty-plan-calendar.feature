@@ -90,7 +90,7 @@ Feature: Export a duty-plan calendar
     And the transcript reports no conversion warning
     And the invocation reports success through its process exit status
 
-  @givn.added @wip
+  @givn.added
   Scenario: A warning report that cannot be published keeps the calendar and the warnings visible
     Given a supported duty plan with an unrecognized activity code and no writable destination for a new warning report
     When the crew member converts it
