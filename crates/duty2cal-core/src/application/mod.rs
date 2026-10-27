@@ -133,7 +133,12 @@ pub fn warning_report_text(source_name: &str, warnings: &[Diagnostic]) -> String
 }
 
 /// Append one severity section with its entries, or nothing when it is empty.
-fn append_section(report: &mut String, title: &str, diagnostics: &[Diagnostic], severity: Severity) {
+fn append_section(
+    report: &mut String,
+    title: &str,
+    diagnostics: &[Diagnostic],
+    severity: Severity,
+) {
     let matching: Vec<&Diagnostic> = diagnostics
         .iter()
         .filter(|diagnostic| diagnostic.severity == severity)
@@ -323,11 +328,9 @@ fn interpret(table: &RawRosterTable) -> Result<Interpretation, ConvertError> {
                 entries.push((row.index, entry));
                 diagnostics.push(Diagnostic::warning(row.raw, Some(row.date), message));
             }
-            Classified::Error(message) => diagnostics.push(Diagnostic::error(
-                row.raw,
-                Some(row.date),
-                message,
-            )),
+            Classified::Error(message) => {
+                diagnostics.push(Diagnostic::error(row.raw, Some(row.date), message))
+            }
         }
     }
 
@@ -661,11 +664,7 @@ fn station(row: &Row) -> Option<String> {
 }
 
 /// Merge a departure and an arrival fragment into one travel leg.
-fn merge_travel(
-    departure: &Row,
-    arrival: &Row,
-    trip: Option<String>,
-) -> Result<DutyEntry, String> {
+fn merge_travel(departure: &Row, arrival: &Row, trip: Option<String>) -> Result<DutyEntry, String> {
     let start = resolve(departure.date, &departure.start)?;
     let end = resolve(arrival.date, &arrival.end)?;
     Ok(DutyEntry::Travel {
@@ -698,7 +697,8 @@ fn row_interval(row: &Row) -> Result<UtcInterval, String> {
         end += Duration::days(1);
     }
 
-    UtcInterval::new(start, end).map_err(|_| "a timed interval must end after it starts".to_string())
+    UtcInterval::new(start, end)
+        .map_err(|_| "a timed interval must end after it starts".to_string())
 }
 
 fn resolve(local_date: Date, cell: &str) -> Result<OffsetDateTime, String> {
