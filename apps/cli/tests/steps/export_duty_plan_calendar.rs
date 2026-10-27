@@ -3403,6 +3403,23 @@ async fn converter_reports_no_warning(w: &mut DutyWorld) {
     assert!(warnings.is_empty(), "warnings were reported: {warnings:?}");
 }
 
+#[given(
+    "a supported duty plan with a travel leg printing flight number LU742 from ABC to DEF with printed UTC times 09:00 and 10:00 and no crew position"
+)]
+async fn a_travel_leg_with_a_flight_number_and_no_crew_position(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "LU742"),
+            (FROM_X, "ABC"),
+            (TO_X, "DEF"),
+            (START_X, "09:00"),
+            (END_X, "10:00"),
+        ],
+    );
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);

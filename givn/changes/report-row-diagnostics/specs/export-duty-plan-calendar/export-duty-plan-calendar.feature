@@ -160,7 +160,7 @@ Feature: Export a duty-plan calendar
     And the converter reports no conversion warning
     And no warning report is published
 
-  @givn.added @wip
+  @givn.added
   Scenario: A travel leg with a flight number produces no warning
     Given a supported duty plan with a travel leg printing flight number LU742 from ABC to DEF with printed UTC times 09:00 and 10:00 and no crew position
     When the crew member converts it
