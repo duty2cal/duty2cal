@@ -76,6 +76,25 @@ If `gh` is authenticated and its scopes are sufficient:
 export GITHUB_TOKEN="$(gh auth token)"
 ```
 
+## Declared organization profile fields
+
+The organization's public profile is declared in `main.tf` and applied like any
+other declared object. The current values:
+
+| Field | Value |
+|---|---|
+| Description | `Converts a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export into one calendar file.` |
+| URL (`blog`) | `https://duty2cal.github.io/` |
+| Email (public) | `duty2cal662.abridge974@aleeas.com` — the Impressum's alias |
+| Location | `Berlin, Germany` |
+| Company | empty |
+| Social accounts | none: `twitter_username` is empty and no `github_organization_social_account` resource is declared. The project has no Mastodon account. |
+
+Changing one of these values is an ordinary declared change: edit `main.tf`,
+preview, apply, read the live organization back, commit the state. A social
+account is never added without its own notice decision, because the profile
+would become another public carrier.
+
 ## Apply
 
 The declaration resolves `org/` beside `infra/` by default; set
