@@ -1,3 +1,16 @@
+## [1.1.0] - 2026-10-27
+
+### New capabilities
+- Every public statement now names the duty plan duty2cal converts: a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export.
+- The public website carries an Impressum and a Datenschutzerklärung that every page links, and the publication refuses a page set that lacks them.
+- Every row of a supplied duty plan is reported in one run: an activity code the converter does not recognize is converted from its printed times and station with a warning, a row that cannot be represented at all still fails the conversion, and both lists appear in the report file and on the conversion page.
+
+### Fixes
+- The converter page's footer names the Built revision, the local-processing note and the two notice links, and no longer repeats the statements panel's sentences.
+
+### Dependencies
+- Bump tokio from 1.53.3 to 1.54.1 in the rust-deps group
+[1.0.0...1.1.0](https://github.com/duty2cal/duty2cal/compare/v1.0.0...v1.1.0)
 ## [1.0.0] - 2026-10-27
 
 ### New capabilities
