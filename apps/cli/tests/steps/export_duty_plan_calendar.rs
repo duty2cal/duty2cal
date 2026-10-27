@@ -3633,6 +3633,42 @@ async fn no_description(w: &mut DutyWorld) {
     );
 }
 
+#[then(regex = r#"^the warning report's first line states the source PDF "([^"]+)"$"#)]
+async fn warning_report_first_line(w: &mut DutyWorld, source: String) {
+    let report = warning_report(w);
+    assert_eq!(
+        report.lines().next(),
+        Some(format!("Source PDF: {source}").as_str()),
+        "the warning report does not identify the source: {report}"
+    );
+}
+
+#[then(regex = r#"^the warning report carries a "([^"]+)" section listing (one|two|three) entr(?:y|ies)$"#)]
+async fn warning_report_section(w: &mut DutyWorld, section: String, count: String) {
+    let report = warning_report(w);
+    let entries = report_section(&report, &section);
+    let expected = counted(&count).expect("a scenario count");
+    assert_eq!(
+        entries.len(),
+        expected,
+        "the {section} section does not list {expected}: {report}"
+    );
+}
+
+#[then(
+    regex = r"^that entry names detail row (\d+) and the date (\d{4}-\d{2}-\d{2})$"
+)]
+async fn warning_entry_names_row_and_date(w: &mut DutyWorld, row: u32, date: String) {
+    let report = warning_report(w);
+    let entries = report_section(&report, "Warnings");
+    assert_eq!(entries.len(), 1, "expected one warning entry: {report}");
+    let expected = format!("row {row} ({date})");
+    assert!(
+        entries[0].starts_with(&expected),
+        "the entry does not name {expected:?}: {report}"
+    );
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);

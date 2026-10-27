@@ -224,7 +224,7 @@ Feature: Export a duty-plan calendar
     And that activity carries no description
     And the converter reports one conversion warning naming detail row 1 and the date 2099-06-07
 
-  @givn.added @wip
+  @givn.added
   Scenario: The warning report identifies the source and carries a warnings section
     Given a supported duty plan dated 2099-06-07 with activity code ZZ_M_CF and printed UTC times 08:00 and 15:30
     When the crew member converts it
