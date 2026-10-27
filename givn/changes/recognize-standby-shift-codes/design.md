@@ -129,10 +129,10 @@ No proposal question is carried or unresolved.
 | Use-case element | Technical decision | Evidence |
 |---|---|---|
 | Rule: the three codes are SB standby windows for Standby Früh/Mittel/Spät, recognized by exact code only, represented exactly like SB | `AVAILABILITY_CODES` literal set | "Standby shift codes keep their own printed windows"; "Consecutive standby shift days interrupted by a day off stay separate" |
-| Rule: titles stay the printed code, never the shift name | unchanged ICS summary of `DutyEntry::Availability` | "Standby shift codes keep their own printed windows" (`the calendar contains one timed activity titled …` per code) |
+| Rule: titles stay the printed code, never the shift name | unchanged ICS summary of `DutyEntry::Availability` | "Standby shift codes keep their own printed windows" — the three-activity Then asserts each code's summary, window and station |
 | Rule: only an unexpected code warns; the three are recognized and do not | unchanged `UnrecognizedActivity` + warning branch; widened set bypasses it | the shift scenario's `no conversion warning` / `no warning report is published`; "A standby-like code outside the three shift codes still warns" |
 | Rule: an unusable shift row is a conversion error, not an all-day fallback | unchanged `row_interval` / `incomplete(...)` error path and report builders; the row now reaches it instead of the fallback arm | "A standby shift row without printed times rejects the conversion" (no calendar, row under `Errors:`, `a required timing could not be resolved`, non-zero exit) |
-| Example: Standby Früh / Mittel / Spät rows; Standby-like code; shift without printed times or with one endpoint | the six examples added to `usecase.md` | the four delta scenarios |
+| Example: Standby Früh / Mittel / Spät rows; Standby-like code; shift without printed times or with one endpoint | the six examples added to `usecase.md`; the one-endpoint example is proven by the same conversion-error path (D4), with no separate delta scenario | "Standby shift codes keep their own printed windows", "A standby-like code outside the three shift codes still warns" and "A standby shift row without printed times rejects the conversion" |
 | Minimal guarantee: every row reported with one severity; prior outputs unchanged | unchanged diagnostic model and publication | the existing warning/error scenarios remain green |
 | Capability ownership | `export-duty-plan-calendar` only | Interaction Coverage Matrix |
 

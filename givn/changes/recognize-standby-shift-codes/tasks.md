@@ -103,7 +103,7 @@ Design constraints (this scenario):
   ```
 - [x] COMMIT: one revision, release note as subject, scenario title in the body; record the hash.
   ```
-  COMMIT: <pending>
+  COMMIT: 8328338
   ```
 
 ### 2. A standby-like code outside the three shift codes still warns
@@ -112,34 +112,52 @@ Design constraints (this scenario):
 - `SB_X_CF` with both endpoints and station FRA stays on the unexpected-code fallback: one timed activity titled `SB_X_CF`, one warning naming row 1 and 2099-11-18, warning text names the code and states the row was converted as a timed activity using its printed UTC window 08:00-15:30.
 - Proves recognition is the exact three strings, not a prefix or family rule; no production change beyond task 1, and the golden oracles are untouched. The new warning-sentence assertion is this task's test edit.
 
-- [ ] RED: run the single-scenario command.
+- [x] RED: run the single-scenario command; the new warning-sentence step is unbound.
   ```
-  <paste output>
+  ...
+   ✔  And the converter reports one conversion warning naming detail row 1 and the date 2099-11-18
+   ✔  And the warning names the activity code "SB_X_CF"
+   ✘  And the warning states that the row was converted as a timed activity using its printed UTC window 08:00-15:30
+      Step doesn't match any function
+  [Summary]
+  1 feature
+  1 scenario (1 failed)
+  6 steps (5 passed, 1 failed)
+  EXIT=1
   ```
-- [ ] GREEN: implement the step definition for the warning sentence; no production change. Compile, then run the single-scenario command.
+- [x] GREEN: bound the warning-sentence assertion (exactly one warning line containing the fallback phrase); no production change. Ran the single-scenario command.
   ```
-  <paste output>
+   ✔  And the warning states that the row was converted as a timed activity using its printed UTC window 08:00-15:30
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  6 steps (6 passed)
+  EXIT=0
   ```
-- [ ] REFACTOR: no behaviour change; re-run and paste.
+- [x] REFACTOR: no behaviour change; `@wip` removed from this scenario and the run repeated.
   ```
-  <paste output>
+  [Summary]
+  1 feature
+  1 scenario (1 passed)
+  6 steps (6 passed)
+  EXIT=0
   ```
-- [ ] COMMIT: one revision, release note as subject, scenario title in the body; record the hash.
+- [x] COMMIT: one revision, release note as subject, scenario title in the body.
   ```
-  COMMIT: <hash>
+  COMMIT: <pending>
   ```
 
 ### 3. Consecutive standby shift days interrupted by a day off stay separate
 
 Design constraints (this scenario):
 - `SB_F_CF` 03:30-13:00 on 2099-11-15 and 2099-11-17 with a `FREE` row on 2099-11-16 becomes two separate timed `SB_F_CF` activities at FRA plus one all-day FREE activity on 2099-11-16; no warning, no warning report.
-- Each row keeps its own window; no continuous block, no all-day standby. The new Given step is this task's test edit; no production change beyond task 1.
+- Each row keeps its own window; no continuous block, no all-day standby. The new Given step and the two-activity Then step (`the calendar contains two timed SB_F_CF activities …`, asserting three events: the two shifts plus the FREE day) are this task's test edits; no production change beyond task 1.
 
 - [ ] RED: run the single-scenario command.
   ```
   <paste output>
   ```
-- [ ] GREEN: implement the Given step for the two shift days and the FREE row; no production change. Compile, then run the single-scenario command.
+- [ ] GREEN: implement the Given step for the two shift days and the FREE row and the two-activity Then step; no production change. Compile, then run the single-scenario command.
   ```
   <paste output>
   ```

@@ -2931,6 +2931,23 @@ async fn the_warning_names_the_code(w: &mut DutyWorld, code: String) {
     );
 }
 
+#[then(
+    regex = r"^the warning states that the row was converted as a timed activity using its printed UTC window (\d{2}:\d{2})-(\d{2}:\d{2})$"
+)]
+async fn the_warning_states_the_fallback_window(
+    w: &mut DutyWorld,
+    start: String,
+    end: String,
+) {
+    let warnings = warning_lines(w);
+    assert_eq!(warnings.len(), 1, "expected one warning: {warnings:?}");
+    let phrase = format!("converted as a timed activity using its printed UTC window {start}-{end}");
+    assert!(
+        warnings[0].contains(&phrase),
+        "the warning does not state {phrase:?}: {warnings:?}"
+    );
+}
+
 #[then("the converter publishes a warning report beside the source")]
 async fn a_warning_report_is_published(w: &mut DutyWorld) {
     let report = warning_report(w);
