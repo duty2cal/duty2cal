@@ -67,6 +67,7 @@ cargo run --release -p duty2cal -- <duty-plan.pdf>
 
 
 
+
 ## Download a release
 
 Every version tag publishes one release at the stable address
@@ -173,6 +174,7 @@ badges above.
 Add lint, build, and other project commands alongside these scripts.
 
 <!-- givn:end:development -->
+
 
 
 
