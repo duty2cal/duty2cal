@@ -24,6 +24,16 @@ reports/visual/
 infra/.terraform/
 infra/.adoption-staging/
 
+
+# Transient OpenTofu plan files: encrypted, never committed
+infra/plan.bin
+infra/*.tfplan
+
+# A partial apply's stale marker: refuses the preview and the apply until a
+# green apply removes it; never committed
+infra/terraform.tfstate.stale
+infra/guard.bin
+
 # givn:begin:rules
 .opencode/skills/givn-*/
 .agents/skills/givn-*/
@@ -34,17 +44,15 @@ infra/.adoption-staging/
 .omp/commands/givn-*.md
 .omp/commands/grill-*.md
 .opencode/plugins/givn-attribution.js
+.opencode/plugins/givn-timeline.js
 .claude/hooks/givn-attribution.sh
+.claude/hooks/givn-timeline.sh
 .claude/settings.local.json
 .omp/hooks/pre/givn-attribution.js
+.omp/hooks/pre/givn-timeline.js
+.maki/lua/givn-timeline.lua
+.maki/skills/givn-*/
+.maki/commands/givn-*.md
+.maki/commands/grill-*.md
 .githooks/commit-msg
 # givn:end:rules
-
-# Transient OpenTofu plan files: encrypted, never committed
-infra/plan.bin
-infra/*.tfplan
-
-# A partial apply's stale marker: refuses the preview and the apply until a
-# green apply removes it; never committed
-infra/terraform.tfstate.stale
-infra/guard.bin
