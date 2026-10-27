@@ -39,7 +39,7 @@ The raster is kept byte-for-byte: it remains the required fallback for a browser
 
 | Proposed capability | Decision | Rationale |
 |---|---|---|
-| The published page's header mark, its tab icon and the Site output's icon members | `EXTEND publish-public-website` | The owning use case already states both requirements: "The page shows the project icon at 48×48 to the left of its heading and as its tab icon" and "The Site output carries the icon, copied from the project's own non-code asset under CC0-1.0". No other capability owns the page header, the tab, or the output's member set. |
+| publish-public-website | EXTEND publish-public-website | The owning use case already states both requirements: "The page shows the project icon at 48×48 to the left of its heading and as its tab icon" and "The site output carries the icon, copied from the project's own non-code asset under CC0-1.0". The page header mark, its tab icon and the Site output's icon members belong to this capability; no other capability owns them. |
 
 The repository README's logo is source content owned by no capability. No capability or use case owns the README, this change does not invent one, and no scenario is written for it: the README line changes as repository documentation in the same implementation pass, and its requirement — the same mark, at 160 pixels wide, now from the vector — is stated here and verified by reading the file.
 
