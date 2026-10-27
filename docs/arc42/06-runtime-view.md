@@ -737,3 +737,69 @@ evidence. The profile's live apply remains the operator's step (D5), and the
 statement's shrink is a reviewed act by the release owner, not an automatic
 rewrite.
 
+
+## Scenario: The legal notices are checked and published
+
+**Trigger:** A revision changes a notice page, a footer link, the organization
+profile or the README, or the publication builds a revision whose Site output
+carries the notices.
+
+```mermaid
+flowchart TB
+  due["A notice, a footer link, the profile or the README changes"] --> edit["Edit the three pages and the two carriers together"]
+  edit --> src["legal-notices-check.sh --root . reads the three pages, the profile and the README"]
+  src -->|"a carrier does not link the notices,<br/>copies the postal address,<br/>or carries a placeholder"| refuse["refuse; name the carrier and the element"]
+  src -->|"the carriers agree"| assemble["build-site.sh assembles eleven members;<br/>both notices are copied unchanged"]
+  assemble --> gate["check-site-content.sh reads the assembled output"]
+  gate -->|"a notice, a footer link, an address,<br/>the Datenschutzerklärung's standing date,<br/>a CSP or a script check fails"| refuseout["refuse; name the page and the element;<br/>the previous Public website stays"]
+  gate -->|"every assertion holds"| publish["publish-site.sh replaces the target's content"]
+  publish --> reader["visitor follows a footer link on any page"]
+  reader --> notice["the Impressum or Datenschutzerklärung renders"]
+```
+
+**Steps:**
+
+1. The release owner edits `web/impressum.html`, `web/privacy.html` and the
+   converter page's footer together, and keeps `org/profile/README.md` and
+   `README.md` linking the notices without copying the postal address.
+2. `scripts/legal-notices-check.sh --root .` reads the three pages and the two
+   carriers that are not output members, and refuses a converter footer that
+   does not link both notices, a notice that does not link the other or lacks a
+   required element, a carrier without the two labelled absolute links, a
+   carrier that copies the postal address or a `mailto:` link, and any
+   placeholder; each refusal names the page or carrier and the element.
+3. `scripts/public-text-check.sh` calls the check with the repository root in
+   the `public-text` CI job, so a revision that breaks a carrier is refused
+   before it lands.
+4. `scripts/build-site.sh` copies both notice pages into `dist/site/`
+   unchanged, stamps the Built revision on the converter page only and writes an
+   output of eleven members.
+5. `scripts/check-site-content.sh` scans every `*.html` member of the assembled
+   output and refuses a member set that differs from the eleven named members, a
+   missing notice or `h1`, a footer link or notice-to-notice link that is
+   absent, an Impressum without a postal code, a city, a `mailto:` link or its
+   service-address sentence, a Datenschutzerklärung without its standing date
+   and required disclosures, a content security policy that differs from
+   `NOTICE_CSP`, a `<script` element, an `on*=` handler attribute, a placeholder,
+   the discontinued dispute-resolution reference, a foreign asset or a relative
+   link to a missing file, naming the page and the element. The publication
+   replaces the target's content only when every assertion holds; a refusal
+   leaves the previous Public website in place.
+6. A visitor follows the converter page's footer link, or the other notice's
+   footer link, or the profile's and the README's two labelled links, and reads
+   who publishes the site, an address at which service is possible, a mail
+   address and what the host processes on a page request. The German version is
+   binding; the English summary below it does not replace it.
+
+**Notes:** The notice pages carry no script and a stricter content security
+policy than the converter page, and they are byte-identical between builds
+because no revision is stamped into them; only the Datenschutzerklärung carries
+a standing date. The two checks prove that the converter page's footer links
+both notices, that each notice's footer links the other and the converter page,
+that the required elements are present and that no carrier copies the address;
+they cannot prove that the notices are legally sufficient, which the operator
+answers for. The browser steps are the two `@e2e` notice scenarios driven
+through `web/e2e/driver.mjs`'s `click`, `navigate` and `read_text` actions by
+`apps/cli/tests/steps/legal_notices.rs`; each observes the site root's `h1`
+before activation and the notice's `h1` after it, and reads an empty cookie jar
+and empty storage.

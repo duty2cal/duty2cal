@@ -1,18 +1,21 @@
-# Converter screen design system
+# Published page design system
 
-Durable design system for the browser converter screen. It is the canonical
-home for the screen's tokens, primitives, breakpoints, accessibility rules and
-evidence mechanics; `design.md` of the change that introduces or changes the
-screen owns the change-specific contract, and this document records the durable
-direction.
+Durable design system for the pages served from the Site output. It is the
+canonical home for the page set's tokens, primitives, breakpoints, accessibility
+rules and evidence mechanics; `design.md` of the change that introduces or
+changes a screen owns the change-specific contract, and this document records the
+durable direction.
 
-- Scope: the single converter screen served from the Site output — the page
-  assembled to `dist/site/` and published at `https://duty2cal.github.io/`.
-- Interface: web (one page, no separate routes).
+- Scope: the page set served from the Site output — the documents assembled to
+  `dist/site/` and published at `https://duty2cal.github.io/`: the converter
+  screen and the two legal notice screens, the Impressum and the
+  Datenschutzerklärung.
+- Interface: web (three documents, no client-side routing).
 - Viewports: mobile 360x780; desktop 1920x1080.
-- States: empty, ready, failure, and the separate `cannot-run` startup state
-  (WebAssembly/ES-module/module-instantiation failure, before the picker).
-  "Converting" is a transient status, not a declared screen state.
+- States: for the converter screen, empty, ready, failure, and the separate
+  `cannot-run` startup state (WebAssembly/ES-module/module-instantiation failure,
+  before the picker); "Converting" is a transient status, not a declared screen
+  state. The notice screens declare the default state only.
 - Approval: the operator approved this direction on 2026-10-19 (design review);
   the same decision created the change's `docs/design/design-system.md`. The
   operator approved an amendment on 2026-10-25 for the site publication: the
@@ -35,6 +38,12 @@ direction.
   direction shows the same placement, tokens, copy and mark the page must use.
   The `@e2e` screenshots become the execution evidence for the states the
   scenario traverses.
+- Amendment 2026-10-27 (legal notices): the two notice screens inherit the
+  approved shell — the header with the 48x48 vector mark and the page title, the
+  surface panel, the 720 px column and the footer — and add no token, no image
+  and no script. The operator chose this direction on 2026-10-27 over a
+  standalone document without the mark. Their rendered reference is
+  [`reference/notice-reference.html`](reference/notice-reference.html).
 
 ## Tokens
 
@@ -66,6 +75,7 @@ AA; `@axe-core/playwright` checks each rendered state.
 | Public statements panel | Default only. Its own surface panel **above** the converter panel, headed "Before you choose a plan": a single-column list stating what the tool does (`what-it-does`) — the one supported plan, a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export, with its boundary — both conversion routes — this page in a current browser (`browser-route`) and downloads for various operating systems available on request, with the release page `https://github.com/duty2cal/duty2cal/releases` carrying the published builds (`archive-route`) — the privacy rule (`privacy`), the non-affiliation sentence naming Lufthansa and Jeppesen (`non-affiliation`) and the as-is sentence (`as-is`). Each statement carries `data-site-statement="<name>"` with non-empty text; every link is keyboard reachable with visible focus; no disabled, loading or error state. Uses the existing panel surface, 8 px radius and body/link typography. |
 | Source and licence panel | Default only. A separate surface panel **below** the converter panels and above the footer: the source repository link (`source`) and the licence statement with its licence-text link (`license`), naming MPL-2.0 for the code, CC0-1.0 for the non-code assets and the Unicode-3.0 attribution. Each statement carries `data-site-statement="<name>"` with non-empty text; links are keyboard reachable with visible focus; no state varies. |
 | Header icon and favicon | Default only. The project's vector mark (`docs/assets/duty2cal.svg`, CC0-1.0, the same silhouette and palette as `docs/assets/duty2cal.png`) rendered as a 48×48 mark **left of the `h1`** in a flex row with the heading and its subheadline, with the alternative text `duty2cal`, and copied into the Site output as `icon.svg`. The tab declares the mark twice: `<link rel="icon" type="image/svg+xml" href="./icon.svg">` first, so the vector is the primary tab icon, and `<link rel="icon" type="image/png" href="./icon.png">` second, the raster alternate (`docs/assets/duty2cal.png`, CC0-1.0) for a browser that cannot use an SVG tab icon. Both paths are relative and same-origin; the inline `data:, ` placeholder is gone. The mark's alt text names the project and no meaning is carried by the image alone. No state varies. |
+| Legal notice screen | Default only. A surface panel under the same header as the converter screen, carrying an `h1` naming the notice, the German body, an `<address>` block for the contact data, section `h2`s, an English summary block under `lang="en"` that states the German version is binding, and a footer linking the converter page and the other notice. Links are the only interactive element: default, hover and focus-visible. No image beyond the header mark, no script, and the standing date only on the Datenschutzerklärung. |
 | Site footer | Default only, and kept full. The Built revision ("Built from `<describe>`" linking the commit) plus plain prose: the non-affiliation sentence naming Lufthansa and Jeppesen, the as-is sentence and the privacy note. The footer repeats no `data-site-statement` attribute from either panel — those live in the two panels — while the revision keeps the `built-revision` attribute the content check anchors on; the revision text is the only build-derived visible string. Rendered above the existing top border in the existing muted small-text treatment; no state varies. |
 
 The page never shows an internal identifier or state name (`ok`, `failure`,
@@ -86,13 +96,18 @@ The header is a flex row: the 48×48 icon, then the `h1` with its subheadline.
 Below it the statements panel, the converter panel, the "Source and licence"
 panel and the full footer stack in that order within the same column, and the
 statements panel's list is always single-column. The header mark stays 48×48 px
-at every breakpoint.
+at every breakpoint. On the notice screens the same header is followed by the
+notice panel and the footer, with no converter panel and no statements panel;
+the notice text is a single column with the same 720 px maximum measure.
 
 ## Accessibility
 
 WCAG 2.2 AA. Landmarks, one `h1`, a failure `h2`, a visible label on every
 control, `role="status"`/`role="alert"`, visible keyboard focus, the token
-contrast ratios, `lang="en"`, and reduced motion. The page honors
+contrast ratios, `lang="en"`, and reduced motion. Each document declares its own
+language: the converter screen `lang="en"`, the notice screens `lang="de"` with
+`lang="en"` on their English summary, and their contact data sits in an
+`<address>` element. The page honors
 `prefers-reduced-motion: reduce` and the E2E asserts the computed motion value
 is `0ms`. The failure state has a heading and a way back.
 
@@ -127,6 +142,11 @@ calls `page.screenshot({ animations: 'disabled' })`.
   the converter, the "Source and licence" panel below it and the full footer —
   per viewport, because it renders the target's checked-out tree after the
   publication.
+- The `@e2e` scenarios "Reader opens the Impressum from the site footer and
+  reads who publishes the site" and "Reader opens the Datenschutzerklärung from
+  the footer and reads what a page request processes" commit one final-state
+  screenshot per viewport of the rendered notice screen, in the same evidence
+  layout.
 - Screenshots are execution evidence; the approved reference for the three
   declared states is the committed static reference above. The failure state's
   visual reference is its section in that file; its behavior is asserted by the

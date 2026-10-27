@@ -39,7 +39,7 @@ flowchart TB
   ver --> rel["Immutable release at the stable latest address"]
   rel --> dl["Crew member on Windows x86_64 downloads the archive"]
   dl --> run["Runs it locally; touches only the local filesystem"]
-  bundle["web/pkg — wasm-pack output and inline module"] --> assemble["scripts/build-site.sh — dist/site with the vector mark, the raster alternate and footer stamp"]
+  bundle["web/pkg — wasm-pack output and inline module"] --> assemble["scripts/build-site.sh — dist/site with the two notice pages, the vector mark, the raster alternate and the converter footer stamp"]
   assemble --> gate["scripts/site-evidence.sh — content, licensing, browser, conversion"]
   gate -->|"accepted"| pages[("Pages repository: the Site output")]
   gate -->|"refused"| prev["the previous page stays"]
@@ -72,9 +72,9 @@ flowchart TB
 
 | Property | Value |
 |---|---|
-| Artefact | The assembled Site output `dist/site/`, holding exactly nine members: `index.html` with the stamped footer, `app.js`, `capability.js`, `styles.css`, `icon.svg` (the project's vector mark, the header mark and the tab's primary icon), `icon.png` (the raster mark, the tab's alternate for a browser without SVG tab icons), `pkg/duty2cal_wasm.js`, `pkg/wasm-inline.js` and `LICENSE.txt` |
-| Page layout | A header flex row with the vector mark at 48×48 left of the `h1` and subheadline; a statements panel above the converter panel (what it does, the browser route, downloads for various operating systems on request with the release page linked, privacy, non-affiliation, as-is); the converter panels; a "Source and licence" panel below them; and the full footer with the Built revision and plain prose |
-| Build | `scripts/build-web.sh` installs the pinned `wasm-pack` and builds the bundle; `scripts/build-site.sh` assembles the output, copies the vector and raster marks, resolves and stamps the Built revision and copies the licence; Node, Playwright and Chromium are test-only and pinned |
+| Artefact | The assembled Site output `dist/site/`, holding exactly eleven members: `index.html` with the stamped footer, `app.js`, `capability.js`, `styles.css`, `icon.svg` (the project's vector mark, the header mark and the tab's primary icon), `icon.png` (the raster mark, the tab's alternate for a browser without SVG tab icons), `impressum.html` and `privacy.html` (the two legal notices, copied unchanged, carrying no script and no Built revision, with a written standing date on the Datenschutzerklärung only), `pkg/duty2cal_wasm.js`, `pkg/wasm-inline.js` and `LICENSE.txt` |
+| Page layout | A header flex row with the vector mark at 48×48 left of the `h1` and subheadline; a statements panel above the converter panel (what it does, the browser route, downloads for various operating systems on request with the release page linked, privacy, non-affiliation, as-is); the converter panels; a "Source and licence" panel below them; and the full footer with the Built revision, the two notice links and plain prose. The two notice screens reuse the same shell as a single-column page at a 720 px maximum measure, with an `<address>` block on the Impressum and no control, motion or Built revision on either |
+| Build | `scripts/build-web.sh` installs the pinned `wasm-pack` and builds the bundle; `scripts/build-site.sh` assembles the output, copies the vector and raster marks, copies both notice pages unchanged, resolves and stamps the Built revision on the converter page and copies the licence; Node, Playwright and Chromium are test-only and pinned |
 | Runtime | The visitor's current browser; no application server, database, queue or container |
 | Serving | GitHub Pages serves the Pages repository's default branch at the canonical address; a loopback static server serves the same output for the manual run and each E2E scenario |
 | Network | No request to another origin after load; no third-party asset; the WASM is inline, so no `.wasm` request occurs |

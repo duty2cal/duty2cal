@@ -46,6 +46,7 @@ flowchart TB
   siteq --> sq3["The footer names a resolvable Built revision"]
   siteq --> sq4["A release publishes only after the site deploy and the target carries the tag"]
   siteq --> sq5["The served page names the Built revision"]
+  siteq --> sq6["Either notice is one step from every page; an incomplete notice set is refused"]
   root --> repro["Reproducibility of the public home"]
   repro --> rp1["Reviewable declaration"]
   repro --> rp2["All-or-none adoption with no live change"]
@@ -103,6 +104,7 @@ flowchart TB
 | QS-041 | Executable size budget | The Windows cross-build produces the executable. | The job fails when `stat -c %s target/x86_64-pc-windows-gnu/release/duty2cal.exe` exceeds 2,097,152 bytes (the last published executable's file size); the per-push attribution remains the evidence report. |
 | QS-042 | Nightly verification | The scheduled workflow is enabled and runs on the default branch with no new commit. | The product suite (including the CLI e2e) and all 16 browser variants pass; `cargo deny check` reads a fresh advisory database. The run holds `contents: read` and no state passphrase, administer token or deploy key; a failure is visible in the run and its transcript artifact. GitHub disables the schedule after 60 days without repository activity; a manual dispatch or any push re-enables it (R-071). |
 | QS-043 | One support statement across its carriers | A revision edits the support sentence in the README, and one of the other carriers (the page, the profile, chapter 3 or an issue form) still carries the earlier wording or an export-family question. | `scripts/support-statement-check.sh` exits non-zero and names the disagreeing carrier and the rule; the clean tree passes; the site publication refuses an assembled page whose `what-it-does` or `non-affiliation` element differs and names the statement; the profile's reviewed source is the one the apply publishes. The check proves the words agree, not that they are true; the generated fixture and review carry that (R-072). |
+| QS-044 | Legal notice reachability | A reader opens any page of the Public website, the organization profile or the README; and a revision drops a notice or a footer link, pastes a placeholder into a notice, or copies the postal address into the profile. | The converter page's footer links both notices and each notice's footer links the other notice and the converter page, so the Impressum and the Datenschutzerklärung are one step from any page; the profile and the README each carry two labelled links without a copied address. A dropped notice or footer link, a missing postal or mail address, a missing standing date in the Datenschutzerklärung, a placeholder or the discontinued dispute-resolution reference is refused by the publication, naming the page and the element; the source-level check refuses a carrier that does not link the notices or that copies the postal address, naming the carrier. The checks prove reachability, not legal sufficiency. |
 
 **Stimulus / response / metric** for the primary scenario:
 

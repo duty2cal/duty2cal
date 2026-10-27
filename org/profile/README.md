@@ -41,3 +41,5 @@ provider or airline.
 
 Found a bug? [Open an issue](https://github.com/duty2cal/duty2cal/issues).
 Security concern? See [SECURITY.md](https://github.com/duty2cal/.github/blob/main/SECURITY.md).
+
+Legal: [Impressum](https://duty2cal.github.io/impressum) · [Datenschutz](https://duty2cal.github.io/privacy)

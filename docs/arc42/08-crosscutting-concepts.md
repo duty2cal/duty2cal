@@ -353,7 +353,11 @@ images are its own local `icon.svg` and the raster `icon.png` tab alternate,
 served from the Site output itself. The content-invariant scenario compares
 the published bytes with the reviewed `org/` source and asserts the positive
 claims; the profile is not trusted because a reviewer once looked at it. The
-support statement's exact sentences are the part checked mechanically, below.
+support statement's exact sentences are the part checked mechanically, below;
+the second checked claim is the legal-notice set, which the profile and the
+README carry as a link — `scripts/legal-notices-check.sh` refuses a carrier that
+omits it or that copies the postal address beside it, and
+`scripts/public-text-check.sh` runs both checks in the `public-text` job.
 
 ## The support statement across its carriers
 
@@ -398,6 +402,50 @@ missing fact, and the reduction is one act across the five carriers. The
 statement is not the release text: a statement revision changes no conversion
 behaviour, but because the page is a user-receiving path the release notes
 announce it as a public-copy change.
+
+## The legal notices and their reachability rule
+
+The Public website carries two legal notices — the Impressum and the
+Datenschutzerklärung — and they are the only public place the operator's postal
+address is written. The rule that keeps them reachable and identical has four
+parts:
+
+- **Static, script-free pages on the site's own origin.** `web/impressum.html`
+  and `web/privacy.html` are authored HTML copied into the Site output at its
+  root; neither carries a script, a cookie or a third-party asset, and neither is
+  stamped with the Built revision — the Datenschutzerklärung carries a written
+  standing date instead, so the pages are byte-identical between builds.
+- **A stricter policy than the converter page.**
+  `default-src 'self'; script-src 'none'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'`.
+  A notice page that ever needs a script is a defect, because nothing
+  on it is interactive; the policy is also the machine proof that it cannot
+  fetch, post or run anything.
+- **Every carrier links; none copies.** The converter page's footer links both
+  notices, each notice's footer links the other notice and the converter page,
+  the organization profile and the README each carry two labelled links —
+  "Impressum" and "Datenschutz" — and the README's pair sits in a short Legal
+  section. The contact block appears only in the two notices; a third copy in
+  the profile or the README is refused, so a changed address is one edit.
+- **Two checks divide the assembled bytes from the source.**
+  `scripts/check-site-content.sh` reads the assembled output and refuses a
+  missing notice or footer link, postal or mail address, the Datenschutzerklärung's
+  standing date, a content security policy that differs from the notice policy,
+  a `<script` element, an `on*=` handler attribute, a placeholder, the
+  discontinued dispute-resolution reference, a foreign asset or a relative link
+  to a missing file, naming the page and the element. `scripts/legal-notices-check.sh --root DIR` reads the three
+  pages, `org/profile/README.md` and `README.md`, refuses a carrier that does not
+  link the notices, copies the postal address or carries a placeholder, and is
+  called by `scripts/public-text-check.sh`, so the `public-text` CI job runs it.
+  The split is deliberate: the output gate must see only what was assembled,
+  which is how a page correct in the source but lost in the assembly is caught,
+  while the profile and the README exist only in the source.
+
+The checks prove that the converter page's footer links both notices, that each
+notice's footer links the other and the converter page, and that the required
+elements are present; they cannot prove that the notices are legally sufficient,
+and no chapter claims they do. The operator supplies the employer, postal
+address, mail alias and the employer's consent to accept service; the repository
+holds the block once supplied and refuses a placeholder in its place.
 
 ## Default community health files
 

@@ -280,6 +280,14 @@ project. The complete third-party list is in
 Contributions are signed off under the DCO (`git commit -s`); there is no CLA
 (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
+## Legal
+
+Who publishes this project, at which address that person can be served, and what
+a page request processes: [Impressum](https://duty2cal.github.io/impressum) ·
+[Datenschutz](https://duty2cal.github.io/privacy). The notices are the single
+source; this README links them and copies neither the postal nor the mail
+address.
+
 <!-- givn:begin:coverage -->
 ## Coverage
 

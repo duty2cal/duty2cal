@@ -79,6 +79,34 @@ flowchart LR
 | GitHub Pages (hosting service) | The Pages repository's default branch, written by the Site publication | The served Public website; the project asserts the content it published and the page it reads at the publication's verified address |
 | GitHub Releases | The release the publication command creates only after the site publication succeeded | — |
 
+### The legal notices and what a page request processes
+
+The Site output carries an Impressum and a Datenschutzerklärung beside the
+converter page. Both are static pages of the same output and the same origin,
+written in German with a short English summary and the sentence that the German
+version is binding. The Impressum names the operator, a postal address at
+which service is possible and a mail address. The Datenschutzerklärung states
+the controller, the hosting by GitHub, Inc., the visitor's IP address that the
+host logs for security purposes, the absence of a published retention period,
+the operator's lack of access to those logs, the legal basis, the third-country
+transfer and its basis, the sub-processors that deliver the pages, the
+browser-local conversion with no upload, storage or request after load, the
+absence of cookies and third-party content, the reader's rights and the
+standing date. The converter page's footer links both notices, each notice's
+footer links the other notice and the converter page, so either is reachable in
+one step from any page; the organization profile and the README each carry two
+labelled links to them without copying the address.
+
+The notices describe the project's public record, not a converter behaviour:
+they change no conversion, and the processing they disclose belongs to the
+host, which serves the page and logs the request for its own security purposes.
+The project's side still learns nothing about a visitor, writes nothing into the
+browser and cannot read or delete the host's logs.
+
+| Partner | Input to the project | Output from the project |
+|---|---|---|
+| Reader of the legal notices | The Impressum or Datenschutzerklärung, reached through the footer of any page, or through the profile's and the README's two labelled links | Who publishes the site, an address at which service is possible and a mail address; and that GitHub, Inc. logs the page request's IP address for security purposes, that no fixed retention period is published and that the operator cannot read those logs |
+
 ### The public home and release channel
 
 GitHub is the project's public home and release channel: the repository holds the history and the gate every change passes before it lands; GitHub Actions runners build, package, attest and publish each version; GitHub Releases serves the one Windows x86_64 archive at a stable latest-release address; Dependabot proposes dependency updates; and code scanning reviews the code and the project's own automation. The organization's overview page is GitHub's rendering of the reviewed profile content and the organization's default security policy, both published from the same declaration into the public `duty2cal/.github` repository.
@@ -188,6 +216,6 @@ flowchart LR
 
 ## Scope boundary
 
-Inside: reading one Lufthansa cabin-crew duty plan published as a Jeppesen PDF export, resolving its activities and dates, composing one calendar, publishing it without clobbering (executable) or offering it for a browser-owned save (browser), and reporting failures with diagnostics. The support statement that names this plan is a public record of the project rather than a converter behaviour: it is owned by the use case to state the converter's support statement and carried by the website, the README, the organization profile, this chapter and both issue forms. The browser route also owns the capability gate, the 20 MiB input bound, the no-network/no-storage page behavior and the inline WASM build.
+Inside: reading one Lufthansa cabin-crew duty plan published as a Jeppesen PDF export, resolving its activities and dates, composing one calendar, publishing it without clobbering (executable) or offering it for a browser-owned save (browser), and reporting failures with diagnostics. The support statement that names this plan is a public record of the project rather than a converter behaviour: it is owned by the use case to state the converter's support statement and carried by the website, the README, the organization profile, this chapter and both issue forms. The browser route also owns the capability gate, the 20 MiB input bound, the no-network/no-storage page behavior and the inline WASM build. The legal notices are a project record rather than a converter behaviour in the same way: they state who publishes the site and what the host processes when a page is requested, and the conversion, its statements and its refusals are unchanged by their presence in the Site output.
 
 Outside: importing the calendar into a client, reconciling revised plans, editing the official schedule, entitlement/legality calculations, visa or booking actions, standby activation, and release approval. The public home and release channel — the repository, its automation, its release pages, the organization profile and the default security policy — belong to separate capabilities; the converter neither uses nor reaches them. Publishing the page at the Public website — its Site output, gate, Built revision, hosting target and release coupling — is the site publication capability of the `publish-public-website` use case; the deploy key and its secret are a prerequisite created by the declared configuration, and the profile copy that describes the site is a configuration change. See the use case's out-of-scope list for the full boundary.

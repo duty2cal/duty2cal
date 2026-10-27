@@ -72,9 +72,9 @@ check was assessed in the design-review hardening of 2026-10-25:
   `CANONICAL_ARTIFACT` →
   `givn/specs/publish-public-release/publish-public-release.feature`.
 - **The publication mechanism** — one command, a reusable workflow wrapper, an
-  assembled `dist/site/` output of nine members including the vector mark and
-  its raster tab alternate, a build-time `git describe` stamp and a local git
-  target as the test twin. It fails `architectural_impact` and
+  assembled `dist/site/` output of eleven members including the two legal
+  notice pages, the vector mark and its raster tab alternate, a build-time
+  `git describe` stamp and a local git target as the test twin. It fails `architectural_impact` and
   `durable_consequence`: the wrapper and the command choose build-and-publish
   tooling inside one boundary the deployment view already fixes, and reversing
   them costs a script and workflow edit.
@@ -132,6 +132,32 @@ minted no ADR and amended none. Three candidates were assessed:
 No record covers the statement's wording before this change; the archived
 profile change's rule that public copy named no provider was a constraint, not
 an ADR, and is superseded by chapter 2's revised constraint.
+
+The change that publishes the legal notices (publish-legal-notices) minted no
+ADR and amended none. Three candidates were assessed, and each routed to
+`CANONICAL_ARTIFACT`:
+
+- **Static, script-free notice pages under a stricter content security policy.**
+  Alternatives exist — reuse the converter's policy, or render the notices with
+  a script — but the architectural impact is two page members and the complete
+  rationale fits a page-level content rule. Routing: `CANONICAL_ARTIFACT` →
+  `givn/changes/publish-legal-notices/design.md` ("Technology decisions") plus
+  the notice rule in `givn/specs/state-the-public-legal-notices/usecase.md`.
+- **One output gate plus one source-level cross-carrier check, instead of one
+  combined script.** Alternatives exist — one script reading both trees — and
+  the consequence is contained in the two scripts' contracts, so no component,
+  authority or deployment boundary moves. Routing: `CANONICAL_ARTIFACT` →
+  `givn/changes/publish-legal-notices/design.md` ("Design decision: the output
+  gate and the source check stay separate").
+- **No build stamping on the notice pages.** Alternatives exist — stamp both
+  pages like the converter page — and the reason is a page-content rule rather
+  than a build boundary. Routing: `CANONICAL_ARTIFACT` →
+  `givn/changes/publish-legal-notices/design.md` ("Technology decisions") plus
+  the notice rule in `givn/specs/state-the-public-legal-notices/usecase.md`.
+
+The register, `docs/arc42/adr/README.md` and the ADR files are unchanged; no
+existing ADR is amended or superseded, because none covers page-level content
+policy or a second output gate.
 
 ## Individual ADR contract
 
