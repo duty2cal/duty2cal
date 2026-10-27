@@ -3420,6 +3420,18 @@ async fn a_travel_leg_with_a_flight_number_and_no_crew_position(w: &mut DutyWorl
     );
 }
 
+#[then("the calendar contains no absence or layover for that date")]
+async fn no_absence_or_layover(w: &mut DutyWorld) {
+    let calendar = calendar(w);
+    assert_no_activity(&calendar, "the silent layout row");
+    for invented in ["Layover", "FREE", "OFF", "FZ"] {
+        assert!(
+            !calendar.contains(invented),
+            "the silent layout row was turned into {invented}: {calendar}"
+        );
+    }
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);

@@ -168,7 +168,7 @@ Feature: Export a duty-plan calendar
     And the converter reports no conversion warning
     And no warning report is published
 
-  @givn.added @wip
+  @givn.added
   Scenario: A silent layout row produces no warning
     Given a supported duty plan with a detail row that carries only a date and no activity code
     When the crew member converts it
