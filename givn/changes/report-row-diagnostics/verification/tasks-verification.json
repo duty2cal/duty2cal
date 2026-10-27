@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "report-row-diagnostics",
+  "status": "passed",
+  "head": "c3db77a7e54525f9ed26be2eb10d7961e6c86fac",
+  "features_path": "givn/changes/report-row-diagnostics/specs",
+  "features_digest": "ab1c14ba53682ad2ecd4018779068dc604bc3d3035e329dee111ef3651b0b965",
+  "command_digest": "1031237dac4a7328aa009dc5586392005a11f5408a7dc7b8a4726efc55a93a8e",
+  "command": "./run-tests.sh",
+  "tested_content_digest": "28be43f4abec4129a258c7d450fffb7dcc2410fbd69f1015d267d11f8e97a0ed",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 114,
+    "passed": 114,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1793131723
+}
