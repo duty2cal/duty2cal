@@ -1,4 +1,4 @@
-@documentation @givn.delta @publish-public-website
+@givn.delta @publish-public-website @documentation
 
 Feature: Publish the public website
 

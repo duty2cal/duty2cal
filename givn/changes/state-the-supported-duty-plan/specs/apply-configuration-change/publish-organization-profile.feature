@@ -1,4 +1,4 @@
-@documentation @givn.delta @publish-organization-profile
+@givn.delta @publish-organization-profile @documentation
 
 Feature: Publish the organization profile
 

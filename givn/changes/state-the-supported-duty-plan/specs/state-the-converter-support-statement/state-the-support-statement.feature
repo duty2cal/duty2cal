@@ -1,4 +1,4 @@
-@documentation @givn.delta @state-the-support-statement
+@givn.delta @state-the-support-statement @documentation
 
 Feature: State the support statement
 
