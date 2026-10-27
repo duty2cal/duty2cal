@@ -3603,6 +3603,36 @@ async fn departure_error_before_arrival_error(w: &mut DutyWorld) {
     );
 }
 
+#[given(
+    "a supported duty plan dated 2099-06-07 with activity code ZZ_M_CF at station ABC, printed UTC times 08:00 and 15:30, and a printed Trip ID T42"
+)]
+async fn an_unrecognized_stationed_window_with_a_trip(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (support::TRIP_X, "T42"),
+            (ACTIVITY_X, "ZZ_M_CF"),
+            (FROM_X, "ABC"),
+            (START_X, "08:00"),
+            (END_X, "15:30"),
+        ],
+    );
+}
+
+#[then("that activity carries no description")]
+async fn no_description(w: &mut DutyWorld) {
+    let calendar = calendar(w).replace("\r\n ", "");
+    assert!(
+        !calendar.contains("DESCRIPTION:"),
+        "the fallback activity carries a description: {calendar}"
+    );
+    assert!(
+        !calendar.contains("T42"),
+        "the printed Trip ID reached the calendar: {calendar}"
+    );
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);

@@ -216,7 +216,7 @@ Feature: Export a duty-plan calendar
     And the failure report lists the departure row's error before the arrival row's error
     And the invocation reports failure through a non-zero process exit status
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unrecognized activity code's activity carries no description
     Given a supported duty plan dated 2099-06-07 with activity code ZZ_M_CF at station ABC, printed UTC times 08:00 and 15:30, and a printed Trip ID T42
     When the crew member converts it
