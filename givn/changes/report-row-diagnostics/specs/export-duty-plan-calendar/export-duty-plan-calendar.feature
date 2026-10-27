@@ -142,7 +142,7 @@ Feature: Export a duty-plan calendar
     And the failure report lists that row under "Errors:"
     And the invocation reports failure through a non-zero process exit status
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unrecognized activity code with a route and a single printed endpoint rejects the conversion
     Given a supported duty plan dated 2099-06-07 with activity code ZZ_M_CF, a printed route from ABC to DEF, a printed UTC start 08:00 and no end
     When the crew member converts it
