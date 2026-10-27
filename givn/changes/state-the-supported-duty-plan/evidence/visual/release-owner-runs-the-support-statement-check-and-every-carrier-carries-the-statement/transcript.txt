@@ -1,0 +1,12 @@
+$ scripts/support-statement-check.sh
+support-statement: clean — 5 carriers agree; evidence record names apps/cli/tests/steps/support.rs and Crew member converts a supported duty plan and receives a calendar file
+
+$ bats scripts/tests/support-statement.bats
+1..7
+ok 1 every carrier carries the statement and the evidence record names the fixture
+ok 2 a carrier that disagrees is refused and named
+ok 3 the withdrawn export-family wording is refused and named
+ok 4 future-support wording is refused and named
+ok 5 an evidence record that names no fixture is refused
+ok 6 a form without the outcome fields is refused
+ok 7 a shrunk statement is accepted when it keeps the plan and the boundary

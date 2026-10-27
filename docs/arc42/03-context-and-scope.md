@@ -6,15 +6,31 @@ The converter itself is a local tool used by one crew member at a time. It has n
 
 ```mermaid
 flowchart LR
-  crew["Crew member"] -->|"supported duty-plan PDF"| conv["duty2cal converter"]
+  crew["Crew member"] -->|"Lufthansa cabin-crew duty-plan PDF (Jeppesen export)"| conv["duty2cal converter"]
   conv -->|"complete calendar beside the source under an unused name"| crew
   conv -->|"explicit failure + numbered diagnostic report"| crew
 ```
 
 | Partner / User | Input to system | Output from system |
 |---|---|---|
-| Crew member running the executable | One supported Released Roster duty-plan PDF (path or drag-and-drop) | A complete RFC 5545 calendar file beside the source; or an explicit failure with a numbered diagnostic report naming the source and reason |
-| Crew member using the browser conversion page | One supported PDF selected or dropped in the tab, at most 20 MiB | The offered `<source-stem>.ics` download for the browser to save; or an explicit failure with an offered `<source-stem>.parse-error.txt` diagnostic; the page writes nothing |
+| Crew member running the executable | One Lufthansa cabin-crew duty-plan PDF published as a Jeppesen PDF export (path or drag-and-drop) | A complete RFC 5545 calendar file beside the source; or an explicit failure with a numbered diagnostic report naming the source and reason |
+| Crew member using the browser conversion page | One Lufthansa cabin-crew duty-plan PDF published as a Jeppesen PDF export, selected or dropped in the tab, at most 20 MiB | The offered `<source-stem>.ics` download for the browser to save; or an explicit failure with an offered `<source-stem>.parse-error.txt` diagnostic; the page writes nothing |
+
+### The supported duty plan and the support statement
+
+duty2cal converts a Lufthansa cabin-crew duty plan published as a Jeppesen PDF
+export into one calendar file. One roster month of cabin crew; not cockpit
+duties, other Lufthansa duty plans, other Jeppesen exports or another operator.
+Not affiliated with Lufthansa, Jeppesen, or any duty-plan provider or airline.
+
+The same statement is carried by the website's `what-it-does` statement, the
+README, the organization profile and both issue forms. `scripts/support-statement-check.sh`
+refuses a carrier that disagrees, and the site publication's page-content check
+refuses an assembled page whose statement differs; the profile's carrier is
+published by the declared configuration's apply. The statement reports the
+evidence the repository exercises — the generated fixture for this plan
+converting through the unchanged conversion — and shrinks when that evidence
+stops holding.
 
 ### The browser conversion route and the Public website
 
@@ -28,7 +44,7 @@ checks pass, and replaces the hosting target's content as a whole.
 
 ```mermaid
 flowchart LR
-  crew["Crew member"] -->|"one supported PDF, at most 20 MiB, selected or dropped"| page["browser conversion page<br/>Site output at the Public website"]
+  crew["Crew member"] -->|"one Lufthansa cabin-crew duty-plan PDF (Jeppesen export), at most 20 MiB, selected or dropped"| page["browser conversion page<br/>Site output at the Public website"]
   page -->|"offers source-stem.ics"| browser["browser-owned save"]
   page -->|"explicit failure + offered parse-error.txt"| crew
   wasm["ffi/wasm facade<br/>no filesystem or network I/O"] --> page
@@ -59,7 +75,7 @@ flowchart LR
 | Partner | Input to the project | Output from the project |
 |---|---|---|
 | Release maintainer | The revision to publish and the publication command | A named Built revision, the accepted evidence, or a refusal naming the failed check; the hosting target's previous content is untouched on a refusal |
-| Visitor opening the Public website | The served page, built from the Built revision named in its footer | A page whose statements panel, above the file picker, states what it does, the browser route, downloads for various operating systems available on request with its release page linked, the privacy rule, the non-affiliation statement and the as-is statement; whose panel below the converter carries the source and the licence; and whose footer names the Built revision |
+| Visitor opening the Public website | The served page, built from the Built revision named in its footer | A page whose statements panel, above the file picker, names the one plan the tool converts (a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export) with its boundary, and states the browser route, downloads for various operating systems available on request with its release page linked, the privacy rule, the non-affiliation sentence naming Lufthansa and Jeppesen, and the as-is statement; whose panel below the converter carries the source and the licence; and whose footer names the Built revision |
 | GitHub Pages (hosting service) | The Pages repository's default branch, written by the Site publication | The served Public website; the project asserts the content it published and the page it reads at the publication's verified address |
 | GitHub Releases | The release the publication command creates only after the site publication succeeded | — |
 
@@ -172,6 +188,6 @@ flowchart LR
 
 ## Scope boundary
 
-Inside: reading one supported plan, resolving its activities and dates, composing one calendar, publishing it without clobbering (executable) or offering it for a browser-owned save (browser), and reporting failures with diagnostics. The browser route also owns the capability gate, the 20 MiB input bound, the no-network/no-storage page behavior and the inline WASM build.
+Inside: reading one Lufthansa cabin-crew duty plan published as a Jeppesen PDF export, resolving its activities and dates, composing one calendar, publishing it without clobbering (executable) or offering it for a browser-owned save (browser), and reporting failures with diagnostics. The support statement that names this plan is a public record of the project rather than a converter behaviour: it is owned by the use case to state the converter's support statement and carried by the website, the README, the organization profile, this chapter and both issue forms. The browser route also owns the capability gate, the 20 MiB input bound, the no-network/no-storage page behavior and the inline WASM build.
 
 Outside: importing the calendar into a client, reconciling revised plans, editing the official schedule, entitlement/legality calculations, visa or booking actions, standby activation, and release approval. The public home and release channel — the repository, its automation, its release pages, the organization profile and the default security policy — belong to separate capabilities; the converter neither uses nor reaches them. Publishing the page at the Public website — its Site output, gate, Built revision, hosting target and release coupling — is the site publication capability of the `publish-public-website` use case; the deploy key and its secret are a prerequisite created by the declared configuration, and the profile copy that describes the site is a configuration change. See the use case's out-of-scope list for the full boundary.

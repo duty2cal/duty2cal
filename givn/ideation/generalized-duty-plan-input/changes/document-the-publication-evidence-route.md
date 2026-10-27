@@ -1,6 +1,6 @@
 # Change seed: document-the-publication-evidence-route
 
-Status: ready
+Status: superseded by state-the-supported-duty-plan
 
 - Use-case IDs: `make-a-further-published-duty-plan-convertible`,
   `state-the-converter-support-statement`

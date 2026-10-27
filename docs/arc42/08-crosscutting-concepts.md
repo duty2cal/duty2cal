@@ -330,16 +330,18 @@ public copy, not product output. They live in `org/` in the monorepo, are
 reviewed like code, are licensed CC0-1.0, and are published into the public
 profile repository by the declaration; the profile repository is output and is
 never edited by hand. The copy states only what the repository keeps: the
-converter and its crew duty plan input, the browser conversion route now
-reachable on the Public website at `https://duty2cal.github.io/`, Windows x86_64
-as the only published archive platform with builds for other operating systems
-available on request, no hosted
-converter or upload, no third-party provider name. The copy is applied only
+converter and the one plan it converts — a Lufthansa cabin-crew duty plan
+published as a Jeppesen PDF export, with the boundary that cockpit duties, other
+Lufthansa duty plans, other Jeppesen exports and another operator are not
+covered — the browser conversion route now reachable on the Public website at
+`https://duty2cal.github.io/`, Windows x86_64 as the only published archive
+platform with builds for other operating systems available on request, and no
+hosted converter or upload. The copy is applied only
 after the page is live, so it never promises a page that is absent. It links the stable
 latest-release address, the source and the site repositories, attributes the
 third-party Unicode data to Unicode-3.0 with an absolute licence link, and
-states explicitly that the project is not affiliated with any duty-plan
-provider or airline. The two published terms are the **profile content**
+states explicitly that the project is not affiliated with Lufthansa, Jeppesen,
+or any duty-plan provider or airline. The two published terms are the **profile content**
 (`profile/README.md`) and the **default security policy** (`SECURITY.md`); the
 reviewed pair is the **reviewed public copy**.
 
@@ -350,9 +352,52 @@ the same promise the converter makes at runtime — the converter page's only
 images are its own local `icon.svg` and the raster `icon.png` tab alternate,
 served from the Site output itself. The content-invariant scenario compares
 the published bytes with the reviewed `org/` source and asserts the positive
-claims; the profile is not trusted because a reviewer once looked at it, and the
-absence of the excluded provider name is a review control rather than a stored
-deny-list.
+claims; the profile is not trusted because a reviewer once looked at it. The
+support statement's exact sentences are the part checked mechanically, below.
+
+## The support statement across its carriers
+
+The statement that names the plan is a standing public claim, not one document's
+copy. It is carried by five places and they must agree:
+
+| Carrier | Where |
+|---|---|
+| The website's `what-it-does` and `non-affiliation` statements | `web/index.html`, the panel above the converter |
+| The README | its opening paragraph and its contributor-route sentence |
+| The organization profile | `org/profile/README.md`, published by the configuration apply |
+| Chapter 3 | `docs/arc42/03-context-and-scope.md` |
+| Both issue forms | `.github/ISSUE_TEMPLATE/bug.yml` and `proposal.yml` |
+
+The three sentences are: the support sentence (the page's with "This tool" as
+its subject), the boundary sentence and the non-affiliation sentence.
+`scripts/support-statement-check.sh` holds the rule, reads the expected text
+from `scripts/support-statement.env`, normalizes each carrier's whitespace, and
+refuses a carrier that differs, still carries the withdrawn export-family
+wording or promises a plan's future support, naming the carrier. The same file
+supplies the page's exact text to `scripts/check-site-content.sh`, so a wording
+revision edits one file and both checks fail together.
+`scripts/public-text-check.sh` runs the check in the `public-text` job, and
+`scripts/site-evidence.sh` runs it as the publication's first evidence step, so
+neither a source edit nor an intermediate revision can publish a page whose
+other carriers disagree.
+
+No carrier is authoritative and none is generated from another: the check owns
+the expected wording, and a wording revision edits the carriers and that one
+file in one act. The profile's carrier is a configuration apply rather than a
+hand edit of the profile repository; until the operator applies, the published
+profile lags the reviewed source, which is stated rather than hidden.
+
+The statement rests on the generated fixture of the named plan converting
+through the unchanged conversion, and `docs/evidence/supported-duty-plan.md` is
+the durable record the check requires: it names the fixture builder, the
+conversion scenario, the fictional month `2099-06`, the printed labels, codes
+and travel leg, and the privacy rule, and it carries no complete calendar date.
+When that fixture stops converting, the carriers state that the plan is
+currently refused, the conversion's refusal names the unknown code or the
+missing fact, and the reduction is one act across the five carriers. The
+statement is not the release text: a statement revision changes no conversion
+behaviour, but because the page is a user-receiving path the release notes
+announce it as a public-copy change.
 
 ## Default community health files
 

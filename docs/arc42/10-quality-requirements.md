@@ -53,6 +53,7 @@ flowchart TB
   repro --> rp4["Security settings declared and applied"]
   repro --> rp5["A refusal changes nothing and a partial failure is named"]
   repro --> rp6["Public profile copy is truthful and self-contained"]
+  repro --> rp7["One support statement across its five carriers"]
 ```
 
 ## Quality scenarios
@@ -101,6 +102,7 @@ flowchart TB
 | QS-040 | Verification runtime | The default suite runs on a clean CI runner and on a developer machine. | The owned target is 10 minutes in CI and 5 minutes locally; the job's 20-minute timeout is the hard failure line. `run-tests.sh` prints one `phase=<name> seconds=<n>` line per class with the cucumber concurrency. |
 | QS-041 | Executable size budget | The Windows cross-build produces the executable. | The job fails when `stat -c %s target/x86_64-pc-windows-gnu/release/duty2cal.exe` exceeds 2,097,152 bytes (the last published executable's file size); the per-push attribution remains the evidence report. |
 | QS-042 | Nightly verification | The scheduled workflow is enabled and runs on the default branch with no new commit. | The product suite (including the CLI e2e) and all 16 browser variants pass; `cargo deny check` reads a fresh advisory database. The run holds `contents: read` and no state passphrase, administer token or deploy key; a failure is visible in the run and its transcript artifact. GitHub disables the schedule after 60 days without repository activity; a manual dispatch or any push re-enables it (R-071). |
+| QS-043 | One support statement across its carriers | A revision edits the support sentence in the README, and one of the other carriers (the page, the profile, chapter 3 or an issue form) still carries the earlier wording or an export-family question. | `scripts/support-statement-check.sh` exits non-zero and names the disagreeing carrier and the rule; the clean tree passes; the site publication refuses an assembled page whose `what-it-does` or `non-affiliation` element differs and names the statement; the profile's reviewed source is the one the apply publishes. The check proves the words agree, not that they are true; the generated fixture and review carry that (R-072). |
 
 **Stimulus / response / metric** for the primary scenario:
 

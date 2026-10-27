@@ -99,6 +99,40 @@ candidate — the mark's vector master with a raster tab fallback — returned
 `NOT_QUALIFIED` and routes to exactly one canonical artifact:
 `givn/changes/add-vector-brand-assets/design.md`.
 
+The change that states the supported duty plan (state-the-supported-duty-plan)
+minted no ADR and amended none. Three candidates were assessed:
+
+- **The public statement's unit and boundary** — name the one plan (a Lufthansa
+  cabin-crew duty plan published as a Jeppesen PDF export) with its boundary and
+  a non-affiliation sentence instead of a generic "supported export" or an
+  internal format family. It fails `lower_level_artifact`: the claim, its
+  wording and its shrink rule are observable public behaviour owned by the new
+  capability's Gherkin specification and use case, and chapter 3 and 8 record
+  the durable position. It also fails the product-behaviour falsification test —
+  it constrains no component, authority or deployment boundary. Routing:
+  `CANONICAL_ARTIFACT` →
+  `givn/specs/state-the-converter-support-statement/state-the-support-statement.feature`.
+- **One wording checked across five carriers** — no authoritative carrier, a
+  script that compares them and names the disagreeing one, run by the
+  `public-text` job, with the site's own content check for the assembled page.
+  It fails `architectural_impact` and `durable_consequence` as a boundary: the
+  carriers and the check are policy inside existing publishing paths, reversal
+  is one change's scripts and copy, and chapter 2 records the constraint.
+  Routing: `CANONICAL_ARTIFACT` → `docs/arc42/02-architecture-constraints.md`
+  (the check's mechanics are implementation detail under `design.md`, not a
+  second routing).
+- **The evidence record and the shrink rule** — a durable
+  `docs/evidence/supported-duty-plan.md` required by the check, and the release
+  owner's one-act revision when the generated fixture fails. It fails
+  `lower_level_artifact`: the rule is the use case's extension and its
+  guarantee, and the record is the artifact that carries the evidence.
+  Routing: `CANONICAL_ARTIFACT` →
+  `givn/changes/state-the-supported-duty-plan/specs/state-the-converter-support-statement/usecase.md`.
+
+No record covers the statement's wording before this change; the archived
+profile change's rule that public copy named no provider was a constraint, not
+an ADR, and is superseded by chapter 2's revised constraint.
+
 ## Individual ADR contract
 
 Written and tailored from `docs/arc42/adr/adr-template.md`; MADR sections,

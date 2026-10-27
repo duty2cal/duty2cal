@@ -59,12 +59,15 @@ reading fills, not a domain noun.
 
 | Seed | Use cases | Start | Depends on |
 |---|---|---|---|
-| `generalize-duty-plan-intake` | `export-duty-plan-calendar` (extended) | 1 | — |
-| `document-the-publication-evidence-route` | `make-a-further-published-duty-plan-convertible`, `state-the-converter-support-statement` | 2 | `generalize-duty-plan-intake` |
+| `generalize-duty-plan-intake` (withdrawn 2026-10-27) | `export-duty-plan-calendar` (extended) | — | — |
+| `document-the-publication-evidence-route` (superseded by `state-the-supported-duty-plan`) | `make-a-further-published-duty-plan-convertible`, `state-the-converter-support-statement` | — | withdrawn with the intake |
+| `state-the-supported-duty-plan` | `state-the-converter-support-statement`, `publish-public-website` (extended), `apply-configuration-change` (extended) | 1 | — |
 
-The first seed carries the behaviour and the copy that would otherwise become
-untrue; the second carries the evidence route and the standing statement. No
-publication is named before its fixture converts.
+The general intake and its further-publication route were withdrawn by the
+operator on 2026-10-27: too many converters already exist, and a broader
+converter would need duty-plan examples beyond the Lufthansa cabin plans. The
+project now names the one plan it converts; the support statement and the
+evidence route for that plan live in `state-the-supported-duty-plan`.
 
 ## Open design work, not questions
 

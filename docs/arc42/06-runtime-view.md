@@ -688,3 +688,52 @@ flowchart TB
 
 **Notes:** The feature file documents this flow; no cucumber scenario drives it after this change. The deleted scenario primed an inherited base tree and asserted the API responses, the journal and the state; `scripts/setup-infra-tests.sh` prepares only the imports and the base apply and does not inspect `org/` or drive the profile preview. The maintainer's real preview and apply are the operational evidence, and the real GitHub acceptance and rendering are proven only there. A write failure after the repository creation is reported as a partial outcome and the state is not committed; the stale marker rules are the shared configuration-change rules, not re-asserted by this capability (R-067).
 
+## Scenario: The support statement is checked across its carriers
+
+**Trigger:** The release owner publishes or revises the support statement — on
+a release, or because the evidence behind it changed. The statement names one
+plan: a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export.
+
+```mermaid
+flowchart TB
+  due["Statement is due: a release, or changed evidence"] --> edit["Edit the five carriers together"]
+  edit --> check["support-statement-check.sh reads the five carriers and the evidence record"]
+  check -->|"a carrier differs, carries withdrawn wording,<br/>or the record is missing"| refuse["refuse; name the carrier and the rule"]
+  check -->|"the fixture no longer converts"| shrink["shrink: state the plan is currently refused;<br/>the conversion names the code or fact"]
+  check -->|"all agree"| public["the carriers carry one statement"]
+  public --> page["site publication: page-content check<br/>requires the exact statement in the assembled page"]
+  public --> profile["configuration apply: the reviewed profile text is published"]
+```
+
+**Steps:**
+
+1. The release owner edits the website's `what-it-does` and
+   `non-affiliation` statements, the README, `org/profile/README.md`, chapter 3
+   and both issue forms in one act; the page's sentence has "This tool" as its
+   subject, and the other four use the project's name.
+2. `scripts/support-statement-check.sh` normalizes each carrier's whitespace,
+   reads the two page elements and the four documents, and compares them with
+   the three expected sentences. The `public-text` CI job runs it through
+   `scripts/public-text-check.sh`.
+3. A carrier that differs, still carries the withdrawn export-family wording,
+   or a missing evidence record is refused with one line naming the carrier and
+   the rule; no carrier is published as agreeing.
+4. If the generated fixture stops converting, the conversion suite is red and
+   its refusal names the unknown activity code or the missing column; the
+   carriers are revised to state that the plan is currently refused, and the
+   evidence record states the failure. The statement does not wait for a
+   release.
+5. The site publication's page-content check requires the assembled page's
+   exact `what-it-does` and `non-affiliation` text; a page that disagrees is
+   refused and named, and the previous page stays.
+6. The profile's carrier is published by the operator's configuration apply
+   after GREEN; until then the reviewed source carries the statement and the
+   published profile lags it.
+
+**Notes:** The feature files are documentation. The executable evidence is
+`scripts/tests/support-statement.bats` for the check and the existing browser
+smoke for the rendered page; the site publication's gate is its own executable
+evidence. The profile's live apply remains the operator's step (D5), and the
+statement's shrink is a reviewed act by the release owner, not an automatic
+rewrite.
+
