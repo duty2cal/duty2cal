@@ -174,6 +174,11 @@ fn capture_screenshots(w: &mut DutyWorld, suffix: &str) {
         );
         params.insert("width".to_string(), Value::from(width));
         params.insert("height".to_string(), Value::from(height));
+        // The converter panel sits below the page's statements panel at the
+        // mobile viewport. A viewport-only capture would show the page top and
+        // none of the state under review, so the evidence captures the whole
+        // page at the declared width.
+        params.insert("fullPage".to_string(), Value::Bool(true));
         let result = driver(w).send("screenshot", params);
         let saved_to = path.display().to_string();
         assert_eq!(

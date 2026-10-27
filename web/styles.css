@@ -185,12 +185,32 @@ a:focus-visible {
   margin-top: 0;
 }
 
+#offer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: var(--space);
+}
+
+#offer-links .button {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
 .offer .button {
   margin-top: var(--space);
 }
 
+.offer #offer-links .button {
+  margin-top: 0;
+}
+
 .offer-note {
   color: var(--ink-muted);
+  overflow-wrap: anywhere;
 }
 
 .diagnostics {

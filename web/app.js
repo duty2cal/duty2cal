@@ -24,6 +24,7 @@ const actions = document.getElementById('plan-actions');
 const offerArea = document.getElementById('offer');
 const offerLinks = document.getElementById('offer-links');
 const offerCopy = document.getElementById('offer-copy');
+const readyStatus = document.getElementById('ready-status');
 const offerNote = document.getElementById('offer-note');
 const warningsBlock = document.getElementById('warnings');
 const warningList = document.getElementById('warning-list');
@@ -82,6 +83,7 @@ function clearAttempt() {
   renderList(warningsBlock, warningList, []);
   renderList(failureErrors, errorList, []);
   renderList(failureWarnings, failureWarningList, []);
+  readyStatus.textContent = '';
   offerNote.textContent = '';
   offerNote.hidden = true;
   status.textContent = 'No plan selected.';
@@ -212,16 +214,18 @@ function showReady(name, calendar, warnings, warningReport) {
   if (hasWarnings) {
     const rows = warnings.length === 1 ? '1 row was' : `${warnings.length} rows were`;
     const noun = warnings.length === 1 ? 'a warning' : 'warnings';
-    status.textContent = `Your calendar is ready to save. ${rows} converted with ${noun}.`;
+    readyStatus.textContent = `Your calendar is ready to save. ${rows} converted with ${noun}.`;
   } else {
-    status.textContent = `Calendar ready for ${name}.`;
+    readyStatus.textContent = `Calendar ready for ${name}.`;
   }
+  status.textContent = '';
   offerArea.hidden = false;
 }
 
 /** Show the visible failure, with both lists and the report offer. */
 function showFailure(name, reason, diagnostic, errors, warnings) {
   status.textContent = 'No calendar was created.';
+  readyStatus.textContent = '';
   failureReason.textContent =
     summarizeFailure(name, errors.length, warnings.length) || `${name}: ${reason}`;
   renderList(failureErrors, errorList, errors);

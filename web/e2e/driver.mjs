@@ -161,7 +161,9 @@ async function waitUntilSettled() {
 async function readState(withBaseline = false, withSite = false) {
   return page.evaluate(async ({ baseline, site }) => {
     const statusText =
-      document.getElementById('status')?.textContent?.trim() || '';
+      document.getElementById('status')?.textContent?.trim() ||
+      document.getElementById('ready-status')?.textContent?.trim() ||
+      '';
     const failure = document.getElementById('failure');
     const offerArea = document.getElementById('offer');
     const cannotRun = document.getElementById('cannot-run');
