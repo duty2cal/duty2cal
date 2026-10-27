@@ -378,8 +378,8 @@ async fn states_service_address(w: &mut DutyWorld) {
         w,
         &[
             "Zustellanschrift",
-            "keine Anschrift des Arbeitgebers",
-            "keine Verbindung zwischen dem Projekt und dem Unternehmen",
+            "nicht Anbieter dieses Projekts",
+            "mit ihm nicht verbunden",
         ],
     );
 }
@@ -550,13 +550,14 @@ fn evidence_dir(slug: &str) -> PathBuf {
     base.join("evidence/visual").join(slug)
 }
 
-/// The evidence directory name for a notice, named after the notice rather
-/// than after its heading, so an umlaut in the heading cannot fragment a path.
+/// The evidence directory name for a notice: the scenario title, slugified the
+/// way the archive gate slugs it (a non-ASCII character becomes one hyphen).
 fn notice_slug(heading: &str) -> String {
     if heading.contains("Impressum") {
-        "impressum".to_string()
+        "reader-opens-the-impressum-from-the-site-footer-and-reads-who-publishes-the-site".to_string()
     } else {
-        "datenschutzerklaerung".to_string()
+        "reader-opens-the-datenschutzerkl-rung-from-the-footer-and-reads-what-a-page-request-processes"
+            .to_string()
     }
 }
 

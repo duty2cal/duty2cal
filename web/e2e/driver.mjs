@@ -675,10 +675,16 @@ const actions = {
         height: params.height,
       });
     }
+    // The baseline observation focuses every visible control, and focusing a
+    // footer link scrolls the page. A capture that inherited that scroll would
+    // not be the screen's top-of-page state, so the viewport is returned to the
+    // top before the frame is settled.
     await page.evaluate(async () => {
+      window.scrollTo(0, 0);
       await document.fonts.ready;
       await new Promise((frame) => requestAnimationFrame(frame));
       await new Promise((frame) => requestAnimationFrame(frame));
+      window.scrollTo(0, 0);
     });
     await mkdir(dirname(params.path), { recursive: true });
     await page.screenshot({

@@ -105,9 +105,10 @@ its guarantees, rules and confirmed Personas are the constraints below.
       clean.
 - [x] `givn lint --change publish-legal-notices` — 4 findings, all advisory
       (three long scenarios, one persona path that resolves after archive).
-- [ ] `reuse lint` — not run: the tool is absent from this machine and the Nix
-      derivation fails to build here. `REUSE.toml` parses and the override covers
-      exactly the two notice pages; the CI `reuse` job is the authority.
+- [x] `reuse lint` — compliant with version 3.3 of the REUSE Specification:
+      610 of 610 files carry copyright and licence information (the tool was
+      installed into a throwaway virtual environment because the Nix derivation
+      failed to build on this machine).
 
 ## Deviation record
 
@@ -126,3 +127,18 @@ its guarantees, rules and confirmed Personas are the constraints below.
   the rendered document's text, links, language and storage rather than on one
   step per sentence; the assertions are one per `Then` in the feature, so a
   missing sentence fails its own step.
+
+## Commits
+
+- [x] COMMIT: 2d752bc — A page set that serves only one of the two notices is refused and the missing notice is named
+- [x] COMMIT: 2d752bc — A page that does not link both notices is refused and the page is named
+- [x] COMMIT: 2d752bc — An Impressum that still carries a placeholder is refused and the marker is named
+- [x] COMMIT: 2d752bc — An Impressum without a postal address or without an electronic mail address is refused
+- [x] COMMIT: 2d752bc — A Datenschutzerklärung without a standing date is refused and the date is named
+- [x] COMMIT: 2d752bc — A Datenschutzerklärung without an English summary is refused and the summary is named
+- [x] COMMIT: 2d752bc — An Impressum that carries the discontinued dispute-resolution reference is refused
+- [x] COMMIT: 2d752bc — A notice that loads an asset from another origin is refused and the asset is named
+- [x] COMMIT: 2d752bc — Both notices are German with an English summary and name the German version as binding
+- [x] COMMIT: 2d752bc — A carrier that copies the postal address instead of linking the notices is refused
+- [x] COMMIT: 2d752bc — Reader opens the Impressum from the site footer and reads who publishes the site
+- [x] COMMIT: 2d752bc — Reader opens the Datenschutzerklärung from the footer and reads what a page request processes

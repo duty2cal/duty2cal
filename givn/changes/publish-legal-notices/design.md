@@ -156,8 +156,8 @@ checks cannot disagree:
 
 | Page | Required elements (from `scripts/legal-notices.env`) |
 |---|---|
-| `web/impressum.html` | `<address>` with a five-digit postal code and a city; a `mailto:` link; `IMPRESSUM_SERVICE_ADDRESS`; `IMPRESSUM_NON_AFFILIATION`; `IMPRESSUM_LICENCE`; `IMPRESSUM_AS_IS`; `IMPRESSUM_EN_SUMMARY`; `IMPRESSUM_BINDING_SENTENCE` |
-| `web/privacy.html` | `PRIVACY_CONTROLLER` with the contact block; `PRIVACY_HOST`; `PRIVACY_IP_ADDRESS`; `PRIVACY_PURPOSE`; `PRIVACY_FURTHER_DATA`; `PRIVACY_LEGAL_BASIS`; `PRIVACY_THIRD_COUNTRY`; `PRIVACY_SUBPROCESSORS`; `PRIVACY_RETENTION`; `PRIVACY_MAIL_HANDLING` with `PRIVACY_MAIL_ROLE`, `PRIVACY_MAIL_LOCATION` and `PRIVACY_MAIL_BASIS`; `PRIVACY_LOCAL_CONVERSION`; `PRIVACY_NO_COOKIES`; `PRIVACY_RIGHTS`; `PRIVACY_COMPLAINT`; `PRIVACY_STANDING_DATE` with a date; `PRIVACY_EN_SUMMARY`; `PRIVACY_BINDING_SENTENCE` |
+| `web/impressum.html` | `<address>` with a five-digit postal code and a city; a `mailto:` link; `IMP_NAME`; `IMP_SERVICE_ADDRESS`; `IMP_EMPLOYER_ROLE`; `IMP_NON_AFFILIATION`; `IMP_TRADEMARK`; `IMP_LICENCE`; `IMP_AS_IS`; `IMP_SOURCE`; `NOTICE_DOCUMENT_LANG`; `NOTICE_SUMMARY_LANG`; `NOTICE_SUMMARY_BINDING` |
+| `web/privacy.html` | `PRIV_CONTROLLER` with the contact block; `PRIV_HOST`; `PRIV_IP`; `PRIV_PURPOSE`; `PRIV_FURTHER_DATA`; `PRIV_BASIS`; `PRIV_TRANSFER`; `PRIV_SCC`; `PRIV_SUBPROCESSORS`; `PRIV_RETENTION`; `PRIV_MAIL_PROVIDER` with the role and location in the mail-handling section; `PRIV_LOCAL_PROCESSING`; `PRIV_COOKIES`; `PRIV_RIGHTS`; `PRIV_STANDING_DATE` with a date; `NOTICE_DOCUMENT_LANG`; `NOTICE_SUMMARY_LANG`; `NOTICE_SUMMARY_BINDING` |
 | both notices | the exact `NOTICE_CSP` policy in their meta element; no `<script` element and no `on*=` handler attribute |
 | neither | `TODO`, `Mustermann`, `example.org`, `ec.europa.eu/consumers/odr`, a `http://` asset reference |
 
@@ -238,12 +238,19 @@ reads the named element rather than only the exit status.
 
 ## Step Definitions
 
-| Step definition file | Capability | Permanent merge target |
-|---|---|---|
-| `apps/cli/tests/steps/legal_notices.rs` | `state-the-legal-notices` | same path (durable project source) |
-| `apps/cli/tests/steps/browser.rs` | unchanged file, new `click`/`navigate`/`read_text` methods on `BrowserDriver` and the extended `ACTIONS` allow-list | same path |
-| `web/e2e/driver.mjs` | unchanged file, `click`, `navigate` and `read_text` actions, and the loopback server's extensionless-path resolution | same path |
-| `apps/cli/tests/steps/e2e/visual_baseline.rs` | new shared module, declared in `apps/cli/tests/steps/e2e/mod.rs`, holding the moved `assert_visual_baseline`, parameterized by document language and counting a labelled link as a labelled control | same path |
+| Step definition file | Permanent merge target |
+|---|---|
+| `apps/cli/tests/steps/legal_notices.rs` | `apps/cli/tests/steps/legal_notices.rs` |
+| `apps/cli/tests/steps/e2e/visual_baseline.rs` | `apps/cli/tests/steps/e2e/visual_baseline.rs` |
+| `apps/cli/tests/steps/browser.rs` | `apps/cli/tests/steps/browser.rs` |
+| `web/e2e/driver.mjs` | `web/e2e/driver.mjs` |
+
+The two notice rules in `browser.rs` and `driver.mjs` are additions to files
+that already exist: the client gained the `click`, `navigate` and `read_text`
+actions in its allow-list, and the driver gained the three matching actions plus
+the loopback server's extensionless-path resolution. The notice capability's
+steps live in `legal_notices.rs`; the shared visual-baseline helper moved to
+`apps/cli/tests/steps/e2e/visual_baseline.rs`.
 
 The `assert_visual_baseline` move is the one edit to an existing step file: both
 the converter scenario and the two notice scenarios call it, the converter passes
@@ -270,6 +277,13 @@ only controls are links — satisfy the `controls` observation.
   and a non-zero exit. The tasks' setup task records it.
 
 ## Interaction Coverage Matrix
+
+The other footer links are variants of the same two inventory actions: activating
+the other notice's labelled footer link from either notice, and activating the
+converter page's footer link from either notice, are one action — activate a
+labelled footer link, then read the rendered document — so no further inventory
+row is added. Their reachability is asserted by the notice-link checks, not by a
+third browser scenario.
 
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
@@ -306,8 +320,9 @@ only controls are links — satisfy the `controls` observation.
   this change; `docs/design/design-system.md` gains the notice primitive, the
   per-document language rule, the notice footer rule and the captures below.
 - **Capture mechanism and evidence path**: `givn/changes/publish-legal-notices/evidence/visual/<scenario-slug>/mobile.png`
-  and `desktop.png`, captured after the final assertion with animations
-  disabled, fonts and network settled, per the driver's existing capture flow.
+  and `desktop.png`, where `<scenario-slug>` is the scenario title slugified
+  by the archive gate; captured from the document top after the final
+  assertion, with animations disabled, fonts and network settled.
 - **Motion**: none on either page — no transition, no animation; the capture
   emulates `prefers-reduced-motion: reduce` and the scenario asserts the
   rendered document carries no animated element.

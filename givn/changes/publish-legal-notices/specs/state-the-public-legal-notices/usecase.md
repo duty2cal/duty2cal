@@ -97,8 +97,6 @@ The Site output serves an Impressum and a Datenschutzerklärung, either reachabl
 | state-the-legal-notices | follow the footer's "Impressum" link on the site | Reader opens the Impressum from the site footer and reads who publishes the site |
 | state-the-legal-notices | follow the footer's "Datenschutz" link on the site | Reader opens the Datenschutzerklärung from the footer and reads what a page request processes |
 
-The same two inventory actions cover the other footer links: activating the other notice's labelled footer link from either notice, and activating the converter page's footer link from either notice, are variants of the same two actions — activate a labelled footer link, then read the rendered document — so no further inventory row is added. Their reachability is asserted by the notice-link checks, not by a third browser scenario; each browser scenario itself observes the rendered state twice, the site root's heading before activation and the notice's heading after it.
-
 ## Includes
 
 - none

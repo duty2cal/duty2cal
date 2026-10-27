@@ -98,7 +98,7 @@ check_source() {
 }
 
 @test "an Impressum that offers no mail link is refused" {
-  sed -i 's|<a href="mailto:duty2cal662.abridge974@aleeas.com">duty2cal662.abridge974@aleeas.com</a>|duty2cal662.abridge974@aleeas.com|' "$OUT/impressum.html"
+  sed -i 's|<a href="mailto:duty2cal662.abridge974@aleeas.com">duty2cal662.abridge974@<wbr>aleeas.com</a>|duty2cal662.abridge974@aleeas.com|' "$OUT/impressum.html"
   check_output
   [ "$status" -eq 1 ]
   [[ "$output" == *"electronic mail address"* ]]
@@ -133,7 +133,7 @@ check_source() {
 }
 
 @test "a notice with an inline event handler is refused" {
-  sed -i 's|<body>|<body onload="alert(1)">|' "$OUT/impressum.html"
+  sed -i 's|<body class="notice-page">|<body class="notice-page" onload="alert(1)">|' "$OUT/impressum.html"
   check_output
   [ "$status" -eq 1 ]
   [[ "$output" == *"inline event handler"* ]]

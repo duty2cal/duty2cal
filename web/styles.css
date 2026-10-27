@@ -198,7 +198,17 @@ a:focus-visible {
 }
 
 /* Legal notice pages. They are static documents in the same shell: one
-   column, the same tokens, no script and no controls beyond links. */
+   column, the same tokens, no script and no controls beyond links. The
+   heading is allowed to hyphenate: "Datenschutzerklärung" is longer than the
+   header's measure at 360 px, and a clipped title is a defect. A mail address
+   longer than the panel breaks rather than leaving it. */
+.brand-text {
+  min-width: 0;
+}
+
+.brand h1 {
+  hyphens: auto;
+}
 .notice h2 {
   margin-top: 0;
 }
@@ -216,4 +226,12 @@ a:focus-visible {
 .notice .muted {
   color: var(--ink-muted);
   font-size: 0.9rem;
+}
+
+.notice-page a {
+  color: var(--accent);
+}
+
+.notice a {
+  overflow-wrap: anywhere;
 }

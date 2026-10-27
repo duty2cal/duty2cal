@@ -220,6 +220,7 @@ require_notice() { # page, literal, name
 }
 require_notice "$impressum" "$IMP_NAME" "operator name"
 require_notice "$impressum" "$IMP_SERVICE_ADDRESS" "service-address sentence"
+require_notice "$impressum" "$IMP_EMPLOYER_ROLE" "employer-role sentence"
 require_notice "$impressum" "$IMP_NON_AFFILIATION" "non-affiliation sentence"
 require_notice "$impressum" "$IMP_TRADEMARK" "trademark sentence"
 require_notice "$impressum" "$IMP_LICENCE" "licence sentence"

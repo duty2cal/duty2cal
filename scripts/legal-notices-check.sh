@@ -75,6 +75,7 @@ done
 
 require "$impressum" "$IMP_NAME" "operator name"
 require "$impressum" "$IMP_SERVICE_ADDRESS" "service-address sentence"
+require "$impressum" "$IMP_EMPLOYER_ROLE" "employer-role sentence"
 require "$impressum" "$IMP_NON_AFFILIATION" "non-affiliation sentence"
 require "$impressum" "$IMP_TRADEMARK" "trademark sentence"
 require "$impressum" "$IMP_LICENCE" "licence sentence"

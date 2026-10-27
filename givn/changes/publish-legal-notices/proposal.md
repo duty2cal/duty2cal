@@ -42,14 +42,14 @@ Observable difference for the reader: from any page, two labelled links lead to 
 
 ## Capability Routing
 
-`givn spec route --change publish-legal-notices` reported no signal ("the top candidates tie at 13.00") and printed no ranked list, so no recommendation column is recorded.
+`givn spec route --change publish-legal-notices` reported no signal ("the top candidates tie at 13.00") and printed no ranked list; the recommendation column records that no signal was reported.
 
-| Proposed capability | Decision | Rationale |
-|---|---|---|
-| `state-the-legal-notices` | `NEW in state-the-public-legal-notices` | The notices are a standing claim with their own actor goal — the operator states who publishes and what a page request does — their own evidence (the two pages exist, carry the fixed elements, and every carrier links them) and their own refusal. They advance that goal, not the site's publication or the profile apply, so they are a new goal-shaped capability, exactly as the support statement became one beside the carriers that carry it. |
-| `publish-public-website` | `EXTEND publish-public-website` | The two pages are members of the Site output, the footer links are page content, and the page-content check already refuses a page set that lacks a required element. This change edits those through that capability; the publication mechanism, the Built revision and the hosting target are untouched. |
-| `publish-organization-profile` | `EXTEND publish-organization-profile` | The profile is its own telemedia of the same operator and needs its own notice or link. Its carrier is the reviewed file the configuration apply publishes; the change adds two labelled links to that file and the apply is the operator's step. |
-| `publish-public-release` | `EXTEND publish-public-release` | The README is the repository's public text and its promises are owned by that capability's public-text rule. The change adds one Legal section and the rule that the two links survive a README rewrite; the release archive, the platform promise and the release text are unchanged. |
+| Proposed capability | Route's recommendation | Decision | Rationale |
+|---|---|---|---|
+| state-the-legal-notices | no signal | NEW in state-the-public-legal-notices | The notices are a standing claim with their own actor goal — the operator states who publishes and what a page request does — their own evidence (the two pages exist, carry the fixed elements, and every carrier links them) and their own refusal. They advance that goal, not the site's publication or the profile apply, so they are a new goal-shaped capability, exactly as the support statement became one beside the carriers that carry it. |
+| publish-public-website | no signal | EXTEND publish-public-website | The two pages are members of the Site output, the footer links are page content, and the page-content check already refuses a page set that lacks a required element. This change edits those through that capability; the publication mechanism, the Built revision and the hosting target are untouched. |
+| publish-organization-profile | no signal | EXTEND publish-organization-profile | The profile is its own telemedia of the same operator and needs its own notice or link. Its carrier is the reviewed file the configuration apply publishes; the change adds two labelled links to that file and the apply is the operator's step. |
+| publish-public-release | no signal | EXTEND publish-public-release | The README is the repository's public text and its promises are owned by that capability's public-text rule. The change adds one Legal section and the rule that the two links survive a README rewrite; the release archive, the platform promise and the release text are unchanged. |
 
 ## Out of Scope
 
