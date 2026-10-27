@@ -123,7 +123,7 @@ Feature: Export a duty-plan calendar
     And  the page offers a way to choose another plan
     And  the page meets the visual baseline in the failure state
 
-  @givn.added @browser @wip
+  @givn.added @browser
   Scenario: The page shows no warning list when the plan converts without warnings
     Given  the converter page served from the built Site output
     When  the crew member supplies the supported duty plan "2026-06.pdf" whose every dated activity is recognized
