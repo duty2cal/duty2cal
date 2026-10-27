@@ -34,11 +34,11 @@ The opportunity is to treat an unfamiliar row the way the source actually reads:
 
 ## Capability Routing
 
-`givn spec route --change report-row-diagnostics` reports no signal: the top candidates tie. The decision is therefore recorded here, and editing this table is the declaration `givn check` compares against the delta.
+`givn spec route --change report-row-diagnostics` recommends `EXTEND export-duty-plan-calendar` (17.00). The decision is recorded here, and editing this table is the declaration `givn check` compares against the delta.
 
-| Proposed capability | Decision | Rationale |
-|---|---|---|
-| Report every row's errors and warnings | `EXTEND export-duty-plan-calendar` | The behaviour changes who is represented and how a failure reads, inside the existing goal of exporting one supplied plan as a calendar. The browser is a second realization of the same action, not a second goal, so the delta belongs to `export-duty-plan-calendar`. |
+| Proposed capability | Delta file | Decision | Rationale |
+|---|---|---|---|
+| `export-duty-plan-calendar` | `specs/export-duty-plan-calendar/export-duty-plan-calendar.feature` | `EXTEND export-duty-plan-calendar` | The behaviour changes who is represented and how a failure reads, inside the existing goal of exporting one supplied plan as a calendar. The browser is a second realization of the same action, not a second goal, so the delta belongs to `export-duty-plan-calendar`. |
 
 ## Out of Scope
 

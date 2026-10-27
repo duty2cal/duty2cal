@@ -254,3 +254,219 @@ Run on 2026-10-27 after all edits, from the repository root:
 Not changed by this review: `proposal.md`, production code, step definitions, tests, `tasks.md`, `review.md`. No commit was made.
 
 DESIGN-REVIEW: PASS
+
+## Re-review (fresh context, 2026-10-27)
+
+Scope: the F1/F2 corrections to `design.md`, the design's commands and file
+layout against the implementation, and the two required `givn check` runs. No
+production code, test, spec, proposal or `review.md` edit was made here.
+
+### Findings and corrections
+
+**F1 — Step Definitions column order: corrected, with one residual defect.**
+The header is now
+`| Capability | Step definition file | Module | Permanent merge target | New or changed phrase groups |`,
+and every row carries the real path in column 2. All five named files exist:
+`apps/cli/tests/steps/export_duty_plan_calendar.rs`,
+`apps/cli/tests/steps/browser.rs`,
+`apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs`,
+`apps/cli/tests/steps/support.rs`, `web/e2e/driver.mjs`.
+`givn check review`'s integrity block now resolves them (`✓ integrity passed`).
+
+**Residual defect R1 (blocking): the e2e row is malformed.** The row for
+`export-duty-plan-calendar` (e2e) contains the phrase
+`the page meets the visual baseline in the (ready-with-warnings|failure|ready) state`
+with three unescaped `|` characters inside the code span. GFM parses table
+pipes before inline content, so the row has **7 cells against the 5-cell
+header**; the excess cells are ignored when rendered, truncating the phrase at
+`(ready-with-warnings`. Every other row has 5 cells. This repository already
+uses the escaped form in tables (`\|`, e.g.
+`givn/archive/windows-only-release/design.md:134`). Fix: write
+`(ready-with-warnings\|failure\|ready)`. The acceptance criterion "no row is
+malformed" is therefore not met.
+
+**F2 — Internal Primitives: corrected, with one residual contradiction.**
+`## Internal Primitives` now exists and lists the nine primitives named by the
+review, each matching the implementation:
+
+| Primitive | Evidence |
+|---|---|
+| `Severity` | `crates/duty2cal-core/src/application/mod.rs:64` |
+| `Diagnostic` | `application/mod.rs:73` |
+| `ConversionOutcome.warnings` | `application/mod.rs:207-211` |
+| `ConvertError::{Table, Rows}` | `application/mod.rs:160-168` |
+| `DutyEntry::UnrecognizedActivity` | `crates/duty2cal-core/src/domain/mod.rs:180-190` |
+| `diagnostic_line` | `application/mod.rs:108` |
+| `failure_report_text` | `application/mod.rs:116` |
+| `warning_report_text` | `application/mod.rs:129` |
+| `Kind::Warning` | `apps/cli/src/fs.rs:65,74` |
+
+The section does not contradict `## Data model` or the code.
+
+**Residual defect R2 (blocking): it contradicts `## Report text`.** The new
+section (`design.md:130`) and the implementation
+(`crates/duty2cal-core/src/application/mod.rs:116`) declare
+`failure_report_text(source_name, diagnostics)` — **two** parameters. The
+`## Report text` block (`design.md:220`) declares
+`failure_report_text(source_name: &str, primary: &str, diagnostics: &[Diagnostic]) -> String`
+— **three** parameters. The stale `primary` predates this edit, but the new
+section now exposes the contradiction, so the verification requirement "does
+not contradict `## Report text`" fails. Fix: align line 220 to
+`failure_report_text(source_name: &str, diagnostics: &[Diagnostic]) -> String;`.
+
+### Documentation-only check
+
+- `git status --porcelain` → only
+  `M givn/changes/report-row-diagnostics/design.md`.
+- `git diff --stat` → `design.md | 34 ++++++++++++++++++++-------`; 26
+  insertions, 8 deletions, no other file.
+- `git diff -- design.md` → exactly two hunks: the new `## Internal
+  Primitives` section and the Step Definitions header/row reorder. No command,
+  file layout, framework, driver, capability, scenario, report format or page
+  contract changed. The runner commands (`./run-tests.sh`, `--e2e`,
+  `--browser`, `--name`) and the paths in the changed-files table still match
+  `run-tests.sh` and the implementation. No behavioral deviation.
+
+### Checks run
+
+- `givn check design --change report-row-diagnostics` → **exit 0**, no
+  findings.
+- `givn check review --change report-row-diagnostics` → **`✓ integrity passed`**
+  (also `✓ run declaration passed`); the command exits **1** for reasons
+  outside the integrity block: `verification/tasks-verification.json` is
+  missing ("run `givn check tasks` before review"), stale
+  overlap-disposition rows, and "`proposal.md` has no filled `## Capability
+  Routing` table". The integrity block itself passes. No suite was re-run.
+
+### Verdict
+
+No design decision changed and no behavioral deviation was found, but the
+corrected artifact is not clean: **R1** leaves a malformed Step Definitions row
+and **R2** leaves `## Internal Primitives` contradicting `## Report text`.
+The original PASS cannot stand; the two precise fixes above are required, then
+a further design-review.
+
+DESIGN-REVIEW: FAIL
+
+## Final re-review (fresh context, 2026-10-27)
+
+Scope: the R1/R2 corrections in `design.md`, the normalized Capability Routing
+row in `proposal.md`, the two required gates, and confirmation that no design
+decision changed. No production code, test, spec, task or `review.md` edit was
+made here; `proposal.md` was read but not edited, and no suite was re-run.
+
+### Verification
+
+**1. `## Step Definitions` — corrected.** The header
+`| Capability | Step definition file | Module | Permanent merge target | New or changed phrase groups |`
+has 5 cells. All seven data rows (`design.md:409-415`) parse to exactly 5
+cells when `\|` is treated as escaped text, so no row splits the table. The
+e2e row writes the phrase as
+`the page meets the visual baseline in the (ready-with-warnings\|failure\|ready) state`;
+the three escaped pipes render as literal characters, so the phrase is no
+longer truncated at `(ready-with-warnings`. Every column-2 path exists
+(`test -f`, all present): `apps/cli/tests/steps/export_duty_plan_calendar.rs`,
+`apps/cli/tests/steps/browser.rs`,
+`apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs`,
+`apps/cli/tests/steps/support.rs`, `web/e2e/driver.mjs`.
+
+**2. `## Internal Primitives` and `## Report text` — corrected and consistent
+with the implementation.** Both `design.md:130` and `design.md:220` now
+declare the two-parameter
+`failure_report_text(source_name: &str, diagnostics: &[Diagnostic]) -> String`,
+matching `crates/duty2cal-core/src/application/mod.rs:116`. The rest of the
+inventory matches the code: `warning_report_text` (code `:129`) produces the
+`Source PDF` / `Warnings` report; `diagnostic_line` (code `:108`) spells
+`row <n> (<YYYY-MM-DD>): <message>` with the no-date form; `Severity`,
+`Diagnostic`, `ConversionOutcome.warnings`, `ConvertError::{Table, Rows}` and
+`DutyEntry::UnrecognizedActivity` are all present at the named locations; and
+`Kind::Warning` at `apps/cli/src/fs.rs:65,74` spells
+`(".parse-warnings", "txt")`. No contradiction between the two sections
+remains.
+
+**3. Capability Routing — the cells are correct, but the table is still not
+parsed by the gate (finding R3).** `proposal.md:39-41` names
+`export-duty-plan-calendar` in the capability cell and
+`EXTEND export-duty-plan-calendar` in the decision cell, so the literal check
+passes. The gate does not: `givn check review` still prints
+`⚠ proposal.md has no filled '## Capability Routing' table — the delta
+capabilities [export-duty-plan-calendar] are undeclared`. The table is
+three-column with header `| Capability | Decision | Rationale |`; the parser
+expects the four-column form `| Proposed capability | Delta file | Decision |
+Rationale |` (recorded empirically in
+`givn/archive/publish-public-website/review.md`, finding F4). I verified this
+against an isolated copy of the change (created as
+`givn/changes/zz-routing-probe`, run, then deleted): the current three-column
+table reproduced the warning; changing only the table to the four-column form,
+with the same cells plus the delta-file path, cleared it and left only the
+expected missing-receipt error. This is therefore not the parser limitation
+recorded for `build-browser-converter`; the normalization did not achieve its
+stated purpose of letting the gate match the delta. Precise fix for
+`proposal.md` (outside this reviewer's allowed edits):
+`| Proposed capability | Delta file | Decision | Rationale |` with the row
+`` | `export-duty-plan-calendar` | `specs/export-duty-plan-calendar/export-duty-plan-calendar.feature` | `EXTEND export-duty-plan-calendar` | … | ``.
+Related staleness (does not change the decision): `proposal.md:37` says
+`givn spec route --change report-row-diagnostics` "reports no signal: the top
+candidates tie", while the current command reports signal
+(`recommendation: EXTEND export-duty-plan-calendar`, score 17.00). The recorded
+decision agrees with the tool; the sentence should be refreshed in the same
+edit.
+
+**4. Documentation-only — confirmed.** `git status --porcelain` shows exactly
+three modified files in the change, all documentation: `design.md` (+27/−9,
+three hunks: the `## Internal Primitives` block, the two-parameter signature,
+and the Step Definitions header plus row normalization), `proposal.md` (+2/−2,
+two hunks: the routing header and capability cell), `design-review.md` (this
+appended review). No production code, spec, fixture, command, file layout,
+framework, driver, scenario, report format, page contract or `tasks.md`
+changed. Severity, classification order, report shapes, page states and runner
+commands are identical to the signed design, so no behavioral design decision
+changed.
+
+### Checks run
+
+- `givn check design --change report-row-diagnostics` → **exit 0**, no output.
+- `givn check review --change report-row-diagnostics` → **exit 1**:
+  `✓ integrity passed`, `✓ run declaration passed`,
+  `✓ overlap dispositions passed`, net delta 29 added / 0 modified / 2 removed,
+  53 stale-disposition advisories (unchanged by this review) and one
+  stale split-or-keep advisory, the routing warning quoted in R3, and one
+  error: `change verification receipt missing at …/verification/tasks-verification.json; run 'givn check tasks'`. That receipt error is the expected
+  pre-`givn check tasks` state and is not a design finding.
+
+### Verdict
+
+R1 and R2 are fixed, the Step Definitions table renders intact, the primitives
+and report text match the code, and the review is documentation-only with no
+behavioral decision changed. The routing normalization is literal but the gate
+still rejects the table, so requirement 3 is not clean and the expected
+receipt error is not the only remaining gate reason. With the four-column
+table (and the refreshed route sentence) applied, the remaining gate reason
+would be the expected missing receipt alone; re-run `givn check review` then.
+
+DESIGN-REVIEW: FAIL
+
+## Routing correction confirmation (2026-10-27)
+
+R3 is resolved. `proposal.md:37-41` now uses
+`| Proposed capability | Delta file | Decision | Rationale |` with
+`specs/export-duty-plan-calendar/export-duty-plan-calendar.feature` in cell 2
+and `EXTEND export-duty-plan-calendar` in cell 3, and states the current route
+signal (`EXTEND export-duty-plan-calendar`, 17.00).
+
+Re-ran both gates:
+
+- `givn check design --change report-row-diagnostics` → **exit 0**, no output.
+- `givn check review --change report-row-diagnostics` → **exit 1**:
+  `✓ integrity passed`, `✓ run declaration passed`,
+  `✓ overlap dispositions passed`, net delta 29 added / 0 modified / 2 removed;
+  the Capability Routing warning is gone; the 53 stale-disposition advisories
+  and one stale split-or-keep advisory are unchanged; the only error is the
+  expected `change verification receipt missing at …/verification/tasks-verification.json — run 'givn check tasks'`.
+
+The tree remains documentation-only: `design-review.md`, `design.md` and
+`proposal.md`, no production code, spec, fixture, task or `review.md` change,
+and no behavioral design decision changed. R1, R2 and R3 are all clean; this
+supersedes the earlier FAIL.
+
+DESIGN-REVIEW: PASS
