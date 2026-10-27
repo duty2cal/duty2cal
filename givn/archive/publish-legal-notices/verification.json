@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "change": "publish-legal-notices",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "merge_completed": true,
+  "merged_deltas": [
+    "apply-configuration-change/publish-organization-profile.feature",
+    "publish-public-release/publish-public-release.feature",
+    "publish-public-website/publish-public-website.feature",
+    "state-the-public-legal-notices/state-the-legal-notices.feature"
+  ],
+  "merge_in_progress": null,
+  "merge_plan": [
+    "apply-configuration-change/publish-organization-profile.feature",
+    "publish-public-release/publish-public-release.feature",
+    "publish-public-website/publish-public-website.feature",
+    "state-the-public-legal-notices/state-the-legal-notices.feature"
+  ],
+  "merge_targets": {
+    "apply-configuration-change/publish-organization-profile.feature": "givn/specs/apply-configuration-change/publish-organization-profile.feature",
+    "publish-public-release/publish-public-release.feature": "givn/specs/publish-public-release/publish-public-release.feature",
+    "publish-public-website/publish-public-website.feature": "givn/specs/publish-public-website/publish-public-website.feature",
+    "state-the-public-legal-notices/state-the-legal-notices.feature": "givn/specs/state-the-public-legal-notices/state-the-legal-notices.feature"
+  },
+  "started_at_unix": 1793116336,
+  "finished_at_unix": null
+}

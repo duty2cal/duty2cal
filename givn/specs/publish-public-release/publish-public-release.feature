@@ -275,3 +275,11 @@ Feature: Publish a public release
     Then  the release is refused and names the site revision the hosting target holds
     And  no release is published for "v0.5.0"
     And  the prepared release's staged archive is unchanged
+  @documentation
+  Scenario: The README carries a Legal section that links both notices
+    Given  the repository README is published
+    When  a reader reads the README's Legal section
+    Then  the section links the Impressum at "https://duty2cal.github.io/impressum" under the label "Impressum"
+    And  the section links the Datenschutzerklärung at "https://duty2cal.github.io/privacy" under the label "Datenschutz"
+    And  the README copies no postal address and no electronic mail address
+    And  a README that loses its Legal section is refused by "scripts/public-text-check.sh"

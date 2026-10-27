@@ -7,7 +7,7 @@ Feature: Publish the public website
     And  a source revision three revisions after the release tag "v0.5.0"
     When  the release maintainer publishes the site from that revision
     Then  the hosting target holds the Site output built from that revision
-    And  the hosting target holds exactly the page, the capability gate, the script, the stylesheet, the project's vector mark and raster mark, "pkg/duty2cal_wasm.js", "pkg/wasm-inline.js" and "LICENSE.txt"
+    And  the hosting target holds exactly the page, the capability gate, the script, the stylesheet, the project's vector mark and raster mark, "pkg/duty2cal_wasm.js", "pkg/wasm-inline.js", "LICENSE.txt", "impressum.html" and "privacy.html"
     And  the earlier page has been replaced as a whole
     And  the served address and the footer name the Built revision that revision's own history yields, and the footer links that commit
     And  the page header shows the project's vector mark at 48 by 48 with the alternative text "duty2cal", left of the page heading and its subheadline
@@ -16,6 +16,8 @@ Feature: Publish the public website
     And  the what-it-does statement names a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export, one roster month of cabin crew, and the limits that cockpit duties, other Lufthansa duty plans, other Jeppesen exports and another operator are not covered
     And  the non-affiliation statement names Lufthansa, Jeppesen and any duty-plan provider or airline
     And  a panel below the converter panels states the source and the licence, and the footer repeats the non-affiliation, as-is and privacy terms in prose without repeating any statement the panels make
+    And  the page's footer links "Impressum" and "Datenschutz" to the two notice pages of the same output
+    And  the served Impressum and Datenschutzerklärung each link the other notice from their own footer
     And  the served page has sent no request to another origin since it loaded
     And  the served page shows its empty state before a plan file is offered
     And  the served page shows its ready state once a supported plan file is offered

@@ -46,6 +46,9 @@ Feature: Publish the organization profile
     And  the profile content states that builds for other operating systems are available on request
     And  the profile content states that a current browser converts a plan on the public website at "https://duty2cal.github.io/"
     And  the profile content links the public website at "https://duty2cal.github.io/"
+    And  the profile content links the Impressum at "https://duty2cal.github.io/impressum" under the label "Impressum"
+    And  the profile content links the Datenschutzerklärung at "https://duty2cal.github.io/privacy" under the label "Datenschutz"
+    And  the profile content copies no postal address and no electronic mail address
     And  the profile content links the stable latest-release address "https://github.com/duty2cal/duty2cal/releases/latest"
     And  the profile content links the source repository "https://github.com/duty2cal/duty2cal" and the site repository "https://github.com/duty2cal/duty2cal.github.io"
     And  the profile content attributes the third-party Unicode data to Unicode-3.0

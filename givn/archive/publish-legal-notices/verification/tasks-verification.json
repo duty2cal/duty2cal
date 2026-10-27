@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "publish-legal-notices",
+  "status": "passed",
+  "head": "af8ce49661deb484e215a016ad0803c520a96b6c",
+  "features_path": "givn/changes/publish-legal-notices/specs",
+  "features_digest": "0d265d5de059e1adf7f0c4abfda9af0e993dee464d2255bf88abbec20a05f872",
+  "command_digest": "1031237dac4a7328aa009dc5586392005a11f5408a7dc7b8a4726efc55a93a8e",
+  "command": "./run-tests.sh",
+  "tested_content_digest": "7bb4052154323d3478a5939864d7ddaafcfd17f30cb72829e967756a98248b36",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 94,
+    "passed": 94,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1793116319
+}
