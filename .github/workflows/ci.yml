@@ -89,6 +89,11 @@ jobs:
       # inside the adoption command resolves offline (design.md "Provider
       # installation for tests").
       - run: ./scripts/setup-infra-tests.sh
+      - name: Install reuse
+        run: |
+          set -euo pipefail
+          pipx install reuse
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       # The Gherkin runner takes exactly one feature root, which
       # ./run-tests.sh assembles from the permanent corpus and the archived
       # change specs; a bare `cargo test` leaves it looking for
