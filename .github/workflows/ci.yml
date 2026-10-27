@@ -103,8 +103,16 @@ jobs:
           set -euo pipefail
           log="$RUNNER_TEMP/test-transcript.log"
           [ -f "$log" ] || exit 0
-          awk '/^  Scenario:/{s=$0} /✘/{if (s != "") {print s; s=""}}' "$log" | head -10 | while IFS= read -r line; do
-            echo "::error title=Failing scenario::${line#  Scenario: }"
+          awk '
+            /^  Scenario:/ { scenario = $0 }
+            /Step panicked\. Captured output:/ {
+              message = $0
+              getline; message = message " | " $0
+              getline; message = message " | " $0
+              print scenario " :: " message
+            }
+          ' "$log" | head -20 | while IFS= read -r line; do
+            echo "::error title=CI failure::${line#  Scenario: }"
           done
       # The manual dispatch archives the change after the same suite has
       # passed, in the environment that carries the Windows cross toolchain,
