@@ -30,12 +30,17 @@ the change to create the pages publishing plumbing (publish-site-plumbing),
 plus the realization of the five public-website terms — **Public website**,
 **Site publication**, **Site output** and **Built revision** among them — and
 the site's lifecycle observations by the change to publish the public website
-(publish-public-website); that change introduces no new term.
+(publish-public-website); that change introduces no new term, plus three
+input-generalization terms added by the generalized duty-plan input ideation
+Handoff (generalized-duty-plan-input) — **Duty plan**, **Evidence for a
+publication** and **Support statement**.
 Source: [Duty-plan calendar conversion](../ideation/duty-plan-calendar-conversion.md),
 [introduction/collision records](../../givn/ideation/duty-plan-calendar-conversion/domain-terms.md),
 [approved contract](../../givn/ideation/duty-plan-calendar-conversion/use-cases/export-duty-plan-calendar.md),
 and [public-home infrastructure](../ideation/public-home-infrastructure.md) with its
-[collision records](../../givn/ideation/public-home-infrastructure/domain-terms.md).
+[collision records](../../givn/ideation/public-home-infrastructure/domain-terms.md),
+and [generalized duty-plan input](../ideation/generalized-duty-plan-input.md) with its
+[collision records](../../givn/ideation/generalized-duty-plan-input/domain-terms.md).
 This is vocabulary/required behavior, not an implemented enforcement claim.
 
 ## Ubiquitous language
@@ -68,8 +73,10 @@ This is vocabulary/required behavior, not an implemented enforcement claim.
 | Distributed executable | The artifact built for `x86_64-pc-windows-gnu` and packaged in the release archive; the thing a downloader runs. | Its stripped file size is reported beside a size attribution and is never substituted for the attribution's total. | `target/x86_64-pc-windows-gnu/release/duty2cal.exe`; `duty2cal-<version>-windows-x86_64.tar.gz` | Not the Linux host build; not the compressed archive; not the symbol-bearing build used for attribution. |
 | Drift check | The check that refuses a committed change log differing from a fresh render of the released revision. | The `changelog` CI job runs `scripts/render-changelog.sh --check`, and the release preparation runs the same check before it stages anything; both refuse by name of the version whose section differs. | `scripts/render-changelog.sh --check`; `.github/workflows/ci.yml` (`changelog` job); `scripts/prepare-release.sh` | Not a reformatting pass: the released version's section is compared byte for byte with a fresh render of it, and every earlier section is kept verbatim. |
 | DT prefix | Activity-code prefix expanding to Duty Time in observed DTUSA. | Preserve known meaning without interpreting unknown suffixes. | `NON_FLIGHT_CODES` (`application/mod.rs`) | Code text, not a numeric duty-duration metric. |
+| Duty plan | The schedule a crew member's crew scheduling system publishes for one period, assigning dated activities to that crew member together with the facts each activity states. | The subject of every conversion: read as it states itself, then interpreted under the confirmed rules; never classified into a format first. | `SourceDocument` (`crates/duty2cal-core/src/application/mod.rs`) — the read record of the supplied document | Not the personal calendar derived from it; not the crew scheduling system; not a file format or a publication layout. |
 | Duty-plan calendar | Complete activity composition from one supplied duty plan governing readiness to export. | Success only after required activities/dates/fields resolve. | `Roster` (`domain/mod.rs`) | Aggregate, not PDF, output file, request record, service, or snapshot. |
 | EM duty | Non-flight duty represented from its printed UTC interval and source station; the code's expansion is not asserted. | Timed activity using its own printed UTC window. | `DutyEntry::NonFlightDuty`, `NON_FLIGHT_CODES` (`application/mod.rs`) | Not a flight, vacation, or an asserted code expansion. |
+| Evidence for a publication | The set of artifacts on which a claim about one publication rests: a stripped sample of it, the facts that sample states, and a fixture built from it that converts. | A publication may be named in the **Support statement** only when its evidence is exercised by the checks; the landed reading on its own is not evidence. | planned: the sample and fixture of the change that lands a reading; `scripts/validate-local-corpus.sh` is the nearest existing local-evidence check | Not the landed reading; not the fixture alone, because the sample decides whether it proves anything; not release evidence, which backs a version's build. |
 | Flight number | The digits a plan prints in its `Activity` column on a travel row, identifying the flight. | Printed verbatim beside the crew position in a travel title, leading zeroes kept; the two are never spliced into one token. | the `Activity` column cell held by `DutyEntry::Travel.activity`; `printed_identification()` is the one rule that reads the two fields together (`crates/duty2cal-core/src/domain/mod.rs`) | Not a rotation number to reformat or convert into a quantity; a letters-and-digits cell the plan prints as one field (`LU900`) is not a position beside a flight number; not component identity. |
 | Gate (on landing) | The requirement that a change pass all the project's checks before it can land on the default branch, enforced by the repository. | Formatting, lint, tests, licences, SPDX headers, third-party notices drift, change-log drift, private-data guard, coverage, Windows cross-build, public text and actionlint; DCO on pull requests. Its release-time counterpart is the **Publication gate**. | `.github/workflows/ci.yml`, the required ruleset on `main` | Not a convention or a habit; not the release pipeline. |
 | Pinned repositories | Up to six repositories the organization owner selects in the organization's web settings to appear on the profile overview. | Set once after the profile repository is created; they have no declared object, no state binding and no drift report. | the organization's profile settings in the web interface (chapter 7) | Not a declared object; not a repository feature; not a previewable change. |
@@ -108,6 +115,7 @@ This is vocabulary/required behavior, not an implemented enforcement claim.
 | Source snapshot | Fixed input PDF version scoping its component identities. | Identical snapshot is deterministic; revised snapshot has separate IDs. | `SnapshotId`, `fingerprint` (`application/mod.rs`) | Not numbered output copy, another aggregate, or calendar-data anonymization. |
 | Stable latest-release address | The fixed URL `https://github.com/duty2cal/duty2cal/releases/latest` that keeps resolving to the latest published release as later versions are published. | A README link or a colleague's link does not rot as versions change. | `https://github.com/duty2cal/duty2cal/releases/latest` (chapter 7) | Not a version-pinned release URL; not a package registry. |
 | Standby duty | Bounded SB/Stby availability with start/end times for possible activation. | Separate dated UTC windows with FREE interruptions preserved. | `DutyEntry::Availability`, `AVAILABILITY_CODES` (`application/mod.rs`) | Not time off, continuous multi-day block, or annual-statistic event. |
+| Support statement | The public statement of what a duty plan must state for conversion and which publications the exercised evidence covers. | Carried identically by the repository README, the organization profile, chapter 3 and the issue form; it reports evidence, never intent, and shrinks when a publication's evidence stops holding. | `README.md`; `org/profile/README.md`; `docs/arc42/03-context-and-scope.md`; `.github/ISSUE_TEMPLATE/bug.yml` (planned as one statement in all four) | Not the **Release text**, which reports one version's changes; not the **Profile content**, which renders the statement among other statements; not a roadmap or a promise of future support. |
 | Supported platform | Windows x86_64 — the one platform/architecture combination the project publishes as an archive, and the one it tests and distributes in that form. | A version publishes exactly one archive, for it. **Supported platform** is about published archive platforms, not about conversion routes: the browser is a supported conversion route and offers no archive. Builds for other operating systems are available on request. Linux remains the project's CI, coverage and local test host, not a supported download platform. | `PLATFORMS` in `scripts/prepare-release.sh`; the browser route in `web/` and `ffi/wasm` | Not every platform the tool could be built for; Linux, macOS, Windows on ARM and 32-bit Windows have no published archive, obtain a build on request, and their source can be built with a Rust toolchain. Not the browser route, which has no archive. |
 | Travel leg | One flight from a departure station to an arrival station, printed either as a whole row or as a departure row and an arrival row that the converter pairs by their two printed fields. | One timed travel activity titled by the printed crew position and activity, then the route, and ending with ` Report <value> LT` when the source supplies one report time (a whole-row value, a single fragment, or equal values on both fragments); no report time, or differing fragment values, leave the title route-only. | `DutyEntry::Travel`, `DutyEntry::summary()` (`crates/duty2cal-core/src/domain/mod.rs`) | Not a printed row, not two activities when a leg is split across rows, not an all-day absence. |
 | Vacation day | U/Urlaub activity denoting vacation on its duty-plan date. | All-day; source times ignored. | `DutyEntry::AllDay`, `ALL_DAY_CODES` (`application/mod.rs`) | Distinct from FREE/OFF/FZ; no entitlement inference. |
@@ -260,12 +268,16 @@ site build started, site built, site evidence refused, site published, site
 publication failed, site serving refused, site served), and leaves the
 conversion aggregate and its invariants unchanged — the site is a published
 record, not a new write boundary. Its serving check is a step of the
-**Site publication**, not a term of its own. Raw
+**Site publication**, not a term of its own. The generalized duty-plan input
+ideation Handoff (generalized-duty-plan-input) adds three terms — **Duty
+plan**, **Evidence for a publication** and **Support statement** — and
+introduces no aggregate: the intake record remains inside the Duty-plan
+calendar boundary, and the statement is a published record. Raw
 source-column labels
 (A/C, Blocktime, Timezone Difference, Tags) and the FREE/OFF day
 codes are used verbatim in the specification and are not confirmed domain terms.
 
-Candidate **Duty plan** and **Calendar export** remain topic
-candidates, not silently confirmed here. No rejected entry exists to remove.
+Candidate **Calendar export** remains a topic candidate, not silently confirmed
+here. No rejected entry exists to remove.
 Suggested FZ expansion and agreement/age/quota provenance remain background, not
 leave/eligibility rules.

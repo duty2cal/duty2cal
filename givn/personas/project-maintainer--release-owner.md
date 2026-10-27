@@ -147,6 +147,16 @@ A release satisfies the agreed distribution, calendar-compliance, licensing, and
 - The readable Handoff may propose a whole-deliverable seed; it must not treat contract approval as implemented release readiness or silently promote this review lens.
 - Project-level promotion remains a separate Handoff choice; the stable Persona core is unchanged.
 
+### 2026-10-25 — Generalized duty-plan input stance
+
+- The support statement is release evidence, not marketing copy: a publication
+  is named only when its fixture converts in the checks, and the statement
+  shrinks when that evidence fails.
+- The project names no formats, operators or families. What a reader can rely
+  on is what a duty plan must state plus the publications whose evidence is
+  exercised.
+- Reused for `generalized-duty-plan-input` (Q3).
+
 ## Review record
 
 ### 2026-10-10 — Event Storming reaction
@@ -169,6 +179,19 @@ A release satisfies the agreed distribution, calendar-compliance, licensing, and
 - Advisory findings: a correct rule set still needs extraction, source-coverage, Windows distribution, license, privacy, and calendar-byte evidence. The existing synthetic golden has five overlong lines, and the PII regex mistakes a generated timestamp for a staff-shaped identifier.
 - Generated example: a conforming folded description cannot match an unfurled verbatim oracle merely by removing DTSTAMP; normalization must not erase the CRLF property it is supposed to prove.
 - Disposition: retain the findings as later test/design obligations, not permission to edit the user's draft or write code/fixtures during ideation. Open identity/timestamp/standby/date rules prevent treating the draft as signed off.
+
+### 2026-10-25 — Review for generalized duty-plan input
+
+- Artifacts: the Frame, the event chain and the three use cases of
+  `generalized-duty-plan-input`.
+- Advisory finding: the statement's two halves must be checked separately — the
+  required facts against the confirmed conversion rules, the publication list
+  against exercised fixtures. A statement that states neither is refused, and
+  so is one that describes future support.
+- Advisory finding: the four carriers (README, organization profile, chapter 3,
+  issue form) must agree; the profile is published through the declared
+  configuration, so a statement change is a configuration change there.
+- Disposition: advisory only; the user arbitrates.
 
 ## Promotion record
 

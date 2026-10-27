@@ -148,6 +148,18 @@ The calendar faithfully represents the required activities and distinguishes ope
 - Goal closure: obtain a complete new calendar at an unused path; importing or reconciling it is outside this converter's goal.
 - The topic-local Persona remains unpromoted until the separate Handoff decision; no automatic authority change follows contract adoption.
 
+### 2026-10-25 — Generalized duty-plan input stance
+
+- An unsupported duty plan is not a defect of the plan. The refusal has to name
+  what could not be established — the unknown code with its date, the absent
+  route or clock — because "not a supported export" tells them nothing about
+  whether another file from the same system would help.
+- The public support statement is answered by two questions: what a duty plan
+  must state, and whether their publication is among those with evidence. A
+  format name answers neither.
+- Reused for `generalized-duty-plan-input` (Q3); no promotion change beyond the
+  record entries added there.
+
 ## Review record
 
 ### 2026-10-10 — Event Storming reaction
@@ -171,6 +183,19 @@ The calendar faithfully represents the required activities and distinguishes ope
 - Advisory findings: the draft preserves all-day versus timed distinctions, DH visibility, trip context, and prior files. It must report the actual new file path and distinguish a failed current diagnostic from older retained reports.
 - Generated example: a revised departure for flight 007 may keep or change its identifier depending on the pending calendar-identity question (Q25); neither choice proves how a calendar application imports it.
 - Disposition: retain identity/date/standby/timestamp prerequisites visibly, and require full human contract approval before Handoff. No new Actor, promotion, or import-reconciliation goal is approved.
+
+### 2026-10-25 — Review for generalized duty-plan input
+
+- Artifacts: the Frame, the event chain and the three use cases of
+  `generalized-duty-plan-input`.
+- Advisory finding: the conversion's success guarantee is unchanged, which is
+  the test of the whole generalization — the intake may change, the calendar
+  the crew member receives may not. The refusal's new granularity is only
+  worth its longer message if it names something the crew member can act on.
+- Advisory finding: the statement must answer "will my plan work?" without the
+  reader having to know what a publication is; required facts do that, a format
+  list does not.
+- Disposition: advisory only; the user arbitrates.
 
 ## Promotion record
 
