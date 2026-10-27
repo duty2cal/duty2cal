@@ -224,7 +224,7 @@ function showReady(name, calendar, warnings, warningReport) {
 
 /** Show the visible failure, with both lists and the report offer. */
 function showFailure(name, reason, diagnostic, errors, warnings) {
-  status.textContent = 'No calendar was created.';
+  status.textContent = '';
   readyStatus.textContent = '';
   failureReason.textContent =
     summarizeFailure(name, errors.length, warnings.length) || `${name}: ${reason}`;
@@ -240,6 +240,9 @@ function showFailure(name, reason, diagnostic, errors, warnings) {
         diagnostic,
         'text/plain;charset=utf-8',
       );
+      failureNote.textContent =
+        'The report names the source, the reason, and every error and warning.';
+      failureNote.hidden = false;
     } catch {
       // Keep the primary failure and say the diagnostic is unavailable.
       failureNote.textContent = 'No diagnostic was offered.';

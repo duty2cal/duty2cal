@@ -213,6 +213,22 @@ a:focus-visible {
   overflow-wrap: anywhere;
 }
 
+#failure-offer {
+  margin-top: var(--space);
+}
+
+#failure-offer .button {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+#failure > .button {
+  margin-top: var(--space);
+}
+
 .diagnostics {
   margin-top: var(--space);
   border-left: 3px solid var(--border);
