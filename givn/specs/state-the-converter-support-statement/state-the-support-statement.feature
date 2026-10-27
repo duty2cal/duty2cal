@@ -1,3 +1,4 @@
+@documentation
 Feature: State the support statement
 
   @e2e
