@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "change": "state-the-supported-duty-plan",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "merge_completed": true,
+  "merged_deltas": [
+    "apply-configuration-change/publish-organization-profile.feature",
+    "publish-public-website/publish-public-website.feature",
+    "state-the-converter-support-statement/state-the-support-statement.feature"
+  ],
+  "merge_in_progress": null,
+  "merge_plan": [
+    "apply-configuration-change/publish-organization-profile.feature",
+    "publish-public-website/publish-public-website.feature",
+    "state-the-converter-support-statement/state-the-support-statement.feature"
+  ],
+  "merge_targets": {
+    "apply-configuration-change/publish-organization-profile.feature": "givn/specs/apply-configuration-change/publish-organization-profile.feature",
+    "publish-public-website/publish-public-website.feature": "givn/specs/publish-public-website/publish-public-website.feature",
+    "state-the-converter-support-statement/state-the-support-statement.feature": "givn/specs/state-the-converter-support-statement/state-the-support-statement.feature"
+  },
+  "started_at_unix": 1793102063,
+  "finished_at_unix": null
+}

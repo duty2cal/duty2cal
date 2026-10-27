@@ -1,4 +1,4 @@
-<!-- givn:base-sha256: 13e7b521a19c8893f58b7899ce31ebe9464a66908f482bb75bc9618831c1cf7b -->
+<!-- givn:base-sha256: 0c0a33b2538e21539f9ba373b217c185163fd5381f7c2440ed5883be2e9dcf6a -->
 # Use case: publish-public-release
 
 ## Level
@@ -105,9 +105,10 @@ The maintainer decides a version is ready and prepares its release.
   - A leaked credential cannot be pushed into the public history, and any secret that still lands raises an alert.
   - A dependency that becomes known-vulnerable or malicious raises an alert, and dependency updates arrive as reviewable proposals; the deliberately pinned extraction and architecture-test crates are excluded from automatic bumps, and nothing is merged automatically.
   - Someone who finds a defect that could expose private plan data has a confidential reporting route, and the project states that route publicly.
-  - A contributor finds the contribution route, the behaviour-before-implementation rule, the sign-off requirement, a code of conduct, an issue form that asks for the export family and a stripped sample rather than a real plan, and a pull-request template that asks for the same.
+  - A contributor finds the contribution route, the behaviour-before-implementation rule, the sign-off requirement, a code of conduct, an issue form that asks whether the plan converted, what the refusal said and for a stripped sample rather than a real plan, and a pull-request template that asks for the same outcome and no export family.
   - The project's code and its own automation are scanned for vulnerabilities on the way in, and findings appear as reviewable alerts.
 - **The public text a reader lands on**
+  - The README states the one plan the converter reads — a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export — with its boundary and the non-affiliation sentence, so a reader knows before downloading whether their plan is in scope; the same statement is carried by the website, the organization profile, chapter 3 and the issue forms, and the project's own machinery refuses a carrier that disagrees.
   - The project's README states the repository's own clone address, so the first command a reader runs works.
   - It names the Windows x86_64 archive, states that no archive is published for other platforms and that builds for them are available on request, states that a platform may be added back when users request it, and gives the command that verifies the archive's checksum and the command that verifies its build provenance, so a downloader can act on a release without asking anyone.
   - It states the browser conversion route beside the archive: that a current browser converts a plan in the tab on the Public website at `https://duty2cal.github.io/`, so a reader does not read "Windows x86_64 only" as "no route without Windows".
