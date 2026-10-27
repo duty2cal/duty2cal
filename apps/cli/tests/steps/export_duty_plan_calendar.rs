@@ -2742,7 +2742,7 @@ fn error_lines(w: &DutyWorld) -> Vec<String> {
 /// A section runs from its `Title:` line to the first line that is not an
 /// entry, so `Errors:` and `Warnings:` can be told apart.
 fn report_section(report: &str, title: &str) -> Vec<String> {
-    let heading = format!("{title}:");
+    let heading = format!("{}:", title.trim_end_matches(':'));
     let mut entries = Vec::new();
     let mut inside = false;
     for line in report.lines() {
@@ -2907,6 +2907,44 @@ fn following_day(date: &str) -> String {
     .next_day()
     .expect("the following day")
     .to_string()
+}
+
+#[given(
+    "a supported duty plan dated 2099-06-07 with activity code ZZ_M_CF and a printed UTC start but no end and no route"
+)]
+async fn a_plan_with_one_endpoint(w: &mut DutyWorld) {
+    plan_with_row(
+        w,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "ZZ_M_CF"),
+            (START_X, "08:00"),
+        ],
+    );
+}
+
+#[then(regex = r#"^the converter reports a conversion failure naming "([^"]+)"$"#)]
+async fn failure_names(w: &mut DutyWorld, needle: String) {
+    let text = transcript(w);
+    assert!(
+        text.contains("conversion failed") && text.contains(&needle),
+        "the reported failure does not name {needle:?}: {text}"
+    );
+}
+
+#[then(regex = r#"^the failure report lists that row under "([^"]+)"$"#)]
+async fn failure_report_lists_the_row_under(w: &mut DutyWorld, section: String) {
+    let report = failure_report(w);
+    let entries = report_section(&report, &section);
+    assert_eq!(
+        entries.len(),
+        1,
+        "the {section} section does not list one entry: {report}"
+    );
+    assert!(
+        entries[0].starts_with("row 1 "),
+        "the entry does not name detail row 1: {report}"
+    );
 }
 
 #[then("the converter reports no conversion error")]

@@ -30,7 +30,7 @@ Feature: Export a duty-plan calendar
     And the converter reports one conversion warning naming detail row 1 and the date 2099-06-07
     And the converter publishes a warning report beside the source
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unrecognized activity code with a single printed endpoint rejects the conversion
     Given a supported duty plan dated 2099-06-07 with activity code ZZ_M_CF and a printed UTC start but no end and no route
     When the crew member converts it
