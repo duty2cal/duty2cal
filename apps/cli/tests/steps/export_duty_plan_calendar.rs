@@ -3582,6 +3582,27 @@ async fn an_unrecognized_code_with_an_equal_window(w: &mut DutyWorld) {
     );
 }
 
+#[then("the failure report lists the departure row's error before the arrival row's error")]
+async fn departure_error_before_arrival_error(w: &mut DutyWorld) {
+    let report = failure_report(w);
+    let errors = report_section(&report, "Errors");
+    assert_eq!(errors.len(), 2, "wrong error count: {report}");
+    assert!(
+        errors[0].starts_with("row 1 "),
+        "the departure row's error is not first: {report}"
+    );
+    assert!(
+        errors[1].starts_with("row 2 "),
+        "the arrival row's error is not second: {report}"
+    );
+    let departure_at = report.find(&errors[0]).expect("the departure entry");
+    let arrival_at = report.find(&errors[1]).expect("the arrival entry");
+    assert!(
+        departure_at < arrival_at,
+        "the arrival error is listed first: {report}"
+    );
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);

@@ -207,7 +207,7 @@ Feature: Export a duty-plan calendar
     And the conversion failure names "a timed interval must end after it starts"
     And the invocation reports failure through a non-zero process exit status
 
-  @givn.added @wip
+  @givn.added
   Scenario: A mis-paired travel leg reports both the arrival error and the orphan departure
     Given a supported duty plan whose departure fragment prints crew position DH and flight number 124 and whose arrival fragment prints flight number 124 without a crew position
     When the crew member converts it
