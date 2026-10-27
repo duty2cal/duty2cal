@@ -22,8 +22,11 @@ setup() {
   cp "$REPO/docs/assets/duty2cal.svg" "$OUT/icon.svg"
   cp "$REPO/docs/assets/duty2cal.png" "$OUT/icon.png"
   cp "$REPO/LICENSES/MPL-2.0.txt" "$OUT/LICENSE.txt"
-  cp "$REPO/web/pkg/duty2cal_wasm.js" "$OUT/pkg/"
-  cp "$REPO/web/pkg/wasm-inline.js" "$OUT/pkg/"
+  # The two bundle members are build outputs, absent from a fresh checkout and
+  # never read by the content gate (it asserts the member list, not the bytes),
+  # so the fixture writes sentinels instead of requiring a browser build.
+  printf 'export {};\n' > "$OUT/pkg/duty2cal_wasm.js"
+  printf '// inline bundle\n' > "$OUT/pkg/wasm-inline.js"
   # The assembler stamps these two anchors; the fixture stamps them the same way
   # so the gate sees the same shape it sees in a real publication.
   sed -i 's|__BUILT_REVISION__|v9.9.9-1-gabcdef1|g; s|__BUILT_COMMIT__|abcdef1234567890abcdef1234567890abcdef12|g' \

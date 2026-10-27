@@ -52,10 +52,7 @@ fn prepare(w: &mut DutyWorld) {
     let root = repo_root();
     let dir = fresh_dir();
     for member in ["index.html", "impressum.html", "privacy.html"] {
-        copy(
-            root.join("web").join(member),
-            dir.join("web").join(member),
-        );
+        copy(root.join("web").join(member), dir.join("web").join(member));
     }
     copy(
         root.join("org/profile/README.md"),
@@ -227,7 +224,9 @@ async fn previous_site_stays(w: &mut DutyWorld) {
     );
 }
 
-#[then(regex = r#"^the check is refused and names the Datenschutzerklärung and the missing "([^"]+)" link$"#)]
+#[then(
+    regex = r#"^the check is refused and names the Datenschutzerklärung and the missing "([^"]+)" link$"#
+)]
 async fn refused_naming_missing_link(w: &mut DutyWorld, link: String) {
     assert_refused_naming(w, &["privacy.html", &link]);
 }
@@ -269,7 +268,8 @@ async fn refused_naming_profile(w: &mut DutyWorld) {
 
 #[then("the organization profile and the README link the notices instead")]
 async fn carriers_link_notices(w: &mut DutyWorld) {
-    let readme = std::fs::read_to_string(w.working_dir().join("README.md")).expect("read the README");
+    let readme =
+        std::fs::read_to_string(w.working_dir().join("README.md")).expect("read the README");
     for link in [
         "[Impressum](https://duty2cal.github.io/impressum)",
         "[Datenschutz](https://duty2cal.github.io/privacy)",
@@ -308,7 +308,9 @@ async fn notice_body_is_german(w: &mut DutyWorld) {
 #[then("the notice carries a short English summary below the German text")]
 async fn notice_carries_summary(w: &mut DutyWorld) {
     for notice in &w.calendars {
-        let german = notice.find("Zustellanschrift").or_else(|| notice.find("Verantwortlicher"));
+        let german = notice
+            .find("Zustellanschrift")
+            .or_else(|| notice.find("Verantwortlicher"));
         let summary = notice.find("lang=\"en\"");
         assert!(
             matches!((german, summary), (Some(g), Some(s)) if s > g),
@@ -352,13 +354,24 @@ fn document_text(w: &mut DutyWorld) -> String {
 fn assert_says(w: &mut DutyWorld, needles: &[&str]) {
     let text = document_text(w);
     for needle in needles {
-        assert!(text.contains(needle), "the notice does not say {needle:?}: {text}");
+        assert!(
+            text.contains(needle),
+            "the notice does not say {needle:?}: {text}"
+        );
     }
 }
 
 #[then("the page states the operator's name and a postal address")]
 async fn states_operator(w: &mut DutyWorld) {
-    assert_says(w, &["Daniel Kressner", "c/o adesso", "Prinzenstraße 34", "10969 Berlin"]);
+    assert_says(
+        w,
+        &[
+            "Daniel Kressner",
+            "c/o adesso",
+            "Prinzenstraße 34",
+            "10969 Berlin",
+        ],
+    );
 }
 
 #[then("the page offers an electronic mail address as a link")]
@@ -403,7 +416,10 @@ async fn states_as_is(w: &mut DutyWorld) {
 async fn carries_no_placeholder(w: &mut DutyWorld) {
     let text = document_text(w);
     for marker in ["TODO", "Mustermann", "example.org"] {
-        assert!(!text.contains(marker), "the notice carries {marker:?}: {text}");
+        assert!(
+            !text.contains(marker),
+            "the notice carries {marker:?}: {text}"
+        );
     }
 }
 
@@ -421,7 +437,9 @@ async fn no_foreign_request(w: &mut DutyWorld) {
     assert!(foreign.is_empty(), "the notice requested {foreign:?}");
 }
 
-#[then(regex = r#"^the page sets no cookie and stores no key in "localStorage" or "sessionStorage"$"#)]
+#[then(
+    regex = r#"^the page sets no cookie and stores no key in "localStorage" or "sessionStorage"$"#
+)]
 async fn no_cookie_no_storage(w: &mut DutyWorld) {
     let state = document(w);
     assert_eq!(
@@ -437,7 +455,9 @@ async fn no_cookie_no_storage(w: &mut DutyWorld) {
     }
 }
 
-#[then("the reader saw the site root's heading before activation and the notice's heading after it")]
+#[then(
+    "the reader saw the site root's heading before activation and the notice's heading after it"
+)]
 async fn heading_changed(w: &mut DutyWorld) {
     assert!(
         !w.heading_before.is_empty() && !w.heading_after.is_empty(),
@@ -484,7 +504,10 @@ async fn names_processed_data(w: &mut DutyWorld) {
 async fn states_retention_and_access(w: &mut DutyWorld) {
     assert_says(
         w,
-        &["feste Speicherdauer veröffentlicht GitHub nicht", "keinen Zugriff auf diese Protokolle"],
+        &[
+            "feste Speicherdauer veröffentlicht GitHub nicht",
+            "keinen Zugriff auf diese Protokolle",
+        ],
     );
 }
 
@@ -507,7 +530,13 @@ async fn states_sub_processors(w: &mut DutyWorld) {
 async fn states_mail_provider(w: &mut DutyWorld) {
     assert_says(
         w,
-        &["SimpleLogin", "Proton AG", "Plan-les-Ouates", "auch in den USA", "in meinem Auftrag"],
+        &[
+            "SimpleLogin",
+            "Proton AG",
+            "Plan-les-Ouates",
+            "auch in den USA",
+            "in meinem Auftrag",
+        ],
     );
 }
 
@@ -554,7 +583,8 @@ fn evidence_dir(slug: &str) -> PathBuf {
 /// way the archive gate slugs it (a non-ASCII character becomes one hyphen).
 fn notice_slug(heading: &str) -> String {
     if heading.contains("Impressum") {
-        "reader-opens-the-impressum-from-the-site-footer-and-reads-who-publishes-the-site".to_string()
+        "reader-opens-the-impressum-from-the-site-footer-and-reads-who-publishes-the-site"
+            .to_string()
     } else {
         "reader-opens-the-datenschutzerkl-rung-from-the-footer-and-reads-what-a-page-request-processes"
             .to_string()
@@ -575,7 +605,10 @@ async fn meets_visual_baseline(w: &mut DutyWorld) {
     for (width, height, viewport) in [(360_u32, 780_u32, "mobile"), (1920, 1080, "desktop")] {
         let path = dir.join(format!("{viewport}.png"));
         let mut params = Map::new();
-        params.insert("path".to_string(), Value::String(path.display().to_string()));
+        params.insert(
+            "path".to_string(),
+            Value::String(path.display().to_string()),
+        );
         params.insert("width".to_string(), Value::from(width));
         params.insert("height".to_string(), Value::from(height));
         let result = driver(w).send("screenshot", params);
