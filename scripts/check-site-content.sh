@@ -90,6 +90,11 @@ svg_line="$(grep -nE '<link[^>]+rel="icon"[^>]+type="image/svg[+]xml"[^>]+href="
 if grep -Eq '<img[^>]+src="\./icon\.png"[^>]*>' "$index"; then
   fail "the page's header mark is the raster; the vector mark is required"
 fi
+png_line="$(grep -nE '<link[^>]+rel="icon"[^>]+type="image/png"[^>]+href="\./icon\.png"' "$index" | head -n 1 | cut -d: -f1 || true)"
+[ -n "$png_line" ] \
+  || fail "the page's tab declares no raster alternate at ./icon.png with type=\"image/png\""
+[ "$svg_line" -lt "$png_line" ] \
+  || fail "the page declares the raster tab icon (line $png_line) before the vector (line $svg_line); the vector must be the tab's first declaration"
 grep -Eq '<img[^>]+src="\./icon\.svg"[^>]*>' "$index" \
   || fail "the page's header mark does not point at ./icon.svg"
 grep -Eq '<img[^>]+src="\./icon\.svg"[^>]+alt="duty2cal"' "$index" \
