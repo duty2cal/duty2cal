@@ -3005,7 +3005,7 @@ fn counted(word: &str) -> Option<usize> {
     }
 }
 
-#[then(regex = r"^the converter reports (one|two|three) conversion warnings$")]
+#[then(regex = r"^the converter reports (one|two|three) conversion warnings?$")]
 async fn conversion_warnings(w: &mut DutyWorld, count: String) {
     let warnings = warning_lines(w);
     let expected = counted(&count).expect("a scenario count");
@@ -3017,6 +3017,61 @@ async fn one_warning_entry_per_row(w: &mut DutyWorld) {
     let entries = report_section(&warning_report(w), "Warnings");
     let warnings = warning_lines(w);
     assert_eq!(entries, warnings, "the report does not mirror the warnings");
+}
+
+#[given(
+    "a supported duty plan with two detail rows that cannot be represented and one unrecognized row that can"
+)]
+async fn two_errors_and_one_warning(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    // A station with neither an activity code nor a route.
+    items.extend(support::at(585.0, &[(DATE_X, "2099-06-07"), (FROM_X, "ABC")]));
+    // An unrecognized code with only one printed endpoint.
+    items.extend(support::at(
+        570.0,
+        &[
+            (DATE_X, "2099-06-08"),
+            (ACTIVITY_X, "ZZ_M_AB"),
+            (START_X, "08:00"),
+        ],
+    ));
+    // An unrecognized code with both endpoints: represented with a warning.
+    items.extend(support::at(
+        555.0,
+        &[
+            (DATE_X, "2099-06-09"),
+            (ACTIVITY_X, "ZZ_M_CF"),
+            (START_X, "08:00"),
+            (END_X, "15:30"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then(regex = r"^the converter reports (one|two|three) conversion errors$")]
+async fn conversion_errors(w: &mut DutyWorld, count: String) {
+    let errors = error_lines(w);
+    let expected = counted(&count).expect("a scenario count");
+    assert_eq!(errors.len(), expected, "wrong error count: {errors:?}");
+}
+
+#[then("the failure report lists both errors and the warning")]
+async fn failure_report_lists_two_errors_and_the_warning(w: &mut DutyWorld) {
+    let report = failure_report(w);
+    let errors = report_section(&report, "Errors");
+    let warnings = report_section(&report, "Warnings");
+    assert_eq!(errors.len(), 2, "wrong error count in the report: {report}");
+    assert_eq!(
+        warnings.len(),
+        1,
+        "wrong warning count in the report: {report}"
+    );
+    assert_eq!(errors, error_lines(w), "the report's errors differ: {report}");
+    assert_eq!(
+        warnings,
+        warning_lines(w),
+        "the report's warnings differ: {report}"
+    );
 }
 
 #[then("the converter reports no conversion error")]

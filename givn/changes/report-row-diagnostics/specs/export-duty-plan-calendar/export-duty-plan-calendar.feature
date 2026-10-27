@@ -48,7 +48,7 @@ Feature: Export a duty-plan calendar
     And the converter reports no conversion error
     And the warning report lists one entry for each warned row
 
-  @givn.added @wip
+  @givn.added
   Scenario: Several failing rows are all reported with the warnings in one failure report
     Given a supported duty plan with two detail rows that cannot be represented and one unrecognized row that can
     When the crew member converts it
