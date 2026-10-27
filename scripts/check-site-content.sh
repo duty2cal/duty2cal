@@ -71,6 +71,22 @@ for name in "${statement_names[@]}"; do
   fi
 done
 
+# The support claim is exact, not merely present: the constants are shared with
+# scripts/support-statement-check.sh so a wording revision edits one file.
+# shellcheck source=support-statement.env
+. "$(dirname "$0")/support-statement.env"
+what="$(statement_text what-it-does)"
+if [ "$what" != "$SUPPORT_SITE $BOUNDARY" ] && [ "$what" != "$SUPPORT_SITE_SHRUNK $BOUNDARY" ]; then
+  fail "the page's what-it-does statement does not name the supported plan and its boundary"
+fi
+nonaff="$(statement_text non-affiliation)"
+[ "$nonaff" = "$NON_AFFILIATION" ] \
+  || fail "the page's non-affiliation statement does not name Lufthansa and Jeppesen"
+grep -Fq -- "$NON_AFFILIATION" "$index" \
+  || fail "the page's footer prose does not carry the non-affiliation sentence"
+grep -Fq 'Lufthansa cabin-crew duty plan published as a Jeppesen PDF export' "$index" \
+  || fail "the page's lede does not name the supported plan"
+
 # The Built revision anchor names the commit and wraps the revision text.
 grep -Eq 'href="https://github\.com/duty2cal/duty2cal/commit/[0-9a-f]{7,40}"' "$index" \
   || fail "the page links no commit for its Built revision"

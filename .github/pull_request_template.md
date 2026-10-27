@@ -7,9 +7,10 @@
 <!-- The Gherkin scenario's title, and the change it belongs to
      (givn/changes/<change>/specs/<capability>/). -->
 
-## The export family and what it exercises
+## The plan and what it exercises
 
-<!-- Which export family, which destination station codes and which dates.
+<!-- Whether the plan converted, what the refusal said, and which destination
+     station codes and dates the change exercises.
      A real duty plan is never attached — see CONTRIBUTING.md and SECURITY.md. -->
 
 ## Checks

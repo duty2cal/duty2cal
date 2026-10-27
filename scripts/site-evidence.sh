@@ -48,7 +48,13 @@ repo="$( cd "$repo" && pwd )"
 results="$(mktemp -d)"
 trap 'rm -rf "$results"' EXIT
 
-# 1. Page content: cheap and purely local.
+# 1. The support statement: all five carriers must agree before the page can
+#    replace the published one. This reads the publication's own worktree.
+if ! ( cd "$repo" && scripts/support-statement-check.sh ); then
+  refuse "the support statement check failed"
+fi
+
+# 2. Page content: cheap and purely local.
 if ! ( cd "$repo" && scripts/check-site-content.sh "$out" ); then
   refuse "the page content check failed"
 fi

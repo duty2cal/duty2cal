@@ -59,9 +59,10 @@ Therefore:
 - never commit, upload or attach a real duty plan, a calendar converted from
   one, or a personal itinerary — not in an issue, not in a pull request, not as a
   test fixture;
-- the issue forms and the pull-request template ask which **export family** a
-  sample comes from and for a **stripped sample**: the page structure with every
-  real name, employee number, date, station and route removed or replaced;
+- the issue forms and the pull-request template ask whether the plan
+  converted, what the refusal said, and for a **stripped sample**: the page
+  structure with every real name, employee number, date, station and route
+  removed or replaced;
 - fixtures, examples and golden calendars in the repository are generated or
   anonymised and follow the project's fictional 2098/2099 date convention;
   `scripts/pii-guard.sh` checks both the tree and the published history for
@@ -76,8 +77,9 @@ use the confidential route in [SECURITY.md](SECURITY.md).
 
 - Bug reports and proposals use the forms under
   [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/).
-- A pull request states what changed, which scenario carries it, the export
-  family and the dates it exercises, and confirms that no real plan is attached.
+- A pull request states what changed, which scenario carries it, whether the
+  plan converted and what the refusal said, the dates it exercises, and confirms
+  that no real plan is attached.
 
 ## Code of conduct
 

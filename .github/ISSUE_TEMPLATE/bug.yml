@@ -7,6 +7,12 @@ body:
   - type: markdown
     attributes:
       value: |
+        duty2cal converts a Lufthansa cabin-crew duty plan published as a
+        Jeppesen PDF export into one calendar file. One roster month of cabin
+        crew; not cockpit duties, other Lufthansa duty plans, other Jeppesen
+        exports or another operator. Not affiliated with Lufthansa, Jeppesen,
+        or any duty-plan provider or airline.
+
         **Never attach a real duty plan, a calendar converted from one, or a
         personal itinerary.** A sample has to be stripped first: the page
         structure with every real name, employee number, date, station and route
@@ -31,42 +37,40 @@ body:
     validations:
       required: true
   - type: dropdown
-    id: export-family
+    id: converted
     attributes:
-      label: Export family
-      description: Which export was the plan? duty2cal supports the Released Roster detail-table family.
+      label: Did the plan convert?
       options:
-        - Released Roster detail table (supported)
-        - another export family (unsupported)
-        - not sure
+        - "yes"
+        - "no"
     validations:
       required: true
   - type: textarea
+    id: refusal
+    attributes:
+      label: What did the refusal say?
+      description: The exact diagnostic text and the process exit status, if you have them. Leave empty if the plan converted.
+    validations:
+      required: false
+  - type: textarea
     id: dates
     attributes:
-      label: The dates the plan covers
-      description: Which month or date range does the plan cover? Do not paste the plan itself.
-      placeholder: a released roster for June 2026
+      label: The month the plan covers
+      description: Which roster month or date range does the plan cover? Do not paste the plan itself.
+      placeholder: the roster month
     validations:
       required: true
   - type: textarea
     id: sample
     attributes:
       label: Stripped sample
-      description: If a sample is needed, supply a stripped one. Leave empty if the export family is unsupported.
+      description: If a sample is needed, supply a stripped one. Never the real plan.
     validations:
       required: false
   - type: textarea
     id: expected
     attributes:
       label: What you expected
-    validations:
-      required: true
-  - type: textarea
-    id: actual
-    attributes:
-      label: What happened
-      description: The exact diagnostic text and the process exit status, if you have them.
     validations:
       required: true
   - type: checkboxes

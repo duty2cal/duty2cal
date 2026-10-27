@@ -84,6 +84,15 @@ require_fixed 'published-history-statement' 'Already-published releases keep the
 forbid 'non-windows-archive' 'duty2cal-[^[:space:]]*-(linux-x86_64|linux-arm64|macos-arm64|macos-x86_64)\.tar\.gz'
 forbid 'non-windows-download-row' '^\|[[:space:]]*(Linux x86_64|Linux arm64|macOS arm64( \([^)]*\))?|macOS x86_64( \([^)]*\))?)[[:space:]]*\|'
 
+# The support statement is one claim across five carriers. The composed check
+# reads the repository tree, so a caller-provided readme is refused rather than
+# checking a different README against the repository's carriers.
+if [ "$(cd "$(dirname "$readme")" && pwd)/$(basename "$readme")" != "$(cd "$here/.." && pwd)/README.md" ]; then
+  echo "public-text-check: the readme argument is not the repository README; the support statement check reads the repository carriers" >&2
+  exit 2
+fi
+"$here/support-statement-check.sh"
+
 if [ "$missing" -ne 0 ]; then
   printf 'public-text-check: FAILED - %d of %d promise(s) violated in %s\n' \
     "$missing" "$promises" "$readme"

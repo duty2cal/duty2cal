@@ -13,17 +13,22 @@
 [![Release](https://github.com/duty2cal/duty2cal/actions/workflows/release.yml/badge.svg)](https://github.com/duty2cal/duty2cal/releases/latest)
 [![License: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-blue)](LICENSES/MPL-2.0.txt)
 
-`duty2cal` turns a released duty plan into a calendar. It reads the PDF a crew
-scheduling system publishes for one roster month and writes one RFC 5545 calendar
+duty2cal converts a Lufthansa cabin-crew duty plan published as a Jeppesen
+PDF export into one calendar file. One roster month of cabin crew; not cockpit
+duties, other Lufthansa duty plans, other Jeppesen exports or another operator.
+It reads the plan's PDF for one roster month and writes one RFC 5545 calendar
 file beside it, so that month's flights, standbys, non-flight duties, days off and
 layovers appear in the calendar the crew member already uses. It is built for the
 crew member who holds the plan: no account, no network, no service, one file in
 and one file out.
 
-A plan it cannot read as a supported export is never half-converted. It publishes
-no calendar, writes a numbered diagnostic naming the source and the reason, and
-reports the failure through its exit status, so an unattended run can tell a failed
-conversion from a converted month.
+A plan it cannot read as the supported Lufthansa cabin-crew Jeppesen export is
+never half-converted. It publishes no calendar, writes a numbered diagnostic
+naming the source and the reason, and reports the failure through its exit
+status, so an unattended run can tell a failed conversion from a converted
+month.
+
+Not affiliated with Lufthansa, Jeppesen, or any duty-plan provider or airline.
 
 ## Quick start
 
@@ -252,9 +257,9 @@ the sign-off (`git commit -s`, no CLA). Participation is governed by the
 plan data goes through the confidential route in [SECURITY.md](SECURITY.md)
 rather than a public issue.
 
-Issue forms and the pull-request template ask for the export family and a
-stripped sample. A real duty plan or a personal itinerary never enters the
-repository.
+Issue forms and the pull-request template ask whether the plan converted and
+what the refusal said, and ask for a stripped sample when one is needed. A real
+duty plan or a personal itinerary never enters the repository.
 
 ## License
 

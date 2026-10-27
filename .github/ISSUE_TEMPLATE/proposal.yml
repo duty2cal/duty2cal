@@ -7,6 +7,12 @@ body:
   - type: markdown
     attributes:
       value: |
+        duty2cal converts a Lufthansa cabin-crew duty plan published as a
+        Jeppesen PDF export into one calendar file. One roster month of cabin
+        crew; not cockpit duties, other Lufthansa duty plans, other Jeppesen
+        exports or another operator. Not affiliated with Lufthansa, Jeppesen,
+        or any duty-plan provider or airline.
+
         A change to behaviour is specified in Gherkin before it is implemented —
         see [CONTRIBUTING.md](../CONTRIBUTING.md). **Never attach a real duty
         plan or personal identifying values**; a stripped sample is what a
@@ -27,16 +33,22 @@ body:
     validations:
       required: true
   - type: dropdown
-    id: export-family
+    id: converted
     attributes:
-      label: Export family
-      description: If this concerns a plan, which export family is it from?
+      label: Did the plan convert?
       options:
-        - Released Roster detail table (supported)
-        - another export family (unsupported)
-        - not about a plan
+        - "yes"
+        - "no"
+        - not a conversion
     validations:
       required: true
+  - type: textarea
+    id: refusal
+    attributes:
+      label: What did the refusal say?
+      description: The exact diagnostic text and the process exit status, if you have them. Leave empty if the plan converted or this is not a conversion.
+    validations:
+      required: false
   - type: textarea
     id: dates
     attributes:
