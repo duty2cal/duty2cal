@@ -3450,6 +3450,83 @@ async fn a_silent_row_before_a_warned_row(w: &mut DutyWorld) {
     write_fixture(w, &items);
 }
 
+#[given(
+    "a supported duty plan with an unmatched departure fragment on an earlier detail row and an unrecognized activity code with printed UTC times on a later detail row"
+)]
+async fn an_orphan_departure_before_a_warning(w: &mut DutyWorld) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "LU743"),
+            (FROM_X, "ABC"),
+            (START_X, "10:00"),
+        ],
+    ));
+    items.extend(support::at(
+        570.0,
+        &[
+            (DATE_X, "2099-06-08"),
+            (ACTIVITY_X, "ZZ_M_CF"),
+            (START_X, "08:00"),
+            (END_X, "15:30"),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then("the failure report lists the departure row's error before the later row's warning")]
+async fn departure_error_before_later_warning(w: &mut DutyWorld) {
+    let report = failure_report(w);
+    let errors = report_section(&report, "Errors");
+    let warnings = report_section(&report, "Warnings");
+    assert_eq!(errors.len(), 1, "wrong error count: {report}");
+    assert_eq!(warnings.len(), 1, "wrong warning count: {report}");
+    assert!(
+        errors[0].starts_with("row 1 "),
+        "the departure row's error is missing: {report}"
+    );
+    assert!(
+        warnings[0].starts_with("row 2 "),
+        "the later row's warning is missing: {report}"
+    );
+    let error_at = report.find(&errors[0]).expect("the error entry");
+    let warning_at = report.find(&warnings[0]).expect("the warning entry");
+    assert!(
+        error_at < warning_at,
+        "the warning is listed before the departure error: {report}"
+    );
+}
+
+#[then("the failure report's reason line is the departure row's error")]
+async fn reason_is_the_departure_error(w: &mut DutyWorld) {
+    let report = failure_report(w);
+    let reason = report
+        .lines()
+        .find_map(|line| line.strip_prefix("Reason: "))
+        .expect("a reason line");
+    let departure = report_section(&report, "Errors")
+        .into_iter()
+        .next()
+        .expect("an error entry");
+    // A `Reason:` line carries the first error's message, while the section
+    // entry prefixes the row and date.
+    let message = departure
+        .split_once("): ")
+        .map(|(_, message)| message)
+        .or_else(|| departure.split_once(": ").map(|(_, message)| message))
+        .expect("a section entry with its row prefix");
+    assert_eq!(
+        reason, message,
+        "the reason is not the departure row's error: {report}"
+    );
+    assert!(
+        departure.starts_with("row 1 ") && departure.contains("no unique compatible partner"),
+        "the first error is not the orphan departure: {report}"
+    );
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);

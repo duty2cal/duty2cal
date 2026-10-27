@@ -183,7 +183,7 @@ Feature: Export a duty-plan calendar
     Then the converter reports one conversion warning naming detail row 2 and the date 2099-06-07
     And the warning names the activity code "ZZ_M_CF"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unmatched departure and a later warning are reported in plan order
     Given a supported duty plan with an unmatched departure fragment on an earlier detail row and an unrecognized activity code with printed UTC times on a later detail row
     When the crew member converts it
