@@ -105,6 +105,9 @@ impl Diagnostic {
 }
 
 /// The single spelling of one diagnostic in a report, a transcript, or a page.
+///
+/// The fallback warning and the row-level error share this line, so the
+/// executable transcript, the report file and the page cannot drift.
 pub fn diagnostic_line(diagnostic: &Diagnostic) -> String {
     match diagnostic.date {
         Some(date) => format!("row {} ({}): {}", diagnostic.row, date, diagnostic.message),
