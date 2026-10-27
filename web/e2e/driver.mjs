@@ -169,26 +169,43 @@ async function readState(withBaseline = false, withSite = false) {
       ...document.querySelectorAll(
         '#offer a[download], #failure-offer a[download]',
       ),
-    ].map((link) => ({
-      name: link.getAttribute('download') || '',
-      text: link.textContent || '',
-      kind: (link.getAttribute('download') || '').endsWith('.ics')
-        ? 'calendar'
-        : 'diagnostic',
-      scheme: (() => {
-        try {
-          return new URL(link.href).protocol;
-        } catch {
-          return '';
-        }
-      })(),
-    }));
+    ].map((link) => {
+      const name = link.getAttribute('download') || '';
+      let kind = 'diagnostic';
+      if (name.endsWith('.ics')) {
+        kind = 'calendar';
+      } else if (name.endsWith('.parse-warnings.txt')) {
+        kind = 'warnings';
+      }
+      return {
+        name,
+        text: link.textContent || '',
+        kind,
+        scheme: (() => {
+          try {
+            return new URL(link.href).protocol;
+          } catch {
+            return '';
+          }
+        })(),
+      };
+    });
+
+    const listText = (selector) =>
+      [...document.querySelectorAll(selector)]
+        .map((item) => item.textContent?.trim() || '')
+        .filter(Boolean);
+    const warningsList = document.getElementById('warnings');
+    const failureErrors = document.getElementById('failure-errors');
+    const failureWarnings = document.getElementById('failure-warnings');
 
     let state = 'empty';
     if (cannotRun && !cannotRun.hidden) {
       state = 'cannot-run';
     } else if (failure && !failure.hidden) {
       state = 'failure';
+    } else if (offerArea && !offerArea.hidden && warningsList && !warningsList.hidden) {
+      state = 'ready-with-warnings';
     } else if (offerArea && !offerArea.hidden) {
       state = 'ready';
     } else if (statusText.includes('Converting')) {
@@ -227,6 +244,18 @@ async function readState(withBaseline = false, withSite = false) {
       failureReason: failure && !failure.hidden
         ? document.getElementById('failure-reason')?.textContent?.trim() || ''
         : null,
+      lists: {
+        errors:
+          failureErrors && !failureErrors.hidden
+            ? listText('#error-list li')
+            : [],
+        warnings:
+          warningsList && !warningsList.hidden
+            ? listText('#warning-list li')
+            : failureWarnings && !failureWarnings.hidden
+              ? listText('#failure-warning-list li')
+              : [],
+      },
       storage,
       address: { url: location.href, historyLength: history.length },
       controls: {
@@ -236,7 +265,8 @@ async function readState(withBaseline = false, withSite = false) {
           chooseButton.disabled === false &&
           pickerInput?.disabled === false,
         chooseAnother:
-          resetButton != null && resetButton.offsetParent !== null,
+          (resetButton != null && resetButton.offsetParent !== null) ||
+          (document.getElementById('reset-ready')?.offsetParent !== null),
       },
     };
     if (baseline) {
@@ -452,9 +482,13 @@ async function readState(withBaseline = false, withSite = false) {
 
 /** The offer link matching one kind. */
 function offerSelector(kind) {
-  return kind === 'calendar'
-    ? '#offer a[download$=".ics"]'
-    : '#failure-offer a[download$=".parse-error.txt"]';
+  if (kind === 'calendar') {
+    return '#offer a[download$=".ics"]';
+  }
+  if (kind === 'warnings') {
+    return '#offer a[download$=".parse-warnings.txt"]';
+  }
+  return '#failure-offer a[download$=".parse-error.txt"]';
 }
 
 const actions = {
@@ -494,22 +528,32 @@ const actions = {
     const blockedType =
       mode === 'calendar-offer-failure'
         ? 'text/calendar'
-        : mode === 'diagnostic-offer-failure'
+        : mode === 'diagnostic-offer-failure' || mode === 'warning-offer-failure'
           ? 'text/plain'
           : undefined;
     if (mode && !blockedType && !['no-webassembly', 'no-modules', 'broken-module'].includes(mode)) {
       throw new Error(`unknown start mode: ${mode}`);
     }
     if (blockedType) {
-      await context.addInitScript((type) => {
-        const create = URL.createObjectURL.bind(URL);
-        URL.createObjectURL = (blob) => {
-          if (blob instanceof Blob && blob.type.startsWith(type)) {
-            throw new Error(`the driver refuses a ${type} object URL`);
-          }
-          return create(blob);
-        };
-      }, blockedType);
+      // `warning-offer-failure` refuses only the conversion's first plain-text
+      // offer. The success path creates exactly one — the warning report — so
+      // the calendar offer survives and the page can state what is missing.
+      const onlyFirst = mode === 'warning-offer-failure';
+      await context.addInitScript(
+        ({ type, first }) => {
+          const create = URL.createObjectURL.bind(URL);
+          let refused = false;
+          URL.createObjectURL = (blob) => {
+            const matches = blob instanceof Blob && blob.type.startsWith(type);
+            if (matches && (!first || !refused)) {
+              refused = true;
+              throw new Error(`the driver refuses a ${type} object URL`);
+            }
+            return create(blob);
+          };
+        },
+        { type: blockedType, first: onlyFirst },
+      );
     }
     if (mode === 'no-webassembly') {
       await context.addInitScript(() => {

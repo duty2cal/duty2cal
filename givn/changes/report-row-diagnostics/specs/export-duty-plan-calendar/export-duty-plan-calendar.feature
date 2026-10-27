@@ -99,7 +99,7 @@ Feature: Export a duty-plan calendar
     And the transcript carries the warning line
     And the transcript states that no new warning report was saved
 
-  @givn.added @browser @wip
+  @givn.added @browser
   Scenario: The page shows the warnings and offers both files when a plan converts with warnings
     Given  the converter page served from the built Site output
     When  the crew member supplies the supported duty plan "2026-06.pdf" containing an unrecognized activity code with a printed window

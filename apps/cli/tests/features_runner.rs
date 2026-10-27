@@ -33,6 +33,9 @@ pub struct DutyWorld {
     pub heading_before: String,
     /// The heading the same scenario read on the notice it reached.
     pub heading_after: String,
+    /// The scenario's title, recorded by the before hook. A browser scenario
+    /// names its committed visual evidence directory after it.
+    pub scenario: String,
 }
 
 impl Drop for DutyWorld {
@@ -62,6 +65,11 @@ async fn main() {
     // runnable corpus from `givn/specs/**` and the change's `specs/**`.
     let root = std::env::var("GIVN_FEATURES").unwrap_or_else(|_| "tests/features".to_string());
     DutyWorld::cucumber()
+        .before(|_feature, _rule, scenario, world| {
+            Box::pin(async move {
+                world.scenario = scenario.name.clone();
+            })
+        })
         .fail_on_skipped()
         .run_and_exit(root)
         .await;

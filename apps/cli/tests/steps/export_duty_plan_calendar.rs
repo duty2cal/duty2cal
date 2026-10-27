@@ -2844,7 +2844,9 @@ async fn one_warning_naming_row_and_date(w: &mut DutyWorld, row: u32, date: Stri
 async fn the_warning_names_the_code(w: &mut DutyWorld, code: String) {
     let warnings = warning_lines(w);
     assert!(
-        warnings.iter().any(|warning| warning.contains(&format!("\"{code}\""))),
+        warnings
+            .iter()
+            .any(|warning| warning.contains(&format!("\"{code}\""))),
         "no warning names the code {code:?}: {warnings:?}"
     );
 }
@@ -3009,7 +3011,11 @@ fn counted(word: &str) -> Option<usize> {
 async fn conversion_warnings(w: &mut DutyWorld, count: String) {
     let warnings = warning_lines(w);
     let expected = counted(&count).expect("a scenario count");
-    assert_eq!(warnings.len(), expected, "wrong warning count: {warnings:?}");
+    assert_eq!(
+        warnings.len(),
+        expected,
+        "wrong warning count: {warnings:?}"
+    );
 }
 
 #[then("the warning report lists one entry for each warned row")]
@@ -3025,7 +3031,10 @@ async fn one_warning_entry_per_row(w: &mut DutyWorld) {
 async fn two_errors_and_one_warning(w: &mut DutyWorld) {
     let mut items = support::detail_header_row(600.0);
     // A station with neither an activity code nor a route.
-    items.extend(support::at(585.0, &[(DATE_X, "2099-06-07"), (FROM_X, "ABC")]));
+    items.extend(support::at(
+        585.0,
+        &[(DATE_X, "2099-06-07"), (FROM_X, "ABC")],
+    ));
     // An unrecognized code with only one printed endpoint.
     items.extend(support::at(
         570.0,
@@ -3066,7 +3075,11 @@ async fn failure_report_lists_two_errors_and_the_warning(w: &mut DutyWorld) {
         1,
         "wrong warning count in the report: {report}"
     );
-    assert_eq!(errors, error_lines(w), "the report's errors differ: {report}");
+    assert_eq!(
+        errors,
+        error_lines(w),
+        "the report's errors differ: {report}"
+    );
     assert_eq!(
         warnings,
         warning_lines(w),
@@ -3080,7 +3093,10 @@ async fn failure_report_lists_two_errors_and_the_warning(w: &mut DutyWorld) {
 async fn one_error_and_one_warning(w: &mut DutyWorld) {
     let mut items = support::detail_header_row(600.0);
     // A station with neither an activity code nor a route.
-    items.extend(support::at(585.0, &[(DATE_X, "2099-06-07"), (FROM_X, "ABC")]));
+    items.extend(support::at(
+        585.0,
+        &[(DATE_X, "2099-06-07"), (FROM_X, "ABC")],
+    ));
     // An unrecognized code with both endpoints: represented with a warning.
     items.extend(support::at(
         570.0,
@@ -3129,7 +3145,8 @@ async fn failure_report_identifies_source_and_reason(w: &mut DutyWorld) {
 }
 
 /// A warning report that must survive a later conversion.
-const EXISTING_WARNING_REPORT: &str = "Source PDF: earlier.pdf\nWarnings:\n- row 1 (2099-01-01): an earlier fallback\n";
+const EXISTING_WARNING_REPORT: &str =
+    "Source PDF: earlier.pdf\nWarnings:\n- row 1 (2099-01-01): an earlier fallback\n";
 
 #[given(
     "a supported duty plan with an unrecognized activity code beside existing reports roster.parse-warnings.txt and roster.parse-warnings-1.txt"
@@ -3206,7 +3223,11 @@ async fn transcript_names_the_calendar(w: &mut DutyWorld) {
 #[then("the transcript carries one warning line for each warned row")]
 async fn one_warning_line_per_row(w: &mut DutyWorld) {
     let warnings = warning_lines(w);
-    assert_eq!(warnings.len(), 2, "expected one warning per row: {warnings:?}");
+    assert_eq!(
+        warnings.len(),
+        2,
+        "expected one warning per row: {warnings:?}"
+    );
     for warning in &warnings {
         assert!(
             warning.starts_with("row ") && warning.contains('('),
@@ -3643,7 +3664,9 @@ async fn warning_report_first_line(w: &mut DutyWorld, source: String) {
     );
 }
 
-#[then(regex = r#"^the warning report carries a "([^"]+)" section listing (one|two|three) entr(?:y|ies)$"#)]
+#[then(
+    regex = r#"^the warning report carries a "([^"]+)" section listing (one|two|three) entr(?:y|ies)$"#
+)]
 async fn warning_report_section(w: &mut DutyWorld, section: String, count: String) {
     let report = warning_report(w);
     let entries = report_section(&report, &section);
@@ -3655,9 +3678,7 @@ async fn warning_report_section(w: &mut DutyWorld, section: String, count: Strin
     );
 }
 
-#[then(
-    regex = r"^that entry names detail row (\d+) and the date (\d{4}-\d{2}-\d{2})$"
-)]
+#[then(regex = r"^that entry names detail row (\d+) and the date (\d{4}-\d{2}-\d{2})$")]
 async fn warning_entry_names_row_and_date(w: &mut DutyWorld, row: u32, date: String) {
     let report = warning_report(w);
     let entries = report_section(&report, "Warnings");
@@ -3672,7 +3693,10 @@ async fn warning_entry_names_row_and_date(w: &mut DutyWorld, row: u32, date: Str
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);
-    assert!(errors.is_empty(), "conversion errors were reported: {errors:?}");
+    assert!(
+        errors.is_empty(),
+        "conversion errors were reported: {errors:?}"
+    );
 }
 
 #[then("the invocation reports success through its process exit status")]
@@ -3772,6 +3796,301 @@ fn assert_no_calendar_offer(w: &mut DutyWorld) {
         .iter()
         .any(|offer| offer["kind"].as_str() == Some("calendar"));
     assert!(!calendar, "the page offered a calendar: {state}");
+}
+
+// ---------------------------------------------------------------------------
+// Row diagnostics on the page (design.md "Declared states" and the report
+// scenarios). The fixtures are generated; the plans never come from a real
+// roster.
+// ---------------------------------------------------------------------------
+
+/// Supply a generated named plan and wait for the page to settle.
+fn supply_named_plan(w: &mut DutyWorld, name: &str, items: &[(f64, f64, String)]) {
+    named_source(w, name, support::build_pdf(items));
+    supply_through_picker(w);
+}
+
+/// The entries of one list `read_state` reports.
+fn observed_list(state: &Value, name: &str) -> Vec<String> {
+    state["lists"][name]
+        .as_array()
+        .unwrap_or_else(|| panic!("read_state reports no {name} list: {state}"))
+        .iter()
+        .map(|entry| entry.as_str().unwrap_or_default().to_string())
+        .collect()
+}
+
+/// The download offers the page shows whose kind is `kind`.
+fn offers_of_kind(state: &Value, kind: &str) -> Vec<String> {
+    state["offers"]
+        .as_array()
+        .expect("read_state returns offers")
+        .iter()
+        .filter(|offer| offer["kind"].as_str() == Some(kind))
+        .map(|offer| offer["name"].as_str().unwrap_or_default().to_string())
+        .collect()
+}
+
+#[when(
+    regex = r#"^the crew member supplies the supported duty plan "([^"]+)" containing an unrecognized activity code with a printed window$"#
+)]
+async fn supplies_a_warned_plan(w: &mut DutyWorld, name: String) {
+    supply_named_plan(w, &name, &support::warned_plan());
+}
+
+#[when(
+    regex = r#"^the crew member supplies the supported duty plan "([^"]+)" containing two rows with unrecognized activity codes and printed windows$"#
+)]
+async fn supplies_two_warned_rows(w: &mut DutyWorld, name: String) {
+    supply_named_plan(w, &name, &support::two_warned_rows_plan());
+}
+
+#[when(
+    regex = r#"^the crew member supplies the supported duty plan "([^"]+)" with a row that cannot be represented and a row that was converted with a warning$"#
+)]
+async fn supplies_an_error_and_a_warning(w: &mut DutyWorld, name: String) {
+    supply_named_plan(w, &name, &support::error_and_warning_plan());
+}
+
+#[when(
+    regex = r#"^the crew member supplies the supported duty plan "([^"]+)" whose every dated activity is recognized$"#
+)]
+async fn supplies_a_recognized_plan(w: &mut DutyWorld, name: String) {
+    supply_named_plan(w, &name, &support::equivalence_plan());
+}
+
+#[then("the page shows that the calendar is ready with warnings")]
+async fn the_calendar_is_ready_with_warnings(w: &mut DutyWorld) {
+    let state = page_state(w);
+    assert_eq!(
+        state["state"].as_str(),
+        Some("ready-with-warnings"),
+        "the page did not reach the ready-with-warnings state: {state}"
+    );
+    let text = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        text.contains("Calendar ready"),
+        "the ready heading is not visible: {text}"
+    );
+    assert!(
+        !observed_list(&state, "warnings").is_empty(),
+        "the ready-with-warnings state lists no warning: {state}"
+    );
+    assert!(
+        state["status"]
+            .as_str()
+            .unwrap_or_default()
+            .starts_with("Your calendar is ready to save. "),
+        "the ready-with-warnings status is not the count sentence: {state}"
+    );
+    assert_eq!(
+        state["controls"]["chooseAnother"].as_bool(),
+        Some(true),
+        "the ready state offers no way to choose another duty plan: {state}"
+    );
+}
+
+#[then("the page lists one warning naming the activity code")]
+async fn the_page_lists_one_warning(w: &mut DutyWorld) {
+    let state = page_state(w);
+    let warnings = observed_list(&state, "warnings");
+    assert_eq!(
+        warnings.len(),
+        1,
+        "the page does not list exactly one warning: {state}"
+    );
+    let warning = &warnings[0];
+    assert!(
+        warning.contains("ZZ_M_CF"),
+        "the warning does not name the activity code: {warning:?}"
+    );
+    assert!(
+        warning.starts_with("row 1 (2099-06-07)"),
+        "the warning does not name the detail row and its date: {warning:?}"
+    );
+}
+
+#[then(regex = r#"^the page offers the warning report "([^"]+)"$"#)]
+async fn the_page_offers_the_warning_report(w: &mut DutyWorld, name: String) {
+    let state = page_state(w);
+    let offered = offers_of_kind(&state, "warnings");
+    assert_eq!(
+        offered,
+        vec![name.clone()],
+        "the page does not offer the warning report {name:?}: {state}"
+    );
+}
+
+#[then("the page shows no warning list")]
+async fn the_page_shows_no_warning_list(w: &mut DutyWorld) {
+    let state = page_state(w);
+    assert_eq!(
+        state["state"].as_str(),
+        Some("ready"),
+        "the page did not stay in the plain ready state: {state}"
+    );
+    assert!(
+        observed_list(&state, "warnings").is_empty(),
+        "a warning list is visible although the plan converted without warnings: {state}"
+    );
+}
+
+#[then("the page offers no warning report")]
+async fn the_page_offers_no_warning_report(w: &mut DutyWorld) {
+    let state = page_state(w);
+    let offered = offers_of_kind(&state, "warnings");
+    assert!(
+        offered.is_empty(),
+        "the page offers a warning report although there are no warnings: {state}"
+    );
+}
+
+#[then(regex = r#"^the page states "([^"]+)"$"#)]
+async fn the_page_states(w: &mut DutyWorld, sentence: String) {
+    let state = page_state(w);
+    let text = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        text.contains(&sentence),
+        "the page does not state {sentence:?}: {text}"
+    );
+}
+
+#[then("the page shows a failure heading and the count-based reason sentence")]
+async fn the_failure_shows_the_count_sentence(w: &mut DutyWorld) {
+    let state = page_state(w);
+    assert_eq!(
+        state["state"].as_str(),
+        Some("failure"),
+        "the page did not reach the failure state: {state}"
+    );
+    let text = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        text.contains("Conversion failed"),
+        "the failure heading is not visible: {text}"
+    );
+    let name = w
+        .source_path()
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned();
+    let expected = format!(
+        "{name}: the plan has one row that cannot be represented and one row that was converted with a warning."
+    );
+    assert_eq!(
+        state["failureReason"].as_str(),
+        Some(expected.as_str()),
+        "the failure reason is not the count-based sentence: {state}"
+    );
+}
+
+#[then("the page lists the error naming the unrepresentable row")]
+async fn the_page_lists_the_error(w: &mut DutyWorld) {
+    let state = page_state(w);
+    let errors = observed_list(&state, "errors");
+    assert_eq!(
+        errors.len(),
+        1,
+        "the page does not list exactly one error: {state}"
+    );
+    assert!(
+        errors[0].starts_with("row 1 (2099-06-07)") && errors[0].contains("ZZ999"),
+        "the error does not name the unrepresentable row: {:?}",
+        errors[0]
+    );
+}
+
+#[then("the page lists the warning naming the converted row")]
+async fn the_page_lists_the_warning(w: &mut DutyWorld) {
+    let state = page_state(w);
+    let warnings = observed_list(&state, "warnings");
+    assert_eq!(
+        warnings.len(),
+        1,
+        "the page does not list exactly one warning: {state}"
+    );
+    assert!(
+        warnings[0].starts_with("row 2 (2099-06-08)") && warnings[0].contains("ZZ_M_CF"),
+        "the warning does not name the converted row: {:?}",
+        warnings[0]
+    );
+}
+
+/// The warning report the page offers, read back from the captured download.
+fn captured_warning_report(w: &mut DutyWorld) -> String {
+    let path = capture_offer(w, "warnings", "offered.parse-warnings.txt");
+    std::fs::read_to_string(&path).unwrap_or_else(|error| {
+        panic!(
+            "read the offered warning report {}: {error}",
+            path.display()
+        )
+    })
+}
+
+#[then(
+    regex = r#"^the offered warning report begins with "([^"]+)" and carries a "([^"]+)" section$"#
+)]
+async fn the_offered_warning_report_names_the_source(
+    w: &mut DutyWorld,
+    first: String,
+    section: String,
+) {
+    let report = captured_warning_report(w);
+    assert!(
+        report.starts_with(&format!("{first}\n")),
+        "the warning report does not begin with {first:?}: {report:?}"
+    );
+    assert!(
+        report.contains(&format!("\n{section}:\n")),
+        "the warning report carries no {section:?} section: {report:?}"
+    );
+    assert!(
+        report.ends_with('\n'),
+        "the warning report has no trailing newline: {report:?}"
+    );
+}
+
+#[then("the offered warning report's entry names the detail row and its date")]
+async fn the_offered_warning_report_names_the_row(w: &mut DutyWorld) {
+    let report = captured_warning_report(w);
+    assert!(
+        report
+            .lines()
+            .any(|line| line.starts_with("- row 1 (2099-06-07): ") && line.contains("ZZ_M_CF")),
+        "the warning report's entry does not name the detail row and its date: {report:?}"
+    );
+}
+
+#[then("the page states that no warning report was offered")]
+async fn the_page_states_no_warning_report(w: &mut DutyWorld) {
+    let state = page_state(w);
+    let text = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        text.contains("No warning report was offered."),
+        "the page does not state that no warning report was offered: {text}"
+    );
+    assert!(
+        offers_of_kind(&state, "warnings").is_empty(),
+        "the page offers a warning report although its creation failed: {state}"
+    );
+}
+
+#[given("the converter page served from the built Site output that cannot create a download offer for the warning report")]
+async fn the_converter_page_without_warning_offer(w: &mut DutyWorld) {
+    let mut params = Map::new();
+    params.insert(
+        "mode".to_string(),
+        Value::String("warning-offer-failure".to_string()),
+    );
+    driver(w).send("start", params);
 }
 
 #[given("the converter page served from the built Site output")]
@@ -4366,11 +4685,22 @@ async fn the_page_did_not_report_a_save(w: &mut DutyWorld) {
     let state = page_state(w);
     let text = state["visibleText"]
         .as_str()
-        .expect("read_state returns visible text");
-    assert!(
-        !text.to_lowercase().contains("saved"),
-        "the page claims it saved a file: {text}"
-    );
+        .expect("read_state returns visible text")
+        .to_lowercase();
+    // The approved copy says where the browser saves the file; that is not a
+    // claim that a save happened. Only a completed-save claim is refused here.
+    for claim in [
+        "saved to",
+        "has been saved",
+        "we saved",
+        "file was saved",
+        "successfully saved",
+    ] {
+        assert!(
+            !text.contains(claim),
+            "the page claims it saved a file ({claim:?}): {text}"
+        );
+    }
 }
 
 #[then("the page has stored nothing in persistent browser storage")]
@@ -4463,11 +4793,11 @@ async fn the_page_shows_the_empty_state(w: &mut DutyWorld) {
 #[then("the page still offers the calendar")]
 async fn the_page_still_offers_the_calendar(w: &mut DutyWorld) {
     let state = page_state(w);
-    assert_eq!(
+    let ready = matches!(
         state["state"].as_str(),
-        Some("ready"),
-        "dismissing the save changed the page state: {state}"
+        Some("ready" | "ready-with-warnings")
     );
+    assert!(ready, "dismissing the save changed the page state: {state}");
     let offered = state["offers"]
         .as_array()
         .expect("read_state returns offers")
@@ -4481,7 +4811,7 @@ async fn the_page_still_offers_the_calendar(w: &mut DutyWorld) {
         .as_str()
         .expect("read_state returns visible text");
     assert!(
-        text.contains("Your browser chooses where to save it."),
+        text.contains("Your complete calendar is ready. The browser chooses where the file"),
         "the offer does not say the browser chooses the save location: {text}"
     );
 }

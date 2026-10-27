@@ -14,7 +14,10 @@ use duty2cal_core::application::Clock;
 use time::OffsetDateTime;
 
 #[cfg(target_arch = "wasm32")]
-use duty2cal_core::application::diagnostic_text as core_diagnostic_text;
+use duty2cal_core::application::{
+    diagnostic_line, diagnostic_text as core_diagnostic_text, failure_report_text,
+    warning_report_text, ConvertError, Severity,
+};
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
@@ -65,16 +68,57 @@ pub fn convert(filename: &str, bytes: &[u8]) -> JsValue {
         Ok(outcome) => {
             set_property(&result, "status", "ok");
             set_property(&result, "calendar", &outcome.calendar);
+            set_lines_of(&result, "warnings", &outcome.warnings, Severity::Warning);
+            set_property(
+                &result,
+                "warningReport",
+                &warning_report_text(filename, &outcome.warnings),
+            );
+            set_count(&result, "errorCount", 0);
+            set_count(&result, "warningCount", outcome.warnings.len());
         }
         Err(error) => {
             let reason = error.to_string();
             set_property(&result, "status", "failure");
             set_property(&result, "reason", &reason);
-            set_property(
-                &result,
-                "diagnostic",
-                &core_diagnostic_text(filename, &reason),
-            );
+            match &error {
+                ConvertError::Rows(diagnostics) => {
+                    set_property(
+                        &result,
+                        "diagnostic",
+                        &failure_report_text(filename, diagnostics),
+                    );
+                    set_lines_of(&result, "errors", diagnostics, Severity::Error);
+                    set_lines_of(&result, "warnings", diagnostics, Severity::Warning);
+                    set_count(
+                        &result,
+                        "errorCount",
+                        diagnostics
+                            .iter()
+                            .filter(|diagnostic| diagnostic.severity == Severity::Error)
+                            .count(),
+                    );
+                    set_count(
+                        &result,
+                        "warningCount",
+                        diagnostics
+                            .iter()
+                            .filter(|diagnostic| diagnostic.severity == Severity::Warning)
+                            .count(),
+                    );
+                }
+                ConvertError::Source(_) | ConvertError::Table(_) => {
+                    set_property(
+                        &result,
+                        "diagnostic",
+                        &core_diagnostic_text(filename, &reason),
+                    );
+                    set_lines_of(&result, "errors", &[], Severity::Error);
+                    set_lines_of(&result, "warnings", &[], Severity::Warning);
+                    set_count(&result, "errorCount", 0);
+                    set_count(&result, "warningCount", 0);
+                }
+            }
         }
     }
     result.into()
@@ -83,8 +127,46 @@ pub fn convert(filename: &str, bytes: &[u8]) -> JsValue {
 /// Set one string property on the plain result object.
 #[cfg(target_arch = "wasm32")]
 fn set_property(object: &js_sys::Object, key: &str, value: &str) {
-    js_sys::Reflect::set(object, &JsValue::from_str(key), &JsValue::from_str(value))
-        .expect("the result object accepts a string property");
+    set_value(object, key, JsValue::from_str(value));
+}
+
+/// Set one numeric property on the plain result object.
+#[cfg(target_arch = "wasm32")]
+fn set_count(object: &js_sys::Object, key: &str, value: usize) {
+    set_value(object, key, JsValue::from_f64(value as f64));
+}
+
+/// Set one plain value on the result object.
+#[cfg(target_arch = "wasm32")]
+fn set_value(object: &js_sys::Object, key: &str, value: JsValue) {
+    js_sys::Reflect::set(object, &JsValue::from_str(key), &value)
+        .expect("the result object accepts the property");
+}
+
+/// Set the diagnostic lines of one severity as a JavaScript array.
+#[cfg(target_arch = "wasm32")]
+fn set_lines_of(
+    object: &js_sys::Object,
+    key: &str,
+    diagnostics: &[duty2cal_core::application::Diagnostic],
+    severity: Severity,
+) {
+    let lines: Vec<String> = diagnostics
+        .iter()
+        .filter(|diagnostic| diagnostic.severity == severity)
+        .map(diagnostic_line)
+        .collect();
+    set_lines(object, key, &lines);
+}
+
+/// Set a list of lines as a JavaScript string array.
+#[cfg(target_arch = "wasm32")]
+fn set_lines(object: &js_sys::Object, key: &str, lines: &[String]) {
+    let array = js_sys::Array::new();
+    for line in lines {
+        array.push(&JsValue::from_str(line));
+    }
+    set_value(object, key, array.into());
 }
 
 /// The two-line diagnostic report for a failure the page detects itself.

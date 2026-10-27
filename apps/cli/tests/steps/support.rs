@@ -285,3 +285,90 @@ pub fn equivalence_plan() -> Vec<(f64, f64, String)> {
     ));
     items
 }
+
+/// A supported plan with the detail header, the given dated rows and the
+/// revision footer the producer prints.
+fn dated_plan(rows: &[(f64, &[(f64, &str)])]) -> Vec<(f64, f64, String)> {
+    let mut items = detail_header_row(600.0);
+    for (y, values) in rows {
+        items.extend(at(*y, values));
+    }
+    items.extend(at(
+        520.0,
+        &[
+            (DATE_X, "Created"),
+            (TRIP_X, "2099-05-21"),
+            (REPORT_X, "15:52"),
+            (POS_X, "UTC"),
+        ],
+    ));
+    items
+}
+
+/// A supported plan whose one detail row prints an unrecognized activity code
+/// with a station and both UTC endpoints, so the conversion warns.
+pub fn warned_plan() -> Vec<(f64, f64, String)> {
+    dated_plan(&[(
+        585.0,
+        &[
+            (DATE_X, "2099-06-07"),
+            (ACTIVITY_X, "ZZ_M_CF"),
+            (FROM_X, "ABC"),
+            (START_X, "08:00"),
+            (END_X, "15:30"),
+        ],
+    )])
+}
+
+/// A supported plan with two detail rows carrying unrecognized activity codes,
+/// each with a station and both UTC endpoints.
+pub fn two_warned_rows_plan() -> Vec<(f64, f64, String)> {
+    dated_plan(&[
+        (
+            585.0,
+            &[
+                (DATE_X, "2099-06-07"),
+                (ACTIVITY_X, "ZZ_M_CF"),
+                (FROM_X, "ABC"),
+                (START_X, "08:00"),
+                (END_X, "15:30"),
+            ],
+        ),
+        (
+            570.0,
+            &[
+                (DATE_X, "2099-06-08"),
+                (ACTIVITY_X, "ZZ_TST"),
+                (FROM_X, "DEF"),
+                (START_X, "09:00"),
+                (END_X, "12:00"),
+            ],
+        ),
+    ])
+}
+
+/// A supported plan with one detail row that cannot be represented (an
+/// unrecognized code with a single printed endpoint and no station) and one
+/// that is converted with a warning.
+pub fn error_and_warning_plan() -> Vec<(f64, f64, String)> {
+    dated_plan(&[
+        (
+            585.0,
+            &[
+                (DATE_X, "2099-06-07"),
+                (ACTIVITY_X, "ZZ999"),
+                (START_X, "08:00"),
+            ],
+        ),
+        (
+            570.0,
+            &[
+                (DATE_X, "2099-06-08"),
+                (ACTIVITY_X, "ZZ_M_CF"),
+                (FROM_X, "ABC"),
+                (START_X, "08:00"),
+                (END_X, "15:30"),
+            ],
+        ),
+    ])
+}

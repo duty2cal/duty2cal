@@ -181,6 +181,44 @@ a:focus-visible {
   margin-top: var(--space);
 }
 
+.offer h2 {
+  margin-top: 0;
+}
+
+.offer .button {
+  margin-top: var(--space);
+}
+
+.offer-note {
+  color: var(--ink-muted);
+}
+
+.diagnostics {
+  margin-top: var(--space);
+  border-left: 3px solid var(--border);
+  padding-left: var(--space);
+}
+
+.diagnostics h2,
+.diagnostics h3 {
+  font-size: 1rem;
+  line-height: 1.2;
+  margin: 0 0 0.5rem;
+}
+
+.diagnostics__list {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.diagnostics__list li {
+  overflow-wrap: anywhere;
+}
+
+.panel--failure .diagnostics__list li::marker {
+  color: var(--failure-ink);
+}
+
 .page-footer {
   margin-top: calc(var(--space) * 1.5);
   border-top: 1px solid var(--border);

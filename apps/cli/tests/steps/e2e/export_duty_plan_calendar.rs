@@ -82,8 +82,10 @@ async fn the_converter_reports_the_path(w: &mut DutyWorld) {
 // observations only the end-to-end run makes.
 // ---------------------------------------------------------------------------
 
-/// The committed per-viewport visual evidence directory for this scenario.
-fn evidence_dir() -> PathBuf {
+/// The change's evidence tree: the active change when it exists, otherwise the
+/// archived copy. `DUTY2CAL_VISUAL_EVIDENCE_DIR` names the change; it defaults
+/// to the change the permanent `@e2e` browser evidence belongs to.
+fn evidence_root() -> PathBuf {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     // The override names a change id. The active/archived resolution below still
     // decides which tree the gate is testing, so an archived change's evidence
@@ -100,10 +102,30 @@ fn evidence_dir() -> PathBuf {
     } else {
         archived
     };
-    base.join(
-        "evidence/visual/\
-         crew-member-converts-a-supported-duty-plan-in-the-browser-and-saves-the-offered-calendar",
-    )
+    base.join("evidence/visual")
+}
+
+/// The scenario title as the evidence directory name: lowercase words joined
+/// by single hyphens, as the change's design declares them.
+fn scenario_slug(name: &str) -> String {
+    let mut slug = String::new();
+    for character in name.chars() {
+        if character.is_ascii_alphanumeric() {
+            slug.push(character.to_ascii_lowercase());
+        } else if !slug.is_empty() && !slug.ends_with('-') {
+            slug.push('-');
+        }
+    }
+    slug.trim_end_matches('-').to_string()
+}
+
+/// The committed per-viewport visual evidence directory for this scenario.
+fn evidence_dir(w: &DutyWorld) -> PathBuf {
+    assert!(
+        !w.scenario.is_empty(),
+        "the scenario title was not recorded for its evidence directory"
+    );
+    evidence_root().join(scenario_slug(&w.scenario))
 }
 
 /// Read the page with the visual-baseline observations included.
@@ -126,22 +148,24 @@ fn assert_axe_clean(w: &mut DutyWorld, displayed: &str) {
 }
 
 /// Capture the committed screenshots for one displayed state at both viewports.
-fn capture_screenshots(w: &mut DutyWorld, empty: bool) {
+/// The suffix names the state in the file name; the ready state of the
+/// permanent `@e2e` scenario has no suffix.
+fn capture_screenshots(w: &mut DutyWorld, suffix: &str) {
     // The archived screenshots are the frozen record of the reviewed run.
     // A normal run captures into the scenario directory so rendering
     // differences between machines cannot rewrite that record; updating it
     // is an explicit act.
     let dir = if std::env::var_os("DUTY2CAL_UPDATE_VISUAL_EVIDENCE").is_some() {
-        evidence_dir()
+        evidence_dir(w)
     } else {
         w.working_dir().join("visual-capture")
     };
     std::fs::create_dir_all(&dir).expect("create the visual evidence directory");
     for (width, height, viewport) in [(360_u32, 780_u32, "mobile"), (1920, 1080, "desktop")] {
-        let path = dir.join(if empty {
-            format!("{viewport}--empty.png")
-        } else {
+        let path = dir.join(if suffix.is_empty() {
             format!("{viewport}.png")
+        } else {
+            format!("{viewport}--{suffix}.png")
         });
         let mut params = Map::new();
         params.insert(
@@ -327,7 +351,7 @@ async fn the_page_meets_the_visual_baseline(w: &mut DutyWorld) {
     );
     assert_visual_baseline(&ready, "ready", "en");
     assert_axe_clean(w, "ready");
-    capture_screenshots(w, false);
+    capture_screenshots(w, "");
 
     // Return to the empty state the scenario displayed first and assert it too.
     driver(w).send("reload", Map::new());
@@ -339,5 +363,20 @@ async fn the_page_meets_the_visual_baseline(w: &mut DutyWorld) {
     );
     assert_visual_baseline(&empty, "empty", "en");
     assert_axe_clean(w, "empty");
-    capture_screenshots(w, true);
+    capture_screenshots(w, "empty");
+}
+
+#[then(
+    regex = r"^the page meets the visual baseline in the (ready|ready-with-warnings|failure) state$"
+)]
+async fn the_page_meets_the_visual_baseline_in_state(w: &mut DutyWorld, displayed: String) {
+    let state = baseline_state(w);
+    assert_eq!(
+        state["state"].as_str(),
+        Some(displayed.as_str()),
+        "the visual baseline ran outside the {displayed} state: {state}"
+    );
+    assert_visual_baseline(&state, &displayed, "en");
+    assert_axe_clean(w, &displayed);
+    capture_screenshots(w, &displayed);
 }
