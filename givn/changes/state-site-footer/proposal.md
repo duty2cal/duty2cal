@@ -32,6 +32,14 @@ The non-affiliation and as-is sentences appear once, in the statements panel. Th
 
 Observable difference for the reader: the sentence appears once. Observable difference for the reviewer: no footer prose can drift from the statement, because no footer prose states it.
 
+## Capability Routing
+
+`givn spec route --change state-site-footer` reports no signal; the delta names one existing capability.
+
+| Proposed capability | Route's recommendation | Decision | Rationale |
+|---|---|---|---|
+| publish-public-website | no signal | EXTEND publish-public-website | The footer's sentences and the page-content check already belong to the site publication; the change corrects one rule through it and adds no capability. |
+
 ## Out of Scope
 
 - The statements panel's wording, the notice pages and their content.
