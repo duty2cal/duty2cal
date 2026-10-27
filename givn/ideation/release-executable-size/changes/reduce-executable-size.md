@@ -1,6 +1,6 @@
 # Change seed: reduce-executable-size
 
-Status: proposed by reduce-executable-size
+Status: implemented in reduce-executable-size
 
 - Use-case IDs: `reduce-distributed-executable-size`
 - Topic: `release-executable-size`

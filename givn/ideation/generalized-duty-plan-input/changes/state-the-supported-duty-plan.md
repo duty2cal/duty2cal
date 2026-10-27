@@ -1,6 +1,6 @@
 # Change seed: state-the-supported-duty-plan
 
-Status: proposed by state-the-supported-duty-plan
+Status: implemented in state-the-supported-duty-plan
 
 - Use-case IDs: `state-the-converter-support-statement` (new),
   `publish-public-website` (the page's what-it-does and non-affiliation

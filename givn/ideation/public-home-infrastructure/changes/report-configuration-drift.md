@@ -1,6 +1,6 @@
 # Change seed: report-configuration-drift
 
-Status: ready
+Status: implemented in reduce-test-runtime
 
 - Use-case IDs: `check-configuration-drift`
 - Topic: `public-home-infrastructure`

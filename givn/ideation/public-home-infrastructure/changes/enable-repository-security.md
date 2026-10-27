@@ -1,6 +1,6 @@
 # Change seed: enable-repository-security
 
-Status: proposed by enable-repository-security
+Status: implemented in enable-repository-security
 
 - Use-case IDs: `apply-configuration-change`
 - Topic: `public-home-infrastructure`
