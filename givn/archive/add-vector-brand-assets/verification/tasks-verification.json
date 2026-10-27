@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "add-vector-brand-assets",
+  "status": "passed",
+  "head": "11cafdbc26ddb90ca0a7b85e00eaa8ae7c8ebf2b",
+  "features_path": "givn/changes/add-vector-brand-assets/specs",
+  "features_digest": "725e8f0a918fc9c76978cabe8931662bf34bfb367329434a3576cefa72ee9149",
+  "command_digest": "1031237dac4a7328aa009dc5586392005a11f5408a7dc7b8a4726efc55a93a8e",
+  "command": "./run-tests.sh",
+  "tested_content_digest": "2e63b4e70b33417468dd7c27049a704c629449b52c4759dc69c56b2db5a8fe5c",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 84,
+    "passed": 84,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1793091109
+}
