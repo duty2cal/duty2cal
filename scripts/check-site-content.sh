@@ -247,6 +247,8 @@ require_notice "$privacy" "$PRIV_LOCAL_PROCESSING" "browser-local conversion"
 require_notice "$privacy" "$PRIV_COOKIES" "no-cookie statement"
 require_notice "$privacy" "$PRIV_RIGHTS" "rights and supervisory authority"
 require_notice "$privacy" "$PRIV_MAIL_PROVIDER" "mail handling"
+require_notice "$privacy" "$PRIV_MAIL_ADDRESS" "mail provider address"
+require_notice "$privacy" "$PRIV_MAIL_TRANSFER" "mail transfer to the United States"
 grep -Eq 'Stand: [0-9]{2}\.[0-9]{2}\.[0-9]{4}' "$privacy" \
   || fail "the Datenschutzerklärung carries no standing date"
 

@@ -358,7 +358,7 @@ fn assert_says(w: &mut DutyWorld, needles: &[&str]) {
 
 #[then("the page states the operator's name and a postal address")]
 async fn states_operator(w: &mut DutyWorld) {
-    assert_says(w, &["Daniel Kressner", "c/o adesso SE", "Prinzenstraße 34", "10969 Berlin"]);
+    assert_says(w, &["Daniel Kressner", "c/o adesso", "Prinzenstraße 34", "10969 Berlin"]);
 }
 
 #[then("the page offers an electronic mail address as a link")]
@@ -451,7 +451,7 @@ async fn heading_changed(w: &mut DutyWorld) {
 
 #[then("the page names the controller and how to reach it")]
 async fn names_controller(w: &mut DutyWorld) {
-    assert_says(w, &["1. Verantwortlicher", "c/o adesso SE", "E-Mail:"]);
+    assert_says(w, &["1. Verantwortlicher", "c/o adesso", "E-Mail:"]);
 }
 
 #[then("the page states that GitHub, Inc. hosts the site in the United States and logs the visitor's IP address for security purposes")]
@@ -507,7 +507,7 @@ async fn states_sub_processors(w: &mut DutyWorld) {
 async fn states_mail_provider(w: &mut DutyWorld) {
     assert_says(
         w,
-        &["SimpleLogin", "Proton AG", "Schweiz", "in meinem Auftrag"],
+        &["SimpleLogin", "Proton AG", "Plan-les-Ouates", "auch in den USA", "in meinem Auftrag"],
     );
 }
 

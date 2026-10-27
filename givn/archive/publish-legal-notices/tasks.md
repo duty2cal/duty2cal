@@ -36,7 +36,7 @@ its guarantees, rules and confirmed Personas are the constraints below.
 
 ## Precondition — the operator's contact block
 
-- [x] The operator supplied the contact block (Daniel Kressner, c/o adesso SE,
+- [x] The operator supplied the contact block (Daniel Kressner, c/o adesso,
       Prinzenstraße 34, 10969 Berlin), the mail alias
       `duty2cal662.abridge974@aleeas.com`, the forwarding provider (SimpleLogin,
       Proton AG) and confirmed that the employer permits private mail delivery.

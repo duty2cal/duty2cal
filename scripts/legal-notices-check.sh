@@ -105,6 +105,8 @@ require "$privacy" "$PRIV_LOCAL_PROCESSING" "browser-local conversion"
 require "$privacy" "$PRIV_COOKIES" "no-cookie statement"
 require "$privacy" "$PRIV_RIGHTS" "rights and supervisory authority"
 require "$privacy" "$PRIV_MAIL_PROVIDER" "mail handling"
+require "$privacy" "$PRIV_MAIL_ADDRESS" "mail provider address"
+require "$privacy" "$PRIV_MAIL_TRANSFER" "mail transfer to the United States"
 grep -Eq "Stand: [0-9]{2}\.[0-9]{2}\.[0-9]{4}" "$privacy" \
   || fail "privacy.html carries no standing date"
 
