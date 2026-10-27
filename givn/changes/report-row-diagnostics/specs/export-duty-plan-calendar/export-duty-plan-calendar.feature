@@ -258,6 +258,7 @@ Feature: Export a duty-plan calendar
     And  the page shows no warning list
     And  the page offers no warning report
     And  the page offers the file "2026-07.ics"
+    And  the page offers no calendar for "2026-06.pdf"
     And  the page meets the visual baseline in the ready state
 
   @givn.added @browser

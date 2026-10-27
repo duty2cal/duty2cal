@@ -3959,6 +3959,17 @@ async fn the_page_offers_no_warning_report(w: &mut DutyWorld) {
     );
 }
 
+#[then(regex = r#"^the page offers no calendar for "([^"]+)"$"#)]
+async fn the_page_offers_no_calendar_for(w: &mut DutyWorld, source: String) {
+    let state = page_state(w);
+    let expected = format!("{}.ics", source.trim_end_matches(".pdf"));
+    let offered = offers_of_kind(&state, "calendar");
+    assert!(
+        !offered.iter().any(|name| name == &expected),
+        "the page still offers the earlier attempt's {expected}: {state}"
+    );
+}
+
 #[then(regex = r#"^the page states "([^"]+)"$"#)]
 async fn the_page_states(w: &mut DutyWorld, sentence: String) {
     let state = page_state(w);
