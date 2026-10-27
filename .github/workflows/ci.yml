@@ -231,6 +231,7 @@ jobs:
             rhysd/actionlint:1.7.12 \
             -color \
             .github/workflows/ci.yml \
+            .github/workflows/nightly.yml \
             .github/workflows/release.yml \
             .github/workflows/site.yml \
             .github/workflows/web.yml

@@ -1,0 +1,147 @@
+# SPDX-License-Identifier: MPL-2.0
+name: nightly
+
+# The per-push suite runs one browser smoke. The nightly runs every browser
+# variant, the full product suite (which includes the CLI e2e scenario), and
+# refreshes the advisory database. It is read-only and holds no state
+# passphrase, administer token or deploy key; configuration preview/apply and
+# publication stay with the maintainer and the tag/default-branch workflows
+# (ADR-0006). GitHub disables a scheduled workflow after 60 days without
+# repository activity; a manual dispatch or any push re-enables it.
+on:
+  schedule:
+    # A non-round minute avoids the top-of-hour load.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  product:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Run the product suite
+        env:
+          DUTY2CAL_TRANSCRIPT_PATH: ${{ runner.temp }}/nightly-product.log
+        run: ./run-tests.sh
+      - name: Surface the failing scenarios
+        if: failure()
+        run: |
+          set -euo pipefail
+          log="$RUNNER_TEMP/nightly-product.log"
+          [ -f "$log" ] || exit 0
+          awk '
+            /^  Scenario:/ { scenario = $0 }
+            /Step panicked\. Captured output:/ {
+              message = $0
+              getline; message = message " | " $0
+              getline; message = message " | " $0
+              print scenario " :: " message
+            }
+          ' "$log" | head -20 | while IFS= read -r line; do
+            echo "::error title=Nightly failure::${line#  Scenario: }"
+          done
+      - name: Append the phase timings
+        if: always()
+        run: |
+          set -euo pipefail
+          log="$RUNNER_TEMP/nightly-product.log"
+          [ -f "$log" ] || exit 0
+          grep '^phase=' "$log" >> "$GITHUB_STEP_SUMMARY" || true
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: nightly-product-transcript
+          path: ${{ runner.temp }}/nightly-product.log
+          if-no-files-found: ignore
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # `scripts/build-site.sh` stamps the footer with `git describe`.
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          # `scripts/build-web.sh` builds the browser bundle.
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: web/e2e/.nvmrc
+          cache: npm
+          cache-dependency-path: web/e2e/package-lock.json
+      - run: npm ci --prefix web/e2e
+      - run: npx --prefix web/e2e playwright install --with-deps chromium
+      - name: Run every browser variant
+        env:
+          DUTY2CAL_TRANSCRIPT_PATH: ${{ runner.temp }}/nightly-browser.log
+        run: ./run-tests.sh --browser
+      - name: Surface the failing scenarios
+        if: failure()
+        run: |
+          set -euo pipefail
+          log="$RUNNER_TEMP/nightly-browser.log"
+          [ -f "$log" ] || exit 0
+          awk '
+            /^  Scenario:/ { scenario = $0 }
+            /Step panicked\. Captured output:/ {
+              message = $0
+              getline; message = message " | " $0
+              getline; message = message " | " $0
+              print scenario " :: " message
+            }
+          ' "$log" | head -20 | while IFS= read -r line; do
+            echo "::error title=Nightly browser failure::${line#  Scenario: }"
+          done
+      - name: Append the phase timings
+        if: always()
+        run: |
+          set -euo pipefail
+          log="$RUNNER_TEMP/nightly-browser.log"
+          [ -f "$log" ] || exit 0
+          grep '^phase=' "$log" >> "$GITHUB_STEP_SUMMARY" || true
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: nightly-browser-transcript
+          path: ${{ runner.temp }}/nightly-browser.log
+          if-no-files-found: ignore
+
+  deny:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny
+      - name: Refresh the advisory database and check the dependency policy
+        run: |
+          set -euo pipefail
+          cargo deny check 2>&1 | tee "$RUNNER_TEMP/nightly-deny.log"
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: nightly-deny-log
+          path: ${{ runner.temp }}/nightly-deny.log
+          if-no-files-found: ignore

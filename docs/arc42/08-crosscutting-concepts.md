@@ -89,8 +89,10 @@ The operational guarantees live with their owner: the Windows job enforces a
 byte budget, the site workflow runs the golden test then builds, gates and
 deploys, the release publication waits for the tagged revision's checks, the
 drift check is local (ADR-0006), and `publish-site.sh`'s early refusals are
-`bats` tests. The browser smoke is the one `@browser` scenario a separate CI job
-runs; the remaining browser variants run only with `--browser`.
+`bats` tests. The per-push CI job runs the browser smoke; the scheduled
+nightly job runs all 16 browser variants, and a developer can run them on
+demand with `--browser`. GitHub disables a scheduled workflow after 60 days
+without repository activity; a manual dispatch or any push re-enables it.
 
 `run-tests.sh` prints `phase=<name> seconds=<n>` and the cucumber concurrency,
 and CI appends the lines to the step summary, so a regression names the class
