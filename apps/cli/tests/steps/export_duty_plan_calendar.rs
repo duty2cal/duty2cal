@@ -2864,6 +2864,51 @@ async fn a_warning_report_is_published(w: &mut DutyWorld) {
     );
 }
 
+#[given(
+    "a supported duty plan dated 2099-06-07 with activity code ZZ_M_CF and no printed UTC times and no route"
+)]
+async fn a_plan_with_an_unrecognized_all_day_code(w: &mut DutyWorld) {
+    plan_with_row(w, &[(DATE_X, "2099-06-07"), (ACTIVITY_X, "ZZ_M_CF")]);
+}
+
+#[then(
+    regex = r#"^the calendar contains one all-day activity for (\d{4}-\d{2}-\d{2}) titled "([^"]+)"$"#
+)]
+async fn one_all_day_titled_activity(w: &mut DutyWorld, date: String, title: String) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 1);
+    let start = compact(&date);
+    let end = compact(&following_day(&date));
+    for expected in [
+        format!("SUMMARY:{title}"),
+        format!("DTSTART;VALUE=DATE:{start}"),
+        format!("DTEND;VALUE=DATE:{end}"),
+    ] {
+        assert!(
+            calendar.contains(&expected),
+            "the all-day activity does not carry {expected:?}: {calendar}"
+        );
+    }
+}
+
+/// The ISO date after `date`.
+fn following_day(date: &str) -> String {
+    let parts: Vec<i32> = date
+        .split('-')
+        .map(|part| part.parse().expect("an ISO date part"))
+        .collect();
+    let month = u8::try_from(parts[1]).expect("a month number");
+    time::Date::from_calendar_date(
+        parts[0],
+        time::Month::try_from(month).expect("a month"),
+        u8::try_from(parts[2]).expect("a day number"),
+    )
+    .expect("the scenario date")
+    .next_day()
+    .expect("the following day")
+    .to_string()
+}
+
 #[then("the converter reports no conversion error")]
 async fn no_conversion_error(w: &mut DutyWorld) {
     let errors = error_lines(w);

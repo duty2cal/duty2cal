@@ -21,7 +21,7 @@ Feature: Export a duty-plan calendar
     And the converter reports no conversion error
     And the invocation reports success through its process exit status
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unrecognized activity code without printed times becomes an all-day activity with a warning
     Given a supported duty plan dated 2099-06-07 with activity code ZZ_M_CF and no printed UTC times and no route
     When the crew member converts it
