@@ -626,6 +626,77 @@ async fn three_timed_shift_activities(
     }
 }
 
+#[given(
+    regex = r"^a supported duty plan with SB_F_CF windows (\d{2}:\d{2}) to (\d{2}:\d{2}) on (\d{4}-\d{2}-\d{2}) and (\d{4}-\d{2}-\d{2}) and a FREE row on (\d{4}-\d{2}-\d{2})$"
+)]
+async fn consecutive_standby_shift_days(
+    w: &mut DutyWorld,
+    start: String,
+    end: String,
+    first_date: String,
+    second_date: String,
+    off_date: String,
+) {
+    let mut items = support::detail_header_row(600.0);
+    items.extend(support::at(
+        585.0,
+        &[
+            (DATE_X, &first_date),
+            (ACTIVITY_X, "SB_F_CF"),
+            (FROM_X, "FRA"),
+            (START_X, &start),
+            (END_X, &end),
+        ],
+    ));
+    items.extend(support::at(
+        570.0,
+        &[(DATE_X, &off_date), (ACTIVITY_X, "FREE")],
+    ));
+    items.extend(support::at(
+        555.0,
+        &[
+            (DATE_X, &second_date),
+            (ACTIVITY_X, "SB_F_CF"),
+            (FROM_X, "FRA"),
+            (START_X, &start),
+            (END_X, &end),
+        ],
+    ));
+    write_fixture(w, &items);
+}
+
+#[then(
+    regex = r"^the calendar contains two timed SB_F_CF activities from (\d{2}:\d{2}) to (\d{2}:\d{2}) UTC on (\d{4}-\d{2}-\d{2}) and (\d{4}-\d{2}-\d{2}) at (\w+)$"
+)]
+async fn two_timed_shift_activities(
+    w: &mut DutyWorld,
+    start: String,
+    end: String,
+    first: String,
+    second: String,
+    station: String,
+) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 3);
+    for date in [&first, &second] {
+        assert!(
+            calendar.contains("SUMMARY:SB_F_CF")
+                && calendar.contains(&format!("LOCATION:{station}"))
+                && calendar.contains(&format!(
+                    "DTSTART:{}T{}00Z",
+                    compact(date),
+                    start.replace(':', "")
+                ))
+                && calendar.contains(&format!(
+                    "DTEND:{}T{}00Z",
+                    compact(date),
+                    end.replace(':', "")
+                )),
+            "the SB_F_CF activity on {date} from {start} to {end} at {station} is missing or wrong: {calendar}"
+        );
+    }
+}
+
 #[then(
     regex = r"^the calendar contains two timed standby activities on (\d{4}-\d{2}-\d{2}) and (\d{4}-\d{2}-\d{2})$"
 )]

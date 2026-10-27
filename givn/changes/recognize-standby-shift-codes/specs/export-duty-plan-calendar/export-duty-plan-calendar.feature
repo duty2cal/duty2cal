@@ -19,7 +19,7 @@ Feature: Export a duty-plan calendar
     And the warning names the activity code "SB_X_CF"
     And the warning states that the row was converted as a timed activity using its printed UTC window 08:00-15:30
 
-  @givn.added @wip
+  @givn.added
   Scenario: Consecutive standby shift days interrupted by a day off stay separate
     Given a supported duty plan with SB_F_CF windows 03:30 to 13:00 on 2099-11-15 and 2099-11-17 and a FREE row on 2099-11-16
     When the crew member converts it
