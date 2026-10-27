@@ -2,12 +2,12 @@
   "schema": 2,
   "change": "state-the-supported-duty-plan",
   "status": "passed",
-  "head": "dc1d2efe78798afda22b424f6f13d53232b0be72",
+  "head": "c6bbc4f774b6db877d168b9ab3b6ffeab3be4a67",
   "features_path": "givn/changes/state-the-supported-duty-plan/specs",
-  "features_digest": "9fe892c1d8913cb5adfe050b634b77834e5251e36c25850d2bc960ea7e675bbc",
+  "features_digest": "e460f8b5164a4f8806c6a392fa7b106c17760d455c907f963a95d8c4009be278",
   "command_digest": "1031237dac4a7328aa009dc5586392005a11f5408a7dc7b8a4726efc55a93a8e",
   "command": "./run-tests.sh",
-  "tested_content_digest": "a8786b44f5a3fa15c46192fc187f8b3967ac18765f0b4d5c2b58781a6a5545e5",
+  "tested_content_digest": "1b3da0c5d2caa0eb8269804838f353c12c5f22cdbce3805bf0a7bcd4cda87f2f",
   "content_scope": "change-proof/v1",
   "runner_exit": 0,
   "result": {
@@ -17,5 +17,5 @@
     "failed": 0,
     "skipped": 0
   },
-  "finished_at_unix": 1793101924
+  "finished_at_unix": 1793102012
 }
