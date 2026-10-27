@@ -43,14 +43,14 @@ Observable difference for the crew member: the website, the README and the organ
 
 ## Capability Routing
 
-`givn spec route --change state-the-supported-duty-plan` reported no signal ("the top candidates tie at 13.00") and printed no ranked list, so the recommendation column is omitted and each decision is recorded with its rationale. This table is the declaration `givn check review` compares against the delta.
+`givn spec route --change state-the-supported-duty-plan` reported no signal ("the top candidates tie at 13.00") and printed no ranked list; the recommendation column records that no signal was reported, and each decision is recorded with its rationale. This table is the declaration `givn check review` compares against the delta.
 
-| Proposed capability | Decision | Rationale |
-|---|---|---|
-| state-the-support-statement | NEW in state-the-converter-support-statement | The support statement is a standing claim with its own actor goal (the release owner keeps it true), its own evidence rule and its own refusal. It advances that goal, not the site's publication or the configuration apply, so it is a new goal-shaped capability under the new use case rather than a variant of a channel. |
-| publish-public-website | EXTEND publish-public-website | The website's `what-it-does` and `non-affiliation` statements and the page-content check already belong to the site publication. This change edits those sentences through that capability and has the content check refuse a page that does not name the plan; the publication mechanism is untouched. |
-| publish-organization-profile | EXTEND publish-organization-profile | The profile text is already a declared file published by an apply. The carrier change is a new revision of the reviewed source plus the apply that publishes it; the apply mechanism and the declaration are unchanged. |
-| publish-public-release | EXTEND publish-public-release | Only the use-case document changes, but two of its rules do: its description of the contributor route still says the issue forms and pull-request template ask for the export family, and the public-text rule it owns is where the README carrier's release promise lives, so the one statement and its check are recorded there. The release capability's scenarios and the release text are unchanged. |
+| Proposed capability | Route's recommendation | Decision | Rationale |
+|---|---|---|---|
+| `state-the-support-statement` | none — no signal | `NEW in state-the-converter-support-statement` | The support statement is a standing claim with its own actor goal (the release owner keeps it true), its own evidence rule and its own refusal. It advances that goal, not the site's publication or the configuration apply, so it is a new goal-shaped capability under the new use case rather than a variant of a channel. |
+| `publish-public-website` | none — no signal | `EXTEND publish-public-website` | The website's `what-it-does` and `non-affiliation` statements and the page-content check already belong to the site publication. This change edits those sentences through that capability and has the content check refuse a page that does not name the plan; the publication mechanism is untouched. |
+| `publish-organization-profile` | none — no signal | `EXTEND publish-organization-profile` | The profile text is already a declared file published by an apply. The carrier change is a new revision of the reviewed source plus the apply that publishes it; the apply mechanism and the declaration are unchanged. |
+| `publish-public-release` | none — no signal | `EXTEND publish-public-release` | Only the use-case document changes, but two of its rules do: its description of the contributor route still says the issue forms and pull-request template ask for the export family, and the public-text rule it owns is where the README carrier's release promise lives, so the one statement and its check are recorded there. The release capability's scenarios and the release text are unchanged. |
 
 ## Out of Scope
 
