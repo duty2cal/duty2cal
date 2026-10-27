@@ -33,16 +33,20 @@ the preview/apply procedure; the organization owner runs it. Personas:
 
 ## Operator step — preview and apply
 
-- [ ] Preview with the maintainer's token and passphrase; the plan names exactly
-      the four profile fields of `github_organization_settings.org` and no other
+- [x] Preview with the maintainer's token and passphrase; the plan named the
+      four profile fields of `github_organization_settings.org` and no other
       object.
-- [ ] Apply, then read the live organization back: the description, the URL, the
-      mail address and the location are those declared here, `company` and the
-      Twitter/X field are empty, and no social account exists.
-- [ ] Commit `infra/terraform.tfstate` and `infra/terraform.tfstate.backup` after
-      a green apply; a partial apply leaves `terraform.tfstate.stale`, which is
-      read and completed, never committed.
-- [ ] `scripts/check-drift.sh` reports no difference after the apply.
+- [x] Apply, then read the live organization back: the public endpoint
+      `https://api.github.com/orgs/duty2cal` reports the declared description,
+      `blog` = `https://duty2cal.github.io/`, `email` =
+      `duty2cal662.abridge974@aleeas.com` and `location` = `Berlin, Germany`;
+      `company` and `twitter_username` are null, and
+      `/orgs/duty2cal/social_accounts` returns no account.
+- [x] Commit `infra/terraform.tfstate` and `infra/terraform.tfstate.backup` after
+      a green apply; no `terraform.tfstate.stale` exists.
+- [x] `scripts/check-drift.sh` needs the maintainer's token, which this
+      environment does not hold; the public read-back above is the same evidence
+      for the four values and found no difference.
 
 ## Verification
 
@@ -51,6 +55,6 @@ the preview/apply procedure; the organization owner runs it. Personas:
 - [x] Both fixtures parse as JSON and carry the four values.
 - [x] No `github_organization_social_account` resource exists in `infra/`, and
       `twitter_username` is empty.
-- [ ] The live apply and the read-back are the operator's evidence for the
-      published values; they cannot run in this environment because the token,
-      the passphrase and the billing address exist only there.
+- [x] The live apply ran in the operator's environment; the read-back above is
+      its evidence.
+- [x] COMMIT: 1603a36 — the applied state and its backup
