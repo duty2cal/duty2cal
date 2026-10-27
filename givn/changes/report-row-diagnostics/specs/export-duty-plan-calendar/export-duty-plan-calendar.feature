@@ -249,7 +249,7 @@ Feature: Export a duty-plan calendar
     And  the offered warning report's entry names the detail row and its date
     And  the page meets the visual baseline in the ready-with-warnings state
 
-  @givn.added @browser @wip
+  @givn.added @browser
   Scenario: A second attempt clears the previous attempt's warning list
     Given  the converter page served from the built Site output
     When  the crew member supplies the supported duty plan "2026-06.pdf" containing an unrecognized activity code with a printed window
