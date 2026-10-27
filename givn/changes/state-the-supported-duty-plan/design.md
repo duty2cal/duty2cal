@@ -572,12 +572,13 @@ evidence for the check is the bats suite. A change that later binds one of
 these scenarios to cucumber needs an ADR naming the defect no other mechanism
 catches (TD-025).
 
-| File | Role |
-|---|---|
-| `scripts/tests/support-statement.bats` | Executable evidence for `state-the-support-statement`: the check's clean pass and each named refusal against a mutated copy. |
-| `apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs` | Unchanged; rerun only to regenerate the screenshots under this change's evidence directory. |
-| `web/e2e/driver.mjs` | Unchanged; supplies the rendered page, its statement elements and the screenshots. |
-| (no delta step definition) | The modified `publish-public-website`, `publish-organization-profile` and new support-statement scenarios are documentation; no archive-time phrase binding is created. |
+| Capability | Step definition file | Role | Permanent merge target |
+|---|---|---|---|
+| `state-the-support-statement` | none | No Gherkin binding; `scripts/tests/support-statement.bats` is the executable shell test. | none |
+| `publish-public-website` | none | The modified publication and refusal scenarios are documentation. | none |
+| `publish-organization-profile` | none | The profile scenarios are documentation. | none |
+| browser evidence | `apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs` | The browser smoke; unchanged, rerun to regenerate this change's screenshots. | `apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs` |
+| driver | `web/e2e/driver.mjs` | The Playwright driver; unchanged. | `web/e2e/driver.mjs` |
 
 ## Test runner, strict mode, and single-scenario command
 
