@@ -111,6 +111,8 @@ jobs:
               getline; message = message " | " $0
               print scenario " :: " message
             }
+            /publish-site:/ { print scenario " :: " $0 }
+            /site-evidence:/ { print scenario " :: " $0 }
           ' "$log" | head -20 | while IFS= read -r line; do
             echo "::error title=CI failure::${line#  Scenario: }"
           done
