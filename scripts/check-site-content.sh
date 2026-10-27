@@ -86,6 +86,10 @@ grep -Eq '<span data-site-statement="built-revision">[^<]+</span>' "$index" \
 svg_line="$(grep -nE '<link[^>]+rel="icon"[^>]+type="image/svg[+]xml"[^>]+href="\./icon\.svg"' "$index" | head -n 1 | cut -d: -f1 || true)"
 [ -n "$svg_line" ] \
   || fail "the page's tab declares no vector icon at ./icon.svg with type=\"image/svg+xml\""
+# The header mark is the vector; the raster there is a refusal.
+if grep -Eq '<img[^>]+src="\./icon\.png"[^>]*>' "$index"; then
+  fail "the page's header mark is the raster; the vector mark is required"
+fi
 grep -Eq '<img[^>]+src="\./icon\.svg"[^>]*>' "$index" \
   || fail "the page's header mark does not point at ./icon.svg"
 grep -Eq '<img[^>]+src="\./icon\.svg"[^>]+alt="duty2cal"' "$index" \
