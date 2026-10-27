@@ -3935,6 +3935,18 @@ async fn the_page_shows_no_warning_list(w: &mut DutyWorld) {
         observed_list(&state, "warnings").is_empty(),
         "a warning list is visible although the plan converted without warnings: {state}"
     );
+    let name = w
+        .source_path()
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned();
+    let expected = format!("Calendar ready for {name}.");
+    assert_eq!(
+        state["status"].as_str(),
+        Some(expected.as_str()),
+        "the plain ready status is not the approved copy: {state}"
+    );
 }
 
 #[then("the page offers no warning report")]
