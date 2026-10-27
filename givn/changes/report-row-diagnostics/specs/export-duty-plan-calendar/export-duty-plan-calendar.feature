@@ -260,7 +260,7 @@ Feature: Export a duty-plan calendar
     And  the page offers the file "2026-07.ics"
     And  the page meets the visual baseline in the ready state
 
-  @givn.added @browser @wip
+  @givn.added @browser
   Scenario: The page keeps the calendar and the warnings when it cannot offer the warning report
     Given  the converter page served from the built Site output that cannot create a download offer for the warning report
     When  the crew member supplies the supported duty plan "2026-06.pdf" containing an unrecognized activity code with a printed window
