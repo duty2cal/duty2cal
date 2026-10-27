@@ -420,6 +420,45 @@ async fn a_plan_with_a_stationed_timed_code(
 }
 
 #[given(
+    regex = r"^a supported duty plan with SB_F_CF (\d{2}:\d{2}) to (\d{2}:\d{2}) on (\d{4}-\d{2}-\d{2}), SB_M_CF (\d{2}:\d{2}) to (\d{2}:\d{2}) on (\d{4}-\d{2}-\d{2}), and SB_S_CF (\d{2}:\d{2}) to (\d{2}:\d{2}) on (\d{4}-\d{2}-\d{2}) at station (\w+)$"
+)]
+async fn three_standby_shift_days(
+    w: &mut DutyWorld,
+    f_start: String,
+    f_end: String,
+    f_date: String,
+    m_start: String,
+    m_end: String,
+    m_date: String,
+    s_start: String,
+    s_end: String,
+    s_date: String,
+    station: String,
+) {
+    let mut items = support::detail_header_row(600.0);
+    for (row, (code, date, start, end)) in [
+        ("SB_F_CF", &f_date, &f_start, &f_end),
+        ("SB_M_CF", &m_date, &m_start, &m_end),
+        ("SB_S_CF", &s_date, &s_start, &s_end),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        items.extend(support::at(
+            585.0 - 15.0 * row as f64,
+            &[
+                (DATE_X, date),
+                (ACTIVITY_X, code),
+                (FROM_X, &station),
+                (START_X, start),
+                (END_X, end),
+            ],
+        ));
+    }
+    write_fixture(w, &items);
+}
+
+#[given(
     regex = r"^a supported duty plan dated (\d{4}-\d{2}-\d{2}) with activity code (\w+) and its own resolved UTC start (\d{2}:\d{2}) and end (\d{2}:\d{2})$"
 )]
 async fn a_plan_with_an_own_window_code(
@@ -544,6 +583,47 @@ async fn consecutive_standby_days(
         ],
     ));
     write_fixture(w, &items);
+}
+
+#[then(
+    regex = r"^the calendar contains three timed activities titled SB_F_CF, SB_M_CF and SB_S_CF on (\d{4}-\d{2}-\d{2}), (\d{4}-\d{2}-\d{2}) and (\d{4}-\d{2}-\d{2}) from (\d{2}:\d{2}) to (\d{2}:\d{2}), (\d{2}:\d{2}) to (\d{2}:\d{2}) and (\d{2}:\d{2}) to (\d{2}:\d{2}) UTC at (\w+)$"
+)]
+async fn three_timed_shift_activities(
+    w: &mut DutyWorld,
+    f_date: String,
+    m_date: String,
+    s_date: String,
+    f_start: String,
+    f_end: String,
+    m_start: String,
+    m_end: String,
+    s_start: String,
+    s_end: String,
+    station: String,
+) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 3);
+    for (code, date, start, end) in [
+        ("SB_F_CF", &f_date, &f_start, &f_end),
+        ("SB_M_CF", &m_date, &m_start, &m_end),
+        ("SB_S_CF", &s_date, &s_start, &s_end),
+    ] {
+        assert!(
+            calendar.contains(&format!("SUMMARY:{code}"))
+                && calendar.contains(&format!("LOCATION:{station}"))
+                && calendar.contains(&format!(
+                    "DTSTART:{}T{}00Z",
+                    compact(date),
+                    start.replace(':', "")
+                ))
+                && calendar.contains(&format!(
+                    "DTEND:{}T{}00Z",
+                    compact(date),
+                    end.replace(':', "")
+                )),
+            "the {code} activity on {date} from {start} to {end} at {station} is missing or wrong: {calendar}"
+        );
+    }
 }
 
 #[then(

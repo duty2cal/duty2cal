@@ -139,7 +139,7 @@ pub enum DutyEntry {
         /// Tags, when supplied.
         tags: Option<FieldValue>,
     },
-    /// Timed availability window: SB, RE or SBX.
+    /// Timed availability window: SB, RE, SBX, SB_F_CF, SB_M_CF or SB_S_CF.
     Availability {
         /// Duty-plan date.
         date: Date,

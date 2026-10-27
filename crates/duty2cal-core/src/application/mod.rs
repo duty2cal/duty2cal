@@ -217,7 +217,7 @@ pub struct ConversionOutcome {
 /// The activity codes the supported family treats as all-day.
 const ALL_DAY_CODES: [&str; 4] = ["FREE", "OFF", "U", "FZ"];
 /// The activity codes that denote a timed availability window.
-const AVAILABILITY_CODES: [&str; 3] = ["SB", "RE", "SBX"];
+const AVAILABILITY_CODES: [&str; 6] = ["SB", "RE", "SBX", "SB_F_CF", "SB_M_CF", "SB_S_CF"];
 /// The activity codes that denote timed non-flight duty.
 const NON_FLIGHT_CODES: [&str; 3] = ["TK", "DTUSA", "EM"];
 
