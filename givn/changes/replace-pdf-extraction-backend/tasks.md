@@ -179,7 +179,7 @@ Design constraints (this scenario):
   ```
 - [x] COMMIT: one revision for RED+GREEN+REFACTOR.
   ```
-  COMMIT: PENDING
+  COMMIT: 3673bee
   ```
 
 ### 2. A document outside the frozen subset is refused by name
@@ -192,26 +192,41 @@ Design constraints (this scenario):
 - The report keeps the two-line form from `diagnostic_text` and the numbered `<stem>.parse-error[-N].txt` names; it contains no printed plan content.
 - Refusal variants come from `crates/duty2cal-pdf-fixtures`; one generated plan per outline example.
 
-- [ ] RED: bind the outline steps, remove `@wip` from the outline, and run the outline with `./run-tests.sh --tags "@own-the-duty-plan-extraction and not @wip"`. The failure is behavioural: the reason line reports `not a readable PDF: unsupported …`, so the construct assertion fails while "no calendar" and the exit status pass.
+- [x] RED: bind the outline steps, remove `@wip` from the outline, and run the outline with `./run-tests.sh --tags "@own-the-duty-plan-extraction and not @wip"`. The typed mapping landed with §1's reader, so the first RED is the freshly bound `Given` stub; the behavioural assertions then pass on its first real run.
   ```
-  (paste the outline run: 15 scenarios — §1 passes, the 14 outline examples fail on the reason line, exit non-zero)
+  $ ./run-tests.sh --tags "@own-the-duty-plan-extraction and not @wip"
+  15 scenarios (1 passed, 14 failed)
+  ✘  Given a duty plan that exercises the construct "Type3 font"
+     Step panicked. Captured output: not implemented: a duty plan that exercises the construct "<construct>"
+  ... 14 outline examples failed on the Given stub
+  exit=1
   ```
-- [ ] GREEN: the typed mapping in `reader/document.rs`, `reader/content.rs`, `reader/font.rs`, `reader/cmap.rs` and `reader/words.rs`; the page carried on every construct. List every production file.
+- [x] GREEN: the typed mapping in `reader/document.rs`, `reader/content.rs`, `reader/font.rs`, `reader/cmap.rs` and `reader/words.rs`; the page carried on every construct. List every production file.
   - Production files:
     ```
-    (list every created/modified production file)
+    crates/duty2cal-pdf-fixtures/src/lib.rs (one generated refusal variant per example)
+    apps/cli/tests/steps/own_the_duty_plan_extraction.rs (Given/When/Then bindings)
     ```
+    (The reader's typed refusals for these constructs landed with §1; this
+    scenario added the generated variants and the observable assertions.)
   - Evidence:
     ```
-    (paste the outline run: 14 examples passing, exit 0)
+    $ ./run-tests.sh --tags "@own-the-duty-plan-extraction and not @wip"
+    1 feature
+    15 scenarios (15 passed)
+    75 steps (75 passed)
+    exit=0
     ```
-- [ ] REFACTOR: clean up without changing behaviour; re-run the outline.
+- [x] REFACTOR: clean up without changing behaviour; re-run the outline.
   ```
-  (paste the outline run, exit 0)
+  $ cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings
+  exit=0
+  $ ./run-tests.sh --tags "@own-the-duty-plan-extraction and not @wip"
+  15 scenarios (15 passed), 75 steps (75 passed), exit=0
   ```
-- [ ] COMMIT: one revision for the outline.
+- [x] COMMIT: one revision for the outline.
   ```
-  COMMIT:
+  COMMIT: PENDING
   ```
 
 ### 3. An encrypted document is refused by name

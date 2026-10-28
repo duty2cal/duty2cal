@@ -101,30 +101,72 @@ async fn the_executable_reports_success_for_both_conversions(w: &mut DutyWorld) 
 }
 
 #[given(regex = r#"^a duty plan that exercises the construct "(.*)"$"#)]
-async fn a_duty_plan_that_exercises_the_construct(_w: &mut DutyWorld, _construct: String) {
-    unimplemented!("a duty plan that exercises the construct \"<construct>\"")
+async fn a_duty_plan_that_exercises_the_construct(w: &mut DutyWorld, construct: String) {
+    let bytes = fixtures::build_construct_plan(&construct);
+    w.source = Some(write_plan(w, "roster.pdf", bytes));
 }
 
 #[when("the release maintainer converts it through the executable")]
-async fn the_release_maintainer_converts_it_through_the_executable(_w: &mut DutyWorld) {
-    unimplemented!("the release maintainer converts it through the executable")
+async fn the_release_maintainer_converts_it_through_the_executable(w: &mut DutyWorld) {
+    let source = w.source_path();
+    convert(w, &source);
+}
+
+/// The numbered failure report the converter wrote beside the source.
+fn failure_report(w: &DutyWorld) -> String {
+    let dir = w.working_dir();
+    let mut reports: Vec<PathBuf> = std::fs::read_dir(&dir)
+        .expect("read the scenario directory")
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .filter(|path| {
+            path.file_name()
+                .is_some_and(|name| name.to_string_lossy().contains(".parse-error"))
+        })
+        .collect();
+    reports.sort();
+    let path = reports
+        .first()
+        .unwrap_or_else(|| panic!("no numbered failure report in {}", dir.display()));
+    std::fs::read_to_string(path).expect("read the numbered failure report")
 }
 
 #[then(
     regex = r#"^the numbered failure report names the source PDF, the construct "(.*)" and the page it occurs on$"#
 )]
 async fn the_numbered_failure_report_names_the_construct_and_page(
-    _w: &mut DutyWorld,
-    _construct: String,
+    w: &mut DutyWorld,
+    construct: String,
 ) {
-    unimplemented!(
-        "the numbered failure report names the source PDF, the construct \"<construct>\" and the page it occurs on"
-    )
+    let report = failure_report(w);
+    assert!(
+        report.contains("Source PDF: roster.pdf"),
+        "the report does not name the source: {report}"
+    );
+    // A parameterised construct carries its own argument (`unsupported stream
+    // filter ASCIIHexDecode`, `unknown content-stream operator BZ`); the
+    // scenario's name is the prefix the report must carry.
+    let reason =
+        format!("the source uses a PDF construct outside the supported family: {construct}");
+    assert!(
+        report.contains(&reason),
+        "the report does not carry {reason:?}: {report}"
+    );
+    assert!(
+        report.contains(" on page 1"),
+        "the report does not name the page: {report}"
+    );
 }
 
 #[then("the executable reports failure through a non-zero process exit status")]
-async fn the_executable_reports_failure_through_a_non_zero_exit(_w: &mut DutyWorld) {
-    unimplemented!("the executable reports failure through a non-zero process exit status")
+async fn the_executable_reports_failure_through_a_non_zero_exit(w: &mut DutyWorld) {
+    assert_ne!(
+        w.exit_status,
+        Some(0),
+        "the conversion reported success: stdout={} stderr={}",
+        w.stdout,
+        w.stderr
+    );
 }
 
 #[given("a duty plan that is encrypted")]

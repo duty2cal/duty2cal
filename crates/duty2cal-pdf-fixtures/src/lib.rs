@@ -4,7 +4,8 @@
 //! The generator emits bytes at test time; no PDF is committed. It does not
 //! claim to reproduce the producer's bytes — it reproduces the readable shape:
 //! Type0/Identity-H fonts with per-font `ToUnicode` CMaps and `/W` advances,
-//! Flate content, a classic xref table, an xref stream, or object streams.
+//! Flate content, a classic xref table, an xref stream, or object streams. The
+//! refusal variants place one named construct on a known page.
 
 use std::collections::BTreeSet;
 
@@ -50,6 +51,27 @@ pub enum Encoding {
     XrefStream,
     /// A cross-reference stream with every non-stream object in an object stream.
     ObjectStreams,
+}
+
+/// The construct a refusal fixture places on page 1.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Variant {
+    Supported,
+    Type3Font,
+    TextRotation,
+    PageRotation,
+    HorizontalScaling,
+    InlineImage,
+    StreamFilter,
+    NonIdentityEncoding,
+    MissingToUnicode,
+    UnmappedGlyph,
+    PageBox,
+    FormXObject,
+    MissingDescent,
+    TextOperatorTj,
+    UnknownOperator,
+    Encrypted,
 }
 
 /// The roster month and year a fixture's dates belong to, and its heading.
@@ -147,7 +169,7 @@ pub fn weekday_abbreviation(year: i32, month: u32, day: u32) -> &'static str {
 /// Build a one-page PDF placing each `(x, y, text)` item with a 9 pt
 /// Type0/Identity-H font.
 pub fn build_pdf(items: &[(f64, f64, String)]) -> Vec<u8> {
-    build(items, Encoding::ClassicXref, 0, true)
+    build(items, Encoding::ClassicXref, 0, true, Variant::Supported)
 }
 
 /// Build a PDF of exactly `size` bytes whose page content stays readable.
@@ -156,7 +178,7 @@ pub fn build_pdf(items: &[(f64, f64, String)]) -> Vec<u8> {
 /// trailing `%%EOF` stays where the reader expects it. `/Length` grows with the
 /// padding, so the builder corrects for the changed digit count.
 pub fn build_pdf_at_size(items: &[(f64, f64, String)], size: usize) -> Vec<u8> {
-    let base = build(items, Encoding::ClassicXref, 0, false);
+    let base = build(items, Encoding::ClassicXref, 0, false, Variant::Supported);
     assert!(
         base.len() <= size,
         "a {size}-byte PDF cannot hold the {} bytes of fixture content",
@@ -164,7 +186,13 @@ pub fn build_pdf_at_size(items: &[(f64, f64, String)], size: usize) -> Vec<u8> {
     );
     let mut padding = size - base.len();
     for _ in 0..8 {
-        let pdf = build(items, Encoding::ClassicXref, padding, false);
+        let pdf = build(
+            items,
+            Encoding::ClassicXref,
+            padding,
+            false,
+            Variant::Supported,
+        );
         if pdf.len() == size {
             return pdf;
         }
@@ -179,53 +207,269 @@ pub fn build_pdf_at_size(items: &[(f64, f64, String)], size: usize) -> Vec<u8> {
 
 /// Build a plan in the requested encoding, with the same page content.
 pub fn build_plan(items: &[(f64, f64, String)], encoding: Encoding) -> Vec<u8> {
-    build(items, encoding, 0, true)
+    build(items, encoding, 0, true, Variant::Supported)
 }
 
-/// The generated PDF with an explicit encoding, padding and content filter.
-fn build(items: &[(f64, f64, String)], encoding: Encoding, padding: usize, flate: bool) -> Vec<u8> {
-    let (printed, heading) = producer_layout(items);
-    let mut all = heading.unwrap_or_default();
-    all.extend(printed);
+/// Build the refusal fixture that places `construct` on page 1.
+pub fn build_construct_plan(construct: &str) -> Vec<u8> {
+    let variant = match construct {
+        "Type3 font" => Variant::Type3Font,
+        "text rotation" => Variant::TextRotation,
+        "page rotation" => Variant::PageRotation,
+        "horizontal text scaling" => Variant::HorizontalScaling,
+        "inline image" => Variant::InlineImage,
+        "unsupported stream filter" => Variant::StreamFilter,
+        "font encoding other than Identity-H" => Variant::NonIdentityEncoding,
+        "missing ToUnicode CMap" => Variant::MissingToUnicode,
+        "unmapped glyph code" => Variant::UnmappedGlyph,
+        "page box other than the media box" => Variant::PageBox,
+        "form XObject" => Variant::FormXObject,
+        "font descriptor without a descent" => Variant::MissingDescent,
+        "text operator TJ" => Variant::TextOperatorTj,
+        "unknown content-stream operator" => Variant::UnknownOperator,
+        other => panic!("no generated fixture for the construct {other:?}"),
+    };
+    build(&equivalence_plan(), Encoding::ClassicXref, 0, true, variant)
+}
 
-    let mut content = String::from("BT\n");
-    for (index, (x, y, text)) in all.iter().enumerate() {
-        let font = index % 3 + 1;
-        content.push_str(&format!("/F{font} 9 Tf\n1 0 0 1 {x} {y} Tm\n<"));
-        for unit in text.encode_utf16() {
-            content.push_str(&format!("{unit:04X}"));
-        }
-        content.push_str("> Tj\n");
-    }
-    content.push_str("ET\n");
-    // The real plan's logo: an image XObject that the extraction skips.
-    content.push_str("q\n105 0 0 30 701 529 cm\n/Im1 Do\nQ\n");
-    if padding > 0 {
-        content.push('%');
-        content.push_str(&" ".repeat(padding.saturating_sub(2)));
-        content.push('\n');
-    }
+/// Build an encrypted document with a readable structure.
+pub fn build_encrypted_plan() -> Vec<u8> {
+    build(
+        &equivalence_plan(),
+        Encoding::ClassicXref,
+        0,
+        true,
+        Variant::Encrypted,
+    )
+}
 
+/// Build a readable PDF that prints no detail-table header.
+pub fn build_no_header_plan() -> Vec<u8> {
+    let items = at(
+        700.0,
+        &[(DATE_X, "Notes"), (FROM_X, "This page is not a duty plan.")],
+    );
+    build(&items, Encoding::ClassicXref, 0, true, Variant::Supported)
+}
+
+/// Build a truncated document: a valid fixture cut short.
+pub fn build_truncated_plan() -> Vec<u8> {
+    let mut bytes = build_plan(&equivalence_plan(), Encoding::ClassicXref);
+    let keep = bytes.len() * 2 / 3;
+    bytes.truncate(keep);
+    bytes
+}
+
+/// Build a Type3 plan that prints an identifying name.
+pub fn build_privacy_plan() -> Vec<u8> {
+    let mut items = equivalence_plan();
+    items.extend(at(760.0, &[(DATE_X, "Zephyr"), (DATE_X + 40.0, "Vale")]));
+    build(&items, Encoding::ClassicXref, 0, true, Variant::Type3Font)
+}
+
+/// Build a supported plan whose detail table continues on a second page with a
+/// repeated header and a TK row on each page.
+pub fn build_multipage_plan() -> Vec<u8> {
+    let row = |date: &str| {
+        let mut items = detail_header_row(600.0);
+        items.extend(at(
+            585.0,
+            &[
+                (DATE_X, date),
+                (ACTIVITY_X, "TK"),
+                (FROM_X, "ABC"),
+                (START_X, "08:00"),
+                (END_X, "12:00"),
+            ],
+        ));
+        items
+    };
+    build_pages(
+        &[row("2026-06-12"), row("2026-06-13")],
+        Encoding::ClassicXref,
+        0,
+        true,
+        Variant::Supported,
+    )
+}
+
+/// Build one fixture page set.
+fn build(
+    items: &[TextItem],
+    encoding: Encoding,
+    padding: usize,
+    flate: bool,
+    variant: Variant,
+) -> Vec<u8> {
+    build_pages(&[items.to_vec()], encoding, padding, flate, variant)
+}
+
+/// Build a document with one content stream per page.
+fn build_pages(
+    pages: &[Vec<TextItem>],
+    encoding: Encoding,
+    padding: usize,
+    flate: bool,
+    variant: Variant,
+) -> Vec<u8> {
     let mut used: BTreeSet<u32> = BTreeSet::new();
-    for (_, _, text) in &all {
-        for unit in text.encode_utf16() {
-            used.insert(u32::from(unit));
+    let mut contents = Vec::with_capacity(pages.len());
+    for items in pages {
+        let (printed, heading) = producer_layout(items);
+        let mut all = heading.unwrap_or_default();
+        all.extend(printed);
+        for (_, _, text) in &all {
+            for unit in text.encode_utf16() {
+                used.insert(u32::from(unit));
+            }
         }
+        contents.push(page_content(&all, padding, variant));
     }
 
     let mut pdf = Pdf::default();
-    let content_id = pdf.add_stream("", content.as_bytes(), flate);
+    let content_ids: Vec<u32> = contents
+        .iter()
+        .map(|content| match variant {
+            Variant::StreamFilter => {
+                pdf.add_stream_with_filter("ASCIIHexDecode", content.as_bytes(), "")
+            }
+            _ => pdf.add_stream("", content.as_bytes(), flate),
+        })
+        .collect();
     let image_id = pdf.add_stream(
         "/Type /XObject /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceGray \
          /BitsPerComponent 8 /Filter /DCTDecode",
         b"\xFF\xD8\xFF\xD9",
         false,
     );
+    let form_id = (variant == Variant::FormXObject).then(|| {
+        pdf.add_stream(
+            "/Type /XObject /Subtype /Form /BBox [0 0 10 10] /Resources << >>",
+            b"",
+            false,
+        )
+    });
 
-    let mut font_ids = Vec::new();
+    let fonts = add_fonts(&mut pdf, &used, variant);
+    let pages_id = pdf.reserve();
+    let mut page_ids = Vec::new();
+    for content_id in content_ids {
+        let page_id = pdf.reserve();
+        let rotation = if variant == Variant::PageRotation {
+            " /Rotate 90"
+        } else {
+            ""
+        };
+        let crop = if variant == Variant::PageBox {
+            " /CropBox [0 0 100 100]"
+        } else {
+            ""
+        };
+        let xobjects = match form_id {
+            Some(form_id) => format!("/XObject << /Fm1 {form_id} 0 R >>"),
+            None => format!("/XObject << /Im1 {image_id} 0 R >>"),
+        };
+        pdf.set_reserved(
+            page_id,
+            format!(
+                "<< /Type /Page /Parent {pages_id} 0 R /MediaBox [0 0 {PAGE_WIDTH} {PAGE_HEIGHT}]\
+                 {rotation}{crop} /Resources << /Font << /F1 {} 0 R /F2 {} 0 R /F3 {} 0 R >> \
+                 {xobjects} >> /Contents {content_id} 0 R >>",
+                fonts[0], fonts[1], fonts[2]
+            ),
+        );
+        page_ids.push(page_id);
+    }
+    let kids = page_ids
+        .iter()
+        .map(|id| format!("{id} 0 R"))
+        .collect::<Vec<_>>()
+        .join(" ");
+    pdf.set_reserved(
+        pages_id,
+        format!(
+            "<< /Type /Pages /Kids [{kids}] /Count {} >>",
+            page_ids.len()
+        ),
+    );
+    let catalog_id = pdf.add_dict(format!("<< /Type /Catalog /Pages {pages_id} 0 R >>"));
+
+    if variant == Variant::Encrypted {
+        let encrypt_id =
+            pdf.add_dict("<< /Filter /Standard /V 1 /R 2 /O <00> /U <00> /P -4 >>".to_string());
+        pdf.finish(catalog_id, encoding, Some(encrypt_id))
+    } else {
+        pdf.finish(catalog_id, encoding, None)
+    }
+}
+
+/// The page content stream: `Tm`-only text positioning and the variant hook.
+fn page_content(items: &[TextItem], padding: usize, variant: Variant) -> String {
+    let mut content = String::new();
+    if variant == Variant::HorizontalScaling {
+        content.push_str("90 Tz\n");
+    }
+    content.push_str("BT\n");
+    let mut used_tj_operator = false;
+    for (index, (x, y, text)) in items.iter().enumerate() {
+        let font = index % 3 + 1;
+        let matrix = if variant == Variant::TextRotation && index == 0 {
+            format!("1 0.1 0 1 {x} {y} Tm")
+        } else {
+            format!("1 0 0 1 {x} {y} Tm")
+        };
+        content.push_str(&format!("/F{font} 9 Tf\n{matrix}\n<"));
+        for unit in text.encode_utf16() {
+            content.push_str(&format!("{unit:04X}"));
+        }
+        if variant == Variant::TextOperatorTj && !used_tj_operator {
+            content.push_str("> TJ\n<0041");
+            used_tj_operator = true;
+        }
+        content.push_str("> Tj\n");
+    }
+    content.push_str("ET\n");
+    match variant {
+        Variant::FormXObject => content.push_str("q\n/Form1 Do\nQ\n"),
+        Variant::InlineImage => content.push_str("BI\n/W 1 /H 1 /BPC 8 /CS /G\nID \u{0} EI\n"),
+        Variant::UnknownOperator => content.push_str("BZ\n"),
+        _ => content.push_str("q\n105 0 0 30 701 529 cm\n/Im1 Do\nQ\n"),
+    }
+    if padding > 0 {
+        content.push('%');
+        content.push_str(&" ".repeat(padding.saturating_sub(2)));
+        content.push('\n');
+    }
+    content
+}
+
+/// Add the three Type0/Identity-H fonts, or the variant's font shape.
+fn add_fonts(pdf: &mut Pdf, used: &BTreeSet<u32>, variant: Variant) -> Vec<u32> {
+    let mut fonts = Vec::new();
     for index in 0..3 {
-        let to_unicode = to_unicode_stream(&used);
-        let to_unicode_id = pdf.add_stream("", to_unicode.as_bytes(), true);
+        if index == 0 && variant == Variant::Type3Font {
+            fonts.push(
+                pdf.add_dict(
+                    "<< /Type /Font /Subtype /Type3 /FontBBox [0 0 1000 1000] \
+                     /FontMatrix [0.001 0 0 0.001 0 0] /CharProcs << >> \
+                     /Encoding << /Type /Encoding /Differences [65 /A] >> \
+                     /FirstChar 65 /LastChar 65 /Widths [600] >>"
+                        .to_string(),
+                ),
+            );
+            continue;
+        }
+        let mapping = if variant == Variant::UnmappedGlyph {
+            used.iter().copied().filter(|code| *code != 77).collect()
+        } else {
+            used.clone()
+        };
+        let to_unicode_id = if variant == Variant::MissingToUnicode {
+            None
+        } else {
+            let stream = to_unicode_stream(&mapping);
+            Some(pdf.add_stream("", stream.as_bytes(), true))
+        };
         let width_entries: String = used
             .iter()
             .map(|code| format!("{code} [{}]", helvetica_width(*code)))
@@ -233,51 +477,44 @@ fn build(items: &[(f64, f64, String)], encoding: Encoding, padding: usize, flate
             .join(" ");
         let descendant_id = pdf.reserve();
         let descriptor_id = pdf.reserve();
+        let descent = if variant == Variant::MissingDescent && index == 0 {
+            ""
+        } else {
+            "/Descent -120"
+        };
         pdf.set_reserved(
             descriptor_id,
             format!(
                 "<< /Type /FontDescriptor /FontName /HPDFA{index}+NotoSans /Ascent 880 \
-             /Descent -120 /CapHeight 700 /Flags 32 /FontBBox [0 -200 1000 900] \
-             /ItalicAngle 0 /StemV 80 >>"
+                 {descent} /CapHeight 700 /Flags 32 /FontBBox [0 -200 1000 900] \
+                 /ItalicAngle 0 /StemV 80 >>"
             ),
         );
         pdf.set_reserved(
             descendant_id,
             format!(
                 "<< /Type /Font /Subtype /CIDFontType2 /BaseFont /HPDFA{index}+NotoSans \
-             /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> \
-             /FontDescriptor {descriptor_id} 0 R /DW 1000 /W [{width_entries}] >>"
+                 /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> \
+                 /FontDescriptor {descriptor_id} 0 R /DW 1000 /W [{width_entries}] >>"
             ),
         );
-        let font_id = pdf.add_dict(format!(
+        let encoding = if variant == Variant::NonIdentityEncoding && index == 0 {
+            "/WinAnsiEncoding"
+        } else {
+            "/Identity-H"
+        };
+        let to_unicode = to_unicode_id
+            .map(|id| format!(" /ToUnicode {id} 0 R"))
+            .unwrap_or_default();
+        fonts.push(pdf.add_dict(format!(
             "<< /Type /Font /Subtype /Type0 /BaseFont /HPDFA{index}+NotoSans \
-             /Encoding /Identity-H /DescendantFonts [{descendant_id} 0 R] \
-             /ToUnicode {to_unicode_id} 0 R >>"
-        ));
-        font_ids.push(font_id);
+             /Encoding {encoding} /DescendantFonts [{descendant_id} 0 R]{to_unicode} >>"
+        )));
     }
-
-    let page_id = pdf.reserve();
-    let page = format!(
-        "<< /Type /Page /Parent {pages} 0 R /MediaBox [0 0 {PAGE_WIDTH} {PAGE_HEIGHT}] \
-         /Resources << /Font << /F1 {} 0 R /F2 {} 0 R /F3 {} 0 R >> \
-         /XObject << /Im1 {image_id} 0 R >> >> /Contents {content_id} 0 R >>",
-        font_ids[0],
-        font_ids[1],
-        font_ids[2],
-        pages = pdf.reserve(),
-    );
-    pdf.set_reserved(page_id, page);
-    // `page` referenced one more reserved id for the page tree; fix the order.
-    let pages_id = pdf.last_reserved();
-    let pages = format!("<< /Type /Pages /Kids [{page_id} 0 R] /Count 1 >>");
-    pdf.set_reserved(pages_id, pages);
-    let catalog_id = pdf.add_dict(format!("<< /Type /Catalog /Pages {pages_id} 0 R >>"));
-
-    pdf.finish(catalog_id, encoding)
+    fonts
 }
 
-/// The image and text operators the generator writes.
+/// The `ToUnicode` CMap stream.
 fn to_unicode_stream(used: &BTreeSet<u32>) -> String {
     let mut cmap = String::from(
         "/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n\
@@ -329,11 +566,6 @@ impl Pdf {
         self.objects.len() as u32
     }
 
-    /// The most recently reserved id.
-    fn last_reserved(&self) -> u32 {
-        self.objects.len() as u32
-    }
-
     /// Fill a reserved id with a dictionary body.
     fn set_reserved(&mut self, id: u32, body: String) -> u32 {
         self.objects[(id - 1) as usize] = Some(ObjectBody::Dict(body));
@@ -361,18 +593,27 @@ impl Pdf {
         self.objects.len() as u32
     }
 
+    /// Add a stream object with an explicit filter name.
+    fn add_stream_with_filter(&mut self, filter: &str, data: &[u8], extra: &str) -> u32 {
+        self.objects.push(Some(ObjectBody::Stream {
+            dict: format!("<< /Length {} /Filter /{filter} {extra} >>", data.len()),
+            data: data.to_vec(),
+        }));
+        self.objects.len() as u32
+    }
+
     /// Serialize the document.
-    fn finish(&self, root: u32, encoding: Encoding) -> Vec<u8> {
+    fn finish(&self, root: u32, encoding: Encoding, encrypt: Option<u32>) -> Vec<u8> {
         match encoding {
-            Encoding::ClassicXref => self.finish_classic(root),
+            Encoding::ClassicXref => self.finish_classic(root, encrypt),
             Encoding::XrefStream | Encoding::ObjectStreams => {
-                self.finish_xref_stream(root, encoding == Encoding::ObjectStreams)
+                self.finish_xref_stream(root, encoding == Encoding::ObjectStreams, encrypt)
             }
         }
     }
 
     /// Serialize with a classic cross-reference table.
-    fn finish_classic(&self, root: u32) -> Vec<u8> {
+    fn finish_classic(&self, root: u32, encrypt: Option<u32>) -> Vec<u8> {
         let mut pdf = Vec::new();
         pdf.extend_from_slice(b"%PDF-1.7\n%\xE2\xE3\xCF\xD3\n");
         let mut offsets = Vec::with_capacity(self.objects.len());
@@ -389,9 +630,12 @@ impl Pdf {
         for offset in &offsets {
             pdf.extend_from_slice(format!("{offset:010} 00000 n \n").as_bytes());
         }
+        let encrypt = encrypt
+            .map(|id| format!(" /Encrypt {id} 0 R"))
+            .unwrap_or_default();
         pdf.extend_from_slice(
             format!(
-                "trailer\n<< /Size {} /Root {root} 0 R >>\nstartxref\n{xref_position}\n%%EOF\n",
+                "trailer\n<< /Size {} /Root {root} 0 R{encrypt} >>\nstartxref\n{xref_position}\n%%EOF\n",
                 self.objects.len() + 1
             )
             .as_bytes(),
@@ -400,7 +644,7 @@ impl Pdf {
     }
 
     /// Serialize with an xref stream, optionally packing the dictionaries.
-    fn finish_xref_stream(&self, root: u32, pack: bool) -> Vec<u8> {
+    fn finish_xref_stream(&self, root: u32, pack: bool, encrypt: Option<u32>) -> Vec<u8> {
         let mut packed: Vec<(u32, String)> = Vec::new();
         if pack {
             for (index, body) in self.objects.iter().enumerate() {
@@ -483,10 +727,13 @@ impl Pdf {
         xref.extend_from_slice(&(xref_offset as u32).to_be_bytes());
         xref.extend_from_slice(&0u16.to_be_bytes());
 
+        let encrypt = encrypt
+            .map(|id| format!(" /Encrypt {id} 0 R"))
+            .unwrap_or_default();
         pdf.extend_from_slice(format!("{xref_id} 0 obj\n").as_bytes());
         pdf.extend_from_slice(
             format!(
-                "<< /Type /XRef /Size {size} /W [1 4 2] /Root {root} 0 R /Length {} >>\nstream\n",
+                "<< /Type /XRef /Size {size} /W [1 4 2] /Root {root} 0 R{encrypt} /Length {} >>\nstream\n",
                 xref.len()
             )
             .as_bytes(),
@@ -520,9 +767,6 @@ pub fn at(y: f64, values: &[(f64, &str)]) -> Vec<(f64, f64, String)> {
 }
 
 /// The detail-table header row: local-date, local-report and UTC-time labels.
-///
-/// Adjacent label words are placed within the merge tolerance so that wrapped
-/// headings such as `Date (LT)` and `Start (UTC)` form one column each.
 pub fn detail_header_row(y: f64) -> Vec<(f64, f64, String)> {
     let mut items = Vec::new();
     items.extend(at(
@@ -548,16 +792,12 @@ pub fn detail_header_row(y: f64) -> Vec<(f64, f64, String)> {
             (TAGS_X, "Tags"),
         ],
     ));
-    // The header wraps over several print rows: this one carries the words that
-    // continue a column, and the anchor labels of the family are spread across
-    // both rows only when the producer's own header starts on a later row.
     items.extend(at(y - 9.0, &[(TZ_X, "Difference")]));
     items
 }
 
 /// The fictional June plan both the golden test and the browser equivalence
-/// scenario convert. The committed fixture keeps the source stem `2026-06`;
-/// only the calendar's own dates use the project's fictional-year convention.
+/// scenario convert.
 pub fn equivalence_plan() -> Vec<(f64, f64, String)> {
     let mut items = detail_header_row(600.0);
     items.extend(at(
@@ -618,8 +858,7 @@ pub fn warned_plan() -> Vec<(f64, f64, String)> {
     )])
 }
 
-/// A supported plan with two detail rows carrying unrecognized activity codes,
-/// each with a station and both UTC endpoints.
+/// A supported plan with two detail rows carrying unrecognized activity codes.
 pub fn two_warned_rows_plan() -> Vec<(f64, f64, String)> {
     dated_plan(&[
         (
@@ -645,9 +884,7 @@ pub fn two_warned_rows_plan() -> Vec<(f64, f64, String)> {
     ])
 }
 
-/// A supported plan with one detail row that cannot be represented (an
-/// unrecognized code with a single printed endpoint and no station) and one
-/// that is converted with a warning.
+/// A supported plan with one unrepresentable row and one warned row.
 pub fn error_and_warning_plan() -> Vec<(f64, f64, String)> {
     dated_plan(&[
         (

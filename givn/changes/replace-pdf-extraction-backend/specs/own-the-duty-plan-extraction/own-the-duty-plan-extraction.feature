@@ -18,7 +18,7 @@ Feature: Own the duty-plan extraction
     Then both published calendars are identical apart from their source-snapshot identities
     And the executable reports success for both conversions
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: A document outside the frozen subset is refused by name
     Given a duty plan that exercises the construct "<construct>"
     When the release maintainer converts it through the executable
