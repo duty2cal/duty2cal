@@ -22,7 +22,7 @@ Feature: Export a duty-plan calendar
     And  the converter reports one conversion warning naming detail row 1 and the date 2099-06-07
     And  the converter publishes a warning report beside the source
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: An unrecognized activity code with an unqualified window across midnight keeps it as the following UTC day
     Given  a supported duty plan dated 2099-06-07 with activity code ZZ_M_CF, one local-date block and unqualified printed UTC clocks 23:10 and 01:05
     When  the crew member converts it

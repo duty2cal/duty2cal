@@ -123,7 +123,7 @@ Design constraints:
   ```
 - [x] COMMIT: one revision; record the hash.
   ```
-  COMMIT: PENDING2
+  COMMIT: ed6cb4b
   ```
 
 ### 3. An unrecognized activity code with an unqualified window across midnight keeps it as the following UTC day
@@ -133,10 +133,25 @@ Design constraints:
 - Guard: the title rule from task 1 already covers it; no further production change.
 - Files: delta feature expectation.
 
-- [ ] RED: remove `@wip`; run the targeted command; paste output. This guard is green once task 1's rule is in place; record that the run is the guard's evidence rather than a fabricated failure.
-- [ ] GREEN: no production change; run the targeted command; paste output.
-- [ ] REFACTOR: run again; paste output.
-- [ ] COMMIT: one revision; record the hash.
+- [x] RED: removed `@wip`; the guard's title rule from task 1 is already in place, so the targeted run is green. Recorded honestly as guard evidence; the RED failure this scenario guards against (a bare override title) is covered by task 1.
+  ```
+  1 scenario (1 passed) / 4 steps (4 passed)
+  EXIT=0
+  ```
+- [x] GREEN: no production change; the overnight interval and title pass.
+  ```
+  ✔  Then the calendar contains one timed activity titled "unknown duty: ZZ_M_CF" from 23:10 on 2099-06-07 to 01:05 on 2099-06-08 UTC
+  1 scenario (1 passed) / 4 steps (4 passed)
+  ```
+- [x] REFACTOR: run again; no behaviour change.
+  ```
+  1 scenario (1 passed) / 4 steps (4 passed)
+  EXIT=0
+  ```
+- [x] COMMIT: one revision; record the hash.
+  ```
+  COMMIT: PENDING3
+  ```
 
 ### 4. An unrecognized activity code's activity carries no description
 
