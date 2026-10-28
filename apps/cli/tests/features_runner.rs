@@ -36,6 +36,11 @@ pub struct DutyWorld {
     /// The scenario's title, recorded by the before hook. A browser scenario
     /// names its committed visual evidence directory after it.
     pub scenario: String,
+    /// The generated duty plan a scenario converts, when it is not the
+    /// reference fixture.
+    pub plan: Option<Vec<u8>>,
+    /// The accepted calendar text an `@e2e` scenario compares against.
+    pub accepted_calendar: Option<String>,
 }
 
 impl Drop for DutyWorld {

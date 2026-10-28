@@ -15,6 +15,7 @@ file at `docs/arc42/adr/ADR-NNNN-short-slug.md`; the chapter-09 register
 | ADR-0005 | Declare the public home's GitHub configuration with OpenTofu and the GitHub provider | accepted | 2026-10-17 | [ADR-0005-declare-the-public-home-with-opentofu.md](ADR-0005-declare-the-public-home-with-opentofu.md) |
 | ADR-0006 | Keep the applied state local, passphrase-encrypted and committed, and check configuration drift locally | accepted | 2026-10-17 (amended 2026-10-19) | [ADR-0006-encrypted-local-applied-state.md](ADR-0006-encrypted-local-applied-state.md) |
 | ADR-0007 | Run the conversion in the browser through a WASM facade over the unchanged application | accepted | 2026-10-19 | [ADR-0007-browser-local-conversion-facade.md](ADR-0007-browser-local-conversion-facade.md) |
+| ADR-0008 | Own the extraction of the one supported duty plan and keep the third-party extractor as a test-only oracle | accepted | 2026-10-28 | [ADR-0008-own-the-duty-plan-extraction.md](ADR-0008-own-the-duty-plan-extraction.md) |
 
 ## Notes
 
@@ -37,6 +38,13 @@ file at `docs/arc42/adr/ADR-NNNN-short-slug.md`; the chapter-09 register
   conversion route, not a downloadable archive platform. The browser-owned save
   and the browser test driver were routed to the capability specification and
   `design.md` respectively, not to an ADR.
+- The change to replace the PDF extraction backend
+  (replace-pdf-extraction-backend) minted ADR-0008 (own the extraction of the
+  frozen supported subset; keep `pdfplumber` only as a test oracle). Its
+  considered alternatives include a measured vendored-fork option
+  (1,642,384 B host, −591,200 B) that was rejected; it is not a second ADR and
+  no fork is built. The word seam, the fixture generator and the measurement
+  commands are owned by `design.md` and the capability specification.
 - ADR-0006 was **amended on 2026-10-19** by the change to create the pages
   publishing plumbing (publish-site-plumbing), which generates the publishing
   key pair inside the declaration: the state now holds the only copy of a live

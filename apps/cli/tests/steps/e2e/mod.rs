@@ -4,4 +4,5 @@
 //! the in-process steps (design.md "Step definition locations").
 
 pub mod export_duty_plan_calendar;
+pub mod own_the_duty_plan_extraction;
 pub mod visual_baseline;

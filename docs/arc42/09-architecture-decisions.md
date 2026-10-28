@@ -15,6 +15,7 @@ Markdown file under `docs/arc42/adr/ADR-NNNN-short-slug.md`.
 | ADR-0005 | Declare the public home's GitHub configuration with OpenTofu and the GitHub provider | accepted | 2026-10-17 | [ADR-0005-declare-the-public-home-with-opentofu.md](adr/ADR-0005-declare-the-public-home-with-opentofu.md) |
 | ADR-0006 | Keep the applied state local, passphrase-encrypted and committed, and check configuration drift locally | accepted | 2026-10-17 (amended 2026-10-19) | [ADR-0006-encrypted-local-applied-state.md](adr/ADR-0006-encrypted-local-applied-state.md) |
 | ADR-0007 | Run the conversion in the browser through a WASM facade over the unchanged application | accepted | 2026-10-19 | [ADR-0007-browser-local-conversion-facade.md](adr/ADR-0007-browser-local-conversion-facade.md) |
+| ADR-0008 | Own the extraction of the one supported duty plan and keep the third-party extractor as a test-only oracle | accepted | 2026-10-28 | [ADR-0008-own-the-duty-plan-extraction.md](adr/ADR-0008-own-the-duty-plan-extraction.md) |
 
 ADR-0001 and ADR-0002 were minted by the change to export released roster
 calendars (export-released-roster-calendar); ADR-0003 and ADR-0004 were minted
@@ -36,6 +37,19 @@ driver is test tooling routed to `design.md`. Every other design choice in
 those changes is a supplied constraint (chapter 2), a local mechanism
 (`design.md`), or product behaviour owned by the capability specification and
 the glossary, and did not pass the qualification gate.
+
+ADR-0008 was minted by the change to replace the PDF extraction backend
+(replace-pdf-extraction-backend): one record for owning the interpretation of
+the frozen supported subset and keeping `pdfplumber` as a test-only oracle, so
+the Windows executable and the browser bundle ship no third-party PDF
+extractor. Its considered alternatives include keeping the extractor, owning
+xref and streams as well, and a measured vendored `pdfplumber-parse` 0.4.1 fork
+whose Adobe CID→Unicode tables are stubbed (1,642,384 B on the host at
+`30bbcb9`, −591,200 B against 2,233,584 B); the fork was rejected as an interim
+alternative inside the same record, not as a second ADR, and no fork is built.
+The word seam, the generated Identity-H corpus and the same-revision
+measurement commands are local mechanisms routed to `design.md` and the
+capability specification.
 
 ADR-0006 was **amended on 2026-10-19** by the change to create the pages
 publishing plumbing (publish-site-plumbing): the state it protects now holds

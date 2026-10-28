@@ -16,7 +16,7 @@
 sequenceDiagram
   participant CLI
   participant App as ConvertRoster
-  participant PDF as PDF extraction
+  participant PDF as Owned extraction
   participant Dom as Domain
   participant FS as Filesystem publication
   CLI->>App: convert(source path)
@@ -95,10 +95,38 @@ sequenceDiagram
 
 1. The orchestrator does not stop at the first failing row: it records an error for each row that cannot be represented and keeps processing, so warnings from other rows are collected too.
 2. Any recorded error prevents calendar composition. The failure's primary reason is the first error in plan order.
-3. A row-level failure writes the sectioned report (`Source PDF:`, `Reason:`, `Errors:`, `Warnings:`); a source, table-structure or publication failure keeps the two-line report.
+3. A row-level failure writes the sectioned report (`Source PDF:`, `Reason:`, `Errors:`, `Warnings:`); a source failure — including a construct outside the frozen supported subset — a table-structure failure or a publication failure keeps the two-line report.
 4. The CLI prints every error and warning line and the report path it actually wrote; when no report could be saved it says so and never presents an older report as current.
 
 **Notes:** Existing calendars and reports are unchanged. The report path is reported only after a successful write.
+
+## Scenario: A construct outside the frozen subset is refused by name
+
+**Trigger:** A readable duty plan uses a PDF construct the frozen subset does not cover.
+
+```mermaid
+sequenceDiagram
+  participant CLI
+  participant App as ConvertRoster
+  participant Ext as Owned extraction
+  participant Diag as Failure-report writer
+  CLI->>App: convert(source bytes)
+  App->>Ext: load document, pages, fonts and content
+  Ext-->>App: Err(UnsupportedConstruct)
+  App-->>CLI: Err(Source)
+  CLI->>Diag: allocate numbered report + two-line body
+  Diag-->>CLI: report path (or why none was saved)
+  CLI-->>CLI: print the reason and report path, exit non-zero
+```
+
+**Steps:**
+
+1. The owned extraction checks the encrypted flag, the page box and rotation, the font subtype/encoding/`ToUnicode` map, and the content operators and filters before it emits words; the first construct outside the subset names itself and its page.
+2. `ConvertError::Source` keeps the two-line `Source PDF:` / `Reason:` report; the reason reads `the source uses a PDF construct outside the supported family: <construct>` with ` on page <n>` when known.
+3. No calendar, warning report or empty calendar is written. The report carries the construct name and page, never printed plan text, a station, a name, a date or an activity code.
+4. A truncated or malformed file is `Unreadable`; a readable PDF without the supported detail table is `UnsupportedFamily`; a panic is a defect, not a refusal, and the refusal scenarios assert the failure without an abort.
+
+**Notes:** This is a source-level failure, not a row error, so the existing numbered `<stem>.parse-error[-N].txt` names and the two-line body are unchanged. The exact construct names are the closed `Construct` enum's display names in `duty2cal-core/src/application/mod.rs`.
 
 ## Scenario: Publication failure
 
@@ -491,6 +519,39 @@ flowchart TB
 2. It resolves the revision into a worktree and rebuilds the unchanged configuration as the baseline; the published binary's size is reported separately and never used as the baseline.
 3. It builds each candidate lever cumulatively against the configuration carrying the previously accepted levers; a positive delta is applied, a zero or negative delta is rejected and the configuration stays.
 4. The landed `panic = "abort"` build is smaller by the recorded delta: 2,014,208 B against a 2,098,176 B rebuild on the release branch. A panic aborts with the standard Rust panic message; an unsupported source still writes a numbered diagnostic naming the source and reason.
+
+## Scenario: A backend replacement is measured against the previous extraction
+
+**Trigger:** A revision replaces the PDF extraction backend and must show the
+saving on the artifacts that ship.
+
+```mermaid
+flowchart TB
+  rev["Landed revision"] --> landed["Windows GNU executable and browser bundle as built"]
+  rev --> wt["temporary worktree of the landed revision"]
+  base["Base revision's crates/duty2cal-pdf and Cargo.lock"] --> wt
+  wt --> check{"restored base [dependencies] name pdfplumber?"}
+  check -->|"yes"| prev["same tree rebuilt with the previous extraction"]
+  check -->|"no"| na["status: not applicable, the resolved base and the landed size; exit 0"]
+  landed --> both["landed size, baseline size, saved bytes"]
+  prev --> both
+  both -->|"positive"| report["extraction-backend.json/.md and browser-bundle.json/.md + step summary"]
+  both -->|"zero or negative"| reject["replacement rejected"]
+  wt -.->|"baseline does not build"| refuse["no number; refusal names the build"]
+```
+
+**Steps:**
+
+1. The Windows job builds the landed revision's `x86_64-pc-windows-gnu` executable; the browser job builds the landed bundle with the pinned `wasm-pack`.
+2. `scripts/measure_extraction_backend.py` creates a temporary worktree of the landed revision, restores only `crates/duty2cal-pdf/` and `Cargo.lock` from the base revision, and rebuilds the CLI package for the same target while the restored base `crates/duty2cal-pdf/Cargo.toml` still names `pdfplumber` in its `[dependencies]`. `scripts/measure_browser_bundle.py` does the same for the wasm bundle and its inline module.
+3. When the restored base tree's `[dependencies]` no longer name `pdfplumber` — the state of every base after this replacement lands — the script builds nothing, writes `status: not applicable` with the resolved base revision and the landed size, and exits 0. This is the operator decision of 2026-10-28: the same-revision measurement is one-shot for the introducing revision, and after landing no automated size gate remains; the published binary's size and the unchanged 2,097,152-byte budget are the only automated numbers left.
+4. The reports name the landed and base revisions, the target, the two sizes, the saved bytes and percent, and the toolchain; the Windows job appends the markdown to the step summary and uploads the artifacts.
+5. A restored tree that does not build, a diff beyond the allowed paths, a non-Windows artifact or a measured run's non-positive delta is a named refusal, not a number. The existing 2,097,152-byte budget and the published binary's size are reported separately and are not the baseline.
+
+**Notes:** The baseline is a same-revision restore because the landed tree no
+longer contains the previous extraction; a base-revision checkout would
+attribute unrelated changes. The host measurements in the change's evidence are
+attribution, not acceptance.
 
 ## Scenario: The existing public home is adopted into the declared configuration
 

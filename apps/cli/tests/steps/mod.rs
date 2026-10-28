@@ -5,4 +5,5 @@ pub mod browser;
 pub mod e2e;
 pub mod export_duty_plan_calendar;
 pub mod legal_notices;
+pub mod own_the_duty_plan_extraction;
 pub mod support;

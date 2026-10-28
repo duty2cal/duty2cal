@@ -21,11 +21,13 @@ flowchart TB
   corr --> c1["Complete representation"]
   corr --> c2["Explicit failure instead of a partial calendar"]
   corr --> c3["Every row's errors and warnings reported, with severities"]
+  corr --> c4["Named refusal for a construct outside the frozen subset"]
   rel --> r1["No destruction of existing outputs"]
   inter --> i1["RFC 5545 conformance"]
   priv --> p1["No private source data in public artifacts"]
   maint --> m1["Pure domain behind ports"]
   maint --> m2["Executable specification"]
+  maint --> m3["Owned extraction for the frozen supported subset"]
   root --> rel2["Release integrity"]
   rel2 --> ri1["One Windows x86_64 archive per version"]
   rel2 --> ri2["Deterministic archives"]
@@ -36,6 +38,7 @@ flowchart TB
   rel2 --> ri7["Dependency updates are releasable and announced"]
   rel2 --> ri8["Publication waits for every check to conclude"]
   rel2 --> ri9["Measured size attribution"]
+  rel2 --> ri10["Backend replacement measured on the shipped artifacts"]
   root --> browser["Browser conversion"]
   browser --> b1["Same calendar as the executable"]
   browser --> b2["No plan leaves the tab; no request after load"]
@@ -108,6 +111,8 @@ flowchart TB
 | QS-044 | Legal notice reachability | A reader opens any page of the Public website, the organization profile or the README; and a revision drops a notice or a footer link, pastes a placeholder into a notice, or copies the postal address into the profile. | The converter page's footer links both notices and each notice's footer links the other notice and the converter page, so the Impressum and the Datenschutzerklärung are one step from any page; the profile and the README each carry two labelled links without a copied address. A dropped notice or footer link, a missing postal or mail address, a missing standing date in the Datenschutzerklärung, a placeholder or the discontinued dispute-resolution reference is refused by the publication, naming the page and the element; the source-level check refuses a carrier that does not link the notices or that copies the postal address, naming the carrier. The checks prove reachability, not legal sufficiency. |
 | QS-045 | Diagnostics aggregation | A supported plan has two rows that cannot be represented and one row that converts with a warning, and the failing row is the first of the three. | The conversion processes every row: no calendar is published, the executable reports failure, and the numbered failure report carries `Source PDF:`, the primary `Reason:`, an `Errors:` section with both errors and a `Warnings:` section with the warning. The CLI transcript carries the same lines with their severities. |
 | QS-046 | Browser warning visibility | A supported plan with a warning is supplied through the page, and a plan with an error and a warning is supplied afterwards. | The first shows the ready-with-warnings state, lists the warning, offers `<stem>.ics` and `<stem>.parse-warnings.txt`, and still writes nothing and sends no request. The second shows the failure heading, lists the error and the warning under `Errors` and `Warnings`, offers no calendar, and offers `<stem>.parse-error.txt`; the first attempt's warning list and offers are gone. |
+| QS-047 | Owned-extraction equivalence and named refusal | The landed executable converts a supported Identity-H plan and a readable plan that uses a construct outside the frozen subset (Type3 font, rotation, `Tz`, inline image, unresolved filter, encryption). | The supported plan publishes a calendar byte-identical to the accepted reference; the owned extraction's words match the test oracle's text exactly and `x0`/`top` within 0.5 point, and the shared table output is equal. The unsupported plan publishes no calendar and writes a numbered two-line report whose `Reason:` names the construct and, when one is known, the page; the report contains no printed plan text; the process exits non-zero without aborting. |
+| QS-048 | Backend replacement measurement | A revision replaces the extraction backend; the Windows executable and browser bundle are built once as landed and once from the same revision with the previous extraction restored. | Both reports name the landed and base revisions, the target, the two sizes, the saved bytes and percent; in a measured run the landed artifacts are smaller; a restored tree that does not build, a diff beyond the allowed paths, a non-Windows artifact or a non-positive delta yields a named refusal. When the restored base tree's `crates/duty2cal-pdf/Cargo.toml` does not name `pdfplumber` in `[dependencies]`, the script writes `status: not applicable` with the resolved base revision and the landed size and exits 0, because after landing no automated size gate remains. `scripts/check-extraction-dependency.sh` finds no extractor in the Windows/WASM normal graphs and finds the oracle in the dev graph; the published binary and the 2,097,152-byte budget are reported separately. |
 
 **Stimulus / response / metric** for the primary scenario:
 

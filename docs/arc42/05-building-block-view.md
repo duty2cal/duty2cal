@@ -7,7 +7,7 @@ flowchart TB
   CLI["apps/cli — driving adapter (argv → use case → exit code); fs module publishes"]
   WASM["ffi/wasm — wasm-bindgen driving adapter over the same use case"]
   WEB["web/ — static page, ES modules, offers; no backend"]
-  PDF["crates/duty2cal-pdf — pdfplumber → RosterSource"]
+  PDF["crates/duty2cal-pdf — owned extraction → RosterSource"]
   CORE["crates/duty2cal-core — lib"]
   CLI --> CORE
   CLI --> PDF
@@ -22,7 +22,7 @@ flowchart TB
 | `apps/cli` (package `duty2cal`) | Parse the invocation, invoke the conversion, print the reported path or failure, set the exit status, and publish the calendar or the diagnostic (`fs` module). |
 | `ffi/wasm` (package `duty2cal-wasm`) | A thin `wasm-bindgen` driving adapter: accepts the filename and bytes, wires the unchanged `ConvertRoster` with a browser clock, and returns calendar text or a structured failure. Target-scoped to `wasm32-unknown-unknown`; performs no filesystem, network or environment I/O. |
 | `web/` | The converter page: a header with the project's vector mark (`icon.svg`) as a 48×48 mark left of the heading (and as the tab's primary icon, with the raster `icon.png` declared as its alternate), a statements panel above the converter panel (the tool's one plan — a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export — with its boundary, the browser route, downloads for various operating systems on request with the release page linked, privacy, the non-affiliation sentence naming Lufthansa and Jeppesen, as-is), capability gate, file picker and drop zone, 20 MiB bound, conversion call, status/failure panels, Blob offers, a "Source and licence" panel below the converter panels, and a full footer carrying the Built revision and the plain-prose non-affiliation, as-is and privacy statements. No backend, no upload, no persistent storage. |
-| `crates/duty2cal-pdf` | The only crate that depends on `pdfplumber`; produces the `RawRosterTable` anti-corruption input. |
+| `crates/duty2cal-pdf` | Owns the extraction of the frozen supported subset — objects/pages through `lopdf`, and the project's content, font, CMap and positioning interpretation — and produces the `RawRosterTable` anti-corruption input; `pdfplumber` is a test-only oracle. |
 | `crates/duty2cal-core` | Pure domain, application ports + `ConvertRoster`, and the dependency-free ICS adapter. |
 
 ## Browser build and evidence toolbox (outside the product crates)
@@ -63,13 +63,16 @@ stay in the corpus as documentation and are skipped by the assembler.
 ```mermaid
 flowchart TB
   RUN["run-tests.sh — phase timings, default/excluded tags, --e2e, --browser, --name"]
-  RUST["cargo test -p duty2cal-core -p duty2cal-pdf — unit, property, architecture"]
+  RUST["cargo test -p duty2cal-core -p duty2cal-pdf — unit, property, architecture, differential"]
+  FIX["crates/duty2cal-pdf-fixtures — generated Identity-H/Flate/xref/ObjStm corpus"]
   GOLD["cargo test -p duty2cal --test golden — 2026-06 fixture"]
-  CUC["features_runner — export-duty-plan-calendar, not @browser"]
+  CUC["features_runner — export-duty-plan-calendar and own-the-duty-plan-extraction, not @browser"]
   BROWSER["features_runner — @browser (build-web.sh + build-site.sh first)"]
   ASM["scripts/assemble_features.py — skips @documentation"]
   RUN --> RUST
+  FIX -->|"generates plans"| RUST
   RUN --> GOLD
+  FIX -->|"generates plans"| GOLD
   RUN --> ASM --> CUC
   RUN -->|"--browser"| BROWSER
 ```
@@ -79,7 +82,12 @@ flowchart TB
 | `run-tests.sh` | Assemble the feature root, print `phase=<name> seconds=<n>` and the cucumber concurrency, run the Rust tests and the golden test on a full run, and select the scenario set. `--no-fail-fast` keeps one failing class from hiding the others. |
 | `apps/cli/tests/features_runner.rs` | Cucumber-rs runner with `.fail_on_skipped()`; the world carries only the product scenario fields. |
 | `apps/cli/tests/steps/export_duty_plan_calendar.rs` | The conversion capability's CLI and in-process steps. |
+| `apps/cli/tests/steps/own_the_duty_plan_extraction.rs` | The owned-extraction capability's regular and outline steps: generated supported and refusal plans, the accepted calendar, the named construct report. |
 | `apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs` | The one CLI `@e2e` scenario and the one browser `@e2e` scenario. |
+| `apps/cli/tests/steps/e2e/own_the_duty_plan_extraction.rs` | The owned-extraction capability's `@e2e` scenario, its CLI invocation and committed transcript. |
+| `crates/duty2cal-pdf-fixtures` | The dev-only generator: Identity-H fonts with per-font `ToUnicode`, Flate content, classic xref, xref stream, object streams, a logo image, multi-page plans and the refusal variants. It emits bytes in-process and commits no PDF. |
+| `crates/duty2cal-pdf/src/differential_tests.rs` | The word-level oracle comparison (exact text, 0.5 pt on `x0`/`top`, equal `RawRosterTable`), the refusal cases, and the ignored real-corpus run. |
+| `scripts/validate-local-corpus.sh` | Runs the executable over `private/*.pdf` in place; `--differential` runs the ignored real-corpus oracle test. Opt-in, never CI. |
 | `apps/cli/tests/steps/browser.rs` | The Playwright driver client. |
 | `apps/cli/tests/golden.rs` | Direct conversion of the generated 2026-06 plan against `tests/fixtures/expected/2026-06.ics`. |
 | `scripts/assemble_features.py` | Merge delta specs and skip a feature whose prefix carries `@documentation`. |
@@ -164,6 +172,10 @@ flowchart TB
   ART["run artifact: size-attribution + step summary"]
   REDUCE["scripts/measure_size_lever.py — baseline and cumulative lever builds (local tool)"]
   LEVER["size-lever.json + size-lever.md — baseline, cumulative delta, status"]
+  MBACK["scripts/measure_extraction_backend.py — same-revision Windows executable against the previous extraction"]
+  MWASM["scripts/measure_browser_bundle.py — same-revision browser bundle against the previous extraction"]
+  MREP["extraction-backend.json/.md + browser-bundle.json/.md — landed, baseline, delta"]
+  GRAPH["scripts/check-extraction-dependency.sh — no extractor in the Windows/WASM normal graphs; the oracle stays in the dev graph"]
   REL -->|invokes| PREP
   PREP -->|invokes| RENDER
   REL -->|publish job invokes| GATE
@@ -178,6 +190,11 @@ flowchart TB
   REPORT -->|"uploaded for every pushed revision"| ART
   REDUCE -->|writes| LEVER
   REDUCE -->|"measures the release profile"| PRODUCT["Cargo.toml: panic = abort"]
+  CI -->|"windows-gnu-build invokes"| MBACK
+  CI -->|"browser job invokes"| MWASM
+  MBACK -->|writes| MREP
+  MWASM -->|writes| MREP
+  CI -->|"windows-gnu-build, browser and test jobs run"| GRAPH
 ```
 
 | Release block | Responsibility |
@@ -191,8 +208,12 @@ flowchart TB
 | `scripts/measure_executable_size.py` | The measurement: resolve a named revision into a temporary worktree, build the shipped artifact with the committed configuration, build the same revision again with `strip` disabled for that build only in a separate target directory, attribute it by crate and by function with the pinned generator, read the stripped artifact's file size, digest and section sizes, and write one report naming the revision, the platform and the build's identity. A failed build or a build that keeps no names yields no attribution; an unreadable file size leaves the report incomplete; nothing is inferred from the archive or a host build. |
 | `scripts/measure_size_lever.py` | The reduction measurement: resolve the revision into a worktree, rebuild the unchanged release configuration (`panic = "unwind"`, `opt-level = "z"`) as the baseline, build each candidate lever cumulatively, measure the stripped executable's file size, record the delta and status, refuse a nightly/UPX/dynamic-linking proposal before a build, report the published binary's size separately, and preserve the accepted executable for the failure-path run. |
 | `size-lever.json` and `size-lever.md` | The reduction report: baseline, cumulative rows, applied/rejected statuses, the published binary's size and the recorded panic/conversion outcome. |
+| `scripts/measure_extraction_backend.py` | The backend measurement: build the landed revision's Windows GNU executable, restore `crates/duty2cal-pdf/` and `Cargo.lock` from the base revision in a temporary worktree, build the same package, and record both sizes, the saved bytes and the two revisions. It refuses a baseline that does not build, a worktree diff beyond the allowed paths, a non-Windows artifact or a non-positive delta. |
+| `scripts/measure_browser_bundle.py` | The same comparison for the `wasm-pack` bundle and its inline module; the wasm size must be smaller. |
+| `scripts/check-extraction-dependency.sh` | The dependency split: no `pdfplumber` in the `x86_64-pc-windows-gnu` or `wasm32-unknown-unknown` normal graphs, and the oracle present in `cargo tree -e dev -p duty2cal-pdf`. |
+| `extraction-backend.json`/`.md` and `browser-bundle.json`/`.md` | The CI reports: landed and baseline sizes, saved bytes/percent, the two revisions and the toolchain. They are run artifacts, not committed files (ADR-0008). |
 | `.github/workflows/release.yml` | On a `v*` tag: cross-build the Windows x86_64 executable on Linux, smoke that executable on Windows, prepare the staged set over the one binary, wait for the tagged revision's checks to conclude green, publish the immutable release with provenance and a bill of materials, then verify the published release by reading it back. |
-| `.github/workflows/ci.yml` | The gate on landing: `actionlint`, `dco`, `public-text`, `changelog`, `scripts` (`bats`), `browser` (one Playwright smoke), `coverage` on `main` only, and `windows-gnu-build` with the byte budget and the per-push attribution. The `test` job no longer installs the change-log, OpenTofu or attribution toolchains. |
+| `.github/workflows/ci.yml` | The gate on landing: `actionlint`, `dco`, `public-text`, `changelog`, `scripts` (`bats`), `browser` (one Playwright smoke plus the bundle measurement), `coverage` on `main` only, `windows-gnu-build` with the byte budget, the per-push attribution and the same-revision backend measurement, and the dependency-split check in the Windows, browser and test jobs. The `test` job no longer installs the change-log, OpenTofu or attribution toolchains. |
 | `attribution.json` and `attribution.md` | The report a measurement writes, not a committed file: the machine-readable and human renderings of one dataset. They name the revision, the platform and the build's identity, keep the crate/function split and the stripped executable's file size as separate fields, and carry the status `complete`, `incomplete` or `unreadable`. The `windows-gnu-build` job uploads the pair beside the run for the revision it built; the release maintainer can request the same report for any named revision. |
 | Community files (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/ISSUE_TEMPLATE/*`, `.github/pull_request_template.md`) | The contributor routes: contribution and sign-off rules, conduct, the confidential reporting route, and issue and pull-request forms that state the support statement and ask whether the plan converted, what the refusal said and for a stripped sample, never a real plan and never an export-family classification. |
 | Release and size step definitions | Deleted with the operational test scope. The release channel's executable checks are the release workflow itself; `measure_executable_size.py` runs in `windows-gnu-build` and locally, `measure_size_lever.py` runs locally, and neither has a cucumber binding. |
@@ -245,7 +266,22 @@ flowchart TB
 
 ### `duty2cal-pdf`
 
-**Responsibility:** header detection → X bands → Y clustering → `RawRosterTable`; error mapping to a crate-local `SourceError` (the orphan rule forbids `From<pdfplumber::Error>`).
+**Responsibility:** the owned extraction of the frozen supported subset (bytes →
+positioned words: `lopdf` objects/pages/decoded content, the project's tokenizer,
+text state, Type0/Identity-H fonts, `/W` advances, `/ToUnicode` CMaps and word
+assembly) followed by the extraction-agnostic table construction (header
+detection → X bands → Y clustering → `RawRosterTable`). A construct outside the
+frozen subset maps to `SourceError::UnsupportedConstruct` with a closed
+`Construct` name and page; a readable non-family document maps to
+`UnsupportedFamily`; a corrupt file maps to `Unreadable`. The pinned
+`pdfplumber` is a `[dev-dependencies]` oracle only; `cargo tree -e normal`
+never names it.
+
+| Element | Responsibility |
+|---|---|
+| `reader/` (`document`, `content`, `font`, `cmap`, `words`) | The owned extraction: page order and the page box, the operator subset, the graphics/text state, glyph boxes and word splitting, and the named refusal mapping. |
+| `table.rs` | The table rules, moved from `lib.rs` and unchanged: rows, column bands, date resolution and the footer revision. |
+| `differential_tests.rs` (`#[cfg(test)]`) | Oracle comparison over the generated corpus and the ignored local real-corpus run; equal `RawRosterTable` and `SourceDocument`. |
 
 ### `apps/cli`
 

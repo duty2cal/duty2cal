@@ -12,11 +12,39 @@
 
 Every conversion either produces a complete calendar or fails explicitly. The `Roster` aggregate gates publication: no side effect occurs until every detail row is accounted for, and a required-value contradiction or a row that cannot be represented is a conversion error that rejects the conversion. A cron-like "best effort" partial calendar is never produced, because a calendar that looks complete but omits a leg is worse than a visible failure. A row whose activity code is unrecognized but whose printed evidence is sufficient is not a failure: it becomes an ordinary timed or all-day activity and the conversion reports a warning. The distinction is severity, not best effort — a warning is a documented representation, an error is an unrepresentable row.
 
+## Owned extraction and the frozen supported subset
+
+The shipped graphs read the one supported plan through an extraction the
+project owns: a small `lopdf` object/xref layer and project code for the
+content tokenizer, text state, Type0/Identity-H fonts, `/W` advances,
+`ToUnicode` CMaps, glyph boxes and word assembly. The seam is the positioned
+word; the table construction below it is one implementation used by the
+executable and the browser, so the two routes cannot drift. ADR-0008 freezes
+the subset to the constructs the reference plans and the generated variations
+exercise.
+
+A construct outside the subset — encryption, a font encoding other than
+Identity-H, a Type3 font, a missing `ToUnicode` map, an unmapped glyph code,
+text or page rotation, horizontal scaling, an inline image, a form XObject, an
+unsupported text operator or content filter, a differing page box — maps to
+`SourceError::UnsupportedConstruct` with a closed construct name and a page. It
+is never a panic and never an empty calendar. `Unreadable` is reserved for
+corrupt bytes, `UnsupportedFamily` for a readable PDF without the detail table.
+The reason line carries the construct and page, never printed plan content.
+
+The third-party extractor is a `[dev-dependencies]` oracle only.
+`scripts/check-extraction-dependency.sh` refuses it in the
+`x86_64-pc-windows-gnu` and `wasm32-unknown-unknown` normal graphs and refuses a
+missing oracle in the dev graph. The differential compares word text exactly
+and `x0`/`top` within 0.5 point, then the shared table output; the generated
+Identity-H corpus is the CI gate, and the opt-in real-corpus run is the only
+cover for the generator's exact bytes (R-078).
+
 ## Row diagnostics and two report kinds
 
 Interpretation is a single pass in which every finding is collected rather than thrown. A `Diagnostic` carries its severity, the detail table's row number, the row's date when one was resolved, and one complete sentence. The pass continues after an error, so a plan with several failing rows reports all of them and still reports the warnings from rows that converted. An error wins over success: any error discards the composed entries and no calendar is written. Diagnostics are ordered by row so the report reads in plan order even when an unmatched travel fragment is discovered at the end.
 
-Publication writes one report kind per outcome. A conversion with warnings publishes the calendar and `<stem>.parse-warnings.txt` (enumerated on collision) with a `Warnings:` section. A conversion with errors publishes no calendar and `<stem>.parse-error.txt` (enumerated as before) with `Source PDF:`, the primary `Reason:`, and `Errors:`/`Warnings:` sections. Both builders live in the application layer and both facades call them, so the executable and the page cannot drift. A failure that is not about a row — an unreadable source, an unsupported plan, a missing required column, a publication failure, an unnameable source — keeps the two-line report. A warning report that cannot be saved does not withdraw the calendar and does not hide the warnings.
+Publication writes one report kind per outcome. A conversion with warnings publishes the calendar and `<stem>.parse-warnings.txt` (enumerated on collision) with a `Warnings:` section. A conversion with errors publishes no calendar and `<stem>.parse-error.txt` (enumerated as before) with `Source PDF:`, the primary `Reason:`, and `Errors:`/`Warnings:` sections. Both builders live in the application layer and both facades call them, so the executable and the page cannot drift. A failure that is not about a row — an unreadable source, an unsupported plan, a construct outside the frozen supported subset, a missing required column, a publication failure, an unnameable source — keeps the two-line report. A warning report that cannot be saved does not withdraw the calendar and does not hide the warnings.
 
 ## No-clobber publication
 
@@ -28,7 +56,7 @@ A failure carries a primary reason and is reported independently of report persi
 
 ## Classification and timing as pure rules
 
-Source-code classification (all-day vs timed vs travel vs layover vs unrecognized) and UTC endpoint date resolution are pure functions over source-derived data. Keeping them free of I/O lets return-driven edge cases (adjacent-day qualifiers, the narrow overnight rollover, zero-length intervals) be specified and tested without a real PDF, and prevents the extraction dependency from leaking into the domain. The unrecognized branch is evidence-driven: both printed endpoints make the activity timed, none makes it all-day, and one endpoint is a conversion error. The code's letters are never read as a kind.
+Source-code classification (all-day vs timed vs travel vs layover vs unrecognized) and UTC endpoint date resolution are pure functions over source-derived data. Keeping them free of I/O lets return-driven edge cases (adjacent-day qualifiers, the narrow overnight rollover, zero-length intervals) be specified and tested without a real PDF, and prevents the extraction from leaking into the domain. The unrecognized branch is evidence-driven: both printed endpoints make the activity timed, none makes it all-day, and one endpoint is a conversion error. The code's letters are never read as a kind.
 
 ## Source-snapshot-scoped identity and determinism
 
@@ -110,7 +138,7 @@ that caused it. `--no-fail-fast` keeps one failing class from hiding the rest.
 
 ## Classification and timing as pure rules
 
-Source-code classification (all-day vs timed vs travel vs layover vs unknown) and UTC endpoint date resolution are pure functions over source-derived data. Keeping them free of I/O lets return-driven edge cases (adjacent-day qualifiers, the narrow overnight rollover, zero-length intervals) be specified and tested without a real PDF, and prevents the extraction dependency from leaking into the domain.
+Source-code classification (all-day vs timed vs travel vs layover vs unknown) and UTC endpoint date resolution are pure functions over source-derived data. Keeping them free of I/O lets return-driven edge cases (adjacent-day qualifiers, the narrow overnight rollover, zero-length intervals) be specified and tested without a real PDF, and prevents the extraction from leaking into the domain.
 
 ## Printed identification of a travel leg
 
@@ -594,7 +622,8 @@ unwinding or a backtrace. This does not change the promise for expected
 failures: a conversion that cannot be represented still returns the typed
 failure and attempts a numbered diagnostic naming the source PDF and the
 reason, and when no report can be saved the primary failure remains visible.
-The product uses no `unwrap()`/`expect()` outside test code. The host lever
+The product uses no `unwrap()`/`expect()` outside test code. The owned extraction
+returns `Result` on every path; a panic there is a defect, not a refusal. The host lever
 build is run on an unsupported source by the local reduction measurement; the Windows
 executable is started by the release workflow's Windows smoke job.
 
@@ -637,6 +666,31 @@ is pinned for the same reason the change-log and notices generators are. A
 measurement is produced for every pushed revision by the Windows cross-build
 job and published beside that run, and the same command is available to the
 maintainer for any named revision.
+
+## Measured backend replacement
+
+The backend replacement is accepted on the artifacts that ship, not on a host
+build. The Windows job builds the landed revision's `x86_64-pc-windows-gnu`
+executable and the browser job builds the landed bundle; each measurement then
+creates a temporary worktree of the landed revision, restores only
+`crates/duty2cal-pdf/` and `Cargo.lock` from the base revision, rebuilds, and
+records both sizes and the saved bytes. The baseline is a same-revision restore
+because the landed tree no longer contains the previous extraction; a
+base-revision checkout would attribute unrelated changes.
+
+A restored tree that does not build, a worktree diff beyond the allowed paths, a
+non-Windows artifact or a measured run's non-positive delta is a named refusal,
+not a number. A base revision that no longer names `pdfplumber` in
+`crates/duty2cal-pdf`'s dependencies — the state of every base once this
+replacement has landed — is not a refusal: the script records
+`status: not applicable` with the resolved base and the landed size and exits 0,
+because no baseline exists to restore. The size gate is consequently one-shot
+for the introducing revision; no automated size gate remains after landing. The
+reports are run artifacts, the existing 2,097,152-byte budget is unchanged, and
+the published binary's size is reported separately. The vendored-fork
+alternative was measured on the host (1,642,384 B against 2,233,584 B,
+−591,200 B) and rejected in ADR-0008's considered alternatives; it is not a
+shipped path and no fork is built.
 
 
 
