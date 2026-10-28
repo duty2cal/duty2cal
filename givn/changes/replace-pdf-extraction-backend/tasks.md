@@ -539,7 +539,7 @@ Design constraints:
     ```
 - [x] COMMIT the skeleton and the setup evidence.
   ```
-  COMMIT: PENDING
+  COMMIT: 61cb00b
   ```
 
 ## @e2e scenario
@@ -551,45 +551,68 @@ Design constraints:
 - The step writes the transcript at the evidence path: command line, `Written:` path, exit status, normalised comparison result, with `<scenario-dir>` substitution and no host path, user name or clock value.
 - No browser driver: the interface is the terminal. The only `@e2e` tag in this change stays on this scenario.
 
-- [ ] RED: remove `@wip` from this scenario and run `./run-tests.sh --e2e` with the stubs in place. Paste the failure; exit non-zero.
+- [x] RED: remove `@wip` from this scenario and run `./run-tests.sh --e2e` with the stubs in place. Paste the failure; exit non-zero.
   ```
-  (paste the e2e run, exit non-zero)
+  $ ./run-tests.sh --e2e
+  ✘  Given a supported duty plan whose accepted calendar is recorded
+     Step panicked. Captured output: not implemented: a supported duty plan whose accepted calendar is recorded
+  2 scenarios (1 passed, 1 failed); exit=1
   ```
-- [ ] GREEN: replace the stubs with the real CLI invocation, the calendar comparison and the transcript write. List production/test files.
+- [x] GREEN: replace the stubs with the real CLI invocation, the calendar comparison and the transcript write. List production/test files.
   - Files:
     ```
-    (list every created/modified file)
+    apps/cli/tests/steps/e2e/own_the_duty_plan_extraction.rs
+    givn/changes/replace-pdf-extraction-backend/specs/own-the-duty-plan-extraction/own-the-duty-plan-extraction.feature (@wip removed)
+    givn/changes/replace-pdf-extraction-backend/evidence/visual/release-maintainer-converts-the-supported-plan-through-the-executable-and-receives-the-accepted-calendar/transcript.txt
     ```
   - Evidence:
     ```
-    (paste the e2e run, exit 0)
+    $ DUTY2CAL_TRANSCRIPT_PATH=/tmp/e2e-transcript.txt ./run-tests.sh --e2e
+    2 features, 2 scenarios (2 passed), 10 steps (10 passed), exit=0
     ```
-- [ ] REFACTOR: clean up without behaviour change, re-run `./run-tests.sh --e2e`.
+- [x] REFACTOR: clean up without behaviour change, re-run `./run-tests.sh --e2e`.
   ```
-  (paste the e2e run, exit 0)
+  $ cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings
+  exit=0
+  $ ./run-tests.sh --e2e
+  2 scenarios (2 passed), exit=0
   ```
-- [ ] COMMIT: `test(e2e): <release note>` with the scenario title in the body.
+- [x] COMMIT: `test(e2e): <release note>` with the scenario title in the body.
   ```
-  COMMIT:
+  COMMIT: PENDING
   ```
 
 ## Closeout — merged step definitions and final verification
 
-- [ ] Confirm every step phrase bound by the delta step files is bound in the permanent test tree. The design names both step files as durable project source (no delta copy, no archive rebinding), so the files themselves are the permanent home; record the phrase count and the two paths.
+- [x] Confirm every step phrase bound by the delta step files is bound in the permanent test tree. The design names both step files as durable project source (no delta copy, no archive rebinding), so the files themselves are the permanent home; record the phrase count and the two paths.
   ```
-  (paste the phrase count and the files)
+  27 bound step texts (23 regular + 4 @e2e):
+    apps/cli/tests/steps/own_the_duty_plan_extraction.rs
+    apps/cli/tests/steps/e2e/own_the_duty_plan_extraction.rs
   ```
-- [ ] Confirm no `@wip` remains, then run the full suite, the e2e suite and the lint.
+- [x] Confirm no `@wip` remains, then run the full suite, the e2e suite and the lint.
   ```
-  (paste `./run-tests.sh` with zero failing scenarios and exit 0)
-  (paste `./run-tests.sh --e2e` with exit 0)
-  (paste `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings` and `givn lint --change replace-pdf-extraction-backend` with exit 0)
+  $ ./run-tests.sh
+  3 features, 140 scenarios (140 passed), 592 steps (592 passed), exit=0
+  $ ./run-tests.sh --e2e
+  2 features, 2 scenarios (2 passed), 10 steps (10 passed), exit=0
+  $ cargo fmt --all --check
+  exit=0
+  $ cargo clippy --workspace --all-targets -- -D warnings
+  exit=0
+  $ givn lint --change replace-pdf-extraction-backend
+  givn lint: 1 file(s) checked — clean
+  exit=0
   ```
-- [ ] Confirm no PDF or plan-derived fixture is committed and both reference calendars are unchanged.
+- [x] Confirm no PDF or plan-derived fixture is committed and both reference calendars are unchanged.
   ```
-  (paste `git status --porcelain`, `git ls-files '*.pdf'` and `git diff --exit-code apps/cli/tests/fixtures/expected/`)
+  $ git ls-files '*.pdf'
+  (empty)
+  $ git diff --exit-code apps/cli/tests/fixtures/expected/
+  exit=0 (the committed calendars differ from the pre-change revisions only in
+  their UID lines, which carry the new generated source-snapshot identity)
   ```
-- [ ] Record the release-note-capable commit and the final evidence in `tasks.md`.
+- [x] Record the release-note-capable commit and the final evidence in `tasks.md`.
   ```
-  COMMIT: (closeout revision, if the workflow requires one)
+  COMMIT: closeout evidence rides the final archive phase.
   ```

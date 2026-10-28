@@ -2,7 +2,7 @@
 
 Feature: Own the duty-plan extraction
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Release maintainer converts the supported plan through the executable and receives the accepted calendar
     Given a supported duty plan whose accepted calendar is recorded
     When the release maintainer converts it through the executable
