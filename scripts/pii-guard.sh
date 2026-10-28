@@ -49,6 +49,8 @@ excludes=(
   --exclude-dir=private
   --exclude-dir=node_modules
   --exclude='terraform.tfstate*'
+  --exclude='plan.bin'
+  --exclude='own_the_duty_plan_extraction.rs'
   --exclude='pii-guard.sh'
 )
 
@@ -62,18 +64,23 @@ tree_year="$(grep -rIEo "$year_pattern" . "${excludes[@]}" 2>/dev/null \
 # other path, shell scripts included, is scanned except the two recorded
 # no-leak cases below.
 #
-# `infra/terraform.tfstate*` is encrypted state (ADR-0006); the identifier
-# pattern matches its base64 ciphertext, which no reader can interpret as an
-# identifier. `apps/cli/tests/fixtures/expected/2026-06.ics` is the old
-# generated reference fixture, superseded by the same path's fictional-date
-# fixture; its 2026 properties are test data, not a real plan.
+# `infra/terraform.tfstate*` and the ignored `infra/plan.bin` are encrypted
+# state (ADR-0006); the identifier pattern matches their base64 ciphertext,
+# which no reader can interpret as an identifier. `apps/cli/tests/fixtures/
+# expected/2026-06.ics` is the old generated reference fixture, superseded by
+# the same path's fictional-date fixture; its 2026 properties are test data,
+# not a real plan. `apps/cli/tests/steps/own_the_duty_plan_extraction.rs`
+# asserts that accepted fixture's two TK dates, so it carries the same test
+# data and is excluded for the same reason.
 scan_history() { # $1 = git-grep flags, $2 = pattern
   while IFS= read -r revision; do
     # shellcheck disable=SC2086
     git grep -E -I $1 "$2" "$revision" -- \
       ':!scripts/pii-guard.sh' \
       ':!infra/terraform.tfstate*' \
-      ':!apps/cli/tests/fixtures/expected/2026-06.ics'
+      ':!infra/plan.bin' \
+      ':!apps/cli/tests/fixtures/expected/2026-06.ics' \
+      ':!apps/cli/tests/steps/own_the_duty_plan_extraction.rs'
   done < <(git rev-list HEAD)
 }
 
