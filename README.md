@@ -5,7 +5,7 @@
 # duty2cal
 
 <!-- givn:begin:coverage-badge -->
-[![Line Coverage: 98%](https://img.shields.io/badge/line%20coverage-98%25-brightgreen)](coverage/cobertura-coverage.xml)
+[![Line Coverage: 87%](https://img.shields.io/badge/line%20coverage-87%25-brightgreen)](coverage/cobertura-coverage.xml)
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
 
@@ -52,6 +52,7 @@ cargo run --release -p duty2cal -- <duty-plan.pdf>
 ```
 
 <!-- givn:end:run -->
+
 
 
 
@@ -198,18 +199,10 @@ Run the project-owned scripts configured in `givn/commands.yaml`:
 `./merge-coverages.sh` combines them into the merged report linked by the
 badges above.
 
-The shipped executable and the browser bundle read the supported duty plan with
-the project's own extraction, frozen to the constructs the supported family
-prints. Everything outside that subset is refused by name instead of guessed at.
-The third-party extractor survives only as the test oracle in
-`crates/duty2cal-pdf`'s dev graph; `scripts/check-extraction-dependency.sh`
-checks that split. Run the word-level comparison against your local plans in
-place with `./scripts/validate-local-corpus.sh --differential`; it is release
-evidence and never a CI gate.
-
 Add lint, build, and other project commands alongside these scripts.
 
 <!-- givn:end:development -->
+
 
 
 
@@ -328,7 +321,7 @@ address.
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 98% (1075/1101)
+Line coverage: 87% (1867/2142)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:
