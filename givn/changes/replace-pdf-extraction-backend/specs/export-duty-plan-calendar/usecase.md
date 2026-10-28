@@ -1,3 +1,5 @@
+<!-- givn:base-sha256: 5e1515366885a623ef9a786df0063e2b229a87159cf0dbd020609794f144e137 -->
+
 # Use case: export-duty-plan-calendar
 
 ## Level
