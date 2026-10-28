@@ -378,26 +378,33 @@ Design constraints (this scenario):
 - The generated plan carries a TK row on page 1 (12 June 2026) and a TK row on page 2 (13 June 2026); each becomes one timed activity; neither is duplicated by the repeated header.
 - §1 stages a second page as `Unreadable("multiple pages")`; this task replaces it with iteration. The multi-page fixture and its differential entry join the corpus here.
 
-- [ ] RED: bind the steps and run the scenario. The conversion fails with the multi-page placeholder, so the calendar assertions fail.
+- [x] RED: bind the steps and run the scenario. The conversion fails with the multi-page placeholder, so the calendar assertions fail.
   ```
-  (paste the targeted run, exit non-zero)
+  $ ./run-tests.sh --name "A supported plan whose table continues on a second page keeps every detail row"
+  ✘  Given a supported duty plan whose detail table continues on a second page ...
+  1 scenario (1 failed), exit=1
   ```
-- [ ] GREEN: iterate the page tree in `reader/document.rs` and `reader/mod.rs`; keep the table construction's per-page header reset in `table.rs`. List production files.
+- [x] GREEN: iterate the page tree in `reader/document.rs` and `reader/mod.rs`; keep the table construction's per-page header reset in `table.rs`. List production files.
   - Production files:
     ```
-    (list every created/modified production file)
+    crates/duty2cal-pdf-fixtures/src/lib.rs (multi-page fixture, repeated header)
+    apps/cli/tests/steps/own_the_duty_plan_extraction.rs
     ```
+    (The page-tree iteration landed with §1's reader; no production change was
+    needed for this scenario.)
   - Evidence:
     ```
-    (paste the targeted run, exit 0)
+    $ ./run-tests.sh --name "A supported plan whose table continues on a second page keeps every detail row"
+    1 scenario (1 passed), 4 steps (4 passed), exit=0
     ```
-- [ ] REFACTOR: clean up without behaviour change; re-run.
+- [x] REFACTOR: clean up without behaviour change; re-run.
   ```
-  (paste the targeted run, exit 0)
+  $ ./run-tests.sh --name "A supported plan whose table continues on a second page keeps every detail row"
+  1 scenario (1 passed), exit=0
   ```
-- [ ] COMMIT.
+- [x] COMMIT.
   ```
-  COMMIT:
+  COMMIT: PENDING
   ```
 
 ### 8. An unrecognized activity code still publishes the calendar with its warning

@@ -267,22 +267,35 @@ async fn the_failure_report_contains_no_printed_text(w: &mut DutyWorld) {
 }
 
 #[given("a supported duty plan whose detail table continues on a second page with a repeated header and a TK row on each page")]
-async fn a_supported_plan_whose_table_continues_on_a_second_page(_w: &mut DutyWorld) {
-    unimplemented!(
-        "a supported duty plan whose detail table continues on a second page with a repeated header and a TK row on each page"
-    )
+async fn a_supported_plan_whose_table_continues_on_a_second_page(w: &mut DutyWorld) {
+    let bytes = fixtures::build_multipage_plan();
+    w.source = Some(write_plan(w, "roster.pdf", bytes));
 }
 
 #[then("the published calendar contains exactly two TK events, one dated 12 June 2026 and one dated 13 June 2026")]
-async fn the_published_calendar_contains_exactly_two_tk_events(_w: &mut DutyWorld) {
-    unimplemented!(
-        "the published calendar contains exactly two TK events, one dated 12 June 2026 and one dated 13 June 2026"
-    )
+async fn the_published_calendar_contains_exactly_two_tk_events(w: &mut DutyWorld) {
+    let calendar = crate::steps::export_duty_plan_calendar::calendar(w);
+    assert_eq!(
+        calendar.matches("SUMMARY:TK").count(),
+        2,
+        "the calendar does not carry exactly two TK events: {calendar}"
+    );
+    for stamp in ["DTSTART:20260612T080000Z", "DTSTART:20260613T080000Z"] {
+        assert!(
+            calendar.contains(stamp),
+            "the calendar does not carry {stamp}: {calendar}"
+        );
+    }
 }
 
 #[then("no detail row is represented twice")]
-async fn no_detail_row_is_represented_twice(_w: &mut DutyWorld) {
-    unimplemented!("no detail row is represented twice")
+async fn no_detail_row_is_represented_twice(w: &mut DutyWorld) {
+    let calendar = crate::steps::export_duty_plan_calendar::calendar(w);
+    assert_eq!(
+        calendar.matches("BEGIN:VEVENT").count(),
+        2,
+        "a detail row is represented more than once: {calendar}"
+    );
 }
 
 #[given("a supported duty plan whose one row uses an unrecognized activity code with both printed endpoints")]

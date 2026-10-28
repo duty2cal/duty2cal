@@ -74,7 +74,7 @@ Feature: Own the duty-plan extraction
     Then the numbered failure report names the source PDF and the Type3 font
     And the failure report contains no printed text from the plan
 
-  @givn.added @wip
+  @givn.added
   Scenario: A supported plan whose table continues on a second page keeps every detail row
     Given a supported duty plan whose detail table continues on a second page with a repeated header and a TK row on each page
     When the release maintainer converts it through the executable
