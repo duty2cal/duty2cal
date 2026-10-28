@@ -235,10 +235,7 @@ impl DutyEntry {
                 }
             }
             Self::Availability { code, .. } | Self::NonFlightDuty { code, .. } => code.clone(),
-            Self::UnrecognizedActivity { code, interval, .. } => match interval {
-                Some(_) => format!("unknown duty: {code}"),
-                None => code.clone(),
-            },
+            Self::UnrecognizedActivity { code, .. } => format!("unknown duty: {code}"),
             Self::Layover { station, .. } => format!("Layover {station}"),
         }
     }

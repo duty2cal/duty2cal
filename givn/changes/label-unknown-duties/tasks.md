@@ -38,7 +38,7 @@ Interaction coverage (checked before writing tasks): the permanent inventory hol
 
 ## Setup task — environment, runner, strict mode
 
-- [ ] Confirm the toolchain, runner, strict mode and the pre-implementation baseline.
+- [x] Confirm the toolchain, runner, strict mode and the pre-implementation baseline.
   - `apps/cli/tests/features_runner.rs` calls `DutyWorld::cucumber().fail_on_skipped().run_and_exit(root)`.
   - `verify.command: "./run-tests.sh"`; `verify.e2e_command: "./run-tests.sh --e2e"` (strict subset).
   - Strictness proofs:
@@ -54,7 +54,7 @@ Interaction coverage (checked before writing tasks): the permanent inventory hol
 
 ## E2E setup task
 
-- [ ] Confirm the e2e filter and counts before the browser scenarios.
+- [x] Confirm the e2e filter and counts before the browser scenarios.
   - `verify.e2e_command` is `./run-tests.sh --e2e`, which selects `@e2e and not @browser`; the permanent inventory's CLI `@e2e` scenario is "Crew member converts a supported duty plan and receives a calendar file". The browser `@e2e` scenario is exercised by the browser smoke, not this filter.
   - This change adds no `@e2e` scenario and removes none; the two inventory actions keep one `@e2e` each.
   - Browser smoke command and environment are recorded in `## Environment`; it drives the real page through Playwright.
@@ -68,10 +68,32 @@ Design constraints:
 - First production increment: the timed fallback only; the all-day arm is task 2.
 - Files: `crates/duty2cal-core/src/domain/mod.rs`; test expectation in the delta feature.
 
-- [ ] RED: remove `@wip` from this scenario only; run the targeted command; paste output (must fail on the bare title).
-- [ ] GREEN: prefix the timed fallback's title; run the targeted command; paste output (must pass).
-- [ ] REFACTOR: no behaviour change; run again; paste output.
-- [ ] COMMIT: one revision, release note as subject, scenario title in the body; record the hash.
+- [x] RED: remove `@wip` from this scenario only; run the targeted command; paste output (must fail on the bare title).
+  ```
+  Scenario: An unrecognized activity code with a printed window becomes a timed activity with a warning
+   ✔  Given … / ✔  When …
+   ✘  Then the calendar contains one timed activity titled "unknown duty: ZZ_M_CF" …
+      Matched: apps/cli/tests/steps/export_duty_plan_calendar.rs:2970:1
+      Step panicked: the timed activity does not carry "SUMMARY:unknown duty: ZZ_M_CF": … SUMMARY:ZZ_M_CF …
+  1 scenario (1 failed) / 3 steps (2 passed, 1 failed)
+  EXIT=1
+  ```
+- [x] GREEN: prefixed the timed fallback's title in `DutyEntry::summary()`; run the targeted command; paste output (must pass).
+  ```
+  Scenario: An unrecognized activity code with a printed window becomes a timed activity with a warning
+   ✔ × 8 steps
+  1 scenario (1 passed) / 8 steps (8 passed)
+  EXIT=0
+  ```
+- [x] REFACTOR: `cargo fmt --all`; no behaviour change; run again; paste output.
+  ```
+  1 scenario (1 passed) / 8 steps (8 passed)
+  EXIT=0
+  ```
+- [x] COMMIT: one revision, release note as subject, scenario title in the body; record the hash.
+  ```
+  COMMIT: 5d94ee0
+  ```
 
 ### 2. An unrecognized activity code without printed times becomes an all-day activity with a warning
 
@@ -80,10 +102,29 @@ Design constraints:
 - Second production increment: make the prefix cover the all-day arm too.
 - Files: `crates/duty2cal-core/src/domain/mod.rs`.
 
-- [ ] RED: remove `@wip` from this scenario only; run the targeted command; paste output (must fail on the bare all-day title).
-- [ ] GREEN: unify the arm; run the targeted command; paste output (must pass).
-- [ ] REFACTOR: no behaviour change; run again; paste output.
-- [ ] COMMIT: one revision; record the hash.
+- [x] RED: removed `@wip`; run the targeted command; paste output (failed on the bare all-day title).
+  ```
+  Scenario: An unrecognized activity code without printed times becomes an all-day activity with a warning
+   ✔  Given … / ✔  When …
+   ✘  Then the calendar contains one all-day activity for 2099-06-07 titled "unknown duty: ZZ_M_CF"
+      Step panicked: … SUMMARY:ZZ_M_CF
+  1 scenario (1 failed) / 3 steps (2 passed, 1 failed)
+  EXIT=1
+  ```
+- [x] GREEN: unified the `UnrecognizedActivity` arm; run the targeted command; paste output (passed).
+  ```
+  1 scenario (1 passed) / 6 steps (6 passed)
+  EXIT=0
+  ```
+- [x] REFACTOR: `cargo fmt --all`; run again; no behaviour change.
+  ```
+  1 scenario (1 passed) / 6 steps (6 passed)
+  EXIT=0
+  ```
+- [x] COMMIT: one revision; record the hash.
+  ```
+  COMMIT: PENDING2
+  ```
 
 ### 3. An unrecognized activity code with an unqualified window across midnight keeps it as the following UTC day
 
