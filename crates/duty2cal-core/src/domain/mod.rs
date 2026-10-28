@@ -177,6 +177,8 @@ pub enum DutyEntry {
     /// An activity represented from a row whose code the converter does not
     /// know. The kind comes from the printed evidence, never from the code's
     /// letters: both printed endpoints make it timed, none makes it all-day.
+    /// Its title is `unknown duty: <printed code>`, so an imported calendar
+    /// states the fallback without the warning report.
     UnrecognizedActivity {
         /// Duty-plan date.
         date: Date,
