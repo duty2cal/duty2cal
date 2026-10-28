@@ -172,8 +172,9 @@ sequenceDiagram
   Page->>Wasm: convert(filename, bytes)
   Wasm->>App: execute(bytes) with BrowserClock
   App-->>Wasm: complete calendar (or typed failure)
-  Wasm-->>Page: {status:"ok", calendar}
-  Page->>Browser: Blob + <a download="<stem>.ics">
+  Wasm-->>Page: {status:"ok", calendar, warnings, unknownDuties}
+  Page->>Page: ready heading, status and the Unknown duties list in plan order
+  Page->>Browser: Blob + <a download="<stem>.ics"> and the warning-report offer
   Browser-->>Crew: offered download; the browser saves
   Note over Page,Browser: the page writes nothing and claims no save
 ```
@@ -182,8 +183,8 @@ sequenceDiagram
 
 1. The page clears any offer and status from the previous attempt, then refuses a file larger than 20 MiB by name before reading it.
 2. The page reads the file in the tab and calls the facade with the filename and bytes. No request is made.
-3. The facade runs the unchanged use case with the browser clock and returns the calendar text plus its warnings, or a structured failure with the errors and warnings.
-4. On success the page offers `<stem>.ics` through an object URL and an `<a download>`; when warnings exist it also lists them, offers `<stem>.parse-warnings.txt`, and shows the ready-with-warnings state. The browser owns the save location and any collision, and the page never claims a save it did not observe.
+3. The facade runs the unchanged use case with the browser clock and returns the calendar text, its warnings and the represented unknown duties in plan order, or a structured failure with the errors and warnings.
+4. On success the page shows the ready heading `Calendar ICS ready`. Without unknown duties it shows the status `Calendar ready for <name>.` and offers `<stem>.ics` as `Save <stem>.ics`. With unknown duties it shows the status `Your calendar is ready to save. <n> rows were converted with unknown duties.` (`1 row was converted with an unknown duty.` for one row), lists one entry per unknown duty in plan order under `Unknown duties` — `DD-MM-YYYY HH:MM UTC unknown duty: <code>` for a timed duty and `DD-MM-YYYY unknown duty: <code>` for an all-day one, the date being the event's UTC start date for a timed duty (a printed day qualifier can move it off the row's local date) and the entry's duty-plan date for an all-day duty, so each line matches the calendar event — and offers the calendar as `Save <stem>.ics` and the warning report `<stem>.parse-warnings.txt` as `Save unknown duty warning for publisher`. The browser owns the save location and any collision, and the page never claims a save it did not observe.
 
 **Notes:** A failed attempt withdraws an earlier offer because the attempt clears its offer and its lists first. The page sends no request to another origin after load and stores nothing persistent.
 

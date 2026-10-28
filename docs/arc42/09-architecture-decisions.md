@@ -198,6 +198,35 @@ no ADR and amended none. One candidate was assessed and returned
   the mechanics in `givn/changes/report-row-diagnostics/design.md`. The register,
   `docs/arc42/adr/README.md` and the ADR files are unchanged.
 
+The change that labels an unrecognized activity as an unknown duty
+(label-unknown-duties) minted no ADR and amended none. One candidate was
+assessed and returned `NOT_QUALIFIED`:
+
+- **The unknown-duty presentation contract** — the calendar title
+  `unknown duty: <printed code>` for every activity represented from an
+  unrecognized code, the page's structured `unknownDuties` projection and its
+  `Unknown duties` ready list, and the publisher-specific warning-report offer
+  label. Alternatives exist (keep the bare code and explain the fallback only in
+  the report; parse the diagnostic sentence in the page), so `alternatives`
+  passes. `architectural_impact` fails: the change keeps the same ports, crates,
+  facades, publication boundary and no-clobber naming, moves no authority or
+  deployment boundary, and adds one derived field to an existing result.
+  `durable_consequence` fails: reversal is one change's title arm, one
+  projection and one page state, all inside the same boundary, and the calendar
+  and report names stay. `lower_level_artifact` fails: the title rule, the two
+  ready-state copies, the list order and the offer labels are observable
+  behaviour owned by the `export-duty-plan-calendar` use case and its Gherkin,
+  and the projection shape, the facade array and the page markup are
+  `design.md`. The product-behaviour falsification test applies for the same
+  reason: it is a presentation rule, not a workflow gate that moves a component
+  or authority. `existing_adr_check` passes: ADR-0001 … ADR-0008 were searched
+  and none covers calendar titles, ready-state copy or offer labels; ADR-0007
+  fixes the browser facade boundary, which this change does not move. Routing:
+  `CANONICAL_ARTIFACT` → `givn/specs/export-duty-plan-calendar/usecase.md`, with
+  the delta scenarios and `givn/changes/label-unknown-duties/design.md` owning
+  the mechanics. The register, `docs/arc42/adr/README.md` and the ADR files are
+  unchanged.
+
 ## Individual ADR contract
 
 Written and tailored from `docs/arc42/adr/adr-template.md`; MADR sections,

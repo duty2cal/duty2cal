@@ -144,30 +144,30 @@
 
   <section class="panel ready" aria-labelledby="ready-heading">
     <p class="reference-label">Reference: ready state</p>
-    <h2 id="ready-heading">Calendar ready</h2>
-    <p>Your complete calendar is ready. The browser chooses where the file is saved.</p>
-    <p><a class="offer" href="#ready-heading">Save 2026-06.ics</a></p>
+    <h2 id="ready-heading">Calendar ICS ready</h2>
     <p class="muted" role="status" aria-live="polite">Calendar ready for 2026-06.pdf.</p>
-    <button class="picker" type="button">Choose another duty plan</button>
+    <p>You can choose where to save the file.</p>
+    <p><a class="offer" href="#ready-heading">Save 2026-06.ics</a></p>
+    <button class="picker" type="button">Open new/next duty plan PDF</button>
   </section>
 
   <section class="panel ready" aria-labelledby="warnings-heading">
     <p class="reference-label">Reference: ready-with-warnings state</p>
-    <h2 id="warnings-heading">Calendar ready</h2>
-    <p>Your complete calendar is ready. The browser chooses where the files are saved.</p>
-    <p>
-      <a class="offer" href="#warnings-heading">Save 2026-06.ics</a>
-      <a class="offer" href="#warnings-heading">Save 2026-06.parse-warnings.txt</a>
-    </p>
+    <h2 id="warnings-heading">Calendar ICS ready</h2>
+    <p class="muted" role="status" aria-live="polite">Your calendar is ready to save. 2 rows were converted with unknown duties.</p>
     <div class="diagnostics">
-      <h3>Warnings</h3>
+      <h3>Unknown duties</h3>
       <ul class="diagnostics__list">
-        <li>row 4 (2099-06-07): unrecognized activity code "ZZ_M_CF"; converted as a timed activity using its printed UTC window 08:00-15:30</li>
-        <li>row 5 (2099-06-08): unrecognized activity code "ZZ_M_CF"; converted as an all-day activity</li>
+        <li>07-11-2026 08:00 UTC unknown duty: ZZ_M_CF</li>
+        <li>08-11-2026 unknown duty: ZZ_M_CF</li>
       </ul>
     </div>
-    <p class="muted" role="status" aria-live="polite">Your calendar is ready to save. 2 rows were converted with warnings.</p>
-    <button class="picker" type="button">Choose another duty plan</button>
+    <p>You can choose where to save the file.</p>
+    <p>
+      <a class="offer" href="#warnings-heading">Save 2026-06.ics</a>
+      <a class="offer" href="#warnings-heading">Save unknown duty warning for publisher</a>
+    </p>
+    <button class="picker" type="button">Open new/next duty plan PDF</button>
   </section>
 
   <section class="panel failure" aria-labelledby="startup-heading">

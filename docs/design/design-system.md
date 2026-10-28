@@ -17,8 +17,10 @@ durable direction.
   failure, before the picker); "Converting" is a transient status, not a declared
   screen state. `ready-with-warnings` is the ready state with one or more rows
   that were represented by a documented fallback; it shows the same calendar
-  offer, the warnings, and the warning-report offer. The failure state carries
-  the error and warning lists. The notice screens declare the default state only.
+  offer, the unknown duties under the heading `Unknown duties`, and the
+  warning-report offer labelled `Save unknown duty warning for publisher`. The
+  failure state carries the error and warning lists. The notice screens declare
+  the default state only.
 - Approval: the operator approved this direction on 2026-10-19 (design review);
   the same decision created the change's `docs/design/design-system.md`. The
   operator approved an amendment on 2026-10-25 for the site publication: the
@@ -48,6 +50,28 @@ durable direction.
   the two lists, the report offer, the note and `Choose another plan`. The
   approval covers only these page states and controls; it authorizes no token,
   layout, breakpoint or script change.
+- Amendment 2026-10-28 (`label-unknown-duties`): the converter screen's two ready
+  states are drawn with the settled copy, and this amendment supersedes the
+  ready-state copy and labels recorded in the 2026-10-27 amendment above. Both
+  states are headed `Calendar ICS ready` and carry the offer copy `You can
+  choose where to save the file.` and the way back `Open new/next duty plan
+  PDF`. The plain ready status stays `Calendar ready for <name>.`; the
+  ready-with-warnings status becomes `Your calendar is ready to save. <n> rows
+  were converted with unknown duties.`, with
+  `Your calendar is ready to save. 1 row was converted with an unknown duty.`
+  for one row. Its list is headed `Unknown duties` and its entries name the
+  date, the optional UTC start and the code — `DD-MM-YYYY HH:MM UTC unknown
+  duty: <code>` for a timed duty and `DD-MM-YYYY unknown duty: <code>` for an
+  all-day one — one entry per unknown duty in plan order. The calendar offer
+  keeps `Save <stem>.ics`; the warning-report offer becomes `Save unknown duty
+  warning for publisher` while its file stays `<stem>.parse-warnings.txt`. The
+  same title rule applies to the calendar: an activity represented from an
+  unrecognized code is titled `unknown duty: <printed code>`. The failure
+  state, the report text and filename, and every token are unchanged. The
+  amendment changes the child order inside the offer region only: heading,
+  status, list, save-choice copy, offers, note, way back; tokens, breakpoints
+  and the surrounding panels are unchanged, so it authorizes no token, layout,
+  breakpoint or script change beyond that ordering.
 - Reference: [`reference/converter-reference.html`](reference/converter-reference.html)
   is the approved design-only rendered reference for the empty, ready and
   failure states. It is static because the page source does not exist yet; the
@@ -57,14 +81,18 @@ durable direction.
   2026-10-27 amendment draws that icon from the vector mark, so the approved
   direction shows the same placement, tokens, copy and mark the page must use.
   The `@e2e` screenshots become the execution evidence for the states the
-  scenario traverses. The 2026-10-27 `report-row-diagnostics` amendment adds the
-  `ready-with-warnings` view, the ready state's `Choose another duty plan`
-  button and the failure view's `Errors`/`Warnings` lists; those two states are
+  scenario traverses. The 2026-10-27 `report-row-diagnostics` amendment added
+  the `ready-with-warnings` view, the ready states' way back and the failure
+  view's `Errors`/`Warnings` lists; the 2026-10-28 `label-unknown-duties`
+  amendment replaced the ready views' heading, offer copy, list heading,
+  entries, offer labels and way-back label, so the ready views name none of
+  the superseded copy; those two states are
   exercised by regular `@browser` scenarios, whose screenshots are the
   change-local execution evidence, not new `@e2e` evidence, and which run in the
   nightly `--browser` job (R-070/R-071) rather than the per-push gate. The
   reference's ready, ready-with-warnings and failure views are authoritative for
-  copy and controls, as the operator approved on 2026-10-27.
+  copy and controls, as the operator approved on 2026-10-27 and amended on
+  2026-10-28 for `label-unknown-duties`.
 - Amendment 2026-10-27 (legal notices): the two notice screens inherit the
   approved shell — the header with the 48x48 vector mark and the page title, the
   surface panel, the 720 px column and the footer — and add no token, no image
@@ -94,12 +122,12 @@ AA; `@axe-core/playwright` checks each rendered state.
 | Page shell (`header`, `main`, `footer`) | Default only; one `h1`; landmarks; `<html lang="en">`. |
 | Drop zone | Default, dragover/hover, focus-within, disabled while converting; accepts one file; visible instruction text. |
 | Picker button and labelled file input | Default, hover, focus-visible, disabled/loading while converting; visible label; minimum 44 px touch target below 720 px. |
-| Status region | Empty, converting, ready, ready-with-warnings; `role="status"` and `aria-live="polite"`; the converting status is transient. The ready status reads `Calendar ready for <name>.`; the ready-with-warnings status reads `Your calendar is ready to save. <n> rows were converted with warnings.` (`1 row was converted with a warning.`), so it states how many rows were converted without naming an internal state. |
-| Offer link | Default, hover, focus-visible; text `Save <name>`; no disabled state. The ready-with-warnings state offers the calendar and the warning report as two offer links. |
-| Diagnostic list | Default (visible with entries) and empty (hidden). A block with a 3 px `--color-border` left rule, a 16 px heading, and a real `<ul>` whose items wrap with `overflow-wrap: anywhere` so a long activity code cannot clip at 360 px. In the ready state the block is headed `Warnings` and uses the panel's text colors; in the failure state two blocks are headed `Errors` and `Warnings`, and their list markers use `--color-danger`. Not interactive: no hover, focus or disabled state. The visible words carry the meaning; the marker color never does. |
+| Status region | Empty, converting, ready, ready-with-warnings; `role="status"` and `aria-live="polite"`; the converting status is transient. The ready status reads `Calendar ready for <name>.`; the ready-with-warnings status reads `Your calendar is ready to save. <n> rows were converted with unknown duties.` (`Your calendar is ready to save. 1 row was converted with an unknown duty.`), so it states how many rows were converted with an unknown duty without naming an internal state. |
+| Offer link | Default, hover, focus-visible; text `Save <name>` in general; no disabled state. The calendar offer reads `Save <stem>.ics`, and in the ready-with-warnings state the warning report is offered as `Save unknown duty warning for publisher` for the file `<stem>.parse-warnings.txt`, so the two offers beside each other name the calendar and the publisher's note distinctly. |
+| Diagnostic list | Default (visible with entries) and empty (hidden). A block with a 3 px `--color-border` left rule, a 16 px heading, and a real `<ul>` whose items wrap with `overflow-wrap: anywhere` so a long activity code cannot clip at 360 px. In the ready-with-warnings state the block is headed `Unknown duties` and its items are the unknown-duty lines — `DD-MM-YYYY HH:MM UTC unknown duty: <code>` or `DD-MM-YYYY unknown duty: <code>` — one per converted row in plan order, using the panel's text colors; in the failure state two blocks are headed `Errors` and `Warnings` and carry the row diagnostics, and their list markers use `--color-danger`. Not interactive: no hover, focus or disabled state. The visible words carry the meaning; the marker color never does. |
 | Failure panel | Error `h2`, a count-based reason sentence naming the source and how many rows cannot be represented and how many were converted with warnings, optional `Errors` and `Warnings` diagnostic lists, optional report offer, `Choose another plan`; `role="alert"`; no calendar offer. The first error sentence appears only as the first `Errors:` entry, never also as the reason. |
 | Reset button (`#reset`) | Default, hover, focus-visible; labelled `Choose another plan`; the failure state's way back. |
-| Ready reset button (`#ready-reset`) | Default, hover, focus-visible; labelled `Choose another duty plan`; shown in the ready and ready-with-warnings states as the reference draws them; returns the screen to `empty` and clears the attempt. No disabled state. |
+| Ready reset button (`#reset-ready`) | Default, hover, focus-visible; labelled `Open new/next duty plan PDF`; shown in the ready and ready-with-warnings states as the reference draws them; returns the screen to `empty` and clears the attempt. No disabled state. |
 | Privacy note | Static text: processing is local, no upload, no storage, no request after load. |
 | Public statements panel | Default only. Its own surface panel **above** the converter panel, headed "Before you choose a plan": a single-column list stating what the tool does (`what-it-does`) — the one supported plan, a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export, with its boundary — both conversion routes — this page in a current browser (`browser-route`) and downloads for various operating systems available on request, with the release page `https://github.com/duty2cal/duty2cal/releases` carrying the published builds (`archive-route`) — the privacy rule (`privacy`), the non-affiliation sentence naming Lufthansa and Jeppesen (`non-affiliation`) and the as-is sentence (`as-is`). Each statement carries `data-site-statement="<name>"` with non-empty text; every link is keyboard reachable with visible focus; no disabled, loading or error state. Uses the existing panel surface, 8 px radius and body/link typography. |
 | Source and licence panel | Default only. A separate surface panel **below** the converter panels and above the footer: the source repository link (`source`) and the licence statement with its licence-text link (`license`), naming MPL-2.0 for the code, CC0-1.0 for the non-code assets and the Unicode-3.0 attribution. Each statement carries `data-site-statement="<name>"` with non-empty text; links are keyboard reachable with visible focus; no state varies. |
@@ -135,8 +163,11 @@ WCAG 2.2 AA. Landmarks, one `h1`, a failure `h2`, a visible label on every
 control, `role="status"`/`role="alert"`, visible keyboard focus, the token
 contrast ratios, `lang="en"`, and reduced motion. The diagnostic lists are real
 lists with a heading: an `h3` under the state's `h2` in both the ready and the
-failure state, so the heading order stays valid, and no meaning is carried by
-the marker colour alone. Each document declares its own
+failure state (`Unknown duties` in the ready-with-warnings state, `Errors` and
+`Warnings` in the failure state), so the heading order stays valid, and no
+meaning is carried by the marker colour alone. An unknown-duty entry names its
+date, its optional UTC start and the activity code as visible words, so its
+meaning is not left to a marker or an abbreviation. Each document declares its own
 language: the converter screen `lang="en"`, the notice screens `lang="de"` with
 `lang="en"` on their English summary, and their contact data sits in an
 `<address>` element. The page honors

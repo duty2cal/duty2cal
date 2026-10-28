@@ -15,7 +15,7 @@ flowchart LR
 | Partner / User | Input to system | Output from system |
 |---|---|---|
 | Crew member running the executable | One Lufthansa cabin-crew duty-plan PDF published as a Jeppesen PDF export (path or drag-and-drop) | A complete RFC 5545 calendar file beside the source, with a warning report when rows were represented by a fallback; or an explicit failure with a numbered failure report naming the source, the reason, and every error and warning |
-| Crew member using the browser conversion page | One Lufthansa cabin-crew duty-plan PDF published as a Jeppesen PDF export, selected or dropped in the tab, at most 20 MiB | The offered `<source-stem>.ics` download for the browser to save, the warnings listed when there are any and `<source-stem>.parse-warnings.txt` offered; or an explicit failure listing the errors and warnings and offering `<source-stem>.parse-error.txt`; the page writes nothing |
+| Crew member using the browser conversion page | One Lufthansa cabin-crew duty-plan PDF published as a Jeppesen PDF export, selected or dropped in the tab, at most 20 MiB | The offered `<source-stem>.ics` download for the browser to save, headed `Calendar ICS ready`; when rows used the unrecognized-code fallback, the ready state also states how many rows were converted with unknown duties and lists them under `Unknown duties` in plan order, each with its date, its optional UTC start and the activity titled `unknown duty: <code>`, and offers `<source-stem>.parse-warnings.txt` as `Save unknown duty warning for publisher`; or an explicit failure listing the errors and warnings and offering `<source-stem>.parse-error.txt`; the page writes nothing |
 
 ### The supported duty plan and the support statement
 
@@ -47,6 +47,7 @@ checks pass, and replaces the hosting target's content as a whole.
 flowchart LR
   crew["Crew member"] -->|"one Lufthansa cabin-crew duty-plan PDF (Jeppesen export), at most 20 MiB, selected or dropped"| page["browser conversion page<br/>Site output at the Public website"]
   page -->|"offers source-stem.ics"| browser["browser-owned save"]
+  page -->|"lists the unknown duties with date and optional UTC start and offers Save unknown duty warning for publisher"| crew
   page -->|"explicit failure + offered parse-error.txt"| crew
   wasm["ffi/wasm facade<br/>no filesystem or network I/O"] --> page
   page -.->|"no request to another origin after load"| none["no remote system"]

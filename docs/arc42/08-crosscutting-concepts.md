@@ -52,7 +52,7 @@ New calendars and both report kinds are written with `create_new`, under the pla
 
 ## Explicit failure reporting
 
-A failure carries a primary reason and is reported independently of report persistence. The report path is reported only after a successful write; when no new report can be saved, the message states that and never presents an older report as current. Exit status is zero only when a calendar was actually published — a published calendar with warnings is a success, and its warning report is a separate, non-fatal write. The browser realization keeps the same shape: the reason and the error and warning lists are visible, the calendar is not offered on failure, a failure-report offer is attempted, and a failed offer never replaces the primary failure. The same realization lists the warnings and offers the warning report on a warning conversion.
+A failure carries a primary reason and is reported independently of report persistence. The report path is reported only after a successful write; when no new report can be saved, the message states that and never presents an older report as current. Exit status is zero only when a calendar was actually published — a published calendar with warnings is a success, and its warning report is a separate, non-fatal write. The browser realization keeps the same shape: the reason and the error and warning lists are visible, the calendar is not offered on failure, a failure-report offer is attempted, and a failed offer never replaces the primary failure. The same realization lists the unknown duties in plan order with their date and optional UTC start and offers the publisher's warning report on a warning conversion.
 
 ## Classification and timing as pure rules
 
