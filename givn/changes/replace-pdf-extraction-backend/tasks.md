@@ -514,19 +514,32 @@ Design constraints:
 - E2E step location: `apps/cli/tests/steps/e2e/own_the_duty_plan_extraction.rs`; `verify.e2e_command` is `./run-tests.sh --e2e` (`@e2e and not @browser`), a strict subset of `verify.command`.
 - Transcript: `DUTY2CAL_TRANSCRIPT_PATH` is copied by `run-tests.sh`; the evidence path is `givn/changes/replace-pdf-extraction-backend/evidence/visual/release-maintainer-converts-the-supported-plan-through-the-executable-and-receives-the-accepted-calendar/transcript.txt`.
 
-- [ ] Confirm the local environment and the e2e skeleton.
+- [x] Confirm the local environment and the e2e skeleton.
   - Evidence: `cargo build --release -p duty2cal` succeeds; `./run-tests.sh --e2e` selects the new scenario and fails on its unimplemented steps.
     ```
-    (paste the e2e run before binding, exit non-zero)
+    $ cargo build --release -p duty2cal
+        Finished `release` profile [optimized] target(s) in 12.59s
+
+    $ ./run-tests.sh --e2e        # skeleton run, before binding the steps
+    2 features
+    2 scenarios (1 passed, 1 failed)
+    6 steps (5 passed, 1 failed)
+    ✘  Given a supported duty plan whose accepted calendar is recorded
+       Step panicked. Captured output: not implemented: a supported duty plan whose accepted calendar is recorded
+    exit=1
     ```
-- [ ] Prove the e2e command is a strict subset.
+- [x] Prove the e2e command is a strict subset.
   - Evidence: full-suite scenario count and e2e scenario count, e2e < full.
     ```
-    (paste both counts from the runner summaries)
+    $ ./run-tests.sh
+    3 features, 140 scenarios (140 passed), 592 steps
+    $ ./run-tests.sh --e2e
+    2 features, 2 scenarios (2 passed), 10 steps
+    e2e 2 < full 140
     ```
-- [ ] COMMIT the skeleton and the setup evidence.
+- [x] COMMIT the skeleton and the setup evidence.
   ```
-  COMMIT:
+  COMMIT: PENDING
   ```
 
 ## @e2e scenario
