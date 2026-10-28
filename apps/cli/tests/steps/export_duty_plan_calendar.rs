@@ -4051,7 +4051,7 @@ async fn the_calendar_is_ready_with_warnings(w: &mut DutyWorld) {
         .as_str()
         .expect("read_state returns visible text");
     assert!(
-        text.contains("Calendar ready"),
+        text.contains("Calendar ICS ready"),
         "the ready heading is not visible: {text}"
     );
     assert!(
@@ -4069,26 +4069,6 @@ async fn the_calendar_is_ready_with_warnings(w: &mut DutyWorld) {
         state["controls"]["chooseAnother"].as_bool(),
         Some(true),
         "the ready state offers no way to choose another duty plan: {state}"
-    );
-}
-
-#[then("the page lists one warning naming the activity code")]
-async fn the_page_lists_one_warning(w: &mut DutyWorld) {
-    let state = page_state(w);
-    let warnings = observed_list(&state, "warnings");
-    assert_eq!(
-        warnings.len(),
-        1,
-        "the page does not list exactly one warning: {state}"
-    );
-    let warning = &warnings[0];
-    assert!(
-        warning.contains("ZZ_M_CF"),
-        "the warning does not name the activity code: {warning:?}"
-    );
-    assert!(
-        warning.starts_with("row 1 (2099-06-07)"),
-        "the warning does not name the detail row and its date: {warning:?}"
     );
 }
 
@@ -4165,6 +4145,92 @@ async fn the_page_states(w: &mut DutyWorld, sentence: String) {
         Some(sentence.as_str()),
         "the live status region does not carry {sentence:?}: {state}"
     );
+}
+
+#[then(regex = r#"^the page shows the text "([^"]+)"$"#)]
+async fn the_page_shows_the_text(w: &mut DutyWorld, text: String) {
+    let state = page_state(w);
+    let visible = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        visible.contains(&text),
+        "the page does not show {text:?}: {visible}"
+    );
+}
+
+#[then(regex = r#"^the page lists the unknown duty "([^"]+)"$"#)]
+async fn the_page_lists_the_unknown_duty(w: &mut DutyWorld, line: String) {
+    let state = page_state(w);
+    let listed = observed_list(&state, "warnings");
+    assert!(
+        listed.iter().any(|entry| entry == &line),
+        "the page does not list the unknown duty {line:?}: {listed:?}"
+    );
+}
+
+#[then(regex = r#"^the page offers the calendar labelled "([^"]+)"$"#)]
+async fn the_page_offers_the_calendar_labelled(w: &mut DutyWorld, label: String) {
+    let state = page_state(w);
+    let offers = state["offers"]
+        .as_array()
+        .expect("read_state returns offers");
+    let calendar = offers
+        .iter()
+        .find(|offer| offer["kind"].as_str() == Some("calendar"))
+        .unwrap_or_else(|| panic!("the page offers no calendar: {state}"));
+    assert_eq!(
+        calendar["text"].as_str(),
+        Some(label.as_str()),
+        "the calendar offer is not labelled {label:?}: {state}"
+    );
+}
+
+#[then(regex = r#"^the page offers the warning report "([^"]+)" labelled "([^"]+)"$"#)]
+async fn the_page_offers_the_warning_report_labelled(
+    w: &mut DutyWorld,
+    name: String,
+    label: String,
+) {
+    let state = page_state(w);
+    let offers = state["offers"]
+        .as_array()
+        .expect("read_state returns offers");
+    let report = offers
+        .iter()
+        .find(|offer| {
+            offer["kind"].as_str() == Some("warnings") && offer["name"].as_str() == Some(&name)
+        })
+        .unwrap_or_else(|| panic!("the page offers no warning report {name:?}: {state}"));
+    assert_eq!(
+        report["text"].as_str(),
+        Some(label.as_str()),
+        "the warning-report offer is not labelled {label:?}: {state}"
+    );
+}
+
+#[then(regex = r#"^the page offers the way back "([^"]+)"$"#)]
+async fn the_page_offers_the_way_back_label(w: &mut DutyWorld, label: String) {
+    let state = page_state(w);
+    assert_eq!(
+        state["controls"]["chooseAnother"].as_bool(),
+        Some(true),
+        "the page offers no way back: {state}"
+    );
+    let visible = state["visibleText"]
+        .as_str()
+        .expect("read_state returns visible text");
+    assert!(
+        visible.contains(&label),
+        "the visible way back is not {label:?}: {visible}"
+    );
+}
+
+#[when(
+    regex = r#"^the crew member supplies the supported duty plan "([^"]+)" containing an unrecognized activity code without printed times$"#
+)]
+async fn supplies_an_all_day_warned_plan(w: &mut DutyWorld, name: String) {
+    supply_named_plan(w, &name, &support::all_day_warned_plan());
 }
 
 #[then("the page shows a failure heading and the count-based reason sentence")]
@@ -4543,7 +4609,7 @@ async fn the_calendar_is_ready(w: &mut DutyWorld) {
         .as_str()
         .expect("read_state returns visible text");
     assert!(
-        text.contains("Calendar ready"),
+        text.contains("Calendar ICS ready"),
         "the ready heading is not visible: {text}"
     );
     assert_eq!(
@@ -4565,7 +4631,7 @@ async fn the_drop_was_accepted(w: &mut DutyWorld) {
         .as_str()
         .expect("read_state returns visible text");
     assert!(
-        text.contains("Calendar ready"),
+        text.contains("Calendar ICS ready"),
         "the ready heading is not visible after a drop: {text}"
     );
     assert!(
@@ -4621,7 +4687,7 @@ async fn the_failure_states_the_calendar_could_not_be_offered(w: &mut DutyWorld)
         "the failure heading is not visible: {text}"
     );
     assert!(
-        !text.contains("Calendar ready"),
+        !text.contains("Calendar ICS ready"),
         "the ready heading survives the offer failure: {text}"
     );
     assert!(
@@ -4686,7 +4752,7 @@ fn assert_cannot_run(w: &mut DutyWorld, needle: &str) {
         "the cannot-run message does not name {needle:?}: {text}"
     );
     assert!(
-        !text.contains("Calendar ready"),
+        !text.contains("Calendar ICS ready"),
         "the page reports a calendar although it cannot run: {text}"
     );
 }
@@ -4755,7 +4821,7 @@ async fn the_page_withdraws_the_calendar(w: &mut DutyWorld, name: String) {
         .as_str()
         .expect("read_state returns visible text");
     assert!(
-        !text.contains("Calendar ready"),
+        !text.contains("Calendar ICS ready"),
         "the ready heading survives the failed attempt: {text}"
     );
 }
@@ -5049,7 +5115,7 @@ async fn the_page_still_offers_the_calendar(w: &mut DutyWorld) {
         .as_str()
         .expect("read_state returns visible text");
     assert!(
-        text.contains("Your complete calendar is ready. The browser chooses where the file"),
+        text.contains("You can choose where to save the file."),
         "the offer does not say the browser chooses the save location: {text}"
     );
 }

@@ -9,7 +9,8 @@
 
 #[allow(unused_imports)] // the golden target includes this module but uses only two builders
 pub use duty2cal_pdf_fixtures::{
-    at, build_pdf, build_pdf_at_size, detail_header_row, equivalence_plan, error_and_warning_plan,
-    two_warned_rows_plan, warned_plan, weekday_abbreviation, ACTIVITY_X, AIRCRAFT_X, BLOCKTIME_X,
-    DATE_X, END_X, FROM_X, LAYOVER_X, POS_X, REPORT_X, START_X, TAGS_X, TO_X, TRIP_X, TZ_X,
+    all_day_warned_plan, at, build_pdf, build_pdf_at_size, detail_header_row, equivalence_plan,
+    error_and_warning_plan, two_warned_rows_plan, warned_plan, weekday_abbreviation, ACTIVITY_X,
+    AIRCRAFT_X, BLOCKTIME_X, DATE_X, END_X, FROM_X, LAYOVER_X, POS_X, REPORT_X, START_X, TAGS_X,
+    TO_X, TRIP_X, TZ_X,
 };

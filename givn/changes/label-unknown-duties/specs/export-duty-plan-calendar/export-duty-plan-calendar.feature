@@ -46,7 +46,7 @@ Feature: Export a duty-plan calendar
     And  the warning names the activity code "SB_X_CF"
     And  the warning states that the row was converted as a timed activity using its printed UTC window 08:00-15:30
 
-  @givn.modified @browser @wip
+  @givn.modified @browser
   Scenario: The page shows the warnings and offers both files when a plan converts with warnings
     Given  the converter page served from the built Site output
     When  the crew member supplies the supported duty plan "2026-06.pdf" containing an unrecognized activity code with a printed window

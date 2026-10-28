@@ -290,13 +290,31 @@ impl From<SourceError> for ConvertError {
     }
 }
 
-/// A completed conversion: the calendar text and every fallback it used.
+/// One activity the conversion represented from an unrecognized code.
+///
+/// Derived from the represented entry, never parsed out of a diagnostic
+/// message: the ready page lists exactly what the calendar carries.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UnknownDuty {
+    /// The calendar activity's date: the timed interval's UTC start date,
+    /// or the entry's duty-plan date for the all-day fallback.
+    pub date: Date,
+    /// The printed UTC window's start; `None` for the all-day fallback.
+    pub start: Option<OffsetDateTime>,
+    /// The printed activity code, verbatim.
+    pub code: String,
+}
+
+/// A completed conversion: the calendar text, every fallback it used, and
+/// the fallbacks' listable facts.
 #[derive(Debug, Clone)]
 pub struct ConversionOutcome {
     /// Calendar text ready to be written beside the source.
     pub calendar: String,
     /// Every fallback the run used, in plan order.
     pub warnings: Vec<Diagnostic>,
+    /// Every unrecognized-code activity, in plan order.
+    pub unknown_duties: Vec<UnknownDuty>,
 }
 
 /// The activity codes the supported family treats as all-day.
@@ -877,12 +895,30 @@ impl<S: RosterSource, K: CalendarSink, C: Clock> ConvertRoster<S, K, C> {
             snapshot: SnapshotId(fingerprint(input)),
             entries: interpretation.entries,
         };
+        let unknown_duties = roster
+            .entries
+            .iter()
+            .filter_map(|entry| match entry {
+                DutyEntry::UnrecognizedActivity {
+                    date,
+                    code,
+                    interval,
+                    ..
+                } => Some(UnknownDuty {
+                    date: interval.map_or(*date, |window| window.start().date()),
+                    start: interval.map(|window| window.start()),
+                    code: code.clone(),
+                }),
+                _ => None,
+            })
+            .collect();
         // The source's own revision metadata is preferred; the constructed
         // representation's clock is the fallback.
         let revision = document.revision.unwrap_or_else(|| self.clock.now_utc());
         Ok(ConversionOutcome {
             calendar: self.sink.write(&roster, revision),
             warnings: interpretation.diagnostics,
+            unknown_duties,
         })
     }
 }

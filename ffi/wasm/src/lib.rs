@@ -69,6 +69,7 @@ pub fn convert(filename: &str, bytes: &[u8]) -> JsValue {
             set_property(&result, "status", "ok");
             set_property(&result, "calendar", &outcome.calendar);
             set_lines_of(&result, "warnings", &outcome.warnings, Severity::Warning);
+            set_unknown_duties(&result, "unknownDuties", &outcome.unknown_duties);
             set_property(
                 &result,
                 "warningReport",
@@ -167,6 +168,44 @@ fn set_lines(object: &js_sys::Object, key: &str, lines: &[String]) {
         array.push(&JsValue::from_str(line));
     }
     set_value(object, key, array.into());
+}
+
+/// Set the represented unknown duties as an array of plain objects.
+#[cfg(target_arch = "wasm32")]
+fn set_unknown_duties(
+    object: &js_sys::Object,
+    key: &str,
+    duties: &[duty2cal_core::application::UnknownDuty],
+) {
+    let array = js_sys::Array::new();
+    for duty in duties {
+        let item = js_sys::Object::new();
+        set_property(&item, "date", &format_page_date(duty.date));
+        match duty.start {
+            Some(start) => set_property(&item, "start", &format_page_clock(start)),
+            None => set_value(&item, "start", JsValue::NULL),
+        }
+        set_property(&item, "code", &duty.code);
+        array.push(&item.into());
+    }
+    set_value(object, key, array.into());
+}
+
+/// `DD-MM-YYYY`, zero-padded, for the ready list.
+#[cfg(target_arch = "wasm32")]
+fn format_page_date(date: time::Date) -> String {
+    format!(
+        "{:02}-{:02}-{:04}",
+        date.day(),
+        u8::from(date.month()),
+        date.year()
+    )
+}
+
+/// `HH:MM`, zero-padded, for the ready list.
+#[cfg(target_arch = "wasm32")]
+fn format_page_clock(instant: OffsetDateTime) -> String {
+    format!("{:02}:{:02}", instant.hour(), instant.minute())
 }
 
 /// The two-line diagnostic report for a failure the page detects itself.

@@ -212,10 +212,28 @@ Design constraints:
 - Production: `UnknownDuty` + `ConversionOutcome.unknown_duties` + wasm `unknownDuties` + `web/index.html` + `web/app.js`; the shared step bindings.
 - Files: `crates/duty2cal-core/src/application/mod.rs`, `ffi/wasm/src/lib.rs`, `web/index.html`, `web/app.js`, `apps/cli/tests/steps/export_duty_plan_calendar.rs`.
 
-- [ ] RED: remove `@wip`; run the browser command; paste output (must fail: the page still shows the old heading/copy and no structured list). The driver must be reachable.
-- [ ] GREEN: implement the structured fact, facade array, page order/copy/labels and list composition; run the browser command; paste output (must pass).
-- [ ] REFACTOR: no behaviour change; run again; paste output.
-- [ ] COMMIT: one revision; record the hash.
+- [x] RED: removed `@wip`; run the browser command against the old bundle; paste output.
+  ```
+  Scenario: The page shows the warnings and offers both files when a plan converts with warnings
+   ✔ Given / ✔ When / ✔ Then the page shows that the calendar is ready with warnings
+   ✘ And the page shows the text "Calendar ICS ready"
+  1 scenario (1 failed) / 4 steps (3 passed, 1 failed)
+  EXIT=1
+  ```
+- [x] GREEN: added `UnknownDuty`/`ConversionOutcome.unknown_duties`, the wasm `unknownDuties` array, the page order/copy/labels and the list composition, plus the new step bindings. Run the browser command; paste output.
+  ```
+  1 scenario (1 passed) / 14 steps (14 passed)
+  EXIT=0
+  ```
+- [x] REFACTOR: `cargo fmt --all`; no behaviour change; the same targeted run passes.
+  ```
+  1 scenario (1 passed) / 14 steps (14 passed)
+  EXIT=0
+  ```
+- [x] COMMIT: one revision; record the hash.
+  ```
+  COMMIT: PENDING6
+  ```
 
 ### 7. The page lists an all-day unknown duty with its date and code
 

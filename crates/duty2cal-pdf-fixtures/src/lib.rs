@@ -858,6 +858,12 @@ pub fn warned_plan() -> Vec<(f64, f64, String)> {
     )])
 }
 
+/// A supported plan whose one detail row prints an unrecognized activity code
+/// with no printed UTC times and no route, so the all-day fallback warns.
+pub fn all_day_warned_plan() -> Vec<(f64, f64, String)> {
+    dated_plan(&[(585.0, &[(DATE_X, "2099-06-07"), (ACTIVITY_X, "ZZ_M_CF")])])
+}
+
 /// A supported plan with two detail rows carrying unrecognized activity codes.
 pub fn two_warned_rows_plan() -> Vec<(f64, f64, String)> {
     dated_plan(&[
