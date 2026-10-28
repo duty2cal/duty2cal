@@ -1,3 +1,9 @@
+## [1.2.0] - 2026-10-28
+
+### New capabilities
+- The Windows download and the browser bundle now carry the converter's own reading of the supported duty plan instead of a general-purpose PDF extraction stack, so both artifacts shrink substantially while the calendar, warnings and numbered reports stay the same.
+- Every calendar entry for an unrecognized duty code is prefixed with `unknown duty: <code>`, and the browser's ready page lists those duties and offers the calendar and the publisher warning with clear save labels.
+[1.1.0...1.2.0](https://github.com/duty2cal/duty2cal/compare/v1.1.0...v1.2.0)
 ## [1.1.0] - 2026-10-27
 
 ### New capabilities
