@@ -234,9 +234,11 @@ impl DutyEntry {
                     None | Some(FieldValue::Differing { .. }) => title,
                 }
             }
-            Self::Availability { code, .. }
-            | Self::NonFlightDuty { code, .. }
-            | Self::UnrecognizedActivity { code, .. } => code.clone(),
+            Self::Availability { code, .. } | Self::NonFlightDuty { code, .. } => code.clone(),
+            Self::UnrecognizedActivity { code, interval, .. } => match interval {
+                Some(_) => format!("unknown duty: {code}"),
+                None => code.clone(),
+            },
             Self::Layover { station, .. } => format!("Layover {station}"),
         }
     }
