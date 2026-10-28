@@ -49,7 +49,7 @@ The list is in plan order, one entry per converted row, so the page and the cale
 
 | Proposed capability | Decision | Rationale |
 |---|---|---|
-| `export-duty-plan-calendar` | `EXTEND export-duty-plan-calendar` | The actor, the goal, the source, the publication and the two actions stay the same; only the presentation of a conversion warning in the calendar title and in the page's ready states changes. A new capability would split one goal across two names for no new actor outcome, and no new capability name is goal-shaped here. |
+| export-duty-plan-calendar | EXTEND export-duty-plan-calendar | The actor, the goal, the source, the publication and the two actions stay the same; only the presentation of a conversion warning in the calendar title and in the page's ready states changes. A new capability would split one goal across two names for no new actor outcome, and no new capability name is goal-shaped here. |
 
 The two interaction-inventory actions in `usecase.md` remain exactly as they are: supplying a plan through the executable, and supplying a plan through the converter page and saving the offered calendar. No new user action is introduced, and no new `@e2e` scenario is added.
 

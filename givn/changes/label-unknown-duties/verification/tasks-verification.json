@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "label-unknown-duties",
+  "status": "passed",
+  "head": "6d95d11d2c9a34efecae52e53f8be5eb53dc81ed",
+  "features_path": "givn/changes/label-unknown-duties/specs",
+  "features_digest": "7ded7a8f24f463fd6cc4daad0e5d6e8f894ac8c4fcd3d725ffffbe9e7a03a8b7",
+  "command_digest": "1031237dac4a7328aa009dc5586392005a11f5408a7dc7b8a4726efc55a93a8e",
+  "command": "./run-tests.sh",
+  "tested_content_digest": "8e43b0be36c994febdf484648230012e607a15fd42ab29ca454efcddca969c7a",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 140,
+    "passed": 140,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1793188110
+}
