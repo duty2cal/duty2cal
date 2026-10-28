@@ -313,7 +313,7 @@ Design constraints:
   ```
 - [x] COMMIT: one revision; record the hash.
   ```
-  COMMIT: PENDING9
+  COMMIT: c24f16e
   ```
 
 ### 10. The page keeps the calendar and the warnings when it cannot offer the warning report
@@ -323,10 +323,24 @@ Design constraints:
 - Production: no new code beyond the offer-failure path and the list; the state and copy bindings.
 - Files: `web/app.js`, `apps/cli/tests/steps/export_duty_plan_calendar.rs`.
 
-- [ ] RED: remove `@wip`; run the browser command; paste output (must fail on the old list/copy).
-- [ ] GREEN: keep the calendar and list when the offer fails; run the browser command; paste output (must pass).
-- [ ] REFACTOR: run again; paste output.
-- [ ] COMMIT: one revision; record the hash.
+- [x] RED: removed `@wip`; the list and static copy landed in task 6, so the guard's targeted run is green. Recorded honestly.
+  ```
+  1 scenario (1 passed) / 7 steps (7 passed)
+  EXIT=0
+  ```
+- [x] GREEN: a failed warning-report offer leaves the calendar and the list visible and states `No warning report was offered.`
+  ```
+  1 scenario (1 passed) / 7 steps (7 passed)
+  ```
+- [x] REFACTOR: run again; no behaviour change.
+  ```
+  1 scenario (1 passed) / 7 steps (7 passed)
+  EXIT=0
+  ```
+- [x] COMMIT: one revision; record the hash.
+  ```
+  COMMIT: PENDING10
+  ```
 
 ## Closeout
 
