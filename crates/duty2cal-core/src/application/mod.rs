@@ -13,7 +13,7 @@ use crate::domain::{
 
 /// Raw, position-based content of a supplied document — the anti-corruption
 /// intermediate between the PDF adapter and interpretation.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct RawRosterTable {
     /// Column labels derived from the detail-table header, left to right.
     pub columns: Vec<String>,
@@ -22,18 +22,103 @@ pub struct RawRosterTable {
 }
 
 /// Why a supplied source could not be read as a supported plan.
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum SourceError {
     /// The bytes are not a readable PDF.
-    #[error("the source is not a readable PDF: {0}")]
     Unreadable(String),
     /// The document is readable but is not the supported source family.
-    #[error("the source is not a supported Released Roster detail-table export")]
     UnsupportedFamily,
+    /// The document uses a PDF construct outside the frozen supported subset.
+    UnsupportedConstruct {
+        /// The construct the extraction refuses by name.
+        construct: Construct,
+        /// The 1-based page the construct occurs on, when one is known.
+        page: Option<usize>,
+    },
+}
+
+impl std::fmt::Display for SourceError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Unreadable(detail) => {
+                write!(f, "the source is not a readable PDF: {detail}")
+            }
+            Self::UnsupportedFamily => write!(
+                f,
+                "the source is not a supported Released Roster detail-table export"
+            ),
+            Self::UnsupportedConstruct { construct, page } => {
+                write!(
+                    f,
+                    "the source uses a PDF construct outside the supported family: {construct}"
+                )?;
+                if let Some(page) = page {
+                    write!(f, " on page {page}")?;
+                }
+                Ok(())
+            }
+        }
+    }
+}
+
+impl std::error::Error for SourceError {}
+
+/// A PDF construct outside the frozen supported subset.
+///
+/// The closed vocabulary is the refusal contract: every variant has one display
+/// name the failure report carries, and a construct without a variant is never
+/// skipped silently.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum Construct {
+    /// The document is encrypted.
+    #[error("encrypted document")]
+    EncryptedDocument,
+    /// A stream uses a filter other than FlateDecode or no filter.
+    #[error("unsupported stream filter {0}")]
+    StreamFilter(String),
+    /// An inline image (`BI`) appears in a content stream.
+    #[error("inline image")]
+    InlineImage,
+    /// A Type3 font is used.
+    #[error("Type3 font")]
+    Type3Font,
+    /// A font encoding other than Identity-H is used.
+    #[error("font encoding other than Identity-H")]
+    NonIdentityEncoding,
+    /// A Type0 font carries no ToUnicode CMap.
+    #[error("missing ToUnicode CMap")]
+    MissingToUnicode,
+    /// A glyph code has no ToUnicode mapping.
+    #[error("unmapped glyph code")]
+    UnmappedGlyph,
+    /// Text is set on a rotated matrix.
+    #[error("text rotation")]
+    TextRotation,
+    /// Horizontal text scaling other than 100 percent is requested.
+    #[error("horizontal text scaling")]
+    HorizontalScaling,
+    /// The page carries a non-zero rotation.
+    #[error("page rotation")]
+    PageRotation,
+    /// The page carries a box other than its media box.
+    #[error("page box other than the media box")]
+    PageBox,
+    /// A form XObject is referenced by `Do`.
+    #[error("form XObject")]
+    FormXObject,
+    /// The font descriptor carries no descent.
+    #[error("font descriptor without a descent")]
+    MissingDescent,
+    /// A text-positioning operator outside the subset is used.
+    #[error("text operator {0}")]
+    TextOperator(&'static str),
+    /// The content stream carries an operator the extraction does not know.
+    #[error("unknown content-stream operator {0}")]
+    UnknownOperator(String),
 }
 
 /// A supplied document: its raw detail rows and its own revision metadata.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct SourceDocument {
     /// The detail-table content.
     pub table: RawRosterTable,

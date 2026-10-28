@@ -4,33 +4,100 @@
 //! One file per capability. A step body is never empty: every step starts as an
 //! unimplemented stub that panics with its own text.
 
-use cucumber::{given, then, when};
+use std::path::PathBuf;
+use std::process::Command;
 
+use cucumber::{given, then, when};
+use duty2cal_pdf_fixtures as fixtures;
+
+use crate::steps::export_duty_plan_calendar::fresh_dir;
 use crate::DutyWorld;
 
+/// The second generated plan a scenario converts, beside the first.
+const SECOND_PLAN: &str = "object-streams.pdf";
+
+/// Write one generated plan into the scenario directory.
+fn write_plan(w: &mut DutyWorld, name: &str, bytes: Vec<u8>) -> PathBuf {
+    let dir = w.dir.clone().unwrap_or_else(fresh_dir);
+    std::fs::create_dir_all(&dir).expect("create the scenario directory");
+    let path = dir.join(name);
+    std::fs::write(&path, bytes).expect("write the generated plan");
+    w.dir = Some(dir);
+    path
+}
+
+/// Run the executable on one source and record its output and exit status.
+fn convert(w: &mut DutyWorld, source: &PathBuf) {
+    let output = Command::new(env!("CARGO_BIN_EXE_duty2cal"))
+        .arg(source)
+        .output()
+        .expect("run the converter");
+    w.exit_status = output.status.code();
+    if let Some(status) = w.exit_status {
+        w.exit_statuses.push(status);
+    }
+    w.stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+    w.stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+}
+
 #[given("the supported duty plan encoded with a classic xref table")]
-async fn the_supported_plan_with_a_classic_xref_table(_w: &mut DutyWorld) {
-    unimplemented!("the supported duty plan encoded with a classic xref table")
+async fn the_supported_plan_with_a_classic_xref_table(w: &mut DutyWorld) {
+    let bytes = fixtures::build_plan(
+        &fixtures::equivalence_plan(),
+        fixtures::Encoding::ClassicXref,
+    );
+    w.source = Some(write_plan(w, "classic.pdf", bytes));
 }
 
 #[given("the same plan encoded with an xref stream and object streams")]
-async fn the_same_plan_with_an_xref_stream_and_object_streams(_w: &mut DutyWorld) {
-    unimplemented!("the same plan encoded with an xref stream and object streams")
+async fn the_same_plan_with_an_xref_stream_and_object_streams(w: &mut DutyWorld) {
+    let bytes = fixtures::build_plan(
+        &fixtures::equivalence_plan(),
+        fixtures::Encoding::ObjectStreams,
+    );
+    write_plan(w, SECOND_PLAN, bytes);
 }
 
 #[when("the release maintainer converts both plans through the executable")]
-async fn the_release_maintainer_converts_both_plans(_w: &mut DutyWorld) {
-    unimplemented!("the release maintainer converts both plans through the executable")
+async fn the_release_maintainer_converts_both_plans(w: &mut DutyWorld) {
+    let classic = w.source_path();
+    convert(w, &classic);
+    let second = w.working_dir().join(SECOND_PLAN);
+    convert(w, &second);
 }
 
-#[then("both published calendars are byte-identical")]
-async fn both_published_calendars_are_byte_identical(_w: &mut DutyWorld) {
-    unimplemented!("both published calendars are byte-identical")
+#[then("both published calendars are identical apart from their source-snapshot identities")]
+async fn both_published_calendars_match_apart_from_uids(w: &mut DutyWorld) {
+    // The two encodings are distinct source snapshots, and a calendar's UID
+    // carries the snapshot identity (FNV-1a of the source bytes). Everything a
+    // crew member reads besides that identity must be identical.
+    let first = std::fs::read_to_string(w.working_dir().join("classic.ics"))
+        .expect("the classic-xref conversion published no calendar");
+    let second = std::fs::read_to_string(w.working_dir().join("object-streams.ics"))
+        .expect("the object-stream conversion published no calendar");
+    let content = |calendar: &str| -> Vec<String> {
+        calendar
+            .lines()
+            .filter(|line| !line.starts_with("UID:"))
+            .map(str::to_string)
+            .collect()
+    };
+    assert_eq!(
+        content(&first),
+        content(&second),
+        "the two encodings published different calendar content"
+    );
 }
 
 #[then("the executable reports success for both conversions")]
-async fn the_executable_reports_success_for_both_conversions(_w: &mut DutyWorld) {
-    unimplemented!("the executable reports success for both conversions")
+async fn the_executable_reports_success_for_both_conversions(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_statuses,
+        vec![0, 0],
+        "a conversion reported failure: stdout={} stderr={}",
+        w.stdout,
+        w.stderr
+    );
 }
 
 #[given(regex = r#"^a duty plan that exercises the construct "(.*)"$"#)]
@@ -43,7 +110,9 @@ async fn the_release_maintainer_converts_it_through_the_executable(_w: &mut Duty
     unimplemented!("the release maintainer converts it through the executable")
 }
 
-#[then(regex = r#"^the numbered failure report names the source PDF, the construct "(.*)" and the page it occurs on$"#)]
+#[then(
+    regex = r#"^the numbered failure report names the source PDF, the construct "(.*)" and the page it occurs on$"#
+)]
 async fn the_numbered_failure_report_names_the_construct_and_page(
     _w: &mut DutyWorld,
     _construct: String,
@@ -83,7 +152,9 @@ async fn a_truncated_pdf(_w: &mut DutyWorld) {
     unimplemented!("a truncated PDF")
 }
 
-#[then("the numbered failure report names the source PDF and that the source is not a readable PDF")]
+#[then(
+    "the numbered failure report names the source PDF and that the source is not a readable PDF"
+)]
 async fn the_numbered_failure_report_names_the_unreadable_source(_w: &mut DutyWorld) {
     unimplemented!(
         "the numbered failure report names the source PDF and that the source is not a readable PDF"

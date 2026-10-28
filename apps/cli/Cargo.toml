@@ -12,6 +12,7 @@ time = "0.3"
 
 [dev-dependencies]
 cucumber = "0.23"
+duty2cal-pdf-fixtures = { path = "../../crates/duty2cal-pdf-fixtures" }
 serde_json = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync"] }
 

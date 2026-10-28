@@ -17,6 +17,8 @@ pub struct DutyWorld {
     pub source: Option<PathBuf>,
     /// Exit status of the last child invocation, when one was run.
     pub exit_status: Option<i32>,
+    /// Exit statuses of every child invocation in this scenario, in order.
+    pub exit_statuses: Vec<i32>,
     /// Captured standard output of the last child invocation.
     pub stdout: String,
     /// Captured standard error of the last child invocation.

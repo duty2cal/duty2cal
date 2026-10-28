@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MPL-2.0
+# Dev-only fixture generator: it emits PDF bytes at test time, never a
+# committed PDF. It is never part of a shipped graph.
+[package]
+name = "duty2cal-pdf-fixtures"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+miniz_oxide = "=0.9.1"

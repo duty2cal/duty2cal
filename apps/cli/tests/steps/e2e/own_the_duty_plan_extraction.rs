@@ -19,7 +19,9 @@ async fn the_executable_publishes_the_complete_calendar(_w: &mut DutyWorld) {
     unimplemented!("the executable publishes the complete calendar at an unused path")
 }
 
-#[then("the published calendar is identical to the accepted calendar after the agreed normalisation")]
+#[then(
+    "the published calendar is identical to the accepted calendar after the agreed normalisation"
+)]
 async fn the_published_calendar_matches_the_accepted_calendar(_w: &mut DutyWorld) {
     unimplemented!(
         "the published calendar is identical to the accepted calendar after the agreed normalisation"

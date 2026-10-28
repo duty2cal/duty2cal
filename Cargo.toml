@@ -6,6 +6,7 @@ resolver = "2"
 members = [
   "crates/duty2cal-core",
   "crates/duty2cal-pdf",
+  "crates/duty2cal-pdf-fixtures",
   "apps/cli",
   "ffi/wasm",
 ]

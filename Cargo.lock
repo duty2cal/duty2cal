@@ -488,6 +488,7 @@ dependencies = [
  "cucumber",
  "duty2cal-core",
  "duty2cal-pdf",
+ "duty2cal-pdf-fixtures",
  "serde_json",
  "time",
  "tokio",
@@ -507,8 +508,17 @@ name = "duty2cal-pdf"
 version = "0.1.0"
 dependencies = [
  "duty2cal-core",
+ "duty2cal-pdf-fixtures",
+ "lopdf",
  "pdfplumber",
  "time",
+]
+
+[[package]]
+name = "duty2cal-pdf-fixtures"
+version = "0.1.0"
+dependencies = [
+ "miniz_oxide",
 ]
 
 [[package]]

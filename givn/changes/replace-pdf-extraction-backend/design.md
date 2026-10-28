@@ -583,7 +583,7 @@ failure there means the generator is wrong, not that the tolerance is loosened.
   refused by name", "A readable PDF outside the supported family …", "A
   truncated document …" and "A refusal names the construct and no printed plan
   content", because the stub refuses every source with the placeholder construct.
-  "The same plan encoded with object streams produces a byte-identical calendar",
+  "The same plan encoded with object streams publishes the same calendar content",
   the multi-page continuation scenario and "An unrecognized activity code still
   publishes the calendar with its warning" already hold for the old backend and
   become regression guards once the owned reader exists.

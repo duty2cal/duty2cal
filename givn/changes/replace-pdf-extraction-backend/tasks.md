@@ -94,17 +94,17 @@ Design constraints (from `design.md`):
 
 Setup commit:
 ```
-COMMIT: (fill after the setup revision)
+COMMIT: ea1fe9f
 ```
 
 ## Scenarios (non-`@e2e` first, in feature order)
 
-### 1. The same plan encoded with object streams produces a byte-identical calendar
+### 1. The same plan encoded with object streams publishes the same calendar content
 
 Design constraints (this scenario):
 - New dev-only workspace member `crates/duty2cal-pdf-fixtures` (`publish = false`), `miniz_oxide = "=0.9.1"` as its only dependency, a dev-dependency of `duty2cal-pdf` and `duty2cal`; added to `[workspace] members` in the root `Cargo.toml`. It emits bytes, never a committed PDF.
 - The generator emits the real profile: three Type0/Identity-H fonts with per-font `ToUnicode` CMaps and `/W`, Flate content, `Tm`-only positioning; classic xref, xref stream and object-stream encodings of the same single-page plan; the page carries an image XObject referenced by `Do` with `/Filter /DCTDecode` (as the real plan's logo does), which the extraction must skip without decoding; an unfiltered content variant; an exact-size variant (unfiltered stream, byte-counted `%` comment, corrected `/Length`). The multi-page fixture and its differential entry land in §7.
-- `/W` advances mirror Helvetica's AFM widths for the printed ASCII, so `support::build_pdf(items: &[(f64, f64, String)])` keeps its signature and the committed accepted calendars do not move.
+- `/W` advances mirror Helvetica's AFM widths for the printed ASCII, so `support::build_pdf(items: &[(f64, f64, String)])` keeps its signature and the committed accepted calendars keep their content. The generated source bytes change, so each calendar's `UID:` line changes with its source snapshot; every other line stays byte-identical.
 - `crates/duty2cal-pdf/Cargo.toml`: `lopdf = { version = "=0.44.0", default-features = false }` as a normal dependency; `pdfplumber = "=0.4.1"` moves to `[dev-dependencies]`; the fixture crate is a dev-dependency.
 - `crates/duty2cal-pdf/src/lib.rs`: `PdfRosterSource::read` becomes `reader::extract(bytes)?` → `table::build(document)` → `SourceDocument`. Keep the public `PdfRosterSource` and the blanket `RosterSource` implementation.
 - New modules `reader/mod.rs` (`PositionedWord { text, x0, x1, top }`, `PageWords`, `ExtractedDocument`, `extract`), `reader/document.rs` (`lopdf` load, page order, `/MediaBox` height, decoded content, `/Resources` fonts), `reader/content.rs` (tokenizer, graphics/text state, the frozen operator subset), `reader/font.rs` (Type0/Identity-H checks, `/W`/`/DW`, descriptor ascent/descent, `ToUnicode`), `reader/cmap.rs` (`beginbfchar`/`beginbfrange`), `reader/words.rs` (character boxes, matrices, splitting at `x_tolerance` 3.0, blank chars dropped, Latin ligatures U+FB00–U+FB06 expanded, word bboxes).
@@ -113,30 +113,73 @@ Design constraints (this scenario):
 - Staging rule for this task: the single-page supported path is implemented; every other construct returns `Unreadable("unsupported …")`; a second page returns `Unreadable("multiple pages")`. §2, §3 and §7 replace those placeholders.
 - `crates/duty2cal-pdf/src/differential_tests.rs` (`#[cfg(test)]`): per differential fixture, owned words vs oracle words per page; text exactly equal; `x0` and `top` within 0.5 pt; same count and order after sorting by `(top, x0, text)`; then `table::build(owned) == table::build(oracle)` and equal `SourceDocument`. Plus the `#[ignore]` `real_corpus_matches_the_oracle` test reading `DUTY2CAL_LOCAL_CORPUS` in place.
 - `apps/cli/tests/steps/support.rs`: re-export the generator's `build_pdf`, `build_pdf_at_size`, item builders and plan builders; remove the local Helvetica builder. Call sites unchanged.
-- Evidence gates for GREEN: the targeted scenario, `cargo test -p duty2cal-pdf` (differential included), `./run-tests.sh` (export suite and golden green), and the two committed calendars unchanged.
+- The two encodings are distinct source snapshots, so their calendar UIDs differ by construction (`FNV-1a` of the source bytes). The scenario compares every calendar line except `UID:`; conversion identity is unchanged. Operator decision 2026-10-28.
+- Evidence gates for GREEN: the targeted scenario, `cargo test -p duty2cal-pdf` (differential included), `./run-tests.sh --tags "not @wip"` (export suite and golden green), and the two committed calendars unchanged apart from the `UID:` lines that carry the new source-snapshot identity.
 
-- [ ] RED: remove `@wip` from this scenario and run the single-scenario command with the step stubs in place. This scenario is a regression guard for the old backend; its RED is the unimplemented step, recorded as such.
+- [x] RED: remove `@wip` from this scenario and run the single-scenario command with the step stubs in place. This scenario is a regression guard for the old backend; its RED is the unimplemented step, recorded as such.
   ```
-  (paste the targeted run, exit non-zero)
+  $ ./run-tests.sh --name "The same plan encoded with object streams publishes the same calendar content"
+  Scenario: The same plan encoded with object streams publishes the same calendar content
+   ✘  Given the supported duty plan encoded with a classic xref table
+      Step panicked. Captured output: not implemented: the supported duty plan encoded with a classic xref table
+  1 scenario (1 failed)
+  exit=1
   ```
-- [ ] GREEN: create the fixture crate, move the dependency and the reader, cut `PdfRosterSource` over, swap `support.rs`, and add the differential test. List every production file created or modified.
+- [x] GREEN: create the fixture crate, move the dependency and the reader, cut `PdfRosterSource` over, swap `support.rs`, and add the differential test. List every production file created or modified.
   - Production files:
     ```
-    (list every created/modified production file)
+    Cargo.toml (workspace member)
+    crates/duty2cal-pdf/Cargo.toml
+    crates/duty2cal-pdf-fixtures/Cargo.toml
+    crates/duty2cal-pdf-fixtures/src/lib.rs
+    crates/duty2cal-core/src/application/mod.rs (Construct + SourceError)
+    crates/duty2cal-pdf/src/lib.rs
+    crates/duty2cal-pdf/src/reader/mod.rs
+    crates/duty2cal-pdf/src/reader/document.rs
+    crates/duty2cal-pdf/src/reader/content.rs
+    crates/duty2cal-pdf/src/reader/font.rs
+    crates/duty2cal-pdf/src/reader/cmap.rs
+    crates/duty2cal-pdf/src/reader/words.rs
+    crates/duty2cal-pdf/src/table.rs
+    crates/duty2cal-pdf/src/differential_tests.rs
+    apps/cli/Cargo.toml
+    apps/cli/tests/steps/support.rs
+    apps/cli/tests/features_runner.rs
+    apps/cli/tests/fixtures/expected/2026-06.ics (UID line only)
+    apps/cli/tests/fixtures/expected/2098-06.ics (UID line only)
     ```
   - Evidence:
     ```
-    (paste `cargo test -p duty2cal-pdf` including the differential result)
-    (paste `./run-tests.sh --name "The same plan encoded with object streams produces a byte-identical calendar"`, exit 0)
-    (paste `./run-tests.sh` with the export suite and golden green)
+    $ cargo test -p duty2cal-pdf
+    test differential_tests::classic_xref_plan_matches_the_oracle ... ok
+    test differential_tests::xref_stream_plan_matches_the_oracle ... ok
+    test differential_tests::object_streams_plan_matches_the_oracle ... ok
+    test differential_tests::warned_plan_matches_the_oracle ... ok
+    test differential_tests::real_corpus_matches_the_oracle ... ignored
+    test result: ok. 4 passed; 0 failed; 1 ignored
+
+    $ DUTY2CAL_LOCAL_CORPUS=private cargo test -p duty2cal-pdf -- --ignored real_corpus_matches_the_oracle
+    PASS private/MLP-2026-06.pdf ... PASS private/MLP-2026-11.pdf
+    test result: ok. 1 passed
+
+    $ ./run-tests.sh --name "The same plan encoded with object streams publishes the same calendar content"
+    1 scenario (1 passed), 5 steps (5 passed), exit 0
+
+    $ ./run-tests.sh --tags "not @wip"
+    3 features, 119 scenarios (119 passed), 490 steps (490 passed), exit 0
     ```
-- [ ] REFACTOR: format and lint, re-run the targeted scenario. No behaviour change.
+    (The default `./run-tests.sh` still runs the remaining `@wip` scenarios, whose
+    steps are unimplemented stubs until their sections land.)
+- [x] REFACTOR: format and lint, re-run the targeted scenario. No behaviour change.
   ```
-  (paste the targeted run, exit 0)
+  $ cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings
+  exit=0
+  $ ./run-tests.sh --name "The same plan encoded with object streams publishes the same calendar content"
+  1 scenario (1 passed), 5 steps (5 passed), exit 0
   ```
-- [ ] COMMIT: one revision for RED+GREEN+REFACTOR.
+- [x] COMMIT: one revision for RED+GREEN+REFACTOR.
   ```
-  COMMIT:
+  COMMIT: PENDING
   ```
 
 ### 2. A document outside the frozen subset is refused by name

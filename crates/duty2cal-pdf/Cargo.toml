@@ -7,6 +7,11 @@ license.workspace = true
 
 [dependencies]
 duty2cal-core = { path = "../duty2cal-core" }
-# Exact pin; the only crate allowed to depend on the extraction dependency.
-pdfplumber = "=0.4.1"
+# The file-structure layer only; the interpretation is project code in `src/reader`.
+lopdf = { version = "=0.44.0", default-features = false }
 time = "0.3"
+
+[dev-dependencies]
+# Test oracle only; never part of a shipped graph.
+pdfplumber = "=0.4.1"
+duty2cal-pdf-fixtures = { path = "../duty2cal-pdf-fixtures" }

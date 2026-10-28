@@ -10,12 +10,12 @@ Feature: Own the duty-plan extraction
     And the published calendar is identical to the accepted calendar after the agreed normalisation
     And the executable reports success through its process exit status
 
-  @givn.added @wip
-  Scenario: The same plan encoded with object streams produces a byte-identical calendar
+  @givn.added
+  Scenario: The same plan encoded with object streams publishes the same calendar content
     Given the supported duty plan encoded with a classic xref table
     And the same plan encoded with an xref stream and object streams
     When the release maintainer converts both plans through the executable
-    Then both published calendars are byte-identical
+    Then both published calendars are identical apart from their source-snapshot identities
     And the executable reports success for both conversions
 
   @givn.added @wip
