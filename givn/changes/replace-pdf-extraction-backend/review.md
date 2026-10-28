@@ -198,7 +198,7 @@ PERSONAS: contributor--web-reviewer
 Contract: `Interface: terminal`; evidence is the committed transcript at
 `givn/changes/replace-pdf-extraction-backend/evidence/visual/release-maintainer-converts-the-supported-plan-through-the-executable-and-receives-the-accepted-calendar/transcript.txt`.
 
-Fresh-context Persona reviews:
+Fresh-context Persona reviews: three subagents that wrote none of these artifacts read the transcript, the e2e step implementation and the scenario Then steps. All three returned `VISUAL-REVIEW: PASS` with no finding.
 
 | Persona | Evidence seen | Goal reachable? | Finding | Disposition |
 |---|---|---|---|---|

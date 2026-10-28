@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "replace-pdf-extraction-backend",
+  "status": "passed",
+  "head": "fc1af91ed30d8fe6935b5e96960176647a0151ed",
+  "features_path": "givn/changes/replace-pdf-extraction-backend/specs",
+  "features_digest": "8714bdfda180173216f3e976d0c71c8e04d7d2b1af4b9ef7e1847a2c0a349c1f",
+  "command_digest": "1031237dac4a7328aa009dc5586392005a11f5408a7dc7b8a4726efc55a93a8e",
+  "command": "./run-tests.sh",
+  "tested_content_digest": "2e7169a8737175aec3812780d3c2e66cdb914032151bdebb572a1ab5ebbb1c1e",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 140,
+    "passed": 140,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1793184881
+}

@@ -50,10 +50,10 @@ Impact: 86.8% of the executable is a stack the one supported plan barely uses, a
 
 `givn spec route --change replace-pdf-extraction-backend` reports no signal — the top candidates tie at 13.00 — and prints no ranked list, so no recommendation column is recorded. This table is the declaration `givn check review` compares against the delta.
 
-| Proposed capability | Decision | Rationale |
-|---|---|---|
-| `own-the-duty-plan-extraction` | NEW in own-the-duty-plan-extraction | The actor goal is the release maintainer's: read the one supported plan with an extraction the project owns, prove the delivered calendar and diagnostics equivalent, refuse every construct outside a frozen subset by name, and measure the shipped artifacts. None of the existing use cases owns that goal. `reduce-distributed-executable-size` defines a size lever strictly as a build-configuration change with a cumulative measured saving and excludes backend replacement; `measure-distributed-executable-size` observes a build and changes nothing; `export-duty-plan-calendar` is the crew member's export and its two inventory actions are the executable and browser conversions, so a second capability there would duplicate an action or name a component. |
-| `export-duty-plan-calendar` (document only) | EXTEND export-duty-plan-calendar | Only the delivery-constraint sentence changes: the exact third-party extractor pin becomes one project-owned extraction implementation behind the source port. No conversion rule, scenario, Actor or guarantee of that use case changes. |
+| Proposed capability | Route's recommendation | Decision | Rationale |
+|---|---|---|---|
+| own-the-duty-plan-extraction | no signal | NEW in own-the-duty-plan-extraction | The actor goal is the release maintainer's: read the one supported plan with an extraction the project owns, prove the delivered calendar and diagnostics equivalent, refuse every construct outside a frozen subset by name, and measure the shipped artifacts. None of the existing use cases owns that goal. `reduce-distributed-executable-size` defines a size lever strictly as a build-configuration change with a cumulative measured saving and excludes backend replacement; `measure-distributed-executable-size` observes a build and changes nothing; `export-duty-plan-calendar` is the crew member's export and its two inventory actions are the executable and browser conversions, so a second capability there would duplicate an action or name a component. |
+| export-duty-plan-calendar (document only) | no signal | EXTEND export-duty-plan-calendar | Only the delivery-constraint sentence changes: the exact third-party extractor pin becomes one project-owned extraction implementation behind the source port. No conversion rule, scenario, Actor or guarantee of that use case changes. |
 
 ## Out of Scope
 
