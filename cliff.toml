@@ -45,7 +45,7 @@ render_always = true
 [git]
 # The capability allow-list, read by the renderer and compared against the
 # use-case ids under `givn/specs/`.
-# <!-- capability-allow-list: export-duty-plan-calendar publish-public-release publish-public-website adopt-existing-configuration apply-configuration-change measure-distributed-executable-size reduce-distributed-executable-size state-the-converter-support-statement state-the-public-legal-notices -->
+# <!-- capability-allow-list: export-duty-plan-calendar publish-public-release publish-public-website adopt-existing-configuration apply-configuration-change measure-distributed-executable-size reduce-distributed-executable-size state-the-converter-support-statement state-the-public-legal-notices own-the-duty-plan-extraction -->
 # The paths a user receives: the converter's crates and command-line
 # application, the browser bundle and its WebAssembly FFI, the build inputs that
 # decide what the executable contains, and the packaging and the release
@@ -139,6 +139,10 @@ commit_parsers = [
   { message = "^perf\\(state-the-legal-notices\\)!:", group = "<!-- 0 -->Breaking changes" },
   { message = "^xrevert\\(state-the-support-statement\\)!:", group = "<!-- 0 -->Breaking changes" },
   { message = "^xrevert\\(state-the-legal-notices\\)!:", group = "<!-- 0 -->Breaking changes" },
+  { message = "^feat\\(own-the-duty-plan-extraction\\)!:", group = "<!-- 0 -->Breaking changes" },
+  { message = "^fix\\(own-the-duty-plan-extraction\\)!:", group = "<!-- 0 -->Breaking changes" },
+  { message = "^perf\\(own-the-duty-plan-extraction\\)!:", group = "<!-- 0 -->Breaking changes" },
+  { message = "^xrevert\\(own-the-duty-plan-extraction\\)!:", group = "<!-- 0 -->Breaking changes" },
 
   # A new capability: a feature whose scope is a capability the repository
   # holds.
@@ -150,6 +154,7 @@ commit_parsers = [
   { message = "^feat\\(publish-public-website\\):", group = "<!-- 1 -->New capabilities" },
   { message = "^feat\\(state-the-support-statement\\):", group = "<!-- 1 -->New capabilities" },
   { message = "^feat\\(state-the-legal-notices\\):", group = "<!-- 1 -->New capabilities" },
+  { message = "^feat\\(own-the-duty-plan-extraction\\):", group = "<!-- 1 -->New capabilities" },
 
   # Fixes.
   { message = "^fix\\(export-duty-plan-calendar\\):", group = "<!-- 2 -->Fixes" },
@@ -160,6 +165,7 @@ commit_parsers = [
   { message = "^fix\\(publish-public-website\\):", group = "<!-- 2 -->Fixes" },
   { message = "^fix\\(state-the-support-statement\\):", group = "<!-- 2 -->Fixes" },
   { message = "^fix\\(state-the-legal-notices\\):", group = "<!-- 2 -->Fixes" },
+  { message = "^fix\\(own-the-duty-plan-extraction\\):", group = "<!-- 2 -->Fixes" },
 
   # Performance.
   { message = "^perf\\(export-duty-plan-calendar\\):", group = "<!-- 3 -->Performance" },
@@ -170,6 +176,7 @@ commit_parsers = [
   { message = "^perf\\(publish-public-website\\):", group = "<!-- 3 -->Performance" },
   { message = "^perf\\(state-the-support-statement\\):", group = "<!-- 3 -->Performance" },
   { message = "^perf\\(state-the-legal-notices\\):", group = "<!-- 3 -->Performance" },
+  { message = "^perf\\(own-the-duty-plan-extraction\\):", group = "<!-- 3 -->Performance" },
 
   # Reversals.
   { message = "^xrevert\\(export-duty-plan-calendar\\):", group = "<!-- 4 -->Reversals" },
@@ -180,6 +187,7 @@ commit_parsers = [
   { message = "^xrevert\\(publish-public-website\\):", group = "<!-- 4 -->Reversals" },
   { message = "^xrevert\\(state-the-support-statement\\):", group = "<!-- 4 -->Reversals" },
   { message = "^xrevert\\(state-the-legal-notices\\):", group = "<!-- 4 -->Reversals" },
+  { message = "^xrevert\\(own-the-duty-plan-extraction\\):", group = "<!-- 4 -->Reversals" },
 
   # Dependency updates a user receives: Dependabot's `chore(deps):` bump
   # changes the dependency graph, which is a user-receiving path, so the entry

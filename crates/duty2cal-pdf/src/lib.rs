@@ -5,7 +5,8 @@
 //! The reading boundary is the positioned word (`reader`); the detail-table
 //! construction (`table`) is one implementation shared by the executable and
 //! the browser. No third-party PDF extractor is part of the shipped graph; the
-//! extractor survives only as a test oracle.
+//! extractor survives only as a test oracle. The frozen subset is ADR-0008's
+//! contract: a construct outside it is refused by name rather than guessed at.
 
 use duty2cal_core::application::{RosterSource, SourceDocument, SourceError};
 
