@@ -195,13 +195,22 @@ async fn the_numbered_failure_report_names_the_encrypted_document(w: &mut DutyWo
 }
 
 #[given("a readable PDF that prints no detail-table header")]
-async fn a_readable_pdf_without_a_detail_table_header(_w: &mut DutyWorld) {
-    unimplemented!("a readable PDF that prints no detail-table header")
+async fn a_readable_pdf_without_a_detail_table_header(w: &mut DutyWorld) {
+    let bytes = fixtures::build_no_header_plan();
+    w.source = Some(write_plan(w, "roster.pdf", bytes));
 }
 
 #[then("the numbered failure report names the source PDF and the unsupported family")]
-async fn the_numbered_failure_report_names_the_unsupported_family(_w: &mut DutyWorld) {
-    unimplemented!("the numbered failure report names the source PDF and the unsupported family")
+async fn the_numbered_failure_report_names_the_unsupported_family(w: &mut DutyWorld) {
+    let report = failure_report(w);
+    assert!(
+        report.contains("Source PDF: roster.pdf"),
+        "the report does not name the source: {report}"
+    );
+    assert!(
+        report.contains("the source is not a supported Released Roster detail-table export"),
+        "the report does not name the unsupported family: {report}"
+    );
 }
 
 #[given("a truncated PDF")]

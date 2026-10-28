@@ -276,26 +276,31 @@ Design constraints (this scenario):
 - The two-line report is written, no calendar, no warning report, non-zero exit.
 - This behaviour is already required by the existing export scenario "A source outside the supported family is rejected"; this scenario adds the no-empty-calendar and report assertions on a generated document. It is a regression guard after §1.
 
-- [ ] RED: bind the steps and run the scenario. The RED is the unimplemented step; the behaviour is already present from §1.
+- [x] RED: bind the steps and run the scenario. The RED is the unimplemented step; the behaviour is already present from §1.
   ```
-  (paste the targeted run, exit non-zero)
+  $ ./run-tests.sh --name "A readable PDF outside the supported family is refused without an empty calendar"
+  ✘  Given a readable PDF that prints no detail-table header
+  1 scenario (1 failed), exit=1
   ```
-- [ ] GREEN: bind the assertions; no production change is expected. If the owned reader returns `Unreadable` instead, fix `reader/document.rs`/`table.rs` so a recognised-format file without the family yields `UnsupportedFamily`. List production files (may be none).
+- [x] GREEN: bind the assertions; no production change is expected. If the owned reader returns `Unreadable` instead, fix `reader/document.rs`/`table.rs` so a recognised-format file without the family yields `UnsupportedFamily`. List production files (may be none).
   - Production files:
     ```
-    (list, or state "none — regression guard")
+    none in production — regression guard; the step bindings are in
+    apps/cli/tests/steps/own_the_duty_plan_extraction.rs
     ```
   - Evidence:
     ```
-    (paste the targeted run, exit 0)
+    $ ./run-tests.sh --name "A readable PDF outside the supported family is refused without an empty calendar"
+    1 scenario (1 passed), 5 steps (5 passed), exit=0
     ```
-- [ ] REFACTOR: clean up without behaviour change; re-run.
+- [x] REFACTOR: clean up without behaviour change; re-run.
   ```
-  (paste the targeted run, exit 0)
+  $ ./run-tests.sh --name "A readable PDF outside the supported family is refused without an empty calendar"
+  1 scenario (1 passed), exit=0
   ```
-- [ ] COMMIT.
+- [x] COMMIT.
   ```
-  COMMIT:
+  COMMIT: PENDING
   ```
 
 ### 5. A truncated document is refused and the process does not abort

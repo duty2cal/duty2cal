@@ -51,7 +51,7 @@ Feature: Own the duty-plan extraction
     And the numbered failure report names the source PDF and the encrypted document
     And the executable reports failure through a non-zero process exit status
 
-  @givn.added @wip
+  @givn.added
   Scenario: A readable PDF outside the supported family is refused without an empty calendar
     Given a readable PDF that prints no detail-table header
     When the release maintainer converts it through the executable
