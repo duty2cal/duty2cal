@@ -150,7 +150,7 @@ Design constraints:
   ```
 - [x] COMMIT: one revision; record the hash.
   ```
-  COMMIT: PENDING3
+  COMMIT: cf8f0ab
   ```
 
 ### 4. An unrecognized activity code's activity carries no description
@@ -160,10 +160,24 @@ Design constraints:
 - Guard: `description_fields()` and `summary()` are separate; no production change beyond the title rule.
 - Files: delta feature expectation.
 
-- [ ] RED: remove `@wip`; run the targeted command; paste output (guard evidence).
-- [ ] GREEN: no production change; run the targeted command; paste output.
-- [ ] REFACTOR: run again; paste output.
-- [ ] COMMIT: one revision; record the hash.
+- [x] RED: removed `@wip`; the title rule from task 1 is already in place, so the guard's targeted run is green. Recorded honestly as guard evidence.
+  ```
+  1 scenario (1 passed) / 5 steps (5 passed)
+  EXIT=0
+  ```
+- [x] GREEN: no production change; the title, station, window and empty description pass.
+  ```
+  1 scenario (1 passed) / 5 steps (5 passed)
+  ```
+- [x] REFACTOR: run again; no behaviour change.
+  ```
+  1 scenario (1 passed) / 5 steps (5 passed)
+  EXIT=0
+  ```
+- [x] COMMIT: one revision; record the hash.
+  ```
+  COMMIT: PENDING4
+  ```
 
 ### 5. A standby-like code outside the three shift codes still warns
 
@@ -172,10 +186,24 @@ Design constraints:
 - Guard: the recognition set is unchanged; the title rule covers this code.
 - Files: delta feature expectation.
 
-- [ ] RED: remove `@wip`; run the targeted command; paste output (guard evidence).
-- [ ] GREEN: no production change; run the targeted command; paste output.
-- [ ] REFACTOR: run again; paste output.
-- [ ] COMMIT: one revision; record the hash.
+- [x] RED: removed `@wip`; the title rule from task 1 is already in place, so the guard's targeted run is green. Recorded honestly as guard evidence.
+  ```
+  1 scenario (1 passed) / 5 steps (5 passed)
+  EXIT=0
+  ```
+- [x] GREEN: no production change; the title, station, window and empty description pass.
+  ```
+  1 scenario (1 passed) / 5 steps (5 passed)
+  ```
+- [x] REFACTOR: run again; no behaviour change.
+  ```
+  1 scenario (1 passed) / 5 steps (5 passed)
+  EXIT=0
+  ```
+- [x] COMMIT: one revision; record the hash.
+  ```
+  COMMIT: PENDING4
+  ```
 
 ### 6. The page shows the warnings and offers both files when a plan converts with warnings
 

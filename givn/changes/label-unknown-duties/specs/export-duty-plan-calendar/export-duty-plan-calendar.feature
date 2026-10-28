@@ -29,7 +29,7 @@ Feature: Export a duty-plan calendar
     Then  the calendar contains one timed activity titled "unknown duty: ZZ_M_CF" from 23:10 on 2099-06-07 to 01:05 on 2099-06-08 UTC
     And  the converter reports one conversion warning naming detail row 1 and the date 2099-06-07
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: An unrecognized activity code's activity carries no description
     Given  a supported duty plan dated 2099-06-07 with activity code ZZ_M_CF at station ABC, printed UTC times 08:00 and 15:30, and a printed Trip ID T42
     When  the crew member converts it
