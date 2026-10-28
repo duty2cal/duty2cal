@@ -63,7 +63,7 @@ Feature: Export a duty-plan calendar
     And  the page has sent no request to another origin since it loaded
     And  the page meets the visual baseline in the ready-with-warnings state
 
-  @givn.added @browser @wip
+  @givn.added @browser
   Scenario: The page lists an all-day unknown duty with its date and code
     Given  the converter page served from the built Site output
     When  the crew member supplies the supported duty plan "2026-06.pdf" containing an unrecognized activity code without printed times

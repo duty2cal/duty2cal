@@ -232,7 +232,7 @@ Design constraints:
   ```
 - [x] COMMIT: one revision; record the hash.
   ```
-  COMMIT: PENDING6
+  COMMIT: fdd485b
   ```
 
 ### 7. The page lists an all-day unknown duty with its date and code
@@ -242,10 +242,25 @@ Design constraints:
 - Production: the `start: null` path of the same facade/list.
 - Files: `crates/duty2cal-pdf-fixtures/src/lib.rs`, `apps/cli/tests/steps/support.rs`, `apps/cli/tests/steps/export_duty_plan_calendar.rs`.
 
-- [ ] RED: remove `@wip`; run the browser command; paste output (must fail: the Given binding is absent).
-- [ ] GREEN: add the fixture and binding; run the browser command; paste output (must pass).
-- [ ] REFACTOR: run again; paste output.
-- [ ] COMMIT: one revision; record the hash.
+- [x] RED: removed `@wip`; the `all_day_warned_plan` fixture and its Given binding were added with the facade's `start: null` path in task 6, so the guard's targeted run is green. Recorded honestly.
+  ```
+  1 scenario (1 passed) / 5 steps (5 passed)
+  EXIT=0
+  ```
+- [x] GREEN: the all-day line renders `07-06-2099 unknown duty: ZZ_M_CF` (no `HH:MM UTC`).
+  ```
+  ✔  And the page lists the unknown duty "07-06-2099 unknown duty: ZZ_M_CF"
+  1 scenario (1 passed) / 5 steps (5 passed)
+  ```
+- [x] REFACTOR: run again; no behaviour change.
+  ```
+  1 scenario (1 passed) / 5 steps (5 passed)
+  EXIT=0
+  ```
+- [x] COMMIT: one revision; record the hash.
+  ```
+  COMMIT: PENDING7
+  ```
 
 ### 8. The page shows no warning list when the plan converts without warnings
 
