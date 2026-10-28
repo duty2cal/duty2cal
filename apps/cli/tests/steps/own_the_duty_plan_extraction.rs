@@ -170,13 +170,28 @@ async fn the_executable_reports_failure_through_a_non_zero_exit(w: &mut DutyWorl
 }
 
 #[given("a duty plan that is encrypted")]
-async fn a_duty_plan_that_is_encrypted(_w: &mut DutyWorld) {
-    unimplemented!("a duty plan that is encrypted")
+async fn a_duty_plan_that_is_encrypted(w: &mut DutyWorld) {
+    let bytes = fixtures::build_encrypted_plan();
+    w.source = Some(write_plan(w, "roster.pdf", bytes));
 }
 
 #[then("the numbered failure report names the source PDF and the encrypted document")]
-async fn the_numbered_failure_report_names_the_encrypted_document(_w: &mut DutyWorld) {
-    unimplemented!("the numbered failure report names the source PDF and the encrypted document")
+async fn the_numbered_failure_report_names_the_encrypted_document(w: &mut DutyWorld) {
+    let report = failure_report(w);
+    assert!(
+        report.contains("Source PDF: roster.pdf"),
+        "the report does not name the source: {report}"
+    );
+    assert!(
+        report.contains(
+            "the source uses a PDF construct outside the supported family: encrypted document"
+        ),
+        "the report does not name the encrypted document: {report}"
+    );
+    assert!(
+        !report.contains(" on page"),
+        "an encrypted document carries no page suffix: {report}"
+    );
 }
 
 #[given("a readable PDF that prints no detail-table header")]

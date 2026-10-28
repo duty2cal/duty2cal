@@ -43,7 +43,7 @@ Feature: Own the duty-plan extraction
       | text operator TJ |
       | unknown content-stream operator |
 
-  @givn.added @wip
+  @givn.added
   Scenario: An encrypted document is refused by name
     Given a duty plan that is encrypted
     When the release maintainer converts it through the executable

@@ -11,8 +11,18 @@ use super::{ExtractedDocument, PageWords};
 
 /// Read a supplied PDF into positioned words per page.
 pub fn extract(bytes: &[u8]) -> Result<ExtractedDocument, SourceError> {
-    let document =
-        Document::load_mem(bytes).map_err(|error| SourceError::Unreadable(error.to_string()))?;
+    let document = match Document::load_mem(bytes) {
+        Ok(document) => document,
+        // An encrypted file the loader cannot open is still an encrypted
+        // document, not an unreadable one: the trailer names the encryption.
+        Err(_) if bytes.windows(8).any(|window| window == b"/Encrypt") => {
+            return Err(SourceError::UnsupportedConstruct {
+                construct: Construct::EncryptedDocument,
+                page: None,
+            });
+        }
+        Err(error) => return Err(SourceError::Unreadable(error.to_string())),
+    };
     if document.is_encrypted() {
         return Err(SourceError::UnsupportedConstruct {
             construct: Construct::EncryptedDocument,
