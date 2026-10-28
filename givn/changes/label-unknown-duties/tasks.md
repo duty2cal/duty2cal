@@ -34,7 +34,7 @@ Single-scenario command from the design: `./run-tests.sh --name "<scenario title
 - Driver and CSS are unchanged. Step definitions live in `apps/cli/tests/steps/export_duty_plan_calendar.rs`; the fixture `all_day_warned_plan()` lives in `crates/duty2cal-pdf-fixtures/src/lib.rs` and is re-exported by `apps/cli/tests/steps/support.rs`.
 - The golden oracles `apps/cli/tests/fixtures/expected/2098-06.ics` and `2026-06.ics` stay byte-identical; neither plan prints an unrecognized code.
 
-Interaction coverage (checked before writing tasks): the permanent inventory holds two entries — supply a duty plan to the executable, and supply a duty plan through the page and save the offered calendar — matched by the permanent `@e2e` scenarios named in design.md's Interaction Coverage Matrix. This change adds no consumer action; the page list is regular `@browser` coverage of the existing page action.
+Interaction coverage (checked before writing tasks): the permanent inventory holds two entries — supply a duty plan to the executable, and supply a duty plan through the page and save the offered calendar — matched by the permanent e2e scenarios named in design.md's Interaction Coverage Matrix. This change adds no consumer action; the page list is regular `@browser` coverage of the existing page action.
 
 ## Setup task — environment, runner, strict mode
 
@@ -51,13 +51,6 @@ Interaction coverage (checked before writing tasks): the permanent inventory hol
       ```
     - Full baseline: `4 features / 140 scenarios (135 passed, 5 failed) / 578 steps (573 passed, 5 failed)`; the five failures are exactly the delta's CLI scenarios still `@wip`; no permanent scenario regressed.
   - Browser baseline (before the page edit): `1 scenario (1 passed) / 12 steps (12 passed)` for "Crew member converts a supported duty plan in the browser and saves the offered calendar".
-
-## E2E setup task
-
-- [x] Confirm the e2e filter and counts before the browser scenarios.
-  - `verify.e2e_command` is `./run-tests.sh --e2e`, which selects `@e2e and not @browser`; the permanent inventory's CLI `@e2e` scenario is "Crew member converts a supported duty plan and receives a calendar file". The browser `@e2e` scenario is exercised by the browser smoke, not this filter.
-  - This change adds no `@e2e` scenario and removes none; the two inventory actions keep one `@e2e` each.
-  - Browser smoke command and environment are recorded in `## Environment`; it drives the real page through Playwright.
 
 ## Scenario tasks
 
