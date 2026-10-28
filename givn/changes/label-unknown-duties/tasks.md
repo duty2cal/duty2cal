@@ -339,11 +339,19 @@ Design constraints:
   ```
 - [x] COMMIT: one revision; record the hash.
   ```
-  COMMIT: PENDING10
+  COMMIT: 7374983
   ```
 
 ## Closeout
 
-- [ ] Every delta scenario is GREEN by a targeted run; `./run-tests.sh`, `./run-tests.sh --e2e` and the browser smoke exit 0.
-- [ ] Permanent step bindings exist for every delta phrase; no delta step copy remains.
-- [ ] Visual evidence committed under `givn/changes/label-unknown-duties/evidence/visual/` with the capture override.
+- [x] Every delta scenario is GREEN by a targeted run; `./run-tests.sh`, `./run-tests.sh --e2e` and the browser suite exit 0.
+  ```
+  ./run-tests.sh             4 features / 140 scenarios (140 passed) / 592 steps (592 passed)
+  ./run-tests.sh --e2e       2 features / 2 scenarios (2 passed) / 10 steps (10 passed)
+  ./run-tests.sh --browser   3 features / 26 scenarios (26 passed) / 194 steps (194 passed)
+  cargo clippy --workspace --all-targets -- -D warnings   exit 0
+  cargo fmt --all --check                                  exit 0
+  ```
+  A regression found by the full suite — the permanent "Several unrecognized rows are all reported in one conversion" step still expected `SUMMARY:<code>` — was fixed to expect `SUMMARY:unknown duty: <code>`; no scenario text changed.
+- [x] Permanent step bindings exist for every delta phrase; no delta step copy remains.
+- [x] Visual evidence committed under `givn/changes/label-unknown-duties/evidence/visual/` with the capture override; the ready-with-warnings desktop capture shows the requested heading, count sentence, list, copy, both labels and way back.

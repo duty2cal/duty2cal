@@ -3165,7 +3165,7 @@ async fn three_fallback_activities(w: &mut DutyWorld) {
         ("2099-06-09", "ZZ_M_KQ", "10:00", "18:00"),
     ] {
         for expected in [
-            format!("SUMMARY:{code}"),
+            format!("SUMMARY:unknown duty: {code}"),
             format!("DTSTART:{}", instant(date, start)),
             format!("DTEND:{}", instant(date, end)),
         ] {
