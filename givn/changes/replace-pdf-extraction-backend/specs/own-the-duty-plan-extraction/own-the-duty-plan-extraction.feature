@@ -59,7 +59,7 @@ Feature: Own the duty-plan extraction
     And the numbered failure report names the source PDF and the unsupported family
     And the executable reports failure through a non-zero process exit status
 
-  @givn.added @wip
+  @givn.added
   Scenario: A truncated document is refused and the process does not abort
     Given a truncated PDF
     When the release maintainer converts it through the executable

@@ -214,17 +214,24 @@ async fn the_numbered_failure_report_names_the_unsupported_family(w: &mut DutyWo
 }
 
 #[given("a truncated PDF")]
-async fn a_truncated_pdf(_w: &mut DutyWorld) {
-    unimplemented!("a truncated PDF")
+async fn a_truncated_pdf(w: &mut DutyWorld) {
+    let bytes = fixtures::build_truncated_plan();
+    w.source = Some(write_plan(w, "roster.pdf", bytes));
 }
 
 #[then(
     "the numbered failure report names the source PDF and that the source is not a readable PDF"
 )]
-async fn the_numbered_failure_report_names_the_unreadable_source(_w: &mut DutyWorld) {
-    unimplemented!(
-        "the numbered failure report names the source PDF and that the source is not a readable PDF"
-    )
+async fn the_numbered_failure_report_names_the_unreadable_source(w: &mut DutyWorld) {
+    let report = failure_report(w);
+    assert!(
+        report.contains("Source PDF: roster.pdf"),
+        "the report does not name the source: {report}"
+    );
+    assert!(
+        report.contains("the source is not a readable PDF"),
+        "the report does not name the unreadable source: {report}"
+    );
 }
 
 #[given("a duty plan that uses a Type3 font and prints an identifying name")]
