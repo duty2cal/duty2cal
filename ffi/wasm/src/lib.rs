@@ -178,3 +178,33 @@ fn set_lines(object: &js_sys::Object, key: &str, lines: &[String]) {
 pub fn diagnostic_text(filename: &str, reason: &str) -> String {
     core_diagnostic_text(filename, reason)
 }
+
+#[cfg(test)]
+mod tests {
+    use duty2cal_core::adapters::ics::IcsSink;
+    use duty2cal_core::application::{diagnostic_text, ConvertError, ConvertRoster, SourceError};
+    use duty2cal_pdf::PdfRosterSource;
+
+    use super::NativeClock;
+
+    /// The browser facade carries the same named refusal and two-line
+    /// diagnostic the executable writes; the page's rendering is unchanged.
+    #[test]
+    fn an_out_of_subset_plan_carries_the_named_construct_and_diagnostic() {
+        let bytes = duty2cal_pdf_fixtures::build_construct_plan("Type3 font");
+        let error = ConvertRoster::new(PdfRosterSource, IcsSink, NativeClock)
+            .execute(&bytes)
+            .expect_err("an out-of-subset plan is not converted");
+        let reason =
+            "the source uses a PDF construct outside the supported family: Type3 font on page 1";
+        assert_eq!(error.to_string(), reason);
+        assert!(matches!(
+            error,
+            ConvertError::Source(SourceError::UnsupportedConstruct { .. })
+        ));
+        assert_eq!(
+            diagnostic_text("plan.pdf", &error.to_string()),
+            format!("Source PDF: plan.pdf\nReason: {reason}\n")
+        );
+    }
+}

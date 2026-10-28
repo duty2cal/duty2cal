@@ -226,7 +226,7 @@ Design constraints (this scenario):
   ```
 - [x] COMMIT: one revision for the outline.
   ```
-  COMMIT: PENDING
+  COMMIT: 4d297fc
   ```
 
 ### 3. An encrypted document is refused by name
@@ -266,7 +266,7 @@ Design constraints (this scenario):
   ```
 - [x] COMMIT.
   ```
-  COMMIT: PENDING
+  COMMIT: ef57e13
   ```
 
 ### 4. A readable PDF outside the supported family is refused without an empty calendar
@@ -300,7 +300,7 @@ Design constraints (this scenario):
   ```
 - [x] COMMIT.
   ```
-  COMMIT: PENDING
+  COMMIT: b4833a4
   ```
 
 ### 5. A truncated document is refused and the process does not abort
@@ -334,7 +334,7 @@ Design constraints (this scenario):
   ```
 - [x] COMMIT.
   ```
-  COMMIT: PENDING
+  COMMIT: a7e462e
   ```
 
 ### 6. A refusal names the construct and no printed plan content
@@ -368,7 +368,7 @@ Design constraints (this scenario):
   ```
 - [x] COMMIT.
   ```
-  COMMIT: PENDING
+  COMMIT: ee4411a
   ```
 
 ### 7. A supported plan whose table continues on a second page keeps every detail row
@@ -404,7 +404,7 @@ Design constraints (this scenario):
   ```
 - [x] COMMIT.
   ```
-  COMMIT: PENDING
+  COMMIT: f4b8730
   ```
 
 ### 8. An unrecognized activity code still publishes the calendar with its warning
@@ -438,7 +438,7 @@ Design constraints (this scenario):
   ```
 - [x] COMMIT.
   ```
-  COMMIT: PENDING
+  COMMIT: f1b00a5
   ```
 
 ## Wiring — dependency guard, measurement, browser evidence, notices, README
@@ -454,25 +454,54 @@ Design constraints:
 - `README.md`: one contributor paragraph on the frozen subset, the oracle-only status of the extractor and the local differential command.
 - `cliff.toml` is the archive-phase step recorded in Setup finding 7; do not edit it before `givn/specs/own-the-duty-plan-extraction/` exists.
 
-- [ ] Add the three scripts and the CI wiring.
+- [x] Add the three scripts and the CI wiring.
   - Evidence:
     ```
-    (paste the three graph-check calls and their exits)
-    (paste `cargo tree -e normal --target x86_64-pc-windows-gnu -p duty2cal | grep -c pdfplumber` = 0 and the dev-graph match)
-    (paste `./scripts/measure_extraction_backend.py --help` or a local dry run showing the status rule)
+    $ scripts/check-extraction-dependency.sh --dev --package duty2cal-pdf
+    check-extraction-dependency: pdfplumber is the test oracle of duty2cal-pdf
+    exit=0
+    $ scripts/check-extraction-dependency.sh --normal --target x86_64-pc-windows-gnu
+    check-extraction-dependency: no pdfplumber in the normal graph for x86_64-pc-windows-gnu
+    exit=0
+    $ scripts/check-extraction-dependency.sh --normal --target wasm32-unknown-unknown
+    check-extraction-dependency: no pdfplumber in the normal graph for wasm32-unknown-unknown
+    exit=0
+
+    $ ./scripts/validate-local-corpus.sh --differential
+    PASS private/MLP-2026-06.pdf ... PASS private/MLP-2026-11.pdf
+    test result: ok. 1 passed; 0 failed
+
+    $ python3 scripts/measure_extraction_backend.py --repo . --base HEAD \
+        --landed target/debug/duty2cal.exe --out /tmp/measure-dry
+    # Extraction backend measurement
+    - status: not applicable
+    - landed revision: `f1b00a5...`
+    - landed size: 5 B
+    exit=0
     ```
-- [ ] Add the `ffi/wasm` refusal test and regenerate `THIRD-PARTY-NOTICES.md`.
+- [x] Add the `ffi/wasm` refusal test and regenerate `THIRD-PARTY-NOTICES.md`.
   - Evidence:
     ```
-    (paste `cargo test -p duty2cal-wasm` or the workspace test result)
-    (paste `cargo about generate about.hbs --output-file THIRD-PARTY-NOTICES.md && git diff --stat THIRD-PARTY-NOTICES.md` showing only the fixture crate line)
+    $ cargo test -p duty2cal-wasm
+    test tests::an_out_of_subset_plan_carries_the_named_construct_and_diagnostic ... ok
+    test result: ok. 1 passed; 0 failed
+
+    $ cargo about generate about.hbs --output-file THIRD-PARTY-NOTICES.md
+    $ git diff --stat THIRD-PARTY-NOTICES.md
+     THIRD-PARTY-NOTICES.md | 1 +
+     1 file changed, 1 insertion(+)
+    - duty2cal-pdf-fixtures 0.1.0
     ```
-- [ ] Add the README paragraph and update `cliff.toml`'s archive-phase note only in the design record (no edit yet).
+- [x] Add the README paragraph and update `cliff.toml`'s archive-phase note only in the design record (no edit yet).
   - Evidence:
     ```
-    (paste the README diff)
+    The shipped executable and the browser bundle read the supported duty plan with
+    the project's own extraction, frozen to the constructs the supported family
+    prints. Everything outside that subset is refused by name instead of guessed at.
+    The third-party extractor survives only as the test oracle ...
+    ./scripts/validate-local-corpus.sh --differential
     ```
-- [ ] COMMIT.
+- [x] COMMIT.
   ```
   COMMIT:
   ```

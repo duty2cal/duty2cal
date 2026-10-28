@@ -6,13 +6,37 @@
 # repository, never sent anywhere). Outputs and diagnostics are written into a
 # temporary directory, so nothing is created inside `private/`.
 #
-# Usage: ./scripts/validate-local-corpus.sh [--keep]
+# Usage: ./scripts/validate-local-corpus.sh [--keep] [--differential]
+#
+# --differential runs the word-level comparison with the test oracle instead of
+# the conversion check. The plans are still read in place.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+keep=0
+differential=0
+for argument in "$@"; do
+  case "$argument" in
+    --keep) keep=1 ;;
+    --differential) differential=1 ;;
+    *)
+      echo "validate-local-corpus: unknown argument $argument" >&2
+      exit 2
+      ;;
+  esac
+done
+KEEP="$keep"
 
 corpus="${DUTY2CAL_LOCAL_CORPUS:-private}"
 if ! compgen -G "$corpus/*.pdf" >/dev/null; then
   echo "no local duty plans found in $corpus/ — nothing to validate"
+  exit 0
+fi
+corpus="$(cd "$corpus" && pwd)"
+
+if [ "$differential" = 1 ]; then
+  DUTY2CAL_LOCAL_CORPUS="$corpus" \
+    cargo test -p duty2cal-pdf -- --ignored real_corpus_matches_the_oracle
   exit 0
 fi
 

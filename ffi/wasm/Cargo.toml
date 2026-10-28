@@ -31,3 +31,6 @@ time = "0.3"
 getrandom = { version = "0.4", features = ["wasm_js"] }
 js-sys = "0.3"
 wasm-bindgen = "0.2"
+
+[dev-dependencies]
+duty2cal-pdf-fixtures = { path = "../../crates/duty2cal-pdf-fixtures" }

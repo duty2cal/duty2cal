@@ -198,6 +198,15 @@ Run the project-owned scripts configured in `givn/commands.yaml`:
 `./merge-coverages.sh` combines them into the merged report linked by the
 badges above.
 
+The shipped executable and the browser bundle read the supported duty plan with
+the project's own extraction, frozen to the constructs the supported family
+prints. Everything outside that subset is refused by name instead of guessed at.
+The third-party extractor survives only as the test oracle in
+`crates/duty2cal-pdf`'s dev graph; `scripts/check-extraction-dependency.sh`
+checks that split. Run the word-level comparison against your local plans in
+place with `./scripts/validate-local-corpus.sh --differential`; it is release
+evidence and never a CI gate.
+
 Add lint, build, and other project commands alongside these scripts.
 
 <!-- givn:end:development -->

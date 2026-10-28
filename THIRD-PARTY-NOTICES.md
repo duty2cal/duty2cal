@@ -3252,6 +3252,7 @@ Used by:
 - duty2cal 0.1.0
 - duty2cal-core 0.1.0
 - duty2cal-pdf 0.1.0
+- duty2cal-pdf-fixtures 0.1.0
 - duty2cal-wasm 0.1.0
 
 ```
