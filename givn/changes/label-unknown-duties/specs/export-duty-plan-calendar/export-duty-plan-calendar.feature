@@ -37,7 +37,7 @@ Feature: Export a duty-plan calendar
     And  that activity carries no description
     And  the converter reports one conversion warning naming detail row 1 and the date 2099-06-07
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A standby-like code outside the three shift codes still warns
     Given  a supported duty plan dated 2099-11-18 with activity code SB_X_CF and source station FRA and resolved UTC start 08:00 and end 15:30
     When  the crew member converts it

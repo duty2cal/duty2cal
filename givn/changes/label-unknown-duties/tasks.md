@@ -188,21 +188,21 @@ Design constraints:
 
 - [x] RED: removed `@wip`; the title rule from task 1 is already in place, so the guard's targeted run is green. Recorded honestly as guard evidence.
   ```
-  1 scenario (1 passed) / 5 steps (5 passed)
+  1 scenario (1 passed) / 6 steps (6 passed)
   EXIT=0
   ```
-- [x] GREEN: no production change; the title, station, window and empty description pass.
+- [x] GREEN: no production change; the fallback title, window and warning sentence pass.
   ```
-  1 scenario (1 passed) / 5 steps (5 passed)
+  1 scenario (1 passed) / 6 steps (6 passed)
   ```
 - [x] REFACTOR: run again; no behaviour change.
   ```
-  1 scenario (1 passed) / 5 steps (5 passed)
+  1 scenario (1 passed) / 6 steps (6 passed)
   EXIT=0
   ```
 - [x] COMMIT: one revision; record the hash.
   ```
-  COMMIT: PENDING4
+  COMMIT: PENDING5
   ```
 
 ### 6. The page shows the warnings and offers both files when a plan converts with warnings
