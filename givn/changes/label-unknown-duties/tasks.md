@@ -83,10 +83,7 @@ Design constraints:
   1 scenario (1 passed) / 8 steps (8 passed)
   EXIT=0
   ```
-- [x] COMMIT: one revision, release note as subject, scenario title in the body; record the hash.
-  ```
-  COMMIT: 5d94ee0
-  ```
+- [x] COMMIT: 5d94ee0
 
 ### 2. An unrecognized activity code without printed times becomes an all-day activity with a warning
 
@@ -114,10 +111,7 @@ Design constraints:
   1 scenario (1 passed) / 6 steps (6 passed)
   EXIT=0
   ```
-- [x] COMMIT: one revision; record the hash.
-  ```
-  COMMIT: ed6cb4b
-  ```
+- [x] COMMIT: ed6cb4b
 
 ### 3. An unrecognized activity code with an unqualified window across midnight keeps it as the following UTC day
 
@@ -141,10 +135,7 @@ Design constraints:
   1 scenario (1 passed) / 4 steps (4 passed)
   EXIT=0
   ```
-- [x] COMMIT: one revision; record the hash.
-  ```
-  COMMIT: cf8f0ab
-  ```
+- [x] COMMIT: cf8f0ab
 
 ### 4. An unrecognized activity code's activity carries no description
 
@@ -167,10 +158,7 @@ Design constraints:
   1 scenario (1 passed) / 5 steps (5 passed)
   EXIT=0
   ```
-- [x] COMMIT: one revision; record the hash.
-  ```
-  COMMIT: PENDING4
-  ```
+- [x] COMMIT: 6463fd5
 
 ### 5. A standby-like code outside the three shift codes still warns
 
@@ -193,10 +181,7 @@ Design constraints:
   1 scenario (1 passed) / 6 steps (6 passed)
   EXIT=0
   ```
-- [x] COMMIT: one revision; record the hash.
-  ```
-  COMMIT: PENDING5
-  ```
+- [x] COMMIT: 3359aa5
 
 ### 6. The page shows the warnings and offers both files when a plan converts with warnings
 
@@ -223,10 +208,7 @@ Design constraints:
   1 scenario (1 passed) / 14 steps (14 passed)
   EXIT=0
   ```
-- [x] COMMIT: one revision; record the hash.
-  ```
-  COMMIT: fdd485b
-  ```
+- [x] COMMIT: fdd485b
 
 ### 7. The page lists an all-day unknown duty with its date and code
 
@@ -250,10 +232,7 @@ Design constraints:
   1 scenario (1 passed) / 5 steps (5 passed)
   EXIT=0
   ```
-- [x] COMMIT: one revision; record the hash.
-  ```
-  COMMIT: e09fcbe
-  ```
+- [x] COMMIT: e09fcbe
 
 ### 8. The page shows no warning list when the plan converts without warnings
 
@@ -276,10 +255,7 @@ Design constraints:
   1 scenario (1 passed) / 10 steps (10 passed)
   EXIT=0
   ```
-- [x] COMMIT: one revision; record the hash.
-  ```
-  COMMIT: e512428
-  ```
+- [x] COMMIT: e512428
 
 ### 9. The page states how many rows were converted with warnings
 
@@ -304,10 +280,7 @@ Design constraints:
   1 scenario (1 passed) / 7 steps (7 passed)
   EXIT=0
   ```
-- [x] COMMIT: one revision; record the hash.
-  ```
-  COMMIT: c24f16e
-  ```
+- [x] COMMIT: c24f16e
 
 ### 10. The page keeps the calendar and the warnings when it cannot offer the warning report
 
@@ -330,10 +303,7 @@ Design constraints:
   1 scenario (1 passed) / 7 steps (7 passed)
   EXIT=0
   ```
-- [x] COMMIT: one revision; record the hash.
-  ```
-  COMMIT: 7374983
-  ```
+- [x] COMMIT: 7374983
 
 ## Closeout
 
