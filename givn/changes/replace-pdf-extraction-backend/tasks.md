@@ -503,7 +503,7 @@ Design constraints:
     ```
 - [x] COMMIT.
   ```
-  COMMIT:
+  COMMIT: a42d56d
   ```
 
 ## E2E setup task — environment, e2e skeleton, strict and subset proof
@@ -579,7 +579,7 @@ Design constraints:
   ```
 - [x] COMMIT: `test(e2e): <release note>` with the scenario title in the body.
   ```
-  COMMIT: PENDING
+  COMMIT: 5bc4e7e
   ```
 
 ## Closeout — merged step definitions and final verification
