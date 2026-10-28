@@ -1,3 +1,5 @@
+<!-- givn:base-sha256: 5e1515366885a623ef9a786df0063e2b229a87159cf0dbd020609794f144e137 -->
+
 # Use case: export-duty-plan-calendar
 
 ## Level
@@ -119,7 +121,7 @@ The Crew member supplies one duty-plan PDF for conversion.
 - A browser memory failure or trap is rejected, never reported as a partial success, and attempts the failure-report offer. The browser realization's events are **Calendar export offered** and **Conversion diagnostic offered**; the executable's realization keeps **Calendar export published** and **Conversion diagnostic written**. The page offers; the browser saves or writes.
 - The page sends no request to another origin after it loads, loads no third-party asset, and stores no plan or derived data in persistent storage (localStorage, IndexedDB or a cookie) or in a navigable URL or history entry. An ephemeral in-memory object URL used to offer the download is allowed and is revoked when the page unloads.
 
-- **Delivery constraints, separate from the Actor goal**: retain the supplied Rust stable/edition-2021 application, exact pdfplumber pin, the single self-contained executable without companion-runtime installation, the Windows GNU cross-build on Linux/CI, no native C/C++ PDF extraction dependency, hand-written calendar writer, permitted licenses, and public-repository privacy requirements. The platforms a release offers are the concern of the use case to publish a public release; these remain implementation/release constraints, not extra use cases. **Supported platform** means a platform the project offers as a downloadable archive; the browser realization is a supported conversion route and offers no archive.
+- **Delivery constraints, separate from the Actor goal**: retain the supplied Rust stable/edition-2021 application, one project-owned extraction implementation behind the source port, with the third-party PDF extractor kept only in the test graph as the comparison oracle, the single self-contained executable without companion-runtime installation, the Windows GNU cross-build on Linux/CI, no native C/C++ PDF extraction dependency, hand-written calendar writer, permitted licenses, and public-repository privacy requirements. The platforms a release offers are the concern of the use case to publish a public release; these remain implementation/release constraints, not extra use cases. **Supported platform** means a platform the project offers as a downloadable archive; the browser realization is a supported conversion route and offers no archive.
 - **Review lenses**: the confirmed accuracy and privacy lens is crew-member--personal-calendar-owner; the confirmed release-evidence lens is project-maintainer--release-owner, who is the Actor of the use case to publish a public release rather than an Actor of this one; and the browser realization's confirmed lens is contributor--web-reviewer for the CSP, the no-network proof, the browser fallback and the WASM bundle.
 
 ## Examples
