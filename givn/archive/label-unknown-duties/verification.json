@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "change": "label-unknown-duties",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "merge_completed": true,
+  "merged_deltas": [
+    "export-duty-plan-calendar/export-duty-plan-calendar.feature"
+  ],
+  "merge_in_progress": null,
+  "merge_plan": [
+    "export-duty-plan-calendar/export-duty-plan-calendar.feature"
+  ],
+  "merge_targets": {
+    "export-duty-plan-calendar/export-duty-plan-calendar.feature": "givn/specs/export-duty-plan-calendar/export-duty-plan-calendar.feature"
+  },
+  "started_at_unix": 1793188138,
+  "finished_at_unix": null
+}
