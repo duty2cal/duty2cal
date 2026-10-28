@@ -299,13 +299,38 @@ async fn no_detail_row_is_represented_twice(w: &mut DutyWorld) {
 }
 
 #[given("a supported duty plan whose one row uses an unrecognized activity code with both printed endpoints")]
-async fn a_supported_plan_with_an_unrecognized_activity_code(_w: &mut DutyWorld) {
-    unimplemented!(
-        "a supported duty plan whose one row uses an unrecognized activity code with both printed endpoints"
-    )
+async fn a_supported_plan_with_an_unrecognized_activity_code(w: &mut DutyWorld) {
+    let bytes = fixtures::build_pdf(&fixtures::warned_plan());
+    w.source = Some(write_plan(w, "roster.pdf", bytes));
+}
+
+#[then("the complete calendar is published")]
+async fn the_complete_calendar_is_published(w: &mut DutyWorld) {
+    let calendar = crate::steps::export_duty_plan_calendar::calendar(w);
+    assert!(
+        calendar.contains("BEGIN:VCALENDAR") && calendar.contains("END:VCALENDAR"),
+        "the published calendar is not a complete VCALENDAR: {calendar}"
+    );
+    assert!(
+        calendar.contains("BEGIN:VEVENT"),
+        "the published calendar carries no activity: {calendar}"
+    );
 }
 
 #[then("the warning report names that detail row and the fallback applied")]
-async fn the_warning_report_names_the_row_and_the_fallback(_w: &mut DutyWorld) {
-    unimplemented!("the warning report names that detail row and the fallback applied")
+async fn the_warning_report_names_the_row_and_the_fallback(w: &mut DutyWorld) {
+    let path = w.working_dir().join("roster.parse-warnings.txt");
+    let report = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read the warning report {}: {error}", path.display()));
+    for expected in [
+        "row 1",
+        "2099-06-07",
+        "ZZ_M_CF",
+        "printed UTC window 08:00-15:30",
+    ] {
+        assert!(
+            report.contains(expected),
+            "the warning report does not carry {expected:?}: {report}"
+        );
+    }
 }

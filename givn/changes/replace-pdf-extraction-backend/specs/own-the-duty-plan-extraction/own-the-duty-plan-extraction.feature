@@ -81,7 +81,7 @@ Feature: Own the duty-plan extraction
     Then the published calendar contains exactly two TK events, one dated 12 June 2026 and one dated 13 June 2026
     And no detail row is represented twice
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unrecognized activity code still publishes the calendar with its warning
     Given a supported duty plan whose one row uses an unrecognized activity code with both printed endpoints
     When the release maintainer converts it through the executable

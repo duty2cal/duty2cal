@@ -414,26 +414,31 @@ Design constraints (this scenario):
 - The warning report is `<stem>.parse-warnings.txt`; the exit status is zero because the row was represented.
 - The generated warned plan is the fixture crate's `warned_plan` equivalent.
 
-- [ ] RED: bind the steps and run the scenario. The RED is the unimplemented step; the behaviour is already present from §1.
+- [x] RED: bind the steps and run the scenario. The RED is the unimplemented step; the behaviour is already present from §1.
   ```
-  (paste the targeted run, exit non-zero)
+  $ ./run-tests.sh --name "An unrecognized activity code still publishes the calendar with its warning"
+  ✘  Given a supported duty plan whose one row uses an unrecognized activity code ...
+  1 scenario (1 failed), exit=1
   ```
-- [ ] GREEN: bind the assertions; no production change is expected. List production files.
+- [x] GREEN: bind the assertions; no production change is expected. List production files.
   - Production files:
     ```
-    (list, or state "none — regression guard")
+    none in production — regression guard; the step bindings are in
+    apps/cli/tests/steps/own_the_duty_plan_extraction.rs
     ```
   - Evidence:
     ```
-    (paste the targeted run, exit 0)
+    $ ./run-tests.sh --name "An unrecognized activity code still publishes the calendar with its warning"
+    1 scenario (1 passed), 4 steps (4 passed), exit=0
     ```
-- [ ] REFACTOR: clean up without behaviour change; re-run.
+- [x] REFACTOR: clean up without behaviour change; re-run.
   ```
-  (paste the targeted run, exit 0)
+  $ ./run-tests.sh --name "An unrecognized activity code still publishes the calendar with its warning"
+  1 scenario (1 passed), exit=0
   ```
-- [ ] COMMIT.
+- [x] COMMIT.
   ```
-  COMMIT:
+  COMMIT: PENDING
   ```
 
 ## Wiring — dependency guard, measurement, browser evidence, notices, README
