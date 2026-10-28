@@ -235,18 +235,35 @@ async fn the_numbered_failure_report_names_the_unreadable_source(w: &mut DutyWor
 }
 
 #[given("a duty plan that uses a Type3 font and prints an identifying name")]
-async fn a_duty_plan_that_uses_a_type3_font(_w: &mut DutyWorld) {
-    unimplemented!("a duty plan that uses a Type3 font and prints an identifying name")
+async fn a_duty_plan_that_uses_a_type3_font(w: &mut DutyWorld) {
+    let bytes = fixtures::build_privacy_plan();
+    w.source = Some(write_plan(w, "roster.pdf", bytes));
 }
 
 #[then("the numbered failure report names the source PDF and the Type3 font")]
-async fn the_numbered_failure_report_names_the_type3_font(_w: &mut DutyWorld) {
-    unimplemented!("the numbered failure report names the source PDF and the Type3 font")
+async fn the_numbered_failure_report_names_the_type3_font(w: &mut DutyWorld) {
+    let report = failure_report(w);
+    assert!(
+        report.contains("Source PDF: roster.pdf"),
+        "the report does not name the source: {report}"
+    );
+    assert!(
+        report.contains("the source uses a PDF construct outside the supported family: Type3 font"),
+        "the report does not name the Type3 font: {report}"
+    );
 }
 
 #[then("the failure report contains no printed text from the plan")]
-async fn the_failure_report_contains_no_printed_text(_w: &mut DutyWorld) {
-    unimplemented!("the failure report contains no printed text from the plan")
+async fn the_failure_report_contains_no_printed_text(w: &mut DutyWorld) {
+    let report = failure_report(w);
+    for printed in [
+        "Zephyr", "Vale", "LU742", "Tychon", "Mareum", "Month:", "June", "2099", "07",
+    ] {
+        assert!(
+            !report.contains(printed),
+            "the refusal carries printed plan content {printed:?}: {report}"
+        );
+    }
 }
 
 #[given("a supported duty plan whose detail table continues on a second page with a repeated header and a TK row on each page")]

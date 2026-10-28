@@ -67,7 +67,7 @@ Feature: Own the duty-plan extraction
     And the numbered failure report names the source PDF and that the source is not a readable PDF
     And the executable reports failure through a non-zero process exit status
 
-  @givn.added @wip
+  @givn.added
   Scenario: A refusal names the construct and no printed plan content
     Given a duty plan that uses a Type3 font and prints an identifying name
     When the release maintainer converts it through the executable

@@ -344,26 +344,31 @@ Design constraints (this scenario):
 - Only construct names and page numbers enter a refusal; the `Source PDF:` name is the caller's filename, unchanged.
 - Depends on §2's Type3 mapping. Regression guard for the privacy clause.
 
-- [ ] RED: bind the steps and run the scenario. The RED is the unimplemented step.
+- [x] RED: bind the steps and run the scenario. The RED is the unimplemented step.
   ```
-  (paste the targeted run, exit non-zero)
+  $ ./run-tests.sh --name "A refusal names the construct and no printed plan content"
+  ✘  Given a duty plan that uses a Type3 font and prints an identifying name
+  1 scenario (1 failed), exit=1
   ```
-- [ ] GREEN: bind the assertion; if the report contains printed content, fix the reason construction. List production files.
+- [x] GREEN: bind the assertion; if the report contains printed content, fix the reason construction. List production files.
   - Production files:
     ```
-    (list, or state "none — regression guard")
+    none in production — regression guard; the step bindings are in
+    apps/cli/tests/steps/own_the_duty_plan_extraction.rs
     ```
   - Evidence:
     ```
-    (paste the targeted run, exit 0)
+    $ ./run-tests.sh --name "A refusal names the construct and no printed plan content"
+    1 scenario (1 passed), 4 steps (4 passed), exit=0
     ```
-- [ ] REFACTOR: clean up without behaviour change; re-run.
+- [x] REFACTOR: clean up without behaviour change; re-run.
   ```
-  (paste the targeted run, exit 0)
+  $ ./run-tests.sh --name "A refusal names the construct and no printed plan content"
+  1 scenario (1 passed), exit=0
   ```
-- [ ] COMMIT.
+- [x] COMMIT.
   ```
-  COMMIT:
+  COMMIT: PENDING
   ```
 
 ### 7. A supported plan whose table continues on a second page keeps every detail row
