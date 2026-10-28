@@ -259,7 +259,7 @@ Design constraints:
   ```
 - [x] COMMIT: one revision; record the hash.
   ```
-  COMMIT: PENDING7
+  COMMIT: e09fcbe
   ```
 
 ### 8. The page shows no warning list when the plan converts without warnings
@@ -269,10 +269,24 @@ Design constraints:
 - Production: the empty `unknownDuties` path; the ready heading/copy/label bindings.
 - Files: `web/app.js`, `apps/cli/tests/steps/export_duty_plan_calendar.rs`.
 
-- [ ] RED: remove `@wip`; run the browser command; paste output (must fail on the heading/copy/way-back).
-- [ ] GREEN: ensure the empty path hides the list and the copy is static; run the browser command; paste output (must pass).
-- [ ] REFACTOR: run again; paste output.
-- [ ] COMMIT: one revision; record the hash.
+- [x] RED: removed `@wip`; the empty path and the heading/copy/label plumbing landed in task 6, so the guard's targeted run is green. Recorded honestly.
+  ```
+  1 scenario (1 passed) / 10 steps (10 passed)
+  EXIT=0
+  ```
+- [x] GREEN: the empty `unknownDuties` path hides `#warnings`; the calendar offer and no warning offer are visible.
+  ```
+  1 scenario (1 passed) / 10 steps (10 passed)
+  ```
+- [x] REFACTOR: run again; no behaviour change.
+  ```
+  1 scenario (1 passed) / 10 steps (10 passed)
+  EXIT=0
+  ```
+- [x] COMMIT: one revision; record the hash.
+  ```
+  COMMIT: PENDING8
+  ```
 
 ### 9. The page states how many rows were converted with warnings
 

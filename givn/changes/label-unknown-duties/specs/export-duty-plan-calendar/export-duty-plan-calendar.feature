@@ -71,7 +71,7 @@ Feature: Export a duty-plan calendar
     And  the page lists the unknown duty "07-06-2099 unknown duty: ZZ_M_CF"
     And  the page meets the visual baseline in the ready-with-warnings state
 
-  @givn.modified @browser @wip
+  @givn.modified @browser
   Scenario: The page shows no warning list when the plan converts without warnings
     Given  the converter page served from the built Site output
     When  the crew member supplies the supported duty plan "2026-06.pdf" whose every dated activity is recognized
