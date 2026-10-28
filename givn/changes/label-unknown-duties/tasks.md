@@ -285,7 +285,7 @@ Design constraints:
   ```
 - [x] COMMIT: one revision; record the hash.
   ```
-  COMMIT: PENDING8
+  COMMIT: e512428
   ```
 
 ### 9. The page states how many rows were converted with warnings
@@ -295,10 +295,26 @@ Design constraints:
 - Production: the plural count sentence and plan-order list.
 - Files: `web/app.js`, `apps/cli/tests/steps/export_duty_plan_calendar.rs`.
 
-- [ ] RED: remove `@wip`; run the browser command; paste output (must fail on the old warning wording or order).
-- [ ] GREEN: use `unknownDuties.length` for the count and keep entry order; run the browser command; paste output (must pass).
-- [ ] REFACTOR: run again; paste output.
-- [ ] COMMIT: one revision; record the hash.
+- [x] RED: removed `@wip`; the count sentence and order plumbing landed in task 6, so the guard's targeted run is green. Recorded honestly.
+  ```
+  1 scenario (1 passed) / 7 steps (7 passed)
+  EXIT=0
+  ```
+- [x] GREEN: `unknownDuties.length` supplies the plural count; the two lines stay in plan order.
+  ```
+  ✔  And the page states "Your calendar is ready to save. 2 rows were converted with unknown duties."
+  ✔  And the page lists the unknown duty "07-06-2099 08:00 UTC unknown duty: ZZ_M_CF"
+  ✔  And the page lists the unknown duty "08-06-2099 09:00 UTC unknown duty: ZZ_TST"
+  ```
+- [x] REFACTOR: run again; no behaviour change.
+  ```
+  1 scenario (1 passed) / 7 steps (7 passed)
+  EXIT=0
+  ```
+- [x] COMMIT: one revision; record the hash.
+  ```
+  COMMIT: PENDING9
+  ```
 
 ### 10. The page keeps the calendar and the warnings when it cannot offer the warning report
 

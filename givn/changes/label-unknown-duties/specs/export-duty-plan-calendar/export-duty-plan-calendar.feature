@@ -84,7 +84,7 @@ Feature: Export a duty-plan calendar
     And  the page offers no warning report
     And  the page meets the visual baseline in the ready state
 
-  @givn.modified @browser @wip
+  @givn.modified @browser
   Scenario: The page states how many rows were converted with warnings
     Given  the converter page served from the built Site output
     When  the crew member supplies the supported duty plan "2026-06.pdf" containing two rows with unrecognized activity codes and printed windows
