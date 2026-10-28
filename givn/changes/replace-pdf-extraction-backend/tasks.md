@@ -586,7 +586,7 @@ Design constraints:
 
 - [x] Confirm every step phrase bound by the delta step files is bound in the permanent test tree. The design names both step files as durable project source (no delta copy, no archive rebinding), so the files themselves are the permanent home; record the phrase count and the two paths.
   ```
-  27 bound step texts (23 regular + 4 @e2e):
+  28 bound step texts (24 regular + 4 @e2e):
     apps/cli/tests/steps/own_the_duty_plan_extraction.rs
     apps/cli/tests/steps/e2e/own_the_duty_plan_extraction.rs
   ```

@@ -206,3 +206,8 @@ fn positioned(word: &Word) -> PositionedWord {
 fn cmp(a: f64, b: f64) -> std::cmp::Ordering {
     a.partial_cmp(&b).unwrap_or(std::cmp::Ordering::Equal)
 }
+
+#[test]
+fn multipage_plan_matches_the_oracle() {
+    compare_with_oracle(&fixtures::build_multipage_plan());
+}

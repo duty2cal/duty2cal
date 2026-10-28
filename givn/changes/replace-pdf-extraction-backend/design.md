@@ -596,11 +596,12 @@ failure there means the generator is wrong, not that the tolerance is loosened.
 
 ## Step Definitions
 
-| Step definition file | Capability | Permanent merge target |
-|---|---|---|
-| `apps/cli/tests/steps/own_the_duty_plan_extraction.rs` | `own-the-duty-plan-extraction` (regular and outline steps) | same file (durable project source; archive copies no step file) |
-| `apps/cli/tests/steps/e2e/own_the_duty_plan_extraction.rs` | `own-the-duty-plan-extraction` (`@e2e` steps, CLI invocation, transcript) | same file |
-| `apps/cli/tests/steps/mod.rs`, `apps/cli/tests/steps/e2e/mod.rs` | registration only | same files |
+| Capability | Step definition file | Role | Permanent merge target |
+|---|---|---|---|
+| `own-the-duty-plan-extraction` | `apps/cli/tests/steps/own_the_duty_plan_extraction.rs` | regular and outline steps | same file (durable project source; archive copies no step file) |
+| `own-the-duty-plan-extraction` | `apps/cli/tests/steps/e2e/own_the_duty_plan_extraction.rs` | `@e2e` steps, CLI invocation, transcript | same file |
+| `own-the-duty-plan-extraction` | `apps/cli/tests/steps/mod.rs` | registration only | same file |
+| `own-the-duty-plan-extraction` | `apps/cli/tests/steps/e2e/mod.rs` | registration only | same file |
 
 The regular steps build the named fixture through
 `duty2cal_pdf_fixtures::build_*`, run `env!("CARGO_BIN_EXE_duty2cal")` in the
