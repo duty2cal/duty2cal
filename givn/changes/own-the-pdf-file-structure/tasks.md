@@ -218,9 +218,8 @@ Design constraints (from `design.md`):
     20 steps (20 passed)
     exit=0
     ```
-- [x] COMMIT: one commit for RED+GREEN+REFACTOR, subject carrying the release
-  note, body naming this scenario. Record the hash.
-  - `COMMIT: 8b7d660`
+- [x] COMMIT: the accepted-spelling outline.
+  COMMIT: 8b7d660
 
 ## Scenario 2 — A plan whose cross-reference pointer lies outside the file is refused as unreadable
 
@@ -281,9 +280,8 @@ Design constraints (from `design.md`):
     5 steps (5 passed)
     exit=0
     ```
-- [x] COMMIT: one commit for RED+GREEN+REFACTOR, subject carrying the release
-  note, body naming this scenario. Record the hash.
-  - `COMMIT: b61e519`
+- [x] COMMIT: the bad-pointer refusal.
+  COMMIT: b61e519
 
 ## Gate A — own the file structure, measure, stop or continue
 
@@ -387,10 +385,8 @@ Design constraints (from `design.md`):
 
     Ruling: B — accept the measured replacement (Q3).
     ```
-- [x] COMMIT (only if Gate A passes): one commit for the replacement, subject
-  carrying the release note, body naming Gate A and the scenario titles it
-  re-ran. Record the hash.
-  - `COMMIT: f83dae7`
+- [x] COMMIT: the owned file structure (Gate A).
+  COMMIT: f83dae7
 
 ## Build evidence — dependency split and same-revision measurement
 
@@ -437,9 +433,8 @@ Design constraints (from `design.md`):
     apart from the `lopdf` predicate; the CI jobs run them against the merge
     base. Gate B's shipped deltas are therefore CI evidence, not a local claim.
     ```
-- [x] COMMIT: one commit for the build evidence, subject carrying the release
-  note, body naming the check and the two measurements. Record the hash.
-  - `COMMIT: cb9b95d`
+- [x] COMMIT: the dependency check and the two measurement scripts.
+  COMMIT: cb9b95d
 
 ## E2E — the capability's existing scenario re-run with the change's transcript
 
@@ -480,9 +475,8 @@ Design constraints (from `design.md`):
     removed; the step now writes only under the active change or, with no active
     change, under the temporary directory, and prints that path.
     ```
-- [x] COMMIT: one commit for the evidence path, e2e subject carrying the
-  release note, body naming the scenario. Record the hash.
-  - `COMMIT: 0c18bd8`
+- [x] COMMIT: the e2e evidence path.
+  COMMIT: 0c18bd8
 
 ## Closeout
 

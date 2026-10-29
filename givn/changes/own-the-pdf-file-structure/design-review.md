@@ -223,4 +223,31 @@ and neither duplicates the `@e2e` action. No scenario is merged or deleted.
   evidence, not shipped evidence, and no chapter may present it as a landed
   saving.
 
+## Re-review after the review findings (F2–F5)
+
+- **F2 — file locations.** The design's Files and Step Definitions tables named
+  `apps/cli/tests/steps/mod.rs` for the `DutyWorld` field; the field is in
+  `apps/cli/tests/features_runner.rs`. Corrected, and the changed
+  `apps/cli/tests/steps/e2e/export_duty_plan_calendar.rs` (the shared slug rule)
+  is now listed.
+- **F3 — decompressor API.** The design and chapter 2 named
+  `decompress_to_vec_zlib_with_limit`; the implementation uses
+  `miniz_oxide::inflate::stream::{inflate, InflateState}` with the bounded
+  partial-output loop and the raw-deflate retry. Both documents now name the
+  streaming API.
+- **F4 — header offset.** The design's first-`%PDF-` rule was not implemented:
+  the buffer is now sliced at that offset before the cross-reference is read,
+  and `build_leading_junk_plan()` pins it in the differential suite.
+- **F5 — accepted-path coverage.** Seven cases and fixtures were added: leading
+  junk, hybrid `/XRefStm`, compact `/W [0 4 2]` with an explicit `/Index`,
+  non-PNG predictor pass-through, PNG Sub and Paeth row filters, and the
+  empty-output raw-deflate retry. `cargo test -p duty2cal-pdf` passes 17 cases
+  (1 ignored real-corpus case) and the six private plans stay green. The design,
+  chapter 5, R-078 and R-082 list them.
+- **Fresh-context re-check.** A separate subagent verified each correction
+  against the implementation and the tests and reported `RE-CHECK: CLEAN` after
+  the R-078 corpus list was aligned. No scenario, `@e2e` tag, proposal scope or
+  decision-ledger entry changed; the Gate A acceptance wording stands.
+- **Verdict.** The design-review remains PASS with the corrected design.
+
 DESIGN-REVIEW: PASS

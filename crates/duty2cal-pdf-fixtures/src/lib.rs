@@ -51,14 +51,21 @@ pub enum Encoding {
     XrefStream,
     /// A cross-reference stream with every non-stream object in an object stream.
     ObjectStreams,
-    /// An xref stream carrying the PNG predictor (Flate + `/Predictor 12`).
+    /// An xref stream carrying the PNG predictor (Flate + `/Predictor 12`) with
+    /// the row filter a caller asks for in [`LayoutOptions::png_filter`].
     PredictedXrefStream,
     /// A classic table followed by one incremental update with `/Prev`.
     IncrementalUpdate,
+    /// A classic table whose trailer names a cross-reference stream in
+    /// `/XRefStm`, the stream defining the same objects.
+    HybridXrefStream,
+    /// A cross-reference stream whose type byte is absent (`/W [0 4 2]`, the
+    /// default type 1) and whose `/Index` is explicit.
+    CompactXrefStream,
 }
 
 /// Extra file-structure spellings a caller can ask the builder for.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy)]
 pub struct LayoutOptions {
     /// Write every stream `/Length` as an indirect integer object.
     pub indirect_length: bool,
@@ -66,6 +73,28 @@ pub struct LayoutOptions {
     pub inherited_resources: bool,
     /// Corrupt the trailing zlib checksum byte of every compressed stream.
     pub corrupt_checksum: bool,
+    /// Write `/DecodeParms << /Predictor <n> >>` on each content stream
+    /// without applying that predictor to its bytes.
+    pub predictor: Option<i64>,
+    /// The PNG row filter of a predicted cross-reference stream: 0 None,
+    /// 1 Sub, 2 Up (the default), 3 Average, 4 Paeth.
+    pub png_filter: u8,
+    /// Compress each content stream with raw deflate and put these two bytes in
+    /// front of it, as an invalid zlib header.
+    pub raw_deflate_prefix: Option<[u8; 2]>,
+}
+
+impl Default for LayoutOptions {
+    fn default() -> Self {
+        LayoutOptions {
+            indirect_length: false,
+            inherited_resources: false,
+            corrupt_checksum: false,
+            predictor: None,
+            png_filter: 2,
+            raw_deflate_prefix: None,
+        }
+    }
 }
 
 /// The construct a refusal fixture places on page 1.
@@ -341,6 +370,16 @@ pub fn build_bad_startxref_plan() -> Vec<u8> {
     corrupted
 }
 
+/// Build a classic plan with a short junk line before the `%PDF-` header.
+///
+/// The cross-reference offsets are relative to the sliced view, so the plan is
+/// the classic plan unchanged behind the junk line.
+pub fn build_leading_junk_plan() -> Vec<u8> {
+    let mut bytes = b"junk-before-header\n".to_vec();
+    bytes.extend_from_slice(&build_plan(&equivalence_plan(), Encoding::ClassicXref));
+    bytes
+}
+
 /// Build a supported plan whose compressed streams carry a corrupt checksum.
 pub fn build_corrupt_checksum_plan() -> Vec<u8> {
     build(
@@ -442,6 +481,7 @@ fn build_pages(
     let mut pdf = Pdf {
         indirect_length: options.indirect_length,
         corrupt_checksum: options.corrupt_checksum,
+        png_filter: options.png_filter,
         ..Pdf::default()
     };
     let content_ids: Vec<u32> = contents
@@ -450,7 +490,15 @@ fn build_pages(
             Variant::StreamFilter => {
                 pdf.add_stream_with_filter("ASCIIHexDecode", content.as_bytes(), "")
             }
-            _ => pdf.add_stream("", content.as_bytes(), flate),
+            _ => match (options.raw_deflate_prefix, options.predictor) {
+                (Some(prefix), _) => pdf.add_raw_deflate_stream(content.as_bytes(), prefix),
+                (None, Some(predictor)) => pdf.add_stream(
+                    &format!("/DecodeParms << /Predictor {predictor} >>"),
+                    content.as_bytes(),
+                    flate,
+                ),
+                (None, None) => pdf.add_stream("", content.as_bytes(), flate),
+            },
         })
         .collect();
     let image_id = pdf.add_stream(
@@ -684,6 +732,7 @@ struct Pdf {
     objects: Vec<Option<ObjectBody>>,
     indirect_length: bool,
     corrupt_checksum: bool,
+    png_filter: u8,
 }
 
 /// One object body.
@@ -740,6 +789,18 @@ impl Pdf {
         self.objects.len() as u32
     }
 
+    /// Add a stream whose body is raw deflate behind `prefix`, so the zlib
+    /// decode fails with no output and only the raw-deflate retry recovers it.
+    fn add_raw_deflate_stream(&mut self, data: &[u8], prefix: [u8; 2]) -> u32 {
+        let mut body = Vec::from(prefix);
+        body.extend_from_slice(&miniz_oxide::deflate::compress_to_vec(data, 6));
+        self.objects.push(Some(ObjectBody::Stream {
+            dict: format!("<< /Length {} /Filter /FlateDecode >>", body.len()),
+            data: body,
+        }));
+        self.objects.len() as u32
+    }
+
     /// Add a stream object with an explicit filter name.
     fn add_stream_with_filter(&mut self, filter: &str, data: &[u8], extra: &str) -> u32 {
         self.objects.push(Some(ObjectBody::Stream {
@@ -758,6 +819,8 @@ impl Pdf {
             }
             Encoding::PredictedXrefStream => self.finish_xref_stream(root, false, encrypt, true),
             Encoding::IncrementalUpdate => self.finish_incremental(root, encrypt),
+            Encoding::HybridXrefStream => self.finish_hybrid(root, encrypt),
+            Encoding::CompactXrefStream => self.finish_compact_xref_stream(root, encrypt),
         }
     }
 
@@ -895,7 +958,10 @@ impl Pdf {
             ("", "")
         };
         let data = if predict {
-            miniz_oxide::deflate::compress_to_vec_zlib(&png_up_encode(&xref, 7), 6)
+            miniz_oxide::deflate::compress_to_vec_zlib(
+                &png_filter_encode(&xref, 7, self.png_filter),
+                6,
+            )
         } else {
             xref
         };
@@ -908,6 +974,108 @@ impl Pdf {
             .as_bytes(),
         );
         pdf.extend_from_slice(&data);
+        pdf.extend_from_slice(b"\nendstream\nendobj\n");
+        pdf.extend_from_slice(format!("startxref\n{xref_offset}\n%%EOF\n").as_bytes());
+        pdf
+    }
+
+    /// Serialize with a classic table whose trailer names a cross-reference
+    /// stream in `/XRefStm`, the stream defining the same objects.
+    fn finish_hybrid(&self, root: u32, encrypt: Option<u32>) -> Vec<u8> {
+        let mut pdf = Vec::new();
+        pdf.extend_from_slice(b"%PDF-1.7\n%\xE2\xE3\xCF\xD3\n");
+        let mut offsets = Vec::with_capacity(self.objects.len());
+        for (index, body) in self.objects.iter().enumerate() {
+            offsets.push(pdf.len());
+            let body = body.as_ref().expect("every object is filled");
+            pdf.extend_from_slice(format!("{} 0 obj\n", index + 1).as_bytes());
+            write_body(&mut pdf, body);
+            pdf.extend_from_slice(b"\nendobj\n");
+        }
+        let stream_id = self.objects.len() as u32 + 1;
+        let stream_offset = pdf.len();
+        let size = stream_id + 1;
+
+        let mut xref = Vec::with_capacity(size as usize * 7);
+        xref.extend_from_slice(&[0, 0, 0, 0, 0, 255, 255]);
+        for offset in &offsets {
+            xref.push(1);
+            xref.extend_from_slice(&(*offset as u32).to_be_bytes());
+            xref.extend_from_slice(&0u16.to_be_bytes());
+        }
+        xref.push(1);
+        xref.extend_from_slice(&(stream_offset as u32).to_be_bytes());
+        xref.extend_from_slice(&0u16.to_be_bytes());
+
+        let encrypt = encrypt
+            .map(|id| format!(" /Encrypt {id} 0 R"))
+            .unwrap_or_default();
+        pdf.extend_from_slice(format!("{stream_id} 0 obj\n").as_bytes());
+        pdf.extend_from_slice(
+            format!(
+                "<< /Type /XRef /Size {size} /W [1 4 2] /Root {root} 0 R{encrypt} /Length {} >>\nstream\n",
+                xref.len()
+            )
+            .as_bytes(),
+        );
+        pdf.extend_from_slice(&xref);
+        pdf.extend_from_slice(b"\nendstream\nendobj\n");
+
+        let xref_position = pdf.len();
+        pdf.extend_from_slice(format!("xref\n0 {size}\n").as_bytes());
+        pdf.extend_from_slice(b"0000000000 65535 f \n");
+        for offset in &offsets {
+            pdf.extend_from_slice(format!("{offset:010} 00000 n \n").as_bytes());
+        }
+        pdf.extend_from_slice(format!("{stream_offset:010} 00000 n \n").as_bytes());
+        pdf.extend_from_slice(
+            format!(
+                "trailer\n<< /Size {size} /Root {root} 0 R /XRefStm {stream_offset}{encrypt} >>\nstartxref\n{xref_position}\n%%EOF\n"
+            )
+            .as_bytes(),
+        );
+        pdf
+    }
+
+    /// Serialize with a cross-reference stream whose type byte is absent (the
+    /// default type 1) and whose `/Index` is explicit, with no object streams.
+    fn finish_compact_xref_stream(&self, root: u32, encrypt: Option<u32>) -> Vec<u8> {
+        let mut pdf = Vec::new();
+        pdf.extend_from_slice(b"%PDF-1.7\n%\xE2\xE3\xCF\xD3\n");
+        let mut offsets = Vec::with_capacity(self.objects.len());
+        for (index, body) in self.objects.iter().enumerate() {
+            offsets.push(pdf.len());
+            let body = body.as_ref().expect("every object is filled");
+            pdf.extend_from_slice(format!("{} 0 obj\n", index + 1).as_bytes());
+            write_body(&mut pdf, body);
+            pdf.extend_from_slice(b"\nendobj\n");
+        }
+        let xref_id = self.objects.len() as u32 + 1;
+        let xref_offset = pdf.len();
+        let size = xref_id + 1;
+
+        // `/W [0 4 2]` has no type field, so every row is the default type 1;
+        // object 0 cannot be listed as free and `/Index` names 1..=xref_id.
+        let mut xref = Vec::with_capacity(size as usize * 6);
+        for offset in &offsets {
+            xref.extend_from_slice(&(*offset as u32).to_be_bytes());
+            xref.extend_from_slice(&0u16.to_be_bytes());
+        }
+        xref.extend_from_slice(&(xref_offset as u32).to_be_bytes());
+        xref.extend_from_slice(&0u16.to_be_bytes());
+
+        let encrypt = encrypt
+            .map(|id| format!(" /Encrypt {id} 0 R"))
+            .unwrap_or_default();
+        pdf.extend_from_slice(format!("{xref_id} 0 obj\n").as_bytes());
+        pdf.extend_from_slice(
+            format!(
+                "<< /Type /XRef /Size {size} /W [0 4 2] /Index [1 {xref_id}] /Root {root} 0 R{encrypt} /Length {} >>\nstream\n",
+                xref.len()
+            )
+            .as_bytes(),
+        );
+        pdf.extend_from_slice(&xref);
         pdf.extend_from_slice(b"\nendstream\nendobj\n");
         pdf.extend_from_slice(format!("startxref\n{xref_offset}\n%%EOF\n").as_bytes());
         pdf
@@ -951,19 +1119,48 @@ fn last_startxref(pdf: &[u8]) -> usize {
     digits.parse().expect("a numeric startxref")
 }
 
-/// Encode each row with the PNG Up filter (type 2), the row bytes deltas from
-/// the previous row and the first row from zeros.
-fn png_up_encode(data: &[u8], columns: usize) -> Vec<u8> {
+/// Encode each row with the PNG row filter `filter` (0 None, 1 Sub, 2 Up,
+/// 3 Average, 4 Paeth) at one byte per pixel.
+///
+/// The prediction is the one the decoders reverse: the byte to the left and
+/// the byte above in the decoded frame, with zeros outside it.
+fn png_filter_encode(data: &[u8], columns: usize, filter: u8) -> Vec<u8> {
     let mut output = Vec::with_capacity(data.len() + data.len() / columns + 1);
     let mut previous = vec![0u8; columns];
     for row in data.chunks(columns) {
-        output.push(2);
+        output.push(filter);
         for (index, byte) in row.iter().enumerate() {
-            output.push(byte.wrapping_sub(previous[index]));
+            let left = if index > 0 { row[index - 1] } else { 0 };
+            let above = previous[index];
+            let upper_left = if index > 0 { previous[index - 1] } else { 0 };
+            let predicted = match filter {
+                0 => 0,
+                1 => left,
+                2 => above,
+                3 => left.wrapping_add(above / 2),
+                4 => png_paeth(left, above, upper_left),
+                other => panic!("no PNG row filter {other}"),
+            };
+            output.push(byte.wrapping_sub(predicted));
         }
         previous[..row.len()].copy_from_slice(row);
     }
     output
+}
+
+/// The PNG Paeth predictor.
+fn png_paeth(left: u8, above: u8, upper_left: u8) -> u8 {
+    let estimate = i16::from(left) + i16::from(above) - i16::from(upper_left);
+    let to_left = (estimate - i16::from(left)).abs();
+    let to_above = (estimate - i16::from(above)).abs();
+    let to_upper_left = (estimate - i16::from(upper_left)).abs();
+    if to_left <= to_above && to_left <= to_upper_left {
+        left
+    } else if to_above <= to_upper_left {
+        above
+    } else {
+        upper_left
+    }
 }
 
 /// Write one object body.

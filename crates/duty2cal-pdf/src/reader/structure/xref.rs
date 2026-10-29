@@ -50,7 +50,7 @@ struct Section {
 
 /// Read the cross-reference sections of `bytes`.
 pub(crate) fn read_xref(bytes: &[u8]) -> Result<XrefTable, SourceError> {
-    check_header(bytes)?;
+    header_offset(bytes)?;
     let mut entries = BTreeMap::new();
     let mut trailer = Dict::default();
     let mut encrypted = false;
@@ -97,8 +97,12 @@ pub(crate) fn read_xref(bytes: &[u8]) -> Result<XrefTable, SourceError> {
     })
 }
 
-/// Check for the `%PDF-` header at its first occurrence.
-fn check_header(bytes: &[u8]) -> Result<(), SourceError> {
+/// The offset of the `%PDF-` header at its first occurrence, after checking
+/// the version digit and the header line ending.
+///
+/// The document's byte slice is rebased at this offset, so every offset a
+/// section or trailer names is relative to the sliced view.
+pub(crate) fn header_offset(bytes: &[u8]) -> Result<usize, SourceError> {
     let offset = bytes
         .windows(5)
         .position(|window| window == b"%PDF-")
@@ -110,7 +114,7 @@ fn check_header(bytes: &[u8]) -> Result<(), SourceError> {
     if !after.iter().any(|byte| matches!(byte, b'\n' | b'\r')) {
         return Err(unreadable("the PDF header line does not end"));
     }
-    Ok(())
+    Ok(offset)
 }
 
 /// The offset after the `startxref` keyword nearest the last `%%EOF`.

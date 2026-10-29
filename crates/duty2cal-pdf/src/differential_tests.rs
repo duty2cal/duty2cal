@@ -87,6 +87,75 @@ fn corrupt_checksum_plan_matches_the_oracle() {
 }
 
 #[test]
+fn leading_junk_plan_matches_the_oracle() {
+    compare_with_oracle(&fixtures::build_leading_junk_plan());
+}
+
+#[test]
+fn hybrid_xref_stream_plan_matches_the_oracle() {
+    compare_with_oracle(&fixtures::build_plan(
+        &fixtures::equivalence_plan(),
+        fixtures::Encoding::HybridXrefStream,
+    ));
+}
+
+#[test]
+fn compact_xref_stream_plan_matches_the_oracle() {
+    compare_with_oracle(&fixtures::build_plan(
+        &fixtures::equivalence_plan(),
+        fixtures::Encoding::CompactXrefStream,
+    ));
+}
+
+#[test]
+fn non_png_predictor_plan_matches_the_oracle() {
+    compare_with_oracle(&fixtures::build_plan_with_options(
+        &fixtures::equivalence_plan(),
+        fixtures::Encoding::ClassicXref,
+        fixtures::LayoutOptions {
+            predictor: Some(2),
+            ..fixtures::LayoutOptions::default()
+        },
+    ));
+}
+
+#[test]
+fn png_sub_filter_xref_stream_matches_the_oracle() {
+    compare_with_oracle(&fixtures::build_plan_with_options(
+        &fixtures::equivalence_plan(),
+        fixtures::Encoding::PredictedXrefStream,
+        fixtures::LayoutOptions {
+            png_filter: 1,
+            ..fixtures::LayoutOptions::default()
+        },
+    ));
+}
+
+#[test]
+fn png_paeth_filter_xref_stream_matches_the_oracle() {
+    compare_with_oracle(&fixtures::build_plan_with_options(
+        &fixtures::equivalence_plan(),
+        fixtures::Encoding::PredictedXrefStream,
+        fixtures::LayoutOptions {
+            png_filter: 4,
+            ..fixtures::LayoutOptions::default()
+        },
+    ));
+}
+
+#[test]
+fn raw_deflate_retry_plan_matches_the_oracle() {
+    compare_with_oracle(&fixtures::build_plan_with_options(
+        &fixtures::equivalence_plan(),
+        fixtures::Encoding::ClassicXref,
+        fixtures::LayoutOptions {
+            raw_deflate_prefix: Some([0, 0]),
+            ..fixtures::LayoutOptions::default()
+        },
+    ));
+}
+
+#[test]
 fn warned_plan_matches_the_oracle() {
     compare_with_oracle(&fixtures::build_plan(
         &fixtures::warned_plan(),

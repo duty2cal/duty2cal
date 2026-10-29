@@ -70,6 +70,10 @@ enum LengthSpec {
 
 /// Load the file structure of `bytes`.
 pub(crate) fn load(bytes: &[u8]) -> Result<Document<'_>, SourceError> {
+    // Leading bytes before `%PDF-` are skipped: every offset the sections and
+    // trailers name is relative to the sliced view, so the document keeps and
+    // slices this same slice.
+    let bytes = &bytes[xref::header_offset(bytes)?..];
     let table = xref::read_xref(bytes)?;
     if table.encrypted {
         return Ok(Document {
