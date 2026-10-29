@@ -480,21 +480,34 @@ Design constraints (from `design.md`):
     removed; the step now writes only under the active change or, with no active
     change, under the temporary directory, and prints that path.
     ```
-- [ ] COMMIT: one commit for the evidence path, e2e subject carrying the
+- [x] COMMIT: one commit for the evidence path, e2e subject carrying the
   release note, body naming the scenario. Record the hash.
-  - `COMMIT:`
+  - `COMMIT: 0c18bd8`
 
 ## Closeout
 
-- [ ] `givn lint --change own-the-pdf-file-structure` exits 0, or exits 2 with
+- [x] `givn lint --change own-the-pdf-file-structure` exits 0, or exits 2 with
   only the SHAPE advisory (disposition `variant`) and the end-to-end
   cross-reference warning dispositioned in setup finding 8; paste it.
-- [ ] No `@wip` remains in the delta; paste the grep.
-- [ ] `./run-tests.sh` exits 0 and `./run-tests.sh --e2e` exits 0; paste both.
-- [ ] The archive binding check finds every delta step phrase in
+  - Evidence: exit 2; `[SHAPE] advisory` truncated/bad-pointer (variant) and
+    `[WARN] @e2e scenarios referenced in tasks.md but none found in specs/`
+    (design D7: the permanent @e2e scenario is re-run, no delta @e2e).
+- [x] No `@wip` remains in the delta; paste the grep.
+  - Evidence: `grep -rn "@wip" givn/changes/own-the-pdf-file-structure/specs`
+    → no match.
+- [x] `./run-tests.sh` exits 0 and `./run-tests.sh --e2e` exits 0; paste both.
+  - Evidence: full `145 scenarios (145 passed), 617 steps`, exit 0;
+    `--e2e` `2 scenarios (2 passed), 10 steps`, exit 0.
+- [x] The archive binding check finds every delta step phrase in
   `apps/cli/tests/steps/own_the_duty_plan_extraction.rs`; paste the check.
-- [ ] No real plan or plan-derived fixture is committed; `git status` and the
+  - Evidence: all four phrases bound (spelling Given, bad-pointer Given,
+    apart-from-identity Then, success Then).
+- [x] No real plan or plan-derived fixture is committed; `git status` and the
   changed-file list contain no `private/` path and no `.pdf`.
-- [ ] Every scenario box carries its evidence and exactly one `COMMIT:`; the
+  - Evidence: `git diff --name-only d8a46f8..HEAD | grep -E '^private/|\.pdf$'`
+    → no match; fixtures are generated at test time.
+- [x] Every scenario box carries its evidence and exactly one `COMMIT:`; the
   two delta scenarios, Gate A, the build evidence and the e2e task each have
   a reachable revision naming its scenario or task.
+  - Revisions: `8b7d660` (spellings), `b61e519` (bad pointer), `f83dae7`
+    (Gate A), `cb9b95d` (build evidence), `0c18bd8` (e2e evidence).
