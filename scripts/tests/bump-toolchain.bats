@@ -10,7 +10,6 @@ setup() {
   cp "$repo_root/scripts/bump-toolchain.sh" "$tmp/scripts/"
   chmod +x "$tmp/scripts/bump-toolchain.sh"
   printf '%s\n' \
-    '# SPDX-License-Identifier: MPL-2.0' \
     '[toolchain]' \
     'channel = "1.99.1"' \
     'profile = "minimal"' >"$tmp/rust-toolchain.toml"
