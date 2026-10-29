@@ -107,4 +107,16 @@ the cross-package attribute names, the guard's env refusal, the bootstrap's
 environment sourcing and npm order, chapter 6's flow, R-081, the R-011/TD-005
 corrections and the wording precision. No proposal scope change.
 
+## Post-implementation design correction
+
+Implementation exposed two gaps the first review could not see: the design
+promised a Playwright browser-build/npm-client mismatch refusal that the
+script and shell did not implement, and the CI composite asserted the LLVM
+tools but not `cargo fmt --version`/`cargo clippy --version`. The design's
+Playwright and CI rows were corrected, both mechanisms were implemented, and a
+second fresh-context review (`DeltaReview`) re-ran the affected branches. It
+verified the script refusal, the shell refusal, the bats proof, the composite
+assertions, the corrected design text, the unchanged ADR conclusion and the
+unchanged chapter set, and returned:
+
 DESIGN-REVIEW: PASS
