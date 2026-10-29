@@ -1,17 +1,36 @@
 # SPDX-License-Identifier: MPL-2.0
 name: install dev tools
 description: Install the cargo tools pinned in scripts/dev-tool-versions.env
+inputs:
+  tools:
+    description: Comma-separated tool names (cargo-llvm-cov, cargo-deny, cargo-about, cargo-bloat, git-cliff)
+    required: true
 runs:
   using: composite
   steps:
     - id: versions
       shell: bash
+      env:
+        REQUESTED: ${{ inputs.tools }}
       run: |
         set -euo pipefail
         . scripts/dev-tool-versions.env
-        printf 'tools=cargo-llvm-cov@%s,cargo-deny@%s,cargo-about@%s,cargo-bloat@%s,git-cliff@%s\n' \
-          "$CARGO_LLVM_COV_VERSION" "$CARGO_DENY_VERSION" "$CARGO_ABOUT_VERSION" \
-          "$CARGO_BLOAT_VERSION" "$GIT_CLIFF_VERSION" >> "$GITHUB_OUTPUT"
+        tools=""
+        for tool in ${REQUESTED//,/ }; do
+          case "$tool" in
+            cargo-llvm-cov) version="$CARGO_LLVM_COV_VERSION" ;;
+            cargo-deny) version="$CARGO_DENY_VERSION" ;;
+            cargo-about) version="$CARGO_ABOUT_VERSION" ;;
+            cargo-bloat) version="$CARGO_BLOAT_VERSION" ;;
+            git-cliff) version="$GIT_CLIFF_VERSION" ;;
+            *)
+              echo "install-dev-tools: unknown tool: $tool" >&2
+              exit 2
+              ;;
+          esac
+          tools="${tools:+$tools,}$tool@$version"
+        done
+        printf 'tools=%s\n' "$tools" >> "$GITHUB_OUTPUT"
 
     - uses: taiki-e/install-action@v2
       with:

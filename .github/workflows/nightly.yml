@@ -130,6 +130,8 @@ jobs:
       - uses: ./.github/actions/rust-toolchain
       - uses: Swatinem/rust-cache@v2
       - uses: ./.github/actions/install-dev-tools
+        with:
+          tools: cargo-deny
       - name: Refresh the advisory database and check the dependency policy
         run: |
           set -euo pipefail

@@ -95,6 +95,8 @@ jobs:
       # The preparation renders both files with the pinned generator, so it
       # must be on PATH.
       - uses: ./.github/actions/install-dev-tools
+        with:
+          tools: git-cliff
       - uses: actions/download-artifact@v8
         with:
           pattern: binary-*
