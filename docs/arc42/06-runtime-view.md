@@ -898,3 +898,33 @@ through `web/e2e/driver.mjs`'s `click`, `navigate` and `read_text` actions by
 `apps/cli/tests/steps/legal_notices.rs`; each observes the site root's `h1`
 before activation and the notice's `h1` after it, and reads an empty cookie jar
 and empty storage.
+
+## Fresh-machine bootstrap and the toolchain refusal
+
+This change adds one operational flow beside the release and publication flows:
+a developer brings a machine to the pinned toolchain, and every check refuses
+a machine that did not.
+
+1. On Linux or macOS, `scripts/setup-dev.sh` ensures rustup, sources its
+   environment, runs `rustup show` (which installs the pinned release, its
+   components and its targets), installs the pinned cargo tools, reads
+   `web/e2e/.nvmrc` through nvm when present, runs `npm ci --prefix
+   web/e2e`, downloads Chromium without root, and reports a missing host
+   library or system package by name.
+2. On `x86_64-linux` with Nix, `nix develop` resolves the same file through
+   rust-overlay and provides the toolchain, the pinned cargo tools,
+   `wasm-pack`, Node, the Playwright browser build and the Windows cross
+   compiler; the npm client still comes from `npm ci --prefix web/e2e`.
+3. Every `./run-tests.sh`, `./run-tests.sh --browser` and
+   `./measure-coverage.sh` starts with `scripts/check-toolchain.sh`: the
+   channel must be exact, `rustc -V` must name it, the sysroot derived from
+   `rustc --print target-libdir` must carry `llvm-cov` and `llvm-profdata`, and
+   `LLVM_COV`/`LLVM_PROFDATA` must be unset.
+4. A mismatch ends the command before any build or report and names the
+   remedy: `rustup show`, `rustup component add llvm-tools-preview`, or
+   `nix develop`. A matching toolchain proceeds to the suite or the coverage
+   measurement.
+5. The Windows cross build then uses the distribution's `mingw-w64` or the
+   flake's cross compiler and libraries; the resulting executable is started
+   on Windows by the release workflow, not on the developer machine
+   (chapter 7).

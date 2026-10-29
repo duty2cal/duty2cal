@@ -26,6 +26,48 @@ land; the [README](README.md) points here rather than repeating it.
 5. **Documentation.** Architecture decisions are recorded as ADRs under
    `docs/arc42/adr/`; the durable architecture chapters live under `docs/arc42/`.
 
+## Set up a development machine
+
+The compiler is pinned once, in `rust-toolchain.toml`: stable 1.99.1 with
+`rustfmt`, `clippy`, `llvm-tools-preview` and the `wasm32-unknown-unknown` and
+`x86_64-pc-windows-gnu` targets. Every installer reads that file; there is no
+second channel to keep in step.
+
+- **Linux or macOS.** `./scripts/setup-dev.sh` installs rustup when it is
+  missing and runs `rustup show`, which installs the pinned toolchain, its
+  components and its targets. It then installs the pinned cargo tools, Node
+  from `web/e2e/.nvmrc`, the browser test packages and Chromium. It never uses
+  root and never installs an operating-system package: a missing host library or
+  package is named instead. `--check` reports without changing anything.
+- **NixOS or `x86_64-linux` with Nix.** `nix develop` resolves the same file
+  through rust-overlay and provides the toolchain, the pinned cargo tools,
+  `wasm-pack`, Node, the Playwright browser build and the Windows cross
+  compiler. The npm client still comes from `npm ci --prefix web/e2e`.
+- **Windows native.** Not a development target of this repository; the
+  published executable is cross-built on Linux.
+
+| Pin | Where |
+|---|---|
+| Rust and its LLVM tools | `rust-toolchain.toml` (`llvm-tools-preview` is the compiler's own LLVM) |
+| cargo tools | `scripts/dev-tool-versions.env` |
+| `wasm-pack` | `web/.wasm-pack-version` |
+| Node | `web/e2e/.nvmrc` |
+| Playwright and axe | `web/e2e/package-lock.json` |
+| OpenTofu | `infra/.opentofu-version` (infrastructure work, not the build shell) |
+
+Coverage uses only the compiler's LLVM tools. `run-tests.sh` and
+`measure-coverage.sh` start with `scripts/check-toolchain.sh`, which refuses a
+different compiler, a sysroot without `llvm-cov` and `llvm-profdata`, a
+non-exact channel, or a set `LLVM_COV` or `LLVM_PROFDATA`. Do not put another
+LLVM on `PATH` and do not export those variables; the remedy is `rustup show`,
+`rustup component add llvm-tools-preview`, or `nix develop`.
+
+The Windows target links with `x86_64-w64-mingw32-gcc`; install the
+`mingw-w64` package on Linux, or use `nix develop`, which supplies the cross
+compiler and the libraries the link needs. The browser suite needs
+`npm ci --prefix web/e2e` before `./run-tests.sh --browser`; the setup script
+does it, and names any missing Chromium host library.
+
 ## Checks to run before you propose a change
 
 ```sh

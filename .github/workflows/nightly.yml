@@ -29,7 +29,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: ./.github/actions/rust-toolchain
       - uses: Swatinem/rust-cache@v2
       - name: Run the product suite
         env:
@@ -76,10 +76,7 @@ jobs:
         with:
           # `scripts/build-site.sh` stamps the footer with `git describe`.
           fetch-depth: 0
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          # `scripts/build-web.sh` builds the browser bundle.
-          targets: wasm32-unknown-unknown
+      - uses: ./.github/actions/rust-toolchain
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-node@v7
         with:
@@ -130,11 +127,9 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: ./.github/actions/rust-toolchain
       - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-deny
+      - uses: ./.github/actions/install-dev-tools
       - name: Refresh the advisory database and check the dependency policy
         run: |
           set -euo pipefail

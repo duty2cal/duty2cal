@@ -27,6 +27,10 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# Refuse a compiler that is not the pinned one, or a sysroot without its LLVM
+# tools, before any build. See design.md "Coverage guard".
+scripts/check-toolchain.sh
+
 transcript="$(mktemp)"
 root=""
 trap 'if [ -n "${DUTY2CAL_TRANSCRIPT_PATH:-}" ]; then cp "$transcript" "$DUTY2CAL_TRANSCRIPT_PATH" 2>/dev/null || true; fi; rm -rf "$root" "$transcript"' EXIT

@@ -137,6 +137,21 @@ The size attribution remains in the `windows-gnu-build` job: the job installs `c
 | Middleware / Runtime | None beyond the executable (Windows GNU statically linked; no companion DLL or runtime installer) |
 | Key software deployed | One self-contained `duty2cal.exe` executable |
 
+### The developer machine
+
+| Property | Value |
+|---|---|
+| Hardware / VM | The developer's ordinary Linux, macOS or NixOS machine |
+| OS | Linux or macOS through rustup; NixOS or `x86_64-linux` with Nix through `nix develop`. A Windows host and an aarch64 Nix shell are not development targets in this change. |
+| Middleware / Runtime | The release pinned in `rust-toolchain.toml` (with `llvm-tools-preview`, `wasm32-unknown-unknown` and `x86_64-pc-windows-gnu`), the cargo tools in `scripts/dev-tool-versions.env`, Node from `web/e2e/.nvmrc`, the Playwright npm client from `web/e2e/package-lock.json` and the matching browser build (the flake's locked nixpkgs on the Nix path) |
+| Key software deployed | None; the environment is the checkout plus the installed toolchain |
+
+- `scripts/setup-dev.sh` brings a Linux or macOS machine to that state; `nix develop` brings a `x86_64-linux` Nix machine to the same state from the same file. Neither needs the other.
+- The bootstrap runs `npm ci --prefix web/e2e` before any browser command and downloads Chromium without root; it names a missing host library and its package instead of installing it. The Nix shell supplies Node, `wasm-pack` and the browser build, not the npm client.
+- `scripts/check-toolchain.sh` refuses a different compiler, a sysroot without `llvm-cov`/`llvm-profdata`, or a set `LLVM_COV`/`LLVM_PROFDATA`; `run-tests.sh` and `measure-coverage.sh` run it first, so no test or report uses a second LLVM.
+- `cargo build --release --target x86_64-pc-windows-gnu` runs on a Linux machine after setup; the non-Nix path needs the distribution's `mingw-w64` package, and the flake provides the cross compiler and the two libraries the link needs.
+- The developer machine is not a supported download platform (chapter 2); it is the CI, coverage and local test host.
+
 ### Downloading and verifying
 
 - A downloader on Windows x86_64 takes `duty2cal-<version>-windows-x86_64.tar.gz` from the stable latest-release address `https://github.com/duty2cal/duty2cal/releases/latest`, which stays reachable as later versions are published. No archive is offered for any other platform.

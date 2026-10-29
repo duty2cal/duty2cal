@@ -126,12 +126,13 @@ keeping every remaining platform promise backed by build and start evidence.
   toolchain is not verified by CI; recorded in chapter 11 (R-019, R-013).
 - Bad, because the release path's steps and tooling are pinned by mutable tags
   and branches — the `actions/*` steps are GitHub's own, but
-  `dtolnay/rust-toolchain@stable` (a rolling branch, used by every build job)
-  and `anchore/sbom-action@v0` are third-party, and `rhysd/actionlint` is a
+  `anchore/sbom-action@v0` is third-party, and `rhysd/actionlint` is a
   third-party container image pinned by tag on the CI side — a residual
   supply-chain risk with no detection control, because an attestation produced
   after a substituted step ran attests the substituted artefact; recorded in
-  chapter 11 (R-011, TD-005).
+  chapter 11 (R-011, TD-005). *Corrected 2026-10-29 by `developer-setup`: the
+  compiler is pinned in `rust-toolchain.toml`, and no job uses the rolling
+  `dtolnay/rust-toolchain@stable` step; the decision above is unchanged.*
 
 ### Confirmation
 

@@ -44,9 +44,7 @@ jobs:
           # tags, so the shallow default is not enough.
           ref: ${{ inputs.revision || github.ref }}
           fetch-depth: 0
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
+      - uses: ./.github/actions/rust-toolchain
       - uses: actions/setup-node@v7
         with:
           node-version-file: web/e2e/.nvmrc

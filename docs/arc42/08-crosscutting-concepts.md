@@ -103,6 +103,31 @@ no picker and no calendar, and never falls back to a server or an upload. The
 page refuses a plan larger than 20 MiB by name before reading it; the converter
 still checks the family and content.
 
+## Build toolchain pinning
+
+The compiler is pinned once in `rust-toolchain.toml`: the exact stable
+release, `profile = "minimal"`, `rustfmt`, `clippy` and
+`llvm-tools-preview`, and the `wasm32-unknown-unknown` and
+`x86_64-pc-windows-gnu` targets. rustup reads the file on Linux and macOS; the
+Nix development shell reads it through rust-overlay on `x86_64-linux`. There is
+no second channel in a workflow or a script.
+
+`llvm-tools-preview` makes `llvm-cov` and `llvm-profdata` members of the
+compiler's sysroot, and `cargo llvm-cov` reads that sysroot. cargo-llvm-cov
+prefers the `LLVM_COV` and `LLVM_PROFDATA` environment variables when set, so
+`scripts/check-toolchain.sh` refuses either variable and refuses a differing
+`rustc` or a sysroot without the tools, naming the remedy; `run-tests.sh` and
+`measure-coverage.sh` run it before doing work. Coverage therefore never uses a
+second LLVM, and a profile produced by the compiler cannot meet a tool from
+another release.
+
+The cargo tools that render byte-compared files are pinned in
+`scripts/dev-tool-versions.env`; `scripts/setup-dev.sh` and the CI tool action
+read that one file. Node and the browser tools keep their own pins (below);
+the Nix shell exposes the matching browser build instead of downloading one,
+and the bootstrap installs the npm client from the lockfile before it downloads
+a browser.
+
 ## Browser toolchain pinning
 
 The browser test surface is pinned: Playwright and `@axe-core/playwright` in

@@ -26,7 +26,7 @@ The release maintainer selects one size lever the size attribution justifies.
 ## Main flow
 
 1. Release maintainer selects one lever the size attribution justifies; System states the lever's constraint status before any build.
-2. Project automation rebuilds the released revision as the baseline with the current stable toolchain and the unchanged build configuration; System records the baseline's file size and reports the published binary's size separately.
+2. Project automation rebuilds the released revision as the baseline with the toolchain pinned in `rust-toolchain.toml` and the unchanged build configuration; System records the baseline's file size and reports the published binary's size separately.
 3. Project automation builds the revision with the lever; System reports the measured saving against a rebuild of the same revision carrying the previously accepted levers but not this one, and the artifact's file size.
 4. Release maintainer assesses the failure outcome; System reports whether a panic that ends the process still leaves a diagnosis, and whether a failed conversion still attempts a numbered diagnostic naming the source PDF and the failure reason.
 5. Release maintainer prepares the build-configuration revision; Contributor reviewer reviews it; System reports the review outcome.
@@ -48,7 +48,7 @@ Steps 1–6 repeat for each candidate lever; one landing may carry several accep
 - Every proposed lever has one recorded decision. A refusal before a build names the violated constraint and records no measurement; otherwise the record states the measured saving, the failure-outcome evidence where the lever changes failure behavior, the review outcome where a revision was reviewed, and the reason. A lever is recorded as applied only after its landed revision was rebuilt and measured as smaller.
 - A nightly-only flag, UPX or dynamic linking is not a size lever: it is refused before a build and recorded as a rejected proposal naming the violated constraint, never as a lever decision.
 - Every saving is cumulative against the build configuration as it stood before that lever, carrying the previously accepted levers, so the landed difference equals the sum of the recorded savings.
-- The baseline is the released revision rebuilt by the project's automation with the current stable toolchain and the unchanged build configuration; the published binary's size is reported separately.
+- The baseline is the released revision rebuilt by the project's automation with the toolchain pinned in `rust-toolchain.toml` and the unchanged build configuration; the published binary's size is reported separately.
 - Every saving is measured from the stripped executable built for the supported platform; the file size is the quantity.
 - The diagnosis a panic leaves — the panic message or a numbered diagnostic — is recorded before the lever lands.
 - A source build from the landed revision retains the conversion's failure diagnosis.

@@ -227,6 +227,16 @@ assessed and returned `NOT_QUALIFIED`:
   the mechanics. The register, `docs/arc42/adr/README.md` and the ADR files are
   unchanged.
 
+- **The compiler pin** — one exact stable release in `rust-toolchain.toml`,
+  read by rustup and by the Nix development shell, over a flake-only pin, a
+  container or vendored tarballs. It fails `durable_consequence` (one build
+  environment, reversible in one change) and `lower_level_artifact` (the
+  constraint and its alternatives belong to chapter 2; the procedure belongs
+  to `CONTRIBUTING.md`). Routing: `CANONICAL_ARTIFACT` →
+  `docs/arc42/02-architecture-constraints.md`. ADR-0003 and TD-005 record the
+  rolling-compiler debt; neither decision is amended, but their factual
+  consequence text is corrected.
+
 ## Individual ADR contract
 
 Written and tailored from `docs/arc42/adr/adr-template.md`; MADR sections,

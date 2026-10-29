@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MPL-2.0
+name: install dev tools
+description: Install the cargo tools pinned in scripts/dev-tool-versions.env
+runs:
+  using: composite
+  steps:
+    - id: versions
+      shell: bash
+      run: |
+        set -euo pipefail
+        . scripts/dev-tool-versions.env
+        printf 'tools=cargo-llvm-cov@%s,cargo-deny@%s,cargo-about@%s,cargo-bloat@%s,git-cliff@%s\n' \
+          "$CARGO_LLVM_COV_VERSION" "$CARGO_DENY_VERSION" "$CARGO_ABOUT_VERSION" \
+          "$CARGO_BLOAT_VERSION" "$GIT_CLIFF_VERSION" >> "$GITHUB_OUTPUT"
+
+    - uses: taiki-e/install-action@v2
+      with:
+        tool: ${{ steps.versions.outputs.tools }}

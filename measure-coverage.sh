@@ -15,6 +15,10 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# Refuse a compiler that is not the pinned one, or a sysroot without its LLVM
+# tools, before any measurement. See design.md "Coverage guard".
+scripts/check-toolchain.sh
+
 # Coverage excludes `duty2cal-wasm`: the wasm target has no file-based LLVM
 # profile writer here, and the facade's behavior is browser-evidenced.
 packages=(--package duty2cal-core --package duty2cal-pdf --package duty2cal)

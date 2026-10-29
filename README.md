@@ -138,11 +138,16 @@ Already-published releases keep their original assets and links; only future rel
 
 ## Prerequisites
 
-- A stable Rust toolchain with Cargo; the workspace uses the 2021 edition.
+- The toolchain pinned in `rust-toolchain.toml` (stable 1.99.1, edition 2021)
+  with the compiler's `llvm-tools-preview`; rustup installs it from that file.
+  A development machine runs `./scripts/setup-dev.sh` (or `nix develop` on
+  Nix); [CONTRIBUTING](CONTRIBUTING.md#set-up-a-development-machine) has the
+  two routes and the pinned tools.
 - Nothing else at run time: the executable is self-contained, with no service,
   database or network access, and it reads only the file it is given.
-- Coverage runs additionally need `cargo-llvm-cov` and the LLVM tools
-  (`llvm-cov` and `llvm-profdata`).
+- Coverage runs additionally need `cargo-llvm-cov`; the LLVM tools
+  (`llvm-cov` and `llvm-profdata`) are the pinned compiler's own, not a
+  separate LLVM.
 
 ## Usage
 

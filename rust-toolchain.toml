@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 [toolchain]
-channel = "stable"
-components = ["rustfmt", "clippy"]
+channel = "1.99.1"
+profile = "minimal"
+components = ["rustfmt", "clippy", "llvm-tools-preview"]
+targets = ["wasm32-unknown-unknown", "x86_64-pc-windows-gnu"]
