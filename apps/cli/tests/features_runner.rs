@@ -43,6 +43,9 @@ pub struct DutyWorld {
     pub plan: Option<Vec<u8>>,
     /// The accepted calendar text an `@e2e` scenario compares against.
     pub accepted_calendar: Option<String>,
+    /// Whether the published calendar equalled the accepted calendar after the
+    /// agreed normalisation; the transcript records it.
+    pub calendar_matched: bool,
 }
 
 impl Drop for DutyWorld {

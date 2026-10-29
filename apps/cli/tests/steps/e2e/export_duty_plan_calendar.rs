@@ -107,7 +107,7 @@ fn evidence_root() -> PathBuf {
 
 /// The scenario title as the evidence directory name: lowercase words joined
 /// by single hyphens, as the change's design declares them.
-fn scenario_slug(name: &str) -> String {
+pub(super) fn scenario_slug(name: &str) -> String {
     let mut slug = String::new();
     for character in name.chars() {
         if character.is_ascii_alphanumeric() {

@@ -138,6 +138,13 @@ root="$(scripts/assemble-features.sh)"
 phase_line "phase=assemble seconds=$((SECONDS - phase_start))"
 export GIVN_FEATURES="$root"
 
+# The active change owns the visual evidence tree when exactly one change
+# directory holds a specs/ directory; never guess between changes.
+change_specs=(givn/changes/*/specs)
+if [ "${#change_specs[@]}" -eq 1 ] && [ -d "${change_specs[0]}" ]; then
+  export DUTY2CAL_EVIDENCE_DIR="$PWD/${change_specs[0]%/specs}/evidence/visual"
+fi
+
 status=0
 
 # The full default run also executes the Rust unit/property/architecture tests

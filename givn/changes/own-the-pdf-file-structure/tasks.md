@@ -437,9 +437,9 @@ Design constraints (from `design.md`):
     apart from the `lopdf` predicate; the CI jobs run them against the merge
     base. Gate B's shipped deltas are therefore CI evidence, not a local claim.
     ```
-- [ ] COMMIT: one commit for the build evidence, subject carrying the release
+- [x] COMMIT: one commit for the build evidence, subject carrying the release
   note, body naming the check and the two measurements. Record the hash.
-  - `COMMIT:`
+  - `COMMIT: cb9b95d`
 
 ## E2E — the capability's existing scenario re-run with the change's transcript
 
@@ -457,13 +457,28 @@ Design constraints (from `design.md`):
   `Release maintainer converts the supported plan through the executable and
   receives the accepted calendar` is re-run.
 
-- [ ] Implement the evidence path and the derived transcript, then run the
+- [x] Implement the evidence path and the derived transcript, then run the
   `@e2e` suite. Paste the transcript path and the scenario's zero exit.
   - Prove the e2e scope is a strict subset: record the full-suite scenario
     count and the `--e2e` scenario count; the second must be smaller.
   - Evidence:
     ```
-    (paste the full and e2e counts, the e2e run and the committed transcript path)
+    $ ./run-tests.sh
+    4 features / 145 scenarios (145 passed) / 617 steps
+    $ ./run-tests.sh --e2e
+    2 features / 2 scenarios (2 passed) / 10 steps
+    exit=0
+
+    transcript:
+    givn/changes/own-the-pdf-file-structure/evidence/visual/release-maintainer-converts-the-supported-plan-through-the-executable-and-receives-the-accepted-calendar/transcript.txt
+    $ duty2cal <scenario-dir>/roster.pdf
+    Written: <scenario-dir>/roster.ics
+    exit status: 0
+    normalised comparison: identical
+
+    The stale `givn/changes/replace-pdf-extraction-backend/` evidence tree was
+    removed; the step now writes only under the active change or, with no active
+    change, under the temporary directory, and prints that path.
     ```
 - [ ] COMMIT: one commit for the evidence path, e2e subject carrying the
   release note, body naming the scenario. Record the hash.

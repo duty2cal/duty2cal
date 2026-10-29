@@ -5,10 +5,11 @@
 //! published calendar with the committed accepted calendar, and write the
 //! scenario's transcript.
 
-use std::path::Path;
+use std::path::PathBuf;
 
 use cucumber::{given, then};
 
+use super::export_duty_plan_calendar::scenario_slug;
 use crate::steps::export_duty_plan_calendar::fresh_dir;
 use crate::steps::support;
 use crate::DutyWorld;
@@ -55,9 +56,9 @@ async fn the_published_calendar_matches_the_accepted_calendar(w: &mut DutyWorld)
         .accepted_calendar
         .as_deref()
         .expect("the accepted calendar was recorded");
-    assert_eq!(
-        support::normalise(&published),
-        support::normalise(accepted),
+    w.calendar_matched = support::normalise(&published) == support::normalise(accepted);
+    assert!(
+        w.calendar_matched,
         "the published calendar differs from the accepted one"
     );
 }
@@ -84,12 +85,28 @@ fn write_transcript(w: &DutyWorld) {
         .find(|line| line.starts_with("Written:"))
         .unwrap_or("Written: <none>")
         .replace(&scenario_dir, "<scenario-dir>");
-    let transcript =
-        format!("$ duty2cal <scenario-dir>/roster.pdf\n{written}\nexit status: 0\nnormalised comparison: identical\n");
-    let evidence = Path::new(env!("CARGO_MANIFEST_DIR")).join(
-        "../../givn/changes/replace-pdf-extraction-backend/evidence/visual/release-maintainer-converts-the-supported-plan-through-the-executable-and-receives-the-accepted-calendar/transcript.txt",
+    let exit = w
+        .exit_status
+        .map(|status| status.to_string())
+        .unwrap_or_else(|| "none".to_string());
+    let comparison = if w.calendar_matched {
+        "identical"
+    } else {
+        "different"
+    };
+    let transcript = format!(
+        "$ duty2cal <scenario-dir>/roster.pdf\n{written}\nexit status: {exit}\nnormalised comparison: {comparison}\n"
     );
+    let override_dir = std::env::var_os("DUTY2CAL_EVIDENCE_DIR");
+    let base = match &override_dir {
+        Some(dir) => PathBuf::from(dir),
+        None => std::env::temp_dir().join("duty2cal-evidence"),
+    };
+    let evidence = base.join(scenario_slug(&w.scenario)).join("transcript.txt");
     std::fs::create_dir_all(evidence.parent().expect("the evidence directory"))
         .expect("create the evidence directory");
     std::fs::write(&evidence, transcript).expect("write the e2e transcript");
+    if override_dir.is_none() {
+        eprintln!("e2e transcript: {}", evidence.display());
+    }
 }
