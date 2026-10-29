@@ -105,6 +105,12 @@ commit_parsers = [
   { message = "(?i)^.*release workflow", skip = true },
   { message = "(?i)^.*e2e transcript", skip = true },
 
+  # The lopdf bump and its revert are one event. The final dependency graph is
+  # unchanged (0.44.0), so neither revision is a change a user receives; the
+  # release notes state the final state rather than the detour.
+  { message = "^chore\\(deps\\): bump lopdf from 0\\.44\\.0 to 0\\.46\\.0", skip = true },
+  { message = "^chore\\(deps\\): keep lopdf at 0\\.44\\.0", skip = true },
+
   # Breaking changes first: a reader looks for what may stop working before
   # what is new.
   { message = "^feat\\(export-duty-plan-calendar\\)!:", group = "<!-- 0 -->Breaking changes" },

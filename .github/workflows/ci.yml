@@ -248,6 +248,14 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+      # Cache the Nix store so the pinned toolchain and the built
+      # cargo-llvm-cov are restored instead of rebuilt. No purge: the job keeps
+      # `contents: read`, and GitHub's cache eviction bounds old entries.
+      - uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock', 'rust-toolchain.toml') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          gc-max-store-size-linux: 2G
       - name: Assert the pinned toolchain, components and LLVM tools
         run: |
           nix develop -c bash -c '
