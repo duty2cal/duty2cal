@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "change": "own-the-pdf-file-structure",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "merge_completed": true,
+  "merged_deltas": [
+    "own-the-duty-plan-extraction/own-the-duty-plan-extraction.feature"
+  ],
+  "merge_in_progress": null,
+  "merge_plan": [
+    "own-the-duty-plan-extraction/own-the-duty-plan-extraction.feature"
+  ],
+  "merge_targets": {
+    "own-the-duty-plan-extraction/own-the-duty-plan-extraction.feature": "givn/specs/own-the-duty-plan-extraction/own-the-duty-plan-extraction.feature"
+  },
+  "started_at_unix": 1793288831,
+  "finished_at_unix": null
+}
