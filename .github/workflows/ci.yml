@@ -234,6 +234,30 @@ jobs:
           name: coverage
           path: coverage/
 
+  nix:
+    # The flake is the Nix machine's route; CI must exercise it, not only the
+    # rustup route. The first run resolves the pinned toolchain and builds
+    # cargo-llvm-cov once; later runs reuse the store.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31.11.3
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Assert the pinned toolchain, components and LLVM tools
+        run: |
+          nix develop -c bash -c '
+            set -euo pipefail
+            scripts/check-toolchain.sh
+            rustc -V
+            cargo fmt --version
+            cargo clippy --version
+          '
+
   scripts:
     runs-on: ubuntu-latest
     permissions:
