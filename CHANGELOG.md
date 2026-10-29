@@ -1,3 +1,11 @@
+## [1.2.1] - 2026-10-29
+
+### New capabilities
+- The converter reads the supported duty plan's file structure itself, so the Windows download and the browser bundle no longer carry a third-party PDF library while every published calendar, warning, report and refusal stays the same.
+
+### Fixes
+- Slice at the header and pin every accepted spelling
+[1.2.0...1.2.1](https://github.com/duty2cal/duty2cal/compare/v1.2.0...v1.2.1)
 ## [1.2.0] - 2026-10-28
 
 ### New capabilities
