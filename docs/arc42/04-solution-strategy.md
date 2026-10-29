@@ -17,7 +17,7 @@
 | Concern | Choice | Rationale (see ADR) |
 |---|---|---|
 | Language / runtime | Rust edition 2021; the stable release pinned in `rust-toolchain.toml` | Supplied constraint; chapter 2. |
-| PDF reading | `lopdf = "=0.46.0"` object/xref layer with the project's own content, font, CMap and positioning interpretation in `duty2cal-pdf`; the pinned `pdfplumber = "=0.4.1"` is a test-only oracle | ADR-0008; chapter 2. |
+| PDF reading | `lopdf = "=0.44.0"` object/xref layer with the project's own content, font, CMap and positioning interpretation in `duty2cal-pdf`; the pinned `pdfplumber = "=0.4.1"` is a test-only oracle | ADR-0008; chapter 2. |
 | Calendar output | Hand-written RFC 5545 in `duty2cal-core/src/adapters/ics` | Supplied constraint. |
 | Module boundaries | Two-crate workspace + four enforcement levels | ADR-0002. |
 | Licence | MPL-2.0 for the whole project | ADR-0001. |

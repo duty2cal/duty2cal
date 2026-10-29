@@ -1,21 +1,12 @@
 ---
 status: accepted
 date: 2026-10-28
-amended: 2026-10-29
 decision-makers: operator (kressnerd)
 consulted: none
 informed: none
 ---
 
 # Own the extraction of the one supported duty plan and keep the third-party extractor as a test-only oracle
-
-> **Amended 2026-10-29** by the object-layer bump: `lopdf` moves from 0.44.0 to
-> 0.46.0, adding the brotli decompressor. The differential tests (classic xref,
-> xref stream, object streams, multipage plan) stay green against the test
-> oracle; the Windows executable grows from 841,728 B to 1,038,336 B and the
-> saving over the extractor's 2,233,584-byte host stack falls from 61–63% to
-> 53.5%. The decision to own the interpretation behind the object layer is
-> unchanged.
 
 ## Qualification
 
@@ -105,7 +96,7 @@ the already-landed `panic = "abort"` is the last cheap lever.
 ## Considered Options
 
 - **Keep the current extractor** (`pdfplumber = "=0.4.1"` unchanged).
-- **Own the interpretation behind a small object layer** (`lopdf` 0.46.0 for
+- **Own the interpretation behind a small object layer** (`lopdf` 0.44.0 for
   objects, pages, decoded content, xref tables/streams and object streams;
   project-owned tokenizer, text state, fonts, CMaps, positioning and refusals).
 - **Own the file structure as well** (xref tables and streams, object streams,
@@ -117,26 +108,22 @@ the already-landed `panic = "abort"` is the last cheap lever.
 
 Chosen option: **Own the interpretation behind a small object layer**, because
 it removes the third-party extractor from both shipped graphs while the
-measured object-layer floor left a 61–63% saving at 0.44.0 (the 0.46.0 object
-layer lands at 1,038,336 B, a 53.5% saving), and because the corpus's xref
-streams and object streams stay with `lopdf` instead of becoming the project's
-repair problem.
+measured object-layer floor still leaves a 61–63% saving, and because the
+corpus's xref streams and object streams stay with `lopdf` instead of becoming
+the project's repair problem.
 
 ### Consequences
 
 - Good, because the Windows executable and the browser bundle lose the
   extractor's 1,938,024-byte host stack; the object layer's measured floor is
-  779,016 B against 2,233,584 B today, and the landed Windows executable
-  measured 841,728 B at 0.44.0 and 1,038,336 B at 0.46.0 (amended 2026-10-29),
-  still inside the 2,097,152-byte budget.
+  779,016 B against 2,233,584 B today, and the landed host build is
+  [INFERENCE] ≈820–860 KB.
 - Good, because the supported plan's calendar, warnings and row diagnostics are
   compared with the extractor as a test-only oracle rather than migrated by
   inspection.
-- Bad, because `lopdf` 0.44.0 cost 483,456 B over the no-PDF floor, the 0.46.0
-  bump adds the brotli decompressor and raises the Windows executable from
-  841,728 B to 1,038,336 B (measured 2026-10-29), and it still compiles its
-  encryption stack, with no feature to drop it; going below that requires
-  owning xref and streams. Recorded as TD-030 in chapter 11.
+- Bad, because `lopdf` 0.44.0 costs 483,456 B over the no-PDF floor and still
+  compiles its encryption stack, with no feature to drop it; going below that
+  requires owning xref and streams. Recorded as TD-030 in chapter 11.
 - Bad, because the frozen subset may refuse a later Jeppesen plan whose
   construct is outside it; the refusal is explicit, but the plan does not
   convert until a later ADR widens the subset with evidence. Recorded as R-077.
@@ -178,15 +165,13 @@ repair problem.
 ### Own the interpretation behind a small object layer
 
 - Good, because the measured floor is 779,016 B (a 65.1% reduction from
-  2,233,584 B) and the landed Windows executable measured 841,728 B at 0.44.0
-  (a 61–63% saving) and 1,038,336 B at 0.46.0 (a 53.5% saving), amended
-  2026-10-29.
+  2,233,584 B) and the landed build is [INFERENCE] ≈820–860 KB, a 61–63%
+  saving.
 - Good, because `lopdf` keeps xref streams, object streams and filters out of
   the project's code while the project owns the narrow interpretation the plan
   actually uses.
-- Bad, because the object layer's cost remains and grew with 0.46.0: 483,456 B
-  over the no-PDF floor at 0.44.0, and a 1,038,336-byte Windows executable at
-  0.46.0 (amended 2026-10-29), including its encryption stack.
+- Bad, because 483,456 B of object-layer code, including its encryption stack,
+  remains.
 
 ### Own the file structure as well
 
