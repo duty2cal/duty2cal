@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "developer-setup",
+  "status": "passed",
+  "head": "000ef8b2608d091bbbc8c829184b9463d19f955a",
+  "features_path": "givn/changes/developer-setup/specs",
+  "features_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "command_digest": "1031237dac4a7328aa009dc5586392005a11f5408a7dc7b8a4726efc55a93a8e",
+  "command": "./run-tests.sh",
+  "tested_content_digest": "7700c27d7642b359c164470b0fe0359c36774406388c1591ac83e8cdc0a15079",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 140,
+    "passed": 140,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1793267345
+}
