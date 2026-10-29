@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MPL-2.0
 """Measure the Windows GNU executable against the same revision with the
-previous extraction and lock restored.
+previous file-structure layer and lock restored.
 
 The measurement is one-shot: when the restored base tree no longer names
-`pdfplumber` in `crates/duty2cal-pdf/Cargo.toml`'s `[dependencies]`, the run
+`lopdf` in `crates/duty2cal-pdf/Cargo.toml`'s `[dependencies]`, the run
 records `status: "not applicable"` with the landed size and exits 0.
 """
 
@@ -31,11 +31,11 @@ def git(repo: Path, *args: str) -> str:
     return run(["git", *args], repo).stdout.strip()
 
 
-def names_extractor(manifest: Path) -> bool:
-    """Whether the manifest's `[dependencies]` section names pdfplumber."""
+def names_previous_layer(manifest: Path) -> bool:
+    """Whether the manifest's `[dependencies]` section names the removed file-structure library."""
     text = manifest.read_text()
     match = re.search(r"^\[dependencies\](.*?)(?=^\[|\Z)", text, re.S | re.M)
-    return bool(match and "pdfplumber" in match.group(1))
+    return bool(match and "lopdf" in match.group(1))
 
 
 def main() -> int:
@@ -100,7 +100,7 @@ def main() -> int:
             "base_lock_sha256": __import__("hashlib").sha256(base_lock.read_bytes()).hexdigest(),
         }
 
-        if names_extractor(manifest):
+        if names_previous_layer(manifest):
             build = run(
                 ["cargo", "build", "--release", "--target", TARGET, "-p", "duty2cal"],
                 worktree,
@@ -129,7 +129,7 @@ def main() -> int:
 
         (out / "extraction-backend.json").write_text(json.dumps(report, indent=2) + "\n")
         markdown = [
-            "# Extraction backend measurement",
+            "# Previous file-structure layer measurement",
             "",
             f"- status: {report['status']}",
             f"- landed revision: `{landed_sha}`",

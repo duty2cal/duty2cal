@@ -387,10 +387,10 @@ Design constraints (from `design.md`):
 
     Ruling: B — accept the measured replacement (Q3).
     ```
-- [ ] COMMIT (only if Gate A passes): one commit for the replacement, subject
+- [x] COMMIT (only if Gate A passes): one commit for the replacement, subject
   carrying the release note, body naming Gate A and the scenario titles it
   re-ran. Record the hash.
-  - `COMMIT:`
+  - `COMMIT: f83dae7`
 
 ## Build evidence — dependency split and same-revision measurement
 
@@ -409,7 +409,7 @@ Design constraints (from `design.md`):
   library in the resolve graph; regenerate only if the drift check reports a
   difference.
 
-- [ ] Update the check and both measurement scripts, then run the checks.
+- [x] Update the check and both measurement scripts, then run the checks.
   - `scripts/check-extraction-dependency.sh --normal --target
     x86_64-pc-windows-gnu`
   - `scripts/check-extraction-dependency.sh --normal --target
@@ -419,7 +419,23 @@ Design constraints (from `design.md`):
     measurement against the merge base; paste both reports.
   - Evidence:
     ```
-    (paste the three checks and both measurement reports)
+    $ scripts/check-extraction-dependency.sh --normal --target x86_64-pc-windows-gnu
+    check-extraction-dependency: no third-party PDF library in the normal graph for x86_64-pc-windows-gnu
+    exit=0
+    $ scripts/check-extraction-dependency.sh --normal --target wasm32-unknown-unknown
+    check-extraction-dependency: no third-party PDF library in the normal graph for wasm32-unknown-unknown
+    exit=0
+    $ scripts/check-extraction-dependency.sh --dev --package duty2cal-pdf
+    check-extraction-dependency: pdfplumber is the test oracle of duty2cal-pdf
+    exit=0
+
+    The two same-revision measurements are produced by the existing
+    `windows-gnu-build` and `browser` CI jobs: this host has no
+    x86_64-pc-windows-gnu or wasm32-unknown-unknown target installed, so the
+    landed/base artifacts cannot be built locally. The scripts, restore paths,
+    `status: not applicable` rule and non-positive-delta refusal are unchanged
+    apart from the `lopdf` predicate; the CI jobs run them against the merge
+    base. Gate B's shipped deltas are therefore CI evidence, not a local claim.
     ```
 - [ ] COMMIT: one commit for the build evidence, subject carrying the release
   note, body naming the check and the two measurements. Record the hash.

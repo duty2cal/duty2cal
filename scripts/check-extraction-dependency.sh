@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MPL-2.0
-# Check the mechanical dependency split: no third-party PDF extractor in a
+# Check the mechanical dependency split: no third-party PDF library in a
 # shipped graph, the oracle present in the test graph.
 #
 # Usage:
@@ -45,11 +45,13 @@ case "$mode" in
       echo "check-extraction-dependency: --normal requires --target" >&2
       exit 2
     fi
-    if cargo tree -e normal --target "$target" -p duty2cal | grep -q 'pdfplumber'; then
-      echo "check-extraction-dependency: pdfplumber appears in the normal graph for $target" >&2
-      exit 1
-    fi
-    echo "check-extraction-dependency: no pdfplumber in the normal graph for $target"
+    for crate in pdfplumber lopdf; do
+      if cargo tree -e normal --target "$target" -p duty2cal | grep -q "$crate"; then
+        echo "check-extraction-dependency: $crate appears in the normal graph for $target" >&2
+        exit 1
+      fi
+    done
+    echo "check-extraction-dependency: no third-party PDF library in the normal graph for $target"
     ;;
   dev)
     if [ -z "$package" ]; then

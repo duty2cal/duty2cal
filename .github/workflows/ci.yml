@@ -108,7 +108,7 @@ jobs:
             base="$(git merge-base HEAD origin/main)"
           fi
           echo "sha=$base" >> "$GITHUB_OUTPUT"
-      - name: Check that the browser graph carries no extractor
+      - name: Check that the browser graph carries no third-party PDF library
         run: scripts/check-extraction-dependency.sh --normal --target wasm32-unknown-unknown
       # The browser scenarios, each run by name so a failing one names itself.
       - name: Run the browser smoke
@@ -346,9 +346,9 @@ jobs:
           fi
           echo "sha=$base" >> "$GITHUB_OUTPUT"
       - run: cargo build --release --target x86_64-pc-windows-gnu
-      - name: Check that the Windows graph carries no extractor
+      - name: Check that the Windows graph carries no third-party PDF library
         run: scripts/check-extraction-dependency.sh --normal --target x86_64-pc-windows-gnu
-      - name: Measure the extraction backend against the same revision
+      - name: Measure the previous file-structure layer against the same revision
         run: |
           python3 scripts/measure_extraction_backend.py \
             --repo . \

@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MPL-2.0
-"""Measure the browser bundle against the same revision with the previous
-extraction and lock restored.
+"""Measure the browser bundle against the same revision with the previous file-structure layer and lock restored.
 
 Same one-shot status rule as `measure_extraction_backend.py`: a restored base
 tree whose `crates/duty2cal-pdf/Cargo.toml` `[dependencies]` no longer name
-`pdfplumber` records `status: "not applicable"` with the landed sizes and exits
+`lopdf` records `status: "not applicable"` with the landed sizes and exits
 0. When measured, the WASM module must be smaller; the inlined module's size is
 reported beside it.
 """
@@ -33,10 +32,11 @@ def git(repo: Path, *args: str) -> str:
     return run(["git", *args], repo).stdout.strip()
 
 
-def names_extractor(manifest: Path) -> bool:
+def names_previous_layer(manifest: Path) -> bool:
+    """Whether the manifest's `[dependencies]` section names the removed file-structure library."""
     text = manifest.read_text()
     match = re.search(r"^\[dependencies\](.*?)(?=^\[|\Z)", text, re.S | re.M)
-    return bool(match and "pdfplumber" in match.group(1))
+    return bool(match and "lopdf" in match.group(1))
 
 
 def sizes(root: Path) -> dict[str, int]:
@@ -98,7 +98,7 @@ def main() -> int:
             ).hexdigest(),
         }
 
-        if names_extractor(worktree / "crates/duty2cal-pdf/Cargo.toml"):
+        if names_previous_layer(worktree / "crates/duty2cal-pdf/Cargo.toml"):
             build = run(["bash", "scripts/build-web.sh"], worktree, check=False)
             if build.returncode != 0:
                 print(build.stdout, build.stderr, file=sys.stderr)
