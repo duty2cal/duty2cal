@@ -104,7 +104,7 @@ rustup.
 
 `givn spec route --change developer-setup` reported no signal ("the top
 candidates tie at 13.00"). The change adds no product behaviour, so `specs` is
-skipped in `.givn-skip`.
+skipped in the change's `.givn-skip`.
 
 | Proposed capability | Decision | Rationale |
 |---|---|---|

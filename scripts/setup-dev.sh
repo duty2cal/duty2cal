@@ -20,6 +20,7 @@ case "${1:-}" in
 esac
 
 missing=0
+mismatch=0
 report() {
   printf 'setup-dev: %s\n' "$*" >&2
   missing=1
@@ -117,6 +118,9 @@ if command -v npm >/dev/null 2>&1; then
     npm ci --prefix web/e2e
     npx --prefix web/e2e playwright install chromium
     if [ "$(uname -s)" = Linux ]; then
+      note "host packages the browser needs (dry run):"
+      npx --prefix web/e2e playwright install-deps --dry-run chromium 2>&1 \
+        | sed 's/^/setup-dev: /' || true
       chrome_bin="$(find "${PLAYWRIGHT_BROWSERS_PATH:-$HOME/.cache/ms-playwright}" \
         -path '*/chrome-linux/chrome' -type f 2>/dev/null | head -n 1 || true)"
       if [ -n "$chrome_bin" ]; then
@@ -129,6 +133,15 @@ if command -v npm >/dev/null 2>&1; then
   fi
 else
   report "npm is not installed; install Node $node_major"
+fi
+
+if [ -n "${PLAYWRIGHT_BROWSERS_PATH:-}" ] && [ -n "${PLAYWRIGHT_DRIVER_VERSION:-}" ] \
+  && [ -f web/e2e/node_modules/playwright/package.json ]; then
+  npm_playwright="$(node -p "require('./web/e2e/node_modules/playwright/package.json').version" 2>/dev/null || true)"
+  if [ -n "$npm_playwright" ] && [ "$npm_playwright" != "$PLAYWRIGHT_DRIVER_VERSION" ]; then
+    mismatch=1
+    report "Playwright $npm_playwright in web/e2e does not match the browser build $PLAYWRIGHT_DRIVER_VERSION; run 'npm ci --prefix web/e2e' or update the browser pin"
+  fi
 fi
 
 need() {
@@ -147,6 +160,9 @@ if ! command -v x86_64-w64-mingw32-gcc >/dev/null 2>&1; then
   esac
 fi
 
+if [ "$mismatch" -ne 0 ]; then
+  exit 1
+fi
 if [ "$check" = 1 ]; then
   if [ "$missing" -ne 0 ]; then
     exit 1

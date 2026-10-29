@@ -147,7 +147,7 @@ The size attribution remains in the `windows-gnu-build` job: the job installs `c
 | Key software deployed | None; the environment is the checkout plus the installed toolchain |
 
 - `scripts/setup-dev.sh` brings a Linux or macOS machine to that state; `nix develop` brings a `x86_64-linux` Nix machine to the same state from the same file. Neither needs the other.
-- The bootstrap runs `npm ci --prefix web/e2e` before any browser command and downloads Chromium without root; it names a missing host library and its package instead of installing it. The Nix shell supplies Node, `wasm-pack` and the browser build, not the npm client.
+- The bootstrap runs `npm ci --prefix web/e2e` before any browser command and downloads Chromium without root; it prints the host package list from `playwright install-deps --dry-run`, names a missing host library instead of installing it, and refuses a browser-build/npm-client mismatch. The Nix shell supplies Node, `wasm-pack` and the browser build, not the npm client; its hook refuses the same mismatch once the client exists.
 - `scripts/check-toolchain.sh` refuses a different compiler, a sysroot without `llvm-cov`/`llvm-profdata`, or a set `LLVM_COV`/`LLVM_PROFDATA`; `run-tests.sh` and `measure-coverage.sh` run it first, so no test or report uses a second LLVM.
 - `cargo build --release --target x86_64-pc-windows-gnu` runs on a Linux machine after setup; the non-Nix path needs the distribution's `mingw-w64` package, and the flake provides the cross compiler and the two libraries the link needs.
 - The developer machine is not a supported download platform (chapter 2); it is the CI, coverage and local test host.

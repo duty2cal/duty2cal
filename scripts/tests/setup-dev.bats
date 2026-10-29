@@ -53,6 +53,26 @@ EOS
   [[ "$output" != *"installing"* ]]
 }
 
+@test "a browser build that differs from the npm client is refused" {
+  mkdir -p "$tmp/web/e2e/node_modules/playwright"
+  printf '%s\n' '{"version":"1.60.0"}' >"$tmp/web/e2e/node_modules/playwright/package.json"
+  cat >"$tmp/bin/node" <<'EOS'
+#!/usr/bin/env bash
+case "${1:-}" in
+  -v) printf 'v24.1.0\n' ;;
+  -p) printf '1.60.0\n' ;;
+esac
+EOS
+  chmod +x "$tmp/bin/node"
+  run env PATH="$tmp/bin:$tool_path" \
+    PLAYWRIGHT_BROWSERS_PATH="$tmp/browsers" \
+    PLAYWRIGHT_DRIVER_VERSION=1.64.1 \
+    "$tmp/scripts/setup-dev.sh" --check
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Playwright 1.60.0"* ]]
+  [[ "$output" == *"does not match the browser build 1.64.1"* ]]
+}
+
 @test "a different Node major is refused" {
   cat >"$tmp/bin/node" <<'EOS'
 #!/usr/bin/env bash

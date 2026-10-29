@@ -20,8 +20,10 @@ runs:
         set -euo pipefail
         rustup show
 
-    - name: Assert the pinned toolchain and its LLVM tools
+    - name: Assert the pinned toolchain, components and LLVM tools
       shell: bash
       run: |
         set -euo pipefail
         scripts/check-toolchain.sh
+        cargo fmt --version
+        cargo clippy --version
