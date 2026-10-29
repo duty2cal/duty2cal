@@ -319,6 +319,26 @@ pub fn build_truncated_plan() -> Vec<u8> {
     bytes
 }
 
+/// Build a supported plan whose cross-reference pointer lies outside the file.
+pub fn build_bad_startxref_plan() -> Vec<u8> {
+    let bytes = build_plan(&equivalence_plan(), Encoding::ClassicXref);
+    let needle = b"startxref\n";
+    let position = bytes
+        .windows(needle.len())
+        .rposition(|window| window == needle)
+        .expect("a generated plan carries startxref");
+    let start = position + needle.len();
+    let end = start
+        + bytes[start..]
+            .iter()
+            .take_while(|byte| byte.is_ascii_digit())
+            .count();
+    let mut corrupted = bytes[..start].to_vec();
+    corrupted.extend_from_slice(format!("{}", bytes.len() + 1000).as_bytes());
+    corrupted.extend_from_slice(&bytes[end..]);
+    corrupted
+}
+
 /// Build a Type3 plan that prints an identifying name.
 pub fn build_privacy_plan() -> Vec<u8> {
     let mut items = equivalence_plan();

@@ -220,7 +220,7 @@ Design constraints (from `design.md`):
     ```
 - [x] COMMIT: one commit for RED+GREEN+REFACTOR, subject carrying the release
   note, body naming this scenario. Record the hash.
-  - `COMMIT:`
+  - `COMMIT: 8b7d660`
 
 ## Scenario 2 — A plan whose cross-reference pointer lies outside the file is refused as unreadable
 
@@ -235,32 +235,53 @@ Design constraints (from `design.md`):
   (existing step); non-zero process exit status (existing step).
 - The refusal contains no printed plan content and never panics.
 
-- [ ] RED: remove `@wip` from this scenario only; bind the new Given with
+- [x] RED: remove `@wip` from this scenario only; bind the new Given with
   `unimplemented!("<phrase>")`; run
   `./run-tests.sh --name "A plan whose cross-reference pointer lies outside the file is refused as unreadable"`.
   Must exit non-zero. Paste the output.
   - Evidence:
     ```
-    (paste the targeted run and its non-zero exit)
+    $ ./run-tests.sh --name "A plan whose cross-reference pointer lies outside the file is refused as unreadable"
+    Scenario: A plan whose cross-reference pointer lies outside the file is refused as unreadable
+     ✘  Given a supported duty plan whose cross-reference pointer lies outside the file
+        Step panicked. Captured output: not implemented: a supported duty plan whose cross-reference pointer lies outside the file
+    1 scenario (1 failed)
+    1 step (1 failed)
+    exit=1
     ```
-- [ ] GREEN: implement the fixture and the Given; run the targeted command.
+- [x] GREEN: implement the fixture and the Given; run the targeted command.
   Must exit zero. List every production file touched.
   - Production files:
     ```
-    (list the fixture and step files touched)
+    crates/duty2cal-pdf-fixtures/src/lib.rs — build_bad_startxref_plan()
+    apps/cli/tests/steps/own_the_duty_plan_extraction.rs — the new Given
     ```
   - Evidence:
     ```
-    (paste the targeted run and its zero exit)
+    $ ./run-tests.sh --name "A plan whose cross-reference pointer lies outside the file is refused as unreadable"
+    Scenario: A plan whose cross-reference pointer lies outside the file is refused as unreadable
+     ✔  Given a supported duty plan whose cross-reference pointer lies outside the file
+     ✔  When the release maintainer converts it through the executable
+     ✔  Then no calendar is published
+     ✔  And the numbered failure report names the source PDF and that the source is not a readable PDF
+     ✔  And the executable reports failure through a non-zero process exit status
+    1 scenario (1 passed)
+    5 steps (5 passed)
+    exit=0
     ```
-- [ ] REFACTOR: deduplicate the refusal assertion with the truncated-document
+- [x] REFACTOR: deduplicate the refusal assertion with the truncated-document
   step only if the phrase stays bound; re-run the targeted command. Must still
   exit zero.
   - Evidence:
     ```
-    (paste the targeted run and its zero exit)
+    $ cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings
+    both exit 0
+    $ ./run-tests.sh --name "A plan whose cross-reference pointer lies outside the file is refused as unreadable"
+    1 scenario (1 passed)
+    5 steps (5 passed)
+    exit=0
     ```
-- [ ] COMMIT: one commit for RED+GREEN+REFACTOR, subject carrying the release
+- [x] COMMIT: one commit for RED+GREEN+REFACTOR, subject carrying the release
   note, body naming this scenario. Record the hash.
   - `COMMIT:`
 

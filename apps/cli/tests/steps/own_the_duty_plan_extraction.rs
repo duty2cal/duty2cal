@@ -267,6 +267,14 @@ async fn the_numbered_failure_report_names_the_unsupported_family(w: &mut DutyWo
     );
 }
 
+#[given("a supported duty plan whose cross-reference pointer lies outside the file")]
+async fn a_supported_duty_plan_whose_cross_reference_pointer_lies_outside_the_file(
+    w: &mut DutyWorld,
+) {
+    let bytes = fixtures::build_bad_startxref_plan();
+    w.source = Some(write_plan(w, "roster.pdf", bytes));
+}
+
 #[given("a truncated PDF")]
 async fn a_truncated_pdf(w: &mut DutyWorld) {
     let bytes = fixtures::build_truncated_plan();

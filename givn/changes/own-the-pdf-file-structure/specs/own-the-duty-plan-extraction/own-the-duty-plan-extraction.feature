@@ -21,7 +21,7 @@ Feature: Own the duty-plan extraction
       | an indirect stream length |
       | resources inherited from the page tree |
 
-  @givn.added @wip
+  @givn.added
   Scenario: A plan whose cross-reference pointer lies outside the file is refused as unreadable
     Given a supported duty plan whose cross-reference pointer lies outside the file
     When the release maintainer converts it through the executable
