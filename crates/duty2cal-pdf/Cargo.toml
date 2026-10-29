@@ -7,8 +7,9 @@ license.workspace = true
 
 [dependencies]
 duty2cal-core = { path = "../duty2cal-core" }
-# The file-structure layer only; the interpretation is project code in `src/reader`.
-lopdf = { version = "=0.44.0", default-features = false }
+# FlateDecode only; the file structure and the interpretation are project code
+# in `src/reader`.
+miniz_oxide = { version = "=0.9.1", default-features = false, features = ["with-alloc"] }
 time = "0.3"
 
 [dev-dependencies]

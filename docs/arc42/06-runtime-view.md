@@ -33,7 +33,7 @@ sequenceDiagram
 **Steps:**
 
 1. The CLI reads the source path and calls the orchestrator.
-2. The orchestrator recognizes the family, builds the source snapshot, and extracts positioned content and the revision footer; the bytes are read as a PDF's file structure and then interpreted — by `reader/structure/` under the ADR-0008 amendment proposed on 2026-10-29, and by `lopdf` until Gate A is met.
+2. The orchestrator recognizes the family, builds the source snapshot, and extracts positioned content and the revision footer; the bytes are read as a PDF's file structure and then interpreted — by `reader/structure/` under the accepted ADR-0008 amendment of 2026-10-29, the project's own code.
 3. The domain classifies activities, resolves each UTC endpoint's date, composes descriptions and events, and collects every conversion error and warning; an unrecognized code with printed evidence is represented with a warning.
 4. On no error, the orchestrator asks the publication port for an unused calendar path and writes the calendar.
 5. The CLI prints the actual new path and exits zero, and publishes a warning report when warnings were collected.
@@ -121,7 +121,7 @@ sequenceDiagram
 
 **Steps:**
 
-1. The owned extraction checks the encrypted flag, the page box and rotation, the font subtype/encoding/`ToUnicode` map, and the content operators and filters before it emits words; the first construct outside the subset names itself and its page. Under the ADR-0008 amendment proposed on 2026-10-29 the file structure is read by project code first: `/Encrypt` in a trailer is the encrypted-document refusal, and when the structure fails before a trailer is read the existing byte scan for `/Encrypt` keeps that named refusal instead of a generic unreadable one.
+1. The owned extraction checks the encrypted flag, the page box and rotation, the font subtype/encoding/`ToUnicode` map, and the content operators and filters before it emits words; the first construct outside the subset names itself and its page. Under the accepted ADR-0008 amendment of 2026-10-29 the file structure is read by project code first: `/Encrypt` in a trailer is the encrypted-document refusal, and when the structure fails before a trailer is read the existing byte scan for `/Encrypt` keeps that named refusal instead of a generic unreadable one.
 2. `ConvertError::Source` keeps the two-line `Source PDF:` / `Reason:` report; the reason reads `the source uses a PDF construct outside the supported family: <construct>` with ` on page <n>` when known.
 3. No calendar, warning report or empty calendar is written. The report carries the construct name and page, never printed plan text, a station, a name, a date or an activity code.
 4. A truncated or malformed file is `Unreadable`; a readable PDF without the supported detail table is `UnsupportedFamily`; a panic is a defect, not a refusal, and the refusal scenarios assert the failure without an abort.
@@ -545,7 +545,7 @@ flowchart TB
 
 1. The Windows job builds the landed revision's `x86_64-pc-windows-gnu` executable; the browser job builds the landed bundle with the pinned `wasm-pack`.
 2. `scripts/measure_extraction_backend.py` creates a temporary worktree of the landed revision, restores only `crates/duty2cal-pdf/` and `Cargo.lock` from the base revision, and rebuilds the CLI package for the same target while the restored base `crates/duty2cal-pdf/Cargo.toml` still names `lopdf` in its `[dependencies]`. `scripts/measure_browser_bundle.py` does the same for the wasm bundle and its inline module.
-3. When the restored base tree's `[dependencies]` no longer name `lopdf` — the state of every base after this replacement lands — the script builds nothing, writes `status: not applicable` with the resolved base revision and the landed size, and exits 0. This is the operator decision of 2026-10-28: the same-revision measurement is one-shot for the introducing revision, and after landing no automated size gate remains; the published binary's size and the unchanged 2,097,152-byte budget are the only automated numbers left.
+3. When the restored base tree's `[dependencies]` no longer name `lopdf` — the state of every base after the 2026-10-29 replacement landed — the script builds nothing, writes `status: not applicable` with the resolved base revision and the landed size, and exits 0. This is the operator decision of 2026-10-28: the same-revision measurement is one-shot for the introducing revision, and after landing no automated size gate remains; the published binary's size and the unchanged 2,097,152-byte budget are the only automated numbers left.
 4. The reports name the landed and base revisions, the target, the two sizes, the saved bytes and percent, and the toolchain; the Windows job appends the markdown to the step summary and uploads the artifacts.
 5. A restored tree that does not build, a diff beyond the allowed paths, a non-Windows artifact or a measured run's non-positive delta is a named refusal, not a number. The existing 2,097,152-byte budget and the published binary's size are reported separately and are not the baseline.
 
@@ -553,11 +553,15 @@ flowchart TB
 longer contains the previous extraction; a base-revision checkout would
 attribute unrelated changes. The host measurements in the change's evidence are
 attribution, not acceptance. This scenario is **Gate B** of the ADR-0008
-amendment proposed on 2026-10-29. Its **Gate A** — a host prototype at or below
-the amendment's [INFERENCE] ≈450 KB bound with a green six-file differential —
-runs before the replacement is built and can stop the change; it is not met at
-design time, so `lopdf` still supplies the file structure in both shipped
-graphs.
+amendment accepted on 2026-10-29, and it still measures the shipped Windows and
+browser artifacts. Its **Gate A** — a host prototype at or below the
+amendment's [INFERENCE] ≈450 KB bound with a green six-file differential — ran
+before the replacement and measured 548,432 B (548,424 B stripped) against the
+926,104 B baseline, −377,672 B (−40.8%), with the differential and all six
+private plans green. The result is roughly 98 KB above the estimate; the
+release owner accepted the replacement on that measured evidence, so the
+project's own file structure supplies that layer in both shipped graphs and the
+host figure is gate evidence, not shipped evidence.
 
 ## Scenario: The existing public home is adopted into the declared configuration
 

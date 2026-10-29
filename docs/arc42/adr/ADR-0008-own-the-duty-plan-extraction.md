@@ -9,19 +9,27 @@ informed: none
 
 # Own the extraction of the one supported duty plan and keep the third-party extractor as a test-only oracle
 
-> **Amendment 2026-10-29 (proposed, pending Gate A).** The project proposes to
-> read the supported plan's file structure itself — object syntax, classic
-> cross-reference tables, cross-reference streams, object streams, the trailer,
-> the page tree with its inherited boxes and resources, and Flate decoding —
-> leaving only the pure-Rust `miniz_oxide` decompressor in the reading path, so
-> `lopdf` leaves the Windows and browser normal graphs and survives only in the
-> test graph under the oracle. The amendment is **proposed, not accepted**: the
-> reopen condition this record already carries — Gate A, a measured host
-> prototype at or below the [INFERENCE] ≈450 KB upper bound with a green
-> differential over the six-file corpus — is not met at design time. The
-> accepted boundary today is still the object layer plus the test-only oracle.
-> This record is amended in place, not superseded; see
-> "Amendment — 2026-10-29".
+> **Amendment 2026-10-29 (accepted).** The project reads the supported plan's
+> file structure itself — object syntax, classic cross-reference tables,
+> cross-reference streams, object streams, the trailer, the page tree with
+> `/Resources` inherited from `/Pages` and `/MediaBox`, `/CropBox` and `/Rotate`
+> read from the page dictionary, and Flate decoding — leaving only the
+> pure-Rust `miniz_oxide` decompressor in the reading path, so `lopdf` has left
+> the Windows and browser normal graphs and survives only in the test graph
+> under the oracle. The amendment is **accepted on 2026-10-29**. The reopen
+> condition this record already carries — Gate A, a measured host prototype at
+> or below the [INFERENCE] ≈450 KB upper bound with a green differential over
+> the six-file corpus — was measured on the host: the release executable is
+> **548,432 B** (548,424 B stripped) against the same host's **926,104 B** at
+> the accepted baseline, a saving of **377,672 B (40.8%)**. The result is
+> roughly 98 KB above the estimate, which predates 147 KB of program growth
+> since revision `30bbcb9` and overstates the removed library's file-size cost
+> by about 106 KB (377,672 B measured now against 483,456 B assumed). The
+> release owner accepted the replacement on that measured evidence, so the
+> accepted boundary today is the project-owned file structure plus the
+> test-only oracle. This record is amended in place, not superseded; see
+> "Amendment — 2026-10-29". The Gate A figure is host evidence; Gate B still
+> measures the shipped Windows and browser artifacts.
 
 ## Qualification
 
@@ -213,7 +221,7 @@ the project's repair problem.
   ever needs it, the measurement above is the starting evidence; no fork is
   built by this change.
 
-## Amendment — 2026-10-29: own the PDF file structure too (proposed, pending Gate A)
+## Amendment — 2026-10-29: own the PDF file structure too (accepted)
 
 ### Qualification verdict
 
@@ -291,35 +299,42 @@ replacement_adr: null
 
 ### Status of this amendment
 
-Proposed on 2026-10-29 by the change `own-the-pdf-file-structure`. It is not
-part of the accepted decision yet. The record's own reopen condition stands as
-the entry gate — **Gate A**: a measured host prototype at or below the
-[INFERENCE] ≈450 KB upper bound, with a green differential over the six-file
-corpus. Gate A is **not met** at design time: no prototype exists, and the
-arithmetic the ruling will use leaves roughly 7–18 KB of headroom below the
-bound before the replacing parser's own bytes are added (the 926,104 B host
-executable of 2026-10-28 minus the recorded 483,456 B object-layer cost is
-≈442,648 B, against a bound of ≈450,000–460,800 B). If Gate A fails, the change
-stops and this amendment concludes "not reopened": the accepted boundary in the
-Decision Outcome above is unchanged, `lopdf` stays in both shipped graphs, and
-TD-030 stays open.
+Accepted on 2026-10-29 by the release owner, on the measured Gate A result.
+The record's own reopen condition was the entry gate — **Gate A**: a measured
+host prototype at or below the [INFERENCE] ≈450 KB upper bound, with a green
+differential over the six-file corpus. The host release executable measured
+**548,432 B** (548,424 B stripped) against the same host's **926,104 B** at the
+accepted baseline: a saving of **377,672 B, or 40.8%**. The result is roughly
+98 KB above the ≈450 KB estimate. That estimate predates the 147 KB of program
+growth since revision `30bbcb9` and overstates the removed library's file-size
+cost by about 106 KB (377,672 B measured now against 483,456 B assumed); the
+parser itself is 111.4 KiB of `.text` — the whole `duty2cal-pdf` crate, 48.5 KiB
+above the previous extraction. The generated differential suite (10 cases) and
+all six private plans are green; the Windows and WASM normal graphs name
+neither `lopdf` nor `pdfplumber`, and `lopdf` remains only through the dev
+oracle.
 
-`status: accepted` therefore describes the record as a whole: the object-layer
-boundary and the test-only oracle in the Decision Outcome above are accepted and
-in force; the file-structure ownership in this amendment is proposed.
+The operator accepted the replacement on that measured evidence and directed
+that this record carry the measurement rather than the stale estimate. The
+file-structure ownership in this amendment is therefore part of the accepted
+decision, alongside the object-layer boundary and the test-only oracle in the
+Decision Outcome above, which remain in force. TD-030 closes. Gate B still
+measures the shipped Windows and browser artifacts: the host figure above is
+gate evidence, not shipped evidence, and the post-landing measurement remains a
+no-automated-gate residual (chapter 11, R-079).
 
-Which option the record would then name: the Decision Outcome above chooses
-"Own the interpretation behind a small object layer" and rejected "Own the file
-structure as well" only because no measured prototype existed. If Gate A is
-met, that outcome becomes "Own the file structure as well" and the consequences
-in this section apply; until the ruling, the outcome above stands unchanged.
+The Decision Outcome above originally chose "Own the interpretation behind a
+small object layer" and rejected "Own the file structure as well" only because
+no measured prototype existed. The measured result replaces that estimate as
+the decision input: the outcome is now "Own the file structure as well", and
+the consequences in this section apply.
 
-### What would change (if Gate A is met)
+### What changes
 
 - The project reads the supported plan's file structure inside
   `crates/duty2cal-pdf/src/reader/structure/`: object syntax, classic
   cross-reference table sections, cross-reference streams, object streams, the
-  trailer, the page tree with inherited boxes and resources, and Flate streams
+  trailer, the page tree with `/Resources` inherited from `/Pages` and `/MediaBox`, `/CropBox` and `/Rotate` read from the page dictionary, and Flate streams
   decoded through `miniz_oxide = "=0.9.1"` (`default-features = false`,
   `features = ["with-alloc"]`) — the only third-party crate left in the reading
   path.
@@ -342,7 +357,7 @@ in this section apply; until the ruling, the outcome above stands unchanged.
 
 ### Amendment consequences
 
-- Good, because after Gate A the reading path carries no third-party PDF
+- Good, because the accepted reading path carries no third-party PDF
   library: only `miniz_oxide` remains (20.4 KiB of host `.text` today), while
   the library's 140.4 KiB of host `.text` and the crates reached only through
   it (about 211 KiB together with its dependents) leave the shipped graphs.
@@ -359,10 +374,12 @@ in this section apply; until the ruling, the outcome above stands unchanged.
   refused — so a malformed document can now be refused where it used to
   convert; a corrupt zlib checksum is recovered through the previous reader's
   raw-deflate retry instead (chapter 11, R-083).
-- Bad, because the replacement may not pay: the ≈450 KB bound leaves 7–18 KB of
-  headroom, Gate A may stop the change, and Gate B refuses a non-positive
-  landed saving (chapter 11, R-084). TD-030 stays open until a later revision
-  records Gate A's report and Gate B's measured delta.
+- Bad, because the replacement may not pay on the shipped artifacts: the host
+  result missed the [INFERENCE] ≈450 KB bound by roughly 98 KB, and Gate B
+  refuses a non-positive landed saving (chapter 11, R-084). TD-030 closed on
+  the measured Gate A result; the post-landing measurement is a
+  no-automated-gate residual (R-079), so only Gate B can still show the shipped
+  gain is real.
 
 ### Amendment confirmation
 
@@ -371,7 +388,11 @@ in this section apply; until the ruling, the outcome above stands unchanged.
   --crates`, accept only at or below the ≈450 KB bound, then require
   `./scripts/validate-local-corpus.sh --differential` green over the six plans.
   The ruling belongs to `project-maintainer--release-owner`; a refusal is the
-  gate's own stop rule.
+  gate's own stop rule. **Measured 2026-10-29:** 548,432 B (548,424 B stripped)
+  against the 926,104 B baseline, −377,672 B (−40.8%), with the differential
+  and all six private plans green. The release owner accepted the replacement
+  on that evidence, so the bound's [INFERENCE] estimate is superseded as the
+  decision input.
 - **Gate B (landing, shipped artifacts):**
   `scripts/check-extraction-dependency.sh --normal --target
   x86_64-pc-windows-gnu` and `--target wasm32-unknown-unknown` name neither
@@ -404,5 +425,6 @@ in this section apply; until the ruling, the outcome above stands unchanged.
   impact", "Decisions", "Prototype and measurement gates", "Differences from
   the previous reader"); chapter 9 carries the register entry, chapter 11
   TD-030 and R-082–R-084, chapter 12 the term **File structure**, and chapter 2
-  the dependency constraint. It is proposed pending Gate A and is not part of
-  the accepted decision until that gate's report is recorded.
+  the dependency constraint. It is accepted as of 2026-10-29 on the measured
+  Gate A result (548,432 B against 926,104 B, −40.8%), recorded under "Status of
+  this amendment", and is part of the accepted decision.

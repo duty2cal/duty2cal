@@ -103,7 +103,7 @@ hardening was applied after both operator questions were answered.
 | The committed transcript printed literals | `write_transcript` formats `exit status: 0` and `normalised comparison: identical` | Design requires both values from the scenario state; `DutyWorld` gains the recorded comparison outcome; the e2e row and evidence contract say so |
 | `--tags @own-the-duty-plan-extraction` selects both delta scenarios, not only the outline | The tag sits on the Feature line | Wording corrected in both places |
 | `Unreadable(detail)` text changes and was not stated | `SourceError::Unreadable` carries the library's message today | Differences table row added: wording only; class, two-line form, numbering and page suffix unchanged |
-| Gate A's stop rule did not say what happens to the proposed `arc42-docs` edits | Every chapter marks the amendment "proposed, pending Gate A" | Gate A now says a stop reverts the amendment block and the affected statements |
+| Gate A's stop rule did not say what happens to the proposed `arc42-docs` edits | At review time every chapter marked the amendment "proposed, pending Gate A" | Gate A now says a stop reverts the amendment block and the affected statements |
 | `arc42.md` row 1 marked "No" while row 10 is "Yes" | Row 1 covers chapters 1 and 10 and claimed no quality attribute changes | Reason now says chapter 01 is unaffected and QS-048 is row 10 |
 | `amended:` frontmatter key was an undocumented extension | `docs/arc42/README.md` defines the five status values and no other keys | The key is documented in `docs/arc42/README.md` and `docs/arc42/adr/README.md`: it never replaces `status` and never encodes a pending state |
 
@@ -149,5 +149,78 @@ and neither duplicates the `@e2e` action. No scenario is merged or deleted.
   evidence path, the persona confirmations and the `2026-06.ics` UID lines.
 - No scenario was removed, no `@e2e` tag was changed, and `tasks.md` was not
   written.
+
+## Re-review after the Gate A implementation finding
+
+- **Finding.** The design's Page tree row claimed `/Resources`, `/MediaBox`,
+  `/CropBox` and `/Rotate` were all inherited down the chain. The previous
+  reader inherits only `/Resources` — the page's direct dictionary plus
+  `/Resources` *references* on the parent chain (`get_page_resources`) — while
+  it reads `/MediaBox`, `/CropBox` and `/Rotate` from the page dictionary. The
+  characterisation fixture exposed this: a direct resource dictionary on
+  `/Pages` is not inherited by `get_page_fonts`, so the inherited-resources
+  example failed against the current reader with "the page references no such
+  font".
+- **Correction.** The page-tree row, the `PageRotation` mapping, the
+  architecture diagram label, the `document.rs` and differences wording, and
+  the chapter-5 diagram label now state the previous reader's exact behaviour.
+  The fixture emits `/Resources` as an indirect reference on `/Pages`, which is
+  the form the library inherits. The proposal's two descriptive sentences, the
+  chapter-9 note, the ADR amendment and the Gate A task text were aligned with
+  the same factual wording; no scope, scenario, `@e2e` tag, decision-ledger
+  entry or measurement rule changed.
+- **Fresh-context re-check.** A separate subagent verified the corrected row
+  against `document.rs` and `lopdf 0.44.0`'s `get_page_resources`/
+  `get_page_fonts`, walked the ripple through the proposal, chapters 5/8/9, the
+  ADR and the task list, and reported `RE-CHECK: CLEAN` after the ripple fixes.
+  The general glossary definition of **File structure** stays as a definition of
+  PDF structure, not a support claim.
+- **Verdict.** The design-review remains PASS with the corrected design.
+
+### Q3 — Gate A ruling
+
+- Status: closed 2026-10-29 (operator chose option B)
+- Blocks: whether the file-structure reading lands, and therefore whether the
+  ADR-0008 amendment, TD-030 and the affected architecture chapters record a
+  result or a stop.
+- Context: Gate A measured the host release executable at **548,432 B**
+  (548,424 B stripped) against the same host's **926,104 B** at the accepted
+  baseline — **−377,672 B, −40.8%**. The ADR's reopen bound was an [INFERENCE]
+  ≈450 KB estimate, so the measurement is roughly **98 KB above** it: the
+  estimate predates 147 KB of program growth since revision `30bbcb9` and
+  overstates the removed library's file-size cost by ~106 KB (377,672 B
+  measured against 483,456 B assumed). The parser itself is 111.4 KiB of
+  `.text` — the whole `duty2cal-pdf` crate, 48.5 KiB above the previous
+  extraction. The generated differential suite (10 cases) and all six private
+  plans were green, and the Windows and WASM normal graphs name neither
+  `lopdf` nor `pdfplumber`; `lopdf` remains only through the dev oracle.
+- Options:
+  A. **Stop on the bound.** Treat the estimate as the contract and refuse the
+  replacement. Gain: the letter of the ADR's stated condition. Cost: the
+  measured 377,672 B (40.8%) saving and the working, differential-green reader
+  are discarded, and the library stays in both shipped graphs on the strength
+  of an estimate the measurement has already contradicted.
+  B. **Accept the measured replacement.** Take the measurement as the decision
+  input, record it in ADR-0008 in place of the estimate, and close TD-030.
+  Gain: the shipped graphs lose the last third-party PDF library on evidence
+  rather than on arithmetic, and the reader and build evidence land. Cost: the
+  ADR must state that its own bound was missed and why the estimate was wrong;
+  the parser ownership risks (R-082–R-084) become standing risks.
+  C. **Re-scope to a narrower saving.** Keep the library behind a feature or
+  recover the missing ~98 KB before accepting. Gain: the bound is met. Cost: a
+  second design-and-measurement round for a reader that already works and is
+  green, and the change's own start rule forbids inventing a second size lever.
+- Resolution: **B — accept the measured replacement.** The release owner ruled
+  that the measured evidence, not the stale estimate, is the decision input, so
+  the estimate's bound is superseded rather than the measurement gate being
+  widened for future changes.
+- What it authorizes: the project-owned reader and its build evidence land;
+  ADR-0008 records the measured result (548,432 B against 926,104 B, −40.8%,
+  ~98 KB above the bound) and the operator's acceptance instead of the
+  estimate; TD-030 closes; R-084 stands as the record of the measured outcome
+  with R-079's post-landing no-automated-gate residual. Gate B still measures
+  the shipped Windows and browser artifacts — the host figure is gate
+  evidence, not shipped evidence, and no chapter may present it as a landed
+  saving.
 
 DESIGN-REVIEW: PASS

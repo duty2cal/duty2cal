@@ -509,7 +509,7 @@ version = "0.1.0"
 dependencies = [
  "duty2cal-core",
  "duty2cal-pdf-fixtures",
- "lopdf",
+ "miniz_oxide",
  "pdfplumber",
  "time",
 ]

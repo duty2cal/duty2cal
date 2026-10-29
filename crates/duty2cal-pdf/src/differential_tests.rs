@@ -42,6 +42,51 @@ fn object_streams_plan_matches_the_oracle() {
 }
 
 #[test]
+fn predicted_xref_stream_plan_matches_the_oracle() {
+    compare_with_oracle(&fixtures::build_plan(
+        &fixtures::equivalence_plan(),
+        fixtures::Encoding::PredictedXrefStream,
+    ));
+}
+
+#[test]
+fn incremental_update_plan_matches_the_oracle() {
+    compare_with_oracle(&fixtures::build_plan(
+        &fixtures::equivalence_plan(),
+        fixtures::Encoding::IncrementalUpdate,
+    ));
+}
+
+#[test]
+fn indirect_length_plan_matches_the_oracle() {
+    compare_with_oracle(&fixtures::build_plan_with_options(
+        &fixtures::equivalence_plan(),
+        fixtures::Encoding::ClassicXref,
+        fixtures::LayoutOptions {
+            indirect_length: true,
+            ..fixtures::LayoutOptions::default()
+        },
+    ));
+}
+
+#[test]
+fn inherited_resources_plan_matches_the_oracle() {
+    compare_with_oracle(&fixtures::build_plan_with_options(
+        &fixtures::equivalence_plan(),
+        fixtures::Encoding::ClassicXref,
+        fixtures::LayoutOptions {
+            inherited_resources: true,
+            ..fixtures::LayoutOptions::default()
+        },
+    ));
+}
+
+#[test]
+fn corrupt_checksum_plan_matches_the_oracle() {
+    compare_with_oracle(&fixtures::build_corrupt_checksum_plan());
+}
+
+#[test]
 fn warned_plan_matches_the_oracle() {
     compare_with_oracle(&fixtures::build_plan(
         &fixtures::warned_plan(),

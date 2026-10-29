@@ -15,16 +15,18 @@ Every conversion either produces a complete calendar or fails explicitly. The `R
 ## Owned extraction and the frozen supported subset
 
 The shipped graphs read the one supported plan through an extraction the
-project owns. Under the accepted boundary `lopdf` supplies the object/xref
-layer and project code supplies the content tokenizer, text state,
-Type0/Identity-H fonts, `/W` advances, `ToUnicode` CMaps, glyph boxes and word
-assembly. The ADR-0008 amendment proposed on 2026-10-29 would put the file
-structure in project code as well — object syntax, classic cross-reference
-tables, cross-reference streams, object streams, the trailer, the page tree
-with its inherited boxes and resources, and Flate decoding — so only the
-pure-Rust `miniz_oxide` decompressor stays third-party in the reading path. The
-amendment is **proposed and pending Gate A**, so no chapter, report or public
-claim may state that `lopdf` has already left the shipped graphs. The seam is
+project owns. Under the accepted boundary the project supplies the file
+structure and the content tokenizer, text state, Type0/Identity-H fonts, `/W`
+advances, `ToUnicode` CMaps, glyph boxes and word assembly; `lopdf` is no
+longer part of that boundary. The ADR-0008 amendment accepted on 2026-10-29
+put the file structure in project code too — object syntax, classic
+cross-reference tables, cross-reference streams, object streams, the trailer,
+the page tree with `/Resources` inherited from `/Pages` and its boxes and
+rotation read from the page dictionary, and Flate decoding — so only the
+pure-Rust `miniz_oxide` decompressor stays third-party in the reading path, and
+the graphs no longer name the library. The measurement behind that acceptance
+was the host Gate A result: 548,432 B (548,424 B stripped) against the 926,104 B
+baseline, −377,672 B (−40.8%). The seam is
 the positioned word; the table construction below it is one implementation used
 by the executable and the browser, so the two routes cannot drift. ADR-0008
 freezes the subset to the constructs the reference plans and the generated
@@ -56,14 +58,14 @@ never printed plan content.
 
 The third-party extractor is a `[dev-dependencies]` oracle only.
 `scripts/check-extraction-dependency.sh` refuses it in the
-`x86_64-pc-windows-gnu` and `wasm32-unknown-unknown` normal graphs — and, once
-the 2026-10-29 replacement lands, refuses `lopdf` there too — and refuses a
+`x86_64-pc-windows-gnu` and `wasm32-unknown-unknown` normal graphs — and, since
+the 2026-10-29 replacement landed, refuses `lopdf` there too — and refuses a
 missing oracle in the dev graph. The oracle keeps its own `lopdf` copy, which
 is why `Cargo.lock` and the third-party notices still name it. The differential
 compares word text exactly and `x0`/`top` within 0.5 point, then the shared
 table output; the generated Identity-H corpus is the CI gate, and the opt-in
-real-corpus run (`./scripts/validate-local-corpus.sh --differential`) is both
-the only cover for the generator's exact bytes (R-078) and the prototype gate's
+real-corpus run (`./scripts/validate-local-corpus.sh --differential`) is the
+only cover for the generator's exact bytes (R-078) and was Gate A's
 precondition.
 
 ## Row diagnostics and two report kinds
@@ -675,8 +677,8 @@ failure and attempts a numbered diagnostic naming the source PDF and the
 reason, and when no report can be saved the primary failure remains visible.
 The product uses no `unwrap()`/`expect()` outside test code. The owned extraction
 returns `Result` on every path; a panic there is a defect, not a refusal. That
-rule covers the project's own parser when the file structure becomes project
-code under the ADR-0008 amendment proposed on 2026-10-29: every parse step
+rule covers the project's own parser, which reads the file structure under the
+accepted ADR-0008 amendment of 2026-10-29: every parse step
 returns `Result`, no parsed value is `unwrap`ped and no read is indexed without
 a bounds check, and a truncated or bad-pointer document stays the unreadable
 refusal. The host lever
@@ -738,17 +740,22 @@ The compared layer is named by the base manifest: the 2026-10-29 file-structure
 replacement keeps the two scripts and their `extraction-backend/` and
 `browser-bundle/` outputs, but their predicate matches `lopdf` in
 `crates/duty2cal-pdf`'s `[dependencies]` instead of `pdfplumber`. This scenario
-is **Gate B** of the ADR-0008 amendment proposed on 2026-10-29. **Gate A** — a
-recorded host prototype at or below the amendment's [INFERENCE] ≈450 KB bound
-with a green six-file differential — runs before the replacement is built and
-can stop the change; because it is not met at design time, the accepted graphs
-still carry the object layer.
+is **Gate B** of the ADR-0008 amendment accepted on 2026-10-29, and it still
+measures the shipped Windows and browser artifacts. **Gate A** — a recorded
+host prototype at or below the amendment's [INFERENCE] ≈450 KB bound with a
+green six-file differential — was measured on 2026-10-29 at 548,432 B (548,424 B
+stripped) against the 926,104 B baseline, −377,672 B (−40.8%), with the
+differential (10 generated cases) and all six private plans green. The result
+missed the estimate by roughly 98 KB, which the release owner weighed as the
+decision: the replacement was accepted on that measured evidence rather than on
+the stale bound, so the graphs already carry the project-owned file structure
+and the host figure is gate evidence, not shipped evidence.
 
 A restored tree that does not build, a worktree diff beyond the allowed paths, a
 non-Windows artifact or a measured run's non-positive delta is a named refusal,
 not a number. A base revision that no longer names the previous layer in
-`crates/duty2cal-pdf`'s dependencies — the state of every base once this
-replacement has landed — is not a refusal: the script records
+`crates/duty2cal-pdf`'s dependencies — the state of every base once the 2026-10-29
+replacement landed — is not a refusal: the script records
 `status: not applicable` with the resolved base and the landed size and exits 0,
 because no baseline exists to restore. The size gate is consequently one-shot
 for the introducing revision; no automated size gate remains after landing. The

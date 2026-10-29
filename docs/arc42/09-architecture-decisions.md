@@ -15,7 +15,7 @@ Markdown file under `docs/arc42/adr/ADR-NNNN-short-slug.md`.
 | ADR-0005 | Declare the public home's GitHub configuration with OpenTofu and the GitHub provider | accepted | 2026-10-17 | [ADR-0005-declare-the-public-home-with-opentofu.md](adr/ADR-0005-declare-the-public-home-with-opentofu.md) |
 | ADR-0006 | Keep the applied state local, passphrase-encrypted and committed, and check configuration drift locally | accepted | 2026-10-17 (amended 2026-10-19) | [ADR-0006-encrypted-local-applied-state.md](adr/ADR-0006-encrypted-local-applied-state.md) |
 | ADR-0007 | Run the conversion in the browser through a WASM facade over the unchanged application | accepted | 2026-10-19 | [ADR-0007-browser-local-conversion-facade.md](adr/ADR-0007-browser-local-conversion-facade.md) |
-| ADR-0008 | Own the extraction of the one supported duty plan and keep the third-party extractor as a test-only oracle | accepted (amendment proposed 2026-10-29) | 2026-10-28 | [ADR-0008-own-the-duty-plan-extraction.md](adr/ADR-0008-own-the-duty-plan-extraction.md) |
+| ADR-0008 | Own the extraction of the one supported duty plan and keep the third-party extractor as a test-only oracle | accepted (amended 2026-10-29) | 2026-10-28 | [ADR-0008-own-the-duty-plan-extraction.md](adr/ADR-0008-own-the-duty-plan-extraction.md) |
 
 ADR-0001 and ADR-0002 were minted by the change to export released roster
 calendars (export-released-roster-calendar); ADR-0003 and ADR-0004 were minted
@@ -51,19 +51,26 @@ The word seam, the generated Identity-H corpus and the same-revision
 measurement commands are local mechanisms routed to `design.md` and the
 capability specification.
 
-ADR-0008 was **amended in place on 2026-10-29 (proposed, not accepted)** by the
-change to own the PDF file structure (own-the-pdf-file-structure). The
-amendment proposes that the project read the supported plan's file structure
-itself — object syntax, classic cross-reference tables, cross-reference streams,
-object streams, the trailer, the page tree with its inherited boxes and
-resources, and Flate decoding — so `lopdf` leaves the Windows and browser normal
-graphs and only the pure-Rust `miniz_oxide` decompressor remains in the reading
-path; the library survives in the test graph through the unchanged oracle. The
-amendment is **proposed, not accepted**: the reopen condition the record already
-carries — Gate A, a measured host prototype at or below the [INFERENCE] ≈450 KB
-upper bound with a green differential over the six-file corpus — is not met at
-design time, so the accepted boundary today is still the object layer plus the
-test-only oracle and TD-030 stays open (chapter 11). The accepted
+ADR-0008 was **amended in place on 2026-10-29** by the change to own the PDF
+file structure (own-the-pdf-file-structure). The amendment records that the
+project reads the supported plan's file structure itself — object syntax,
+classic cross-reference tables, cross-reference streams, object streams, the
+trailer, the page tree with `/Resources` inherited from `/Pages` and
+`/MediaBox`, `/CropBox` and `/Rotate` read from the page dictionary, and Flate
+decoding — so `lopdf` has left the Windows and browser normal graphs and only
+the pure-Rust `miniz_oxide` decompressor remains in the reading path; the
+library survives in the test graph through the unchanged oracle. The amendment
+is **accepted**: the reopen condition the record already carries — Gate A, a
+measured host prototype at or below the [INFERENCE] ≈450 KB upper bound with a
+green differential over the six-file corpus — was measured on 2026-10-29 at
+548,432 B (548,424 B stripped) against the same host's 926,104 B at the
+accepted baseline, −377,672 B (−40.8%), with the differential and all six
+private plans green. The result is roughly 98 KB above the estimate; the
+estimate predates 147 KB of growth since `30bbcb9` and overstates the removed
+library's cost by about 106 KB. The release owner accepted the replacement on
+that measured evidence, so the accepted boundary is now the project-owned file
+structure plus the test-only oracle, and TD-030 closes (chapter 11). Gate B
+still measures the shipped Windows and browser artifacts. The accepted
 file-structure spellings, the no-repair rule, the 64 MiB decode bound and the
 predictor range are `design.md`; the refusal mapping and the observable
 behaviour belong to the `own-the-duty-plan-extraction` capability and its use

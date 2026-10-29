@@ -8,8 +8,8 @@
 
 use std::collections::{BTreeMap, HashMap};
 
+use super::structure::{Dict, Document, Object};
 use duty2cal_core::application::{Construct, SourceError};
-use lopdf::{Dictionary, Document, Object};
 
 use super::font::{refusal, unreadable, Font};
 use super::words::Char;
@@ -79,8 +79,8 @@ pub(crate) fn interpret(
     page: usize,
     page_height: f64,
     content: &[u8],
-    resources: Option<&Dictionary>,
-    page_fonts: &BTreeMap<Vec<u8>, &Dictionary>,
+    resources: Option<&Dict>,
+    page_fonts: &BTreeMap<Vec<u8>, &Dict>,
 ) -> Result<Vec<Char>, SourceError> {
     let mut chars = Vec::new();
     let mut fonts: HashMap<Vec<u8>, Font> = HashMap::new();
@@ -285,7 +285,7 @@ fn numbers(operands: &[Operand], count: usize) -> Vec<f64> {
 }
 
 /// Whether a `Do` name resolves to an image XObject that must be skipped.
-fn is_image_xobject(document: &Document, resources: Option<&Dictionary>, name: &[u8]) -> bool {
+fn is_image_xobject(document: &Document, resources: Option<&Dict>, name: &[u8]) -> bool {
     let Some(resources) = resources else {
         return false;
     };

@@ -63,7 +63,7 @@ The landed saving is **not** known at design time. It is produced by
 | Predictors | `/DecodeParms /Predictor`: 10–15 (PNG) applied with `/Columns`, `/Colors` and `/BitsPerComponent`; every other value, including 2 (TIFF), is passed through unchanged | Decision D2 and the differences table: the previous reader and the comparison oracle share `lopdf` 0.44.0, which applies only 10–15 and passes every other value through. Mirroring it keeps a predictor-bearing stream's output identical to the oracle and adds no refusal name |
 | Decompression bound | 64 MiB per decoded stream; exceeding it is unreadable | The browser already refuses a plan above 20 MiB and the CLI has no source bound; a decoded stream above 64 MiB is not a roster. Replaces an unbounded decode |
 | Encryption | `/Encrypt` in any trailer dictionary → the encrypted-document refusal; when the structure fails before a trailer is read, the existing byte scan for `/Encrypt` keeps the named refusal | Preserves the current two paths in `document.rs:14-31` |
-| Page tree | Depth-first from `/Root` → `/Pages` → `/Kids`; `/Resources`, `/MediaBox`, `/CropBox`, `/Rotate` inherited down the chain; a repeated or cyclic kid is unreadable; page order is kid order | Preserves page order and inheritance that `get_page_resources` and `get_pages` provided |
+| Page tree | Depth-first from `/Root` → `/Pages` → `/Kids`; `/Resources` is read as the previous reader does — the page's direct dictionary plus any `/Resources` reference on the parent chain — while `/MediaBox`, `/CropBox` and `/Rotate` are read from the page dictionary, exactly as `document.rs` does today; a repeated or cyclic kid is unreadable; page order is kid order | Preserves the page order and resource inheritance `get_pages` and `get_page_resources` provided, and the page-dictionary box and rotation reads the previous reader performs |
 | Refusal vocabulary | The fifteen existing `Construct` names, unchanged; structural failures stay `Unreadable` | Decision D3; R-077 makes renaming or adding a name an ADR change with evidence |
 | Oracle | Unchanged: `pdfplumber = "=0.4.1"` in `[dev-dependencies]`, its own `lopdf` copy stays in the dev graph | Decision D4 |
 | Dependency check | `scripts/check-extraction-dependency.sh` keeps its two modes; normal mode refuses `pdfplumber` **and** `lopdf` in the named target's graph, dev mode still requires the oracle | Decision D4; one check, two facts |
@@ -91,7 +91,7 @@ flowchart LR
   H --> E{"trailer /Encrypt?"}
   E -- yes --> R1["encrypted-document refusal"]
   X --> O["objects<br/>+ object streams"]
-  O --> P["page tree<br/>inherited boxes and resources"]
+  O --> P["page tree<br/>page boxes, inherited resources"]
   O --> F["Flate decode<br/>miniz_oxide + predictors"]
   F --> P
   P --> C["content interpreter<br/>(existing: content.rs)"]
@@ -113,7 +113,7 @@ flowchart LR
 | `crates/duty2cal-pdf/src/reader/structure/parser.rs` | new | tokenizer and object parser over `&[u8]`: numbers, names with `#xx`, literal and hex strings, arrays, dictionaries, references, booleans, null, comments, stream bodies with `/Length` direct or indirect |
 | `crates/duty2cal-pdf/src/reader/structure/xref.rs` | new | the last `%%EOF` in the last 512 bytes and `startxref` within the 25 bytes before it, classic sections, xref streams (at least three non-negative `/W` widths of 0–8 bytes, the first three used, a zero width meaning an absent field whose type defaults to 1; `/Index`; `/Prev`), hybrid `/XRefStm`, cross-reference types 0/1/2, object-stream entries |
 | `crates/duty2cal-pdf/src/reader/structure/filter.rs` | new | `FlateDecode`/`Fl` through `miniz_oxide` with the 64 MiB bound; PNG predictors 10–15 applied and every other predictor value passed through unchanged; on a zlib decode failure with empty output, the previous reader's raw-deflate retry from byte 2 (partial output kept); the `StreamFilter` refusal for every other name |
-| `crates/duty2cal-pdf/src/reader/document.rs` | rewritten | orchestration that the previous version delegated to the library: header, encryption, page-tree walk with inheritance, `/Contents` concatenation, `/Resources` and `/Font` lookup, then `content::interpret` and `words::extract_words` unchanged |
+| `crates/duty2cal-pdf/src/reader/document.rs` | rewritten | orchestration that the previous version delegated to the library: header, encryption, page-tree walk with resource inheritance, `/Contents` concatenation, `/Resources` and `/Font` lookup, then `content::interpret` and `words::extract_words` unchanged |
 | `crates/duty2cal-pdf/src/reader/font.rs` | imports and signatures only | `lopdf::{Dictionary, Document, Object}` and `decompress_stream` from `document.rs` become the project types from `structure`; `/W`, `/DW`, `/Descent`, `ToUnicode` logic unchanged |
 | `crates/duty2cal-pdf/src/reader/content.rs` | imports and signatures only | same swap of object vocabulary; tokenizer, state, operator subset and refusals unchanged |
 | `crates/duty2cal-pdf/src/reader/mod.rs` | one line | registers the new `structure` module beside `cmap`, `content`, `document`, `font` and `words` |
@@ -214,7 +214,7 @@ it cannot change a supported plan's calendar or refusal:
 | zlib decoding runs through `miniz_oxide` rather than `flate2` | equal | Both decode the zlib streams the corpus uses; the differential compares every word of every generated variant against the oracle |
 | A zlib stream whose checksum is corrupt, or that is raw deflate behind a zlib header, is recovered by retrying raw deflate from byte 2 when zlib produced no bytes; partial output is kept | equal | `lopdf` 0.44.0 does exactly this in `decompress_zlib`, and the oracle shares that decoder; without the retry the owned reader would refuse a stream the oracle reads. A corrupt-checksum fixture in the differential suite pins the parity |
 | The `Unreadable(detail)` text changes from the library's message to the parser's | wording only | `SourceError::Unreadable` carries a detail string that was never part of the contract; the refusal class, the two-line `Source PDF:` / `Reason:` form, the numbered report and the page suffix are unchanged |
-| Header rule, `startxref` window, `/Prev`, `/XRefStm`, `/W`, `/Index`, `/Length`, object streams, page order and inheritance, encryption detection, one-level reference resolution | equal | Implemented to the previous reader's rules, each stated in the accepted list above and read from its source |
+| Header rule, `startxref` window, `/Prev`, `/XRefStm`, `/W`, `/Index`, `/Length`, object streams, page order and resource inheritance, encryption detection, one-level reference resolution | equal | Implemented to the previous reader's rules, each stated in the accepted list above and read from its source |
 
 **Decides D3: the closed refusal vocabulary stays; nothing is renamed or added —
 realized in `crates/duty2cal-core/src/application/mod.rs` (unchanged) and the
@@ -223,7 +223,7 @@ mapping below.**
 | `Construct` | Decided where after the change | Observable wording |
 |---|---|---|
 | `EncryptedDocument` | `document.rs`: `/Encrypt` in a trailer, or the byte-scan fallback when the structure cannot be read | unchanged, no page |
-| `PageRotation` | `document.rs`: inherited `/Rotate` ≠ 0 | unchanged, with page |
+| `PageRotation` | `document.rs`: the page's `/Rotate` ≠ 0 | unchanged, with page |
 | `PageBox` | `document.rs`: a `/CropBox` that differs from `/MediaBox` | unchanged, with page |
 | `StreamFilter(name)` | `filter.rs`, for every name other than `FlateDecode`/`Fl` | unchanged, with page when the stream belongs to a page |
 | `Type3Font`, `NonIdentityEncoding`, `MissingToUnicode`, `MissingDescent`, `UnmappedGlyph` | `font.rs`, unchanged | unchanged, with page |
@@ -323,7 +323,8 @@ consumer performs.
 
 ### Gate A — entry gate (ADR-0008 / TD-030 reopen condition), host, stop-able
 
-Precondition of this design, **not met** at design time: no prototype exists.
+Precondition of this design, **not met at design time**: no prototype existed
+then; the outcome recorded at the end of this section states what was measured.
 
 1. Implement the file-structure reading for the frozen subset behind the
    existing `reader::extract` entry point.
@@ -333,10 +334,10 @@ Precondition of this design, **not met** at design time: no prototype exists.
 4. **Accept only at or below the ADR's [INFERENCE] ≈450 KB upper bound.**
    Above it, the change stops here: the measurement is recorded and the ADR
    amendment concludes "not reopened". A stop also reverts the `arc42-docs`
-   edits that describe the proposed amendment; every chapter already marks the
-   amendment "proposed, pending Gate A", so the revert is the amendment block,
-   the affected chapter statements and the glossary refinements, not the
-   accepted boundary.
+   edits that describe the amendment; at design time every chapter marked the
+   amendment "proposed, pending Gate A", so the revert would have been the
+   amendment block, the affected chapter statements and the glossary
+   refinements, not the accepted boundary.
 5. Run the six-plan differential: `./scripts/validate-local-corpus.sh
    --differential`. It must be green; a difference refuses the replacement.
 
@@ -356,10 +357,25 @@ so the headroom is between roughly 7 and 18 KB, and the `cargo bloat` `.text`
 attribution is not a file-size delta (it attributes 140.4 KiB to the library and
 about 211 KiB to the library and its dependent crates together).
 
-Read plainly: **Gate A may stop this change.** The estimate leaves almost no
-room for the code that replaces the library, and the ADR's own condition is what
-decides whether the replacement is worth building — not this design, and not an
-optimistic reading of an [INFERENCE] figure.
+Read plainly at design time: **Gate A could stop this change.** The estimate
+left almost no room for the code that replaces the library, and the ADR's own
+condition was what would decide whether the replacement was worth building —
+not this design, and not an optimistic reading of an [INFERENCE] figure.
+
+**Outcome — recorded 2026-10-29.** Gate A was measured on the host release
+executable: **548,432 B** (548,424 B stripped) against the same host's
+**926,104 B** at the accepted baseline, a saving of **377,672 B (40.8%)**. The
+≈450 KB bound was missed by roughly 98 KB: that estimate predates 147 KB of
+program growth since revision `30bbcb9` and overstates the removed library's
+file-size cost by about 106 KB (377,672 B measured against 483,456 B assumed).
+The parser itself is 111.4 KiB of `.text` — the whole `duty2cal-pdf` crate,
+48.5 KiB above the previous extraction. The generated differential suite (10
+cases) and all six private plans are green, and the Windows and WASM normal
+graphs name neither `lopdf` nor `pdfplumber`. On that evidence the release
+owner accepted the replacement on 2026-10-29, replacing the estimate above as
+the decision input: ADR-0008 records the measured result, TD-030 closes, and
+Gate B still measures the shipped Windows and browser artifacts — the host
+figure is gate evidence, not shipped evidence.
 
 ### Gate B — landing gate, shipped artifacts only
 
@@ -525,10 +541,10 @@ failure edges of that action, not a second action (D7).
 ## Persona impact
 
 - `project-maintainer--release-owner` — decides the gate and answers for the
-  frozen subset; reads Gate A's host measurement (at or below ≈450 KB, or the
-  change stops), the differential result, and Gate B's
-  `extraction-backend.md`/`browser-bundle.md`, which name both revisions, both
-  sizes and the saved bytes.
+  frozen subset; ruled Gate A on the measured host result (548,432 B against
+  926,104 B, −40.8%, accepted 2026-10-29), reads the differential result, and
+  reads Gate B's `extraction-backend.md`/`browser-bundle.md`, which name both
+  revisions, both sizes and the saved bytes.
 - `crew-member--personal-calendar-owner` — receives the same calendar, the same
   warning and failure reports and the same refusals, from a smaller Windows
   download; no printed plan content appears in a refusal. Evidence: the
@@ -612,11 +628,11 @@ Gherkin assembler.
 
 | ID | Risk | Disposition | Owner |
 |---|---|---|---|
-| R-1 | A real plan's file structure uses a spelling the owned reading does not implement, so a supported plan stops converting | Resolved by Gate A's six-plan differential before acceptance; a construct found there is implemented or refused by name, never repaired or skipped silently (R-077) | release maintainer |
+| R-1 | A real plan's file structure uses a spelling the owned reading does not implement, so a supported plan stops converting | Resolved by Gate A's six-plan differential before acceptance (green on 2026-10-29); a construct found there is implemented or refused by name, never repaired or skipped silently (R-077) | release maintainer |
 | R-2 | A predictor, `/Prev` chain or indirect length is decoded differently from the previous reader on a real file | Resolved by the differential over the generated variants plus the opt-in real corpus; a difference refuses the replacement, never loosens the tolerance | implementer |
 | R-3 | A damaged structure reports differently than before (a document the previous reader accepted, or one it refused) | Resolved in D2: the accepted spellings are enumerated from the previous reader's behaviour and every structural failure keeps the unreadable refusal; the local corpus is the standing check | implementer |
 | R-4 | Ownership of the parser introduces a panic path where the library had none | Resolved by discipline and by the refusal scenarios: every parse step returns `Result`, no `unwrap` on parsed data, no indexing without a bounds check, and the bad-pointer scenario pins the failure path | implementer |
-| R-5 | The prototype misses the ADR's ≈450 KB bound | Carried, decided by Gate A: the change stops and the measurement is recorded; ADR-0008 remains un-amended | release maintainer |
+| R-5 | The prototype misses the ADR's ≈450 KB bound | Realised, and resolved by the 2026-10-29 ruling: the host executable measured 548,432 B, ~98 KB above the bound, and the release owner accepted the replacement on the measured evidence, so ADR-0008 records the measurement rather than the estimate (see Gate A outcome) | release maintainer |
 | R-6 | After landing, nothing watches for re-growth (the measurement is one-shot, as R-079 records) | Carried: the unchanged 2,097,152-byte budget is the only standing bound; no new gate is invented because R-079's accepted limit forbids it | release maintainer |
 | R-7 | The library creeps back into a normal graph, or the oracle silently disappears from the dev graph | Resolved by the check's two modes in all three CI jobs (Windows, WASM, test) | implementer |
 | R-8 | The WASM build fails on the decompressor's features or a `std`-only API | Resolved by `default-features = false` plus `with-alloc`, and by the browser job building the bundle before its scenarios | implementer |

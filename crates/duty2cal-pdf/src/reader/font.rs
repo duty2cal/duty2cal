@@ -4,8 +4,8 @@
 
 use std::collections::HashMap;
 
+use super::structure::{Dict, Document, Object};
 use duty2cal_core::application::{Construct, SourceError};
-use lopdf::{Dictionary, Document, Object};
 
 use super::cmap::ToUnicode;
 use super::document::decompress_stream;
@@ -24,7 +24,7 @@ pub struct Font {
 
 impl Font {
     /// Read a font dictionary, refusing anything outside the frozen subset.
-    pub fn parse(document: &Document, font: &Dictionary, page: usize) -> Result<Self, SourceError> {
+    pub fn parse(document: &Document, font: &Dict, page: usize) -> Result<Self, SourceError> {
         let subtype = name(document, font, b"Subtype");
         match subtype.as_deref() {
             Some("Type0") => {}
@@ -115,7 +115,7 @@ impl Font {
 }
 
 /// Parse the `/W` array into per-CID advances.
-fn parse_widths(document: &Document, descendant: &Dictionary) -> HashMap<u32, f64> {
+fn parse_widths(document: &Document, descendant: &Dict) -> HashMap<u32, f64> {
     let mut widths = HashMap::new();
     let Ok(object) = descendant.get(b"W") else {
         return widths;
@@ -173,7 +173,7 @@ pub(super) fn resolve<'a>(document: &'a Document, object: &'a Object) -> Option<
 }
 
 /// A dictionary name value.
-fn name(document: &Document, dict: &Dictionary, key: &[u8]) -> Option<String> {
+fn name(document: &Document, dict: &Dict, key: &[u8]) -> Option<String> {
     let object = dict.get(key).ok()?;
     let object = resolve(document, object)?;
     object.as_name().ok().map(|name| {
@@ -184,7 +184,7 @@ fn name(document: &Document, dict: &Dictionary, key: &[u8]) -> Option<String> {
 }
 
 /// A dictionary number value.
-fn number(document: &Document, dict: &Dictionary, key: &[u8]) -> Option<f64> {
+fn number(document: &Document, dict: &Dict, key: &[u8]) -> Option<f64> {
     dict.get(key)
         .ok()
         .and_then(|object| resolve(document, object))
@@ -195,7 +195,7 @@ fn number(document: &Document, dict: &Dictionary, key: &[u8]) -> Option<f64> {
 pub(super) fn as_f64(object: &Object) -> Option<f64> {
     match object {
         Object::Integer(value) => Some(*value as f64),
-        Object::Real(value) => Some(f64::from(*value)),
+        Object::Real(value) => Some(*value),
         _ => None,
     }
 }

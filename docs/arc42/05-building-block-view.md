@@ -22,7 +22,7 @@ flowchart TB
 | `apps/cli` (package `duty2cal`) | Parse the invocation, invoke the conversion, print the reported path or failure, set the exit status, and publish the calendar or the diagnostic (`fs` module). |
 | `ffi/wasm` (package `duty2cal-wasm`) | A thin `wasm-bindgen` driving adapter: accepts the filename and bytes, wires the unchanged `ConvertRoster` with a browser clock, and returns the calendar text with its warnings and the represented unknown duties in plan order, or a structured failure. Target-scoped to `wasm32-unknown-unknown`; performs no filesystem, network or environment I/O. |
 | `web/` | The converter page: a header with the project's vector mark (`icon.svg`) as a 48×48 mark left of the heading (and as the tab's primary icon, with the raster `icon.png` declared as its alternate), a statements panel above the converter panel (the tool's one plan — a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export — with its boundary, the browser route, downloads for various operating systems on request with the release page linked, privacy, the non-affiliation sentence naming Lufthansa and Jeppesen, as-is), capability gate, file picker and drop zone, 20 MiB bound, conversion call, status/failure panels, Blob offers, a "Source and licence" panel below the converter panels, and a full footer carrying the Built revision and the plain-prose non-affiliation, as-is and privacy statements. No backend, no upload, no persistent storage. |
-| `crates/duty2cal-pdf` | Owns the extraction of the frozen supported subset — the file structure through `reader/structure/` under the ADR-0008 amendment proposed 2026-10-29 (`lopdf` supplies that layer until Gate A is met), and the project's content, font, CMap and positioning interpretation — and produces the `RawRosterTable` anti-corruption input; `pdfplumber` is a test-only oracle. |
+| `crates/duty2cal-pdf` | Owns the extraction of the frozen supported subset — the file structure through `reader/structure/` since the accepted ADR-0008 amendment of 2026-10-29, and the project's content, font, CMap and positioning interpretation — and produces the `RawRosterTable` anti-corruption input; `pdfplumber` is a test-only oracle. |
 | `crates/duty2cal-core` | Pure domain, application ports + `ConvertRoster`, and the dependency-free ICS adapter. |
 
 ## Browser build and evidence toolbox (outside the product crates)
@@ -183,7 +183,7 @@ flowchart TB
   MBACK["scripts/measure_extraction_backend.py — same-revision Windows executable against the previous file-structure layer"]
   MWASM["scripts/measure_browser_bundle.py — same-revision browser bundle against the previous file-structure layer"]
   MREP["extraction-backend.json/.md + browser-bundle.json/.md — landed, baseline, delta"]
-  GRAPH["scripts/check-extraction-dependency.sh — no third-party PDF library in the Windows/WASM normal graphs (pdfplumber today; lopdf once the 2026-10-29 replacement lands); the oracle stays in the dev graph"]
+  GRAPH["scripts/check-extraction-dependency.sh — no third-party PDF library in the Windows/WASM normal graphs (pdfplumber and lopdf, since the 2026-10-29 replacement landed); the oracle stays in the dev graph"]
   REL -->|invokes| PREP
   PREP -->|invokes| RENDER
   REL -->|publish job invokes| GATE
@@ -216,9 +216,9 @@ flowchart TB
 | `scripts/measure_executable_size.py` | The measurement: resolve a named revision into a temporary worktree, build the shipped artifact with the committed configuration, build the same revision again with `strip` disabled for that build only in a separate target directory, attribute it by crate and by function with the pinned generator, read the stripped artifact's file size, digest and section sizes, and write one report naming the revision, the platform and the build's identity. A failed build or a build that keeps no names yields no attribution; an unreadable file size leaves the report incomplete; nothing is inferred from the archive or a host build. |
 | `scripts/measure_size_lever.py` | The reduction measurement: resolve the revision into a worktree, rebuild the unchanged release configuration (`panic = "unwind"`, `opt-level = "z"`) as the baseline, build each candidate lever cumulatively, measure the stripped executable's file size, record the delta and status, refuse a nightly/UPX/dynamic-linking proposal before a build, report the published binary's size separately, and preserve the accepted executable for the failure-path run. |
 | `size-lever.json` and `size-lever.md` | The reduction report: baseline, cumulative rows, applied/rejected statuses, the published binary's size and the recorded panic/conversion outcome. |
-| `scripts/measure_extraction_backend.py` | The same-revision measurement: build the landed revision's Windows GNU executable, restore `crates/duty2cal-pdf/` and `Cargo.lock` from the base revision in a temporary worktree, build the same package, and record both sizes, the saved bytes and the two revisions. Its base-manifest predicate names the previous file-structure layer (`lopdf` in `[dependencies]`) after the 2026-10-29 replacement. It refuses a baseline that does not build, a worktree diff beyond the allowed paths, a non-Windows artifact or a non-positive delta, and records `status: not applicable` with the landed size once the base no longer names that layer — the measurement is one-shot. |
+| `scripts/measure_extraction_backend.py` | The same-revision measurement: build the landed revision's Windows GNU executable, restore `crates/duty2cal-pdf/` and `Cargo.lock` from the base revision in a temporary worktree, build the same package, and record both sizes, the saved bytes and the two revisions. Its base-manifest predicate names the previous file-structure layer (`lopdf` in `[dependencies]`) of the 2026-10-29 replacement. It refuses a baseline that does not build, a worktree diff beyond the allowed paths, a non-Windows artifact or a non-positive delta, and records `status: not applicable` with the landed size once the base no longer names that layer — the measurement is one-shot. |
 | `scripts/measure_browser_bundle.py` | The same comparison for the `wasm-pack` bundle and its inline module; the wasm size must be smaller, and the base predicate and the one-shot status are the same. |
-| `scripts/check-extraction-dependency.sh` | The dependency split: no `pdfplumber` — and, after the 2026-10-29 replacement lands, no `lopdf` — in the `x86_64-pc-windows-gnu` or `wasm32-unknown-unknown` normal graphs, and the oracle present in `cargo tree -e dev -p duty2cal-pdf`, whose own `lopdf` copy is then expected. |
+| `scripts/check-extraction-dependency.sh` | The dependency split: no `pdfplumber` — and, since the 2026-10-29 replacement landed, no `lopdf` — in the `x86_64-pc-windows-gnu` or `wasm32-unknown-unknown` normal graphs, and the oracle present in `cargo tree -e dev -p duty2cal-pdf`, whose own `lopdf` copy is then expected. |
 | `extraction-backend.json`/`.md` and `browser-bundle.json`/`.md` | The CI reports: landed and baseline sizes, saved bytes/percent, the two revisions and the toolchain. They are run artifacts, not committed files (ADR-0008). |
 | `.github/workflows/release.yml` | On a `v*` tag: cross-build the Windows x86_64 executable on Linux, smoke that executable on Windows, prepare the staged set over the one binary, wait for the tagged revision's checks to conclude green, publish the immutable release with provenance and a bill of materials, then verify the published release by reading it back. |
 | `.github/workflows/ci.yml` | The gate on landing: `actionlint`, `dco`, `public-text`, `changelog`, `scripts` (`bats`), `browser` (one Playwright smoke plus the bundle measurement), `nix` (the flake's toolchain, components, LLVM tools and Playwright equality), `coverage` on `main` only, `windows-gnu-build` with the byte budget, the per-push attribution and the same-revision backend measurement, and the dependency-split check in the Windows, browser and test jobs. The `test` job no longer installs the change-log, OpenTofu or attribution toolchains. |
@@ -281,24 +281,23 @@ positioned words: the file structure, then the project's tokenizer, text state,
 Type0/Identity-H fonts, `/W` advances, `/ToUnicode` CMaps and word assembly)
 followed by the extraction-agnostic table construction (header detection → X
 bands → Y clustering → `RawRosterTable`). The file structure is the project's
-own under the ADR-0008 amendment proposed on 2026-10-29: object syntax, classic
+own under the accepted ADR-0008 amendment of 2026-10-29: object syntax, classic
 cross-reference tables, cross-reference streams, object streams, the trailer,
-the page tree with its inherited boxes and resources, and Flate decoding through
-`miniz_oxide`. Until Gate A is met, `lopdf` supplies that layer and the graphs
-are unchanged. A construct outside the frozen subset maps to
+the page tree with `/Resources` inherited from `/Pages` and `/MediaBox`, `/CropBox` and `/Rotate` read from the page dictionary, and Flate decoding through
+`miniz_oxide`. `lopdf` no longer supplies that layer and the graphs no longer
+name it. A construct outside the frozen subset maps to
 `SourceError::UnsupportedConstruct` with a closed `Construct` name and page; a
 readable non-family document maps to `UnsupportedFamily`; a corrupt file, a
 damaged file structure or a decode over the 64 MiB bound maps to `Unreadable`.
 The pinned `pdfplumber` is a `[dev-dependencies]` oracle only; it keeps its own
 `lopdf` copy in the test graph. The normal graphs name neither the oracle nor
-`lopdf` once Gate A is met; until then they still name `lopdf`, and no chapter
-claims otherwise.
+`lopdf`, which survives only in the dev graph through the oracle.
 
 ```mermaid
 flowchart TB
-  BYTES["supplied bytes"] --> STRUCT["reader/structure — owned file structure (ADR-0008 amendment, proposed 2026-10-29)"]
+  BYTES["supplied bytes"] --> STRUCT["reader/structure — owned file structure (ADR-0008 amendment, accepted 2026-10-29)"]
   STRUCT --> DECODE["Flate through miniz_oxide, PNG predictors 10–15, 64 MiB bound"]
-  STRUCT --> PAGES["page tree: inherited /MediaBox, /CropBox, /Rotate, /Resources"]
+  STRUCT --> PAGES["page tree: page /MediaBox, /CropBox, /Rotate; inherited /Resources"]
   DECODE --> INTERP["reader/content, reader/font, reader/cmap — unchanged interpretation"]
   PAGES --> INTERP
   INTERP --> WORDS["reader/words → positioned words"]
@@ -308,7 +307,7 @@ flowchart TB
 
 | Element | Responsibility |
 |---|---|
-| `reader/structure/` (`mod`, `object`, `parser`, `xref`, `filter`) — proposed by the ADR-0008 amendment of 2026-10-29 | The owned file structure: the object model with one-level reference resolution, the tokenizer and object parser over `&[u8]`, the last `%%EOF`/`startxref` lookup, classic cross-reference sections, cross-reference streams with `/Prev` and hybrid `/XRefStm`, object-stream entries, and Flate through `miniz_oxide` with PNG predictors 10–15 applied, every other value passed through, and the previous reader's raw-deflate retry on a failed zlib checksum and the 64 MiB decode bound. No repair: a structural failure is `Unreadable`. |
+| `reader/structure/` (`mod`, `object`, `parser`, `xref`, `filter`) — accepted by the ADR-0008 amendment of 2026-10-29 | The owned file structure: the object model with one-level reference resolution, the tokenizer and object parser over `&[u8]`, the last `%%EOF`/`startxref` lookup, classic cross-reference sections, cross-reference streams with `/Prev` and hybrid `/XRefStm`, object-stream entries, and Flate through `miniz_oxide` with PNG predictors 10–15 applied, every other value passed through, and the previous reader's raw-deflate retry on a failed zlib checksum and the 64 MiB decode bound. No repair: a structural failure is `Unreadable`. |
 | `reader/` (`document`, `content`, `font`, `cmap`, `words`) | The owned extraction: page order and the page box, the operator subset, the graphics/text state, glyph boxes and word splitting, and the named refusal mapping. |
 | `table.rs` | The table rules, moved from `lib.rs` and unchanged: rows, column bands, date resolution and the footer revision. |
 | `differential_tests.rs` (`#[cfg(test)]`) | Oracle comparison over the generated corpus and the ignored local real-corpus run; equal `RawRosterTable` and `SourceDocument`. |

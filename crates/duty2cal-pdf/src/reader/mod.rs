@@ -9,6 +9,7 @@ mod cmap;
 mod content;
 mod document;
 mod font;
+mod structure;
 mod words;
 
 pub use document::extract;

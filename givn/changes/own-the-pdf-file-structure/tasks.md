@@ -283,7 +283,7 @@ Design constraints (from `design.md`):
     ```
 - [x] COMMIT: one commit for RED+GREEN+REFACTOR, subject carrying the release
   note, body naming this scenario. Record the hash.
-  - `COMMIT:`
+  - `COMMIT: b61e519`
 
 ## Gate A — own the file structure, measure, stop or continue
 
@@ -301,7 +301,7 @@ Design constraints (from `design.md`):
   bytes and `startxref` within the 25 bytes before it, classic sections, xref
   streams with `/W` and `/Index`, `/Prev`, hybrid `/XRefStm`, types 0/1/2,
   object streams (`/Extends` not followed), direct or indirect `/Length`, page
-  tree with inherited `/Resources`, `/MediaBox`, `/CropBox`, `/Rotate`,
+  tree with inherited `/Resources`; `/MediaBox`, `/CropBox` and `/Rotate` read from the page dictionary,
   unfiltered or Flate streams.
 - Flate: `miniz_oxide = "=0.9.1"` with `default-features = false, features =
   ["with-alloc"]`; PNG predictors 10–15 applied, every other value passed
@@ -321,7 +321,7 @@ Design constraints (from `design.md`):
   predicted xref stream, the incremental update, the indirect length, the
   inherited resources and a content stream with a corrupted zlib checksum.
 
-- [ ] Implement the structure layer, swap the library out, and pass the
+- [x] Implement the structure layer, swap the library out, and pass the
   differential suite.
   - Compile: `cargo fmt --all --check && cargo clippy --workspace
     --all-targets -- -D warnings`; paste the result.
@@ -331,9 +331,22 @@ Design constraints (from `design.md`):
     both zero exits.
   - Evidence:
     ```
-    (paste compile, differential and both scenario runs)
+    $ cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings
+    exit=0
+    $ cargo test -p duty2cal-pdf
+    10 passed; 0 failed; 1 ignored (real_corpus_matches_the_oracle)
+      classic, xref stream, object streams, predicted xref stream,
+      incremental update, indirect length, inherited resources,
+      corrupt checksum, warned, multipage
+    $ ./run-tests.sh --tags "@own-the-duty-plan-extraction and not @wip"
+    5 scenarios (5 passed), 25 steps (25 passed)
+    $ ./run-tests.sh --name "A plan whose cross-reference pointer lies outside the file is refused as unreadable"
+    1 scenario (1 passed), 5 steps (5 passed)
+    $ cargo test -p duty2cal --test golden
+    1 passed (the fixture refactor's extra space was corrected; the accepted
+    calendars stay byte-identical)
     ```
-- [ ] Gate A measurement (stop-able). Build the host release executable and
+- [x] Gate A measurement (stop-able). Build the host release executable and
   record the file size and the crate attribution.
   - Commands: `cargo build --release -p duty2cal`; `stat -c '%s'
     target/release/duty2cal`; `strip -s target/release/duty2cal`; record the
@@ -347,9 +360,32 @@ Design constraints (from `design.md`):
   - Stop rule: above the bound, record the measurement, revert the working
     tree, commit nothing, and report the stop. The `arc42-docs` amendment then
     concludes "not reopened" and its proposed text is reverted.
+  - Ruling (2026-10-29, release owner): the measurement is 548,432 B, above the
+    ≈450 KB estimate; the owner accepted the replacement on the measured
+    evidence instead of the stale estimate (design-review Q3). The ADR-0008
+    amendment records the measurement and TD-030 closes; Gate B still measures
+    the shipped artifacts.
   - Evidence:
     ```
-    (paste both sizes, the bloat attribution, the differential result and the release owner's ruling)
+    $ cargo build --release -p duty2cal
+    target/release/duty2cal        548432 B
+    stripped copy                  548424 B
+    baseline (accepted revision)   926104 B
+    saved                          377672 B (-40.8%)
+
+    cargo bloat --release -p duty2cal --crates
+      std            216.6 KiB
+      duty2cal_pdf   111.4 KiB
+      duty2cal        31.6 KiB
+      duty2cal_core   15.8 KiB
+      miniz_oxide     14.3 KiB
+      .text total    400.2 KiB
+
+    ./scripts/validate-local-corpus.sh --differential
+    PASS private/MLP-2026-06.pdf … MLP-2026-11.pdf (six plans)
+    test result: ok. 1 passed
+
+    Ruling: B — accept the measured replacement (Q3).
     ```
 - [ ] COMMIT (only if Gate A passes): one commit for the replacement, subject
   carrying the release note, body naming Gate A and the scenario titles it

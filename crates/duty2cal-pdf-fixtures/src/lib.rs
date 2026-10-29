@@ -64,6 +64,8 @@ pub struct LayoutOptions {
     pub indirect_length: bool,
     /// Move `/Resources` from each page to the `/Pages` node.
     pub inherited_resources: bool,
+    /// Corrupt the trailing zlib checksum byte of every compressed stream.
+    pub corrupt_checksum: bool,
 }
 
 /// The construct a refusal fixture places on page 1.
@@ -339,6 +341,21 @@ pub fn build_bad_startxref_plan() -> Vec<u8> {
     corrupted
 }
 
+/// Build a supported plan whose compressed streams carry a corrupt checksum.
+pub fn build_corrupt_checksum_plan() -> Vec<u8> {
+    build(
+        &equivalence_plan(),
+        Encoding::ClassicXref,
+        LayoutOptions {
+            corrupt_checksum: true,
+            ..LayoutOptions::default()
+        },
+        0,
+        true,
+        Variant::Supported,
+    )
+}
+
 /// Build a Type3 plan that prints an identifying name.
 pub fn build_privacy_plan() -> Vec<u8> {
     let mut items = equivalence_plan();
@@ -424,6 +441,7 @@ fn build_pages(
 
     let mut pdf = Pdf {
         indirect_length: options.indirect_length,
+        corrupt_checksum: options.corrupt_checksum,
         ..Pdf::default()
     };
     let content_ids: Vec<u32> = contents
@@ -478,7 +496,7 @@ fn build_pages(
         let page_resources = if options.inherited_resources {
             String::new()
         } else {
-            format!(" /Resources {resources_dict}")
+            format!("/Resources {resources_dict}")
         };
         pdf.set_reserved(
             page_id,
@@ -665,6 +683,7 @@ fn helvetica_width(code: u32) -> u16 {
 struct Pdf {
     objects: Vec<Option<ObjectBody>>,
     indirect_length: bool,
+    corrupt_checksum: bool,
 }
 
 /// One object body.
@@ -695,7 +714,13 @@ impl Pdf {
     /// Add a stream object.
     fn add_stream(&mut self, extra: &str, data: &[u8], flate: bool) -> u32 {
         let data = if flate {
-            miniz_oxide::deflate::compress_to_vec_zlib(data, 6)
+            let mut data = miniz_oxide::deflate::compress_to_vec_zlib(data, 6);
+            if self.corrupt_checksum {
+                if let Some(last) = data.last_mut() {
+                    *last ^= 0xFF;
+                }
+            }
+            data
         } else {
             data.to_vec()
         };
