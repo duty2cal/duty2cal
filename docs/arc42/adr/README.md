@@ -15,7 +15,9 @@ file at `docs/arc42/adr/ADR-NNNN-short-slug.md`; the chapter-09 register
 | ADR-0005 | Declare the public home's GitHub configuration with OpenTofu and the GitHub provider | accepted | 2026-10-17 | [ADR-0005-declare-the-public-home-with-opentofu.md](ADR-0005-declare-the-public-home-with-opentofu.md) |
 | ADR-0006 | Keep the applied state local, passphrase-encrypted and committed, and check configuration drift locally | accepted | 2026-10-17 (amended 2026-10-19) | [ADR-0006-encrypted-local-applied-state.md](ADR-0006-encrypted-local-applied-state.md) |
 | ADR-0007 | Run the conversion in the browser through a WASM facade over the unchanged application | accepted | 2026-10-19 | [ADR-0007-browser-local-conversion-facade.md](ADR-0007-browser-local-conversion-facade.md) |
-| ADR-0008 | Own the extraction of the one supported duty plan and keep the third-party extractor as a test-only oracle | accepted | 2026-10-28 | [ADR-0008-own-the-duty-plan-extraction.md](ADR-0008-own-the-duty-plan-extraction.md) |
+| ADR-0008 | Own the extraction of the one supported duty plan and keep the third-party extractor as a test-only oracle | accepted (amendment proposed 2026-10-29) | 2026-10-28 | [ADR-0008-own-the-duty-plan-extraction.md](ADR-0008-own-the-duty-plan-extraction.md) |
+
+An in-place amendment adds `amended: YYYY-MM-DD` to the frontmatter; that key never replaces `status` and never encodes a pending state — the amendment section carries the pending or accepted outcome.
 
 ## Notes
 
@@ -51,5 +53,14 @@ file at `docs/arc42/adr/ADR-NNNN-short-slug.md`; the chapter-09 register
   credential, and its loss means replacing the credential. The rule set's
   `DeployKey` bypass and the key-generation mechanism were routed to the
   capability specification and `design.md`; no new ADR was minted.
+- ADR-0008 was **amended in place on 2026-10-29 (proposed)** by the change to
+  own the PDF file structure (own-the-pdf-file-structure): the project would
+  read the file structure itself and keep only the pure-Rust `miniz_oxide`
+  decompressor in the reading path, leaving `lopdf` in the test graph under the
+  oracle. The amendment is proposed, not accepted — its Gate A (a measured
+  prototype at or below the [INFERENCE] ≈450 KB bound with a green six-file
+  differential) is not met — so the accepted boundary is still the object layer
+  plus the test-only oracle and TD-030 stays open. No second ADR was minted and
+  nothing was superseded; chapter 9 carries the register note.
 - Archived historical ADRs live under `docs/arc42/adr/archive/` with their IDs
   preserved; both indexes are updated on any move.

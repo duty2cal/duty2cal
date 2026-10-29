@@ -5,23 +5,13 @@
 //! published calendar with the committed accepted calendar, and write the
 //! scenario's transcript.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use cucumber::{given, then};
 
 use crate::steps::export_duty_plan_calendar::fresh_dir;
 use crate::steps::support;
 use crate::DutyWorld;
-
-/// The committed accepted calendar the scenario compares against.
-fn accepted_calendar_path() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/expected/2026-06.ics")
-}
-
-/// CRLF to LF, and folded lines joined back (the agreed normalisation).
-fn normalise(calendar: &str) -> String {
-    calendar.replace("\r\n ", "").replace("\r\n", "\n")
-}
 
 #[given("a supported duty plan whose accepted calendar is recorded")]
 async fn a_supported_plan_whose_accepted_calendar_is_recorded(w: &mut DutyWorld) {
@@ -31,10 +21,7 @@ async fn a_supported_plan_whose_accepted_calendar_is_recorded(w: &mut DutyWorld)
         .expect("write the generated supported plan");
     w.dir = Some(dir);
     w.source = Some(source);
-    w.accepted_calendar = Some(
-        std::fs::read_to_string(accepted_calendar_path())
-            .expect("read the committed accepted calendar"),
-    );
+    w.accepted_calendar = Some(support::accepted_calendar());
 }
 
 #[then("the executable publishes the complete calendar at an unused path")]
@@ -69,8 +56,8 @@ async fn the_published_calendar_matches_the_accepted_calendar(w: &mut DutyWorld)
         .as_deref()
         .expect("the accepted calendar was recorded");
     assert_eq!(
-        normalise(&published),
-        normalise(accepted),
+        support::normalise(&published),
+        support::normalise(accepted),
         "the published calendar differs from the accepted one"
     );
 }

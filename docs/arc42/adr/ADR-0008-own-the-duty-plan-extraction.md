@@ -1,12 +1,27 @@
 ---
 status: accepted
 date: 2026-10-28
+amended: 2026-10-29
 decision-makers: operator (kressnerd)
 consulted: none
 informed: none
 ---
 
 # Own the extraction of the one supported duty plan and keep the third-party extractor as a test-only oracle
+
+> **Amendment 2026-10-29 (proposed, pending Gate A).** The project proposes to
+> read the supported plan's file structure itself — object syntax, classic
+> cross-reference tables, cross-reference streams, object streams, the trailer,
+> the page tree with its inherited boxes and resources, and Flate decoding —
+> leaving only the pure-Rust `miniz_oxide` decompressor in the reading path, so
+> `lopdf` leaves the Windows and browser normal graphs and survives only in the
+> test graph under the oracle. The amendment is **proposed, not accepted**: the
+> reopen condition this record already carries — Gate A, a measured host
+> prototype at or below the [INFERENCE] ≈450 KB upper bound with a green
+> differential over the six-file corpus — is not met at design time. The
+> accepted boundary today is still the object layer plus the test-only oracle.
+> This record is amended in place, not superseded; see
+> "Amendment — 2026-10-29".
 
 ## Qualification
 
@@ -198,6 +213,180 @@ the project's repair problem.
   ever needs it, the measurement above is the starting evidence; no fork is
   built by this change.
 
+## Amendment — 2026-10-29: own the PDF file structure too (proposed, pending Gate A)
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: AMEND_ADR
+canonical_artifact: null
+target_adr: ADR-0008
+replacement_adr: null
+
+- **Alternatives.** The reopen condition this record already carries has real,
+  distinct shapes, each recorded in the change's `design.md`: for the remaining
+  third-party piece, depend on the pure-Rust `miniz_oxide` directly (chosen),
+  keep `flate2` and ship its gzip and raw wrappers for a zlib-only need, or
+  write an inflate of the project's own; for a damaged file structure, refuse
+  the document as unreadable (chosen), reconstruct the cross-reference by
+  scanning for `N G obj` markers, or build a full repair engine; and for the
+  oracle, keep its own copy in the test graph (chosen), vendor a table-stubbed
+  fork, or drop the oracle. The options differ in what the project owns, in
+  what a malformed file does, and in whether equivalence stays provable.
+- **Architectural impact.** The choice fixes the dependency direction of the
+  reading path in both shipped graphs — the Windows executable and the browser
+  bundle would name no third-party PDF library, and only one pure-Rust
+  decompressor would remain — and it moves one more layer into project
+  ownership. It fixes the test graph's shape too: the oracle keeps its own copy
+  of the library, and that copy is the only place the library may appear.
+- **Durable consequence.** Reversal would restore the library to the manifest
+  and the lock, re-open the differential and the measurement evidence across
+  three graphs, and re-edit the graph check and the measurement predicate. The
+  boundary also constrains every future dependency update, because the
+  library's own releases move the download without any conversion change: the
+  reverted 0.45.0/0.46.0 bump made a Brotli decompressor non-optional and grew
+  the Windows executable from 841,728 B to 1,038,336 B.
+- **Lower-level artifact.** The accepted file-structure spellings, the
+  no-repair rule, the predictor policy, the 64 MiB decode bound, the one-level
+  reference resolution and the page-tree walk are `design.md`; the refusal
+  mapping and the observable calendar and refusals belong to the
+  `own-the-duty-plan-extraction` capability and its use case; the module layout
+  and the decompressor call are code. What none of them can state — which
+  library may appear in which graph, and who owns the file structure — is this
+  record's, and it is the same boundary the record already owns rather than a
+  second one.
+- **Existing-ADR check.** The active register (ADR-0001 … ADR-0008) and the ADR
+  directory were searched; there is still no `docs/arc42/adr/archive/`.
+  ADR-0008 already owns this boundary and records "Own the file structure as
+  well" as a considered option with an explicit reopen condition; no other
+  record covers the extraction dependency, the frozen supported subset or the
+  oracle split. The route is therefore `AMEND_ADR` with ADR-0008 as the target:
+  a refinement of this boundary, not a parallel record, and nothing is
+  superseded.
+
+### MADR checklist evidence
+
+- [x] **Hard to reverse** - Reverting later would re-add the library and the
+      crates reached only through it to both shipped graphs, restore the project
+      code that reads the file structure, and re-open the differential and the
+      measurement evidence: broad code and evidence work across three graphs.
+- [x] **Shapes quality attributes** - It sets a new floor on the Windows
+      download and the browser bundle's parse cost, and removes a dependency
+      whose own releases have grown the executable by 23.4% without a
+      conversion change.
+- [x] **Structural** - It defines who owns the file structure and fixes the
+      dependency direction: `duty2cal-pdf` would own objects, pages and streams,
+      one pure-Rust decompressor would supply Flate, and the oracle's own
+      library would be confined to the test graph.
+- [ ] **Must be shared** - Supporting only: a contributor must know that no
+      third-party PDF library may enter a normal graph and that a damaged
+      structure is refused, never repaired, but the graph check and the refusal
+      scenarios enforce both, so this item is not a gate.
+
+### Status of this amendment
+
+Proposed on 2026-10-29 by the change `own-the-pdf-file-structure`. It is not
+part of the accepted decision yet. The record's own reopen condition stands as
+the entry gate — **Gate A**: a measured host prototype at or below the
+[INFERENCE] ≈450 KB upper bound, with a green differential over the six-file
+corpus. Gate A is **not met** at design time: no prototype exists, and the
+arithmetic the ruling will use leaves roughly 7–18 KB of headroom below the
+bound before the replacing parser's own bytes are added (the 926,104 B host
+executable of 2026-10-28 minus the recorded 483,456 B object-layer cost is
+≈442,648 B, against a bound of ≈450,000–460,800 B). If Gate A fails, the change
+stops and this amendment concludes "not reopened": the accepted boundary in the
+Decision Outcome above is unchanged, `lopdf` stays in both shipped graphs, and
+TD-030 stays open.
+
+`status: accepted` therefore describes the record as a whole: the object-layer
+boundary and the test-only oracle in the Decision Outcome above are accepted and
+in force; the file-structure ownership in this amendment is proposed.
+
+Which option the record would then name: the Decision Outcome above chooses
+"Own the interpretation behind a small object layer" and rejected "Own the file
+structure as well" only because no measured prototype existed. If Gate A is
+met, that outcome becomes "Own the file structure as well" and the consequences
+in this section apply; until the ruling, the outcome above stands unchanged.
+
+### What would change (if Gate A is met)
+
+- The project reads the supported plan's file structure inside
+  `crates/duty2cal-pdf/src/reader/structure/`: object syntax, classic
+  cross-reference table sections, cross-reference streams, object streams, the
+  trailer, the page tree with inherited boxes and resources, and Flate streams
+  decoded through `miniz_oxide = "=0.9.1"` (`default-features = false`,
+  `features = ["with-alloc"]`) — the only third-party crate left in the reading
+  path.
+- `lopdf` leaves the Windows and browser normal graphs. It stays in
+  `Cargo.lock` because the `pdfplumber` oracle keeps its own copy in the test
+  graph, so `THIRD-PARTY-NOTICES.md` does not move.
+- `scripts/check-extraction-dependency.sh` keeps its two modes; its normal mode
+  refuses `lopdf` as well as `pdfplumber`, and its dev mode still requires the
+  oracle.
+- `scripts/measure_extraction_backend.py` and
+  `scripts/measure_browser_bundle.py` keep their restore paths, one-shot
+  status and delta rule; only their base-manifest predicate changes from the
+  extractor to the removed library.
+- No construct, refusal name, report wording or conversion rule changes. The
+  accepted file-structure spellings (classic table, cross-reference stream with
+  `/Prev`, hybrid `/XRefStm`, object streams, direct or indirect stream length,
+  Flate with PNG predictors 10–15 applied and every other value passed through)
+  are spellings of constructs the
+  previous reader already accepted, and the fifteen `Construct` names stay.
+
+### Amendment consequences
+
+- Good, because after Gate A the reading path carries no third-party PDF
+  library: only `miniz_oxide` remains (20.4 KiB of host `.text` today), while
+  the library's 140.4 KiB of host `.text` and the crates reached only through
+  it (about 211 KiB together with its dependents) leave the shipped graphs.
+- Good, because equivalence is still judged against the previously accepted
+  reading: the oracle keeps its own copy and the differential's tolerance is
+  unchanged, so the replacement cannot be accepted by comparing the project
+  with itself.
+- Bad, because the project then owns a parser: a spelling a real plan uses that
+  the accepted set does not cover, or a decode that differs from the previous
+  reader, costs a conversion the library used to make (chapter 11, R-082).
+- Bad, because the owned reading introduces a panic surface where the library
+  had none, and it differs deliberately from the previous reader in two
+  recorded places — the 64 MiB decode bound and a `/Kids` cycle or repeated kid
+  refused — so a malformed document can now be refused where it used to
+  convert; a corrupt zlib checksum is recovered through the previous reader's
+  raw-deflate retry instead (chapter 11, R-083).
+- Bad, because the replacement may not pay: the ≈450 KB bound leaves 7–18 KB of
+  headroom, Gate A may stop the change, and Gate B refuses a non-positive
+  landed saving (chapter 11, R-084). TD-030 stays open until a later revision
+  records Gate A's report and Gate B's measured delta.
+
+### Amendment confirmation
+
+- **Gate A (entry, host, stop-able):** `cargo build --release -p duty2cal`,
+  record the executable's file size and `cargo bloat --release -p duty2cal
+  --crates`, accept only at or below the ≈450 KB bound, then require
+  `./scripts/validate-local-corpus.sh --differential` green over the six plans.
+  The ruling belongs to `project-maintainer--release-owner`; a refusal is the
+  gate's own stop rule.
+- **Gate B (landing, shipped artifacts):**
+  `scripts/check-extraction-dependency.sh --normal --target
+  x86_64-pc-windows-gnu` and `--target wasm32-unknown-unknown` name neither
+  `pdfplumber` nor `lopdf`; `cargo tree -e dev -p duty2cal-pdf` still names
+  `pdfplumber`; `scripts/measure_extraction_backend.py` and
+  `scripts/measure_browser_bundle.py` record `status: measured` with
+  `saved_bytes > 0` against a base whose `crates/duty2cal-pdf/Cargo.toml` names
+  `lopdf` in `[dependencies]`; the unchanged 2,097,152-byte budget stays the
+  standing bound.
+- `cargo test -p duty2cal-pdf` keeps the word differential — exact text, `x0`
+  and `top` within 0.5 point, equal table output and `SourceDocument` — over
+  the existing corpus plus the xref-stream-with-predictor, incremental-update,
+  indirect-length and inherited-resources variants, and the bad-pointer
+  scenario pins the unreadable refusal.
+
 ## More Information
 
 - Proposal, specs and design:
@@ -210,3 +399,10 @@ the project's repair problem.
   six-file corpus.
 - Related: ADR-0002 (the driven-adapter layer this decision keeps), ADR-0007
   (the browser facade that ships the same reader).
+- The amendment of 2026-10-29 is recorded by the change to own the PDF file
+  structure (own-the-pdf-file-structure) and its `design.md` ("Architecture
+  impact", "Decisions", "Prototype and measurement gates", "Differences from
+  the previous reader"); chapter 9 carries the register entry, chapter 11
+  TD-030 and R-082–R-084, chapter 12 the term **File structure**, and chapter 2
+  the dependency constraint. It is proposed pending Gate A and is not part of
+  the accepted decision until that gate's report is recorded.

@@ -1,0 +1,4 @@
+$ duty2cal <scenario-dir>/roster.pdf
+Written: <scenario-dir>/roster.ics
+exit status: 0
+normalised comparison: identical

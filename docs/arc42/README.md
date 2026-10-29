@@ -59,3 +59,4 @@ must have a real date and real participant values, contain all MADR sections,
 and contain no template placeholders. The register and both ADR indexes must
 link to the current file path and preserve historical links for archived or
 superseded records.
+An in-place amendment adds `amended: YYYY-MM-DD` to the frontmatter; that key never replaces `status` and never encodes a pending state — the amendment section carries the pending or accepted outcome.

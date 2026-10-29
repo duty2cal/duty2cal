@@ -11,6 +11,7 @@ use cucumber::{given, then, when};
 use duty2cal_pdf_fixtures as fixtures;
 
 use crate::steps::export_duty_plan_calendar::fresh_dir;
+use crate::steps::support;
 use crate::DutyWorld;
 
 /// The second generated plan a scenario converts, beside the first.
@@ -75,16 +76,9 @@ async fn both_published_calendars_match_apart_from_uids(w: &mut DutyWorld) {
         .expect("the classic-xref conversion published no calendar");
     let second = std::fs::read_to_string(w.working_dir().join("object-streams.ics"))
         .expect("the object-stream conversion published no calendar");
-    let content = |calendar: &str| -> Vec<String> {
-        calendar
-            .lines()
-            .filter(|line| !line.starts_with("UID:"))
-            .map(str::to_string)
-            .collect()
-    };
     assert_eq!(
-        content(&first),
-        content(&second),
+        support::content_apart_from_identity(&first),
+        support::content_apart_from_identity(&second),
         "the two encodings published different calendar content"
     );
 }
@@ -95,6 +89,66 @@ async fn the_executable_reports_success_for_both_conversions(w: &mut DutyWorld) 
         w.exit_statuses,
         vec![0, 0],
         "a conversion reported failure: stdout={} stderr={}",
+        w.stdout,
+        w.stderr
+    );
+}
+
+#[given(regex = r#"^a supported duty plan whose file structure uses "(.*)"$"#)]
+async fn a_supported_duty_plan_whose_file_structure_uses(w: &mut DutyWorld, spelling: String) {
+    use fixtures::{Encoding, LayoutOptions};
+
+    let items = fixtures::equivalence_plan();
+    let bytes = match spelling.as_str() {
+        "an xref stream with the PNG predictor" => {
+            fixtures::build_plan(&items, Encoding::PredictedXrefStream)
+        }
+        "an incremental update" => fixtures::build_plan(&items, Encoding::IncrementalUpdate),
+        "an indirect stream length" => fixtures::build_plan_with_options(
+            &items,
+            Encoding::ClassicXref,
+            LayoutOptions {
+                indirect_length: true,
+                ..LayoutOptions::default()
+            },
+        ),
+        "resources inherited from the page tree" => fixtures::build_plan_with_options(
+            &items,
+            Encoding::ClassicXref,
+            LayoutOptions {
+                inherited_resources: true,
+                ..LayoutOptions::default()
+            },
+        ),
+        other => panic!("no generated fixture for the file-structure spelling {other:?}"),
+    };
+    w.accepted_calendar = Some(support::accepted_calendar());
+    w.source = Some(write_plan(w, "roster.pdf", bytes));
+}
+
+#[then(
+    "the published calendar matches the accepted calendar apart from its source-snapshot identity"
+)]
+async fn the_published_calendar_matches_apart_from_its_source_snapshot_identity(w: &mut DutyWorld) {
+    let published = std::fs::read_to_string(w.working_dir().join("roster.ics"))
+        .expect("the conversion published no calendar");
+    let accepted = w
+        .accepted_calendar
+        .as_deref()
+        .expect("the accepted calendar was recorded");
+    assert_eq!(
+        support::content_apart_from_identity(&support::normalise(&published)),
+        support::content_apart_from_identity(&support::normalise(accepted)),
+        "the published calendar differs from the accepted one apart from its source-snapshot identity"
+    );
+}
+
+#[then("the executable reports success for the conversion")]
+async fn the_executable_reports_success_for_the_conversion(w: &mut DutyWorld) {
+    assert_eq!(
+        w.exit_status,
+        Some(0),
+        "the conversion did not succeed: stdout={} stderr={}",
         w.stdout,
         w.stderr
     );

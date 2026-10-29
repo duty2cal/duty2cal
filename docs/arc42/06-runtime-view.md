@@ -33,7 +33,7 @@ sequenceDiagram
 **Steps:**
 
 1. The CLI reads the source path and calls the orchestrator.
-2. The orchestrator recognizes the family, builds the source snapshot, and extracts positioned content and the revision footer.
+2. The orchestrator recognizes the family, builds the source snapshot, and extracts positioned content and the revision footer; the bytes are read as a PDF's file structure and then interpreted — by `reader/structure/` under the ADR-0008 amendment proposed on 2026-10-29, and by `lopdf` until Gate A is met.
 3. The domain classifies activities, resolves each UTC endpoint's date, composes descriptions and events, and collects every conversion error and warning; an unrecognized code with printed evidence is represented with a warning.
 4. On no error, the orchestrator asks the publication port for an unused calendar path and writes the calendar.
 5. The CLI prints the actual new path and exits zero, and publishes a warning report when warnings were collected.
@@ -121,7 +121,7 @@ sequenceDiagram
 
 **Steps:**
 
-1. The owned extraction checks the encrypted flag, the page box and rotation, the font subtype/encoding/`ToUnicode` map, and the content operators and filters before it emits words; the first construct outside the subset names itself and its page.
+1. The owned extraction checks the encrypted flag, the page box and rotation, the font subtype/encoding/`ToUnicode` map, and the content operators and filters before it emits words; the first construct outside the subset names itself and its page. Under the ADR-0008 amendment proposed on 2026-10-29 the file structure is read by project code first: `/Encrypt` in a trailer is the encrypted-document refusal, and when the structure fails before a trailer is read the existing byte scan for `/Encrypt` keeps that named refusal instead of a generic unreadable one.
 2. `ConvertError::Source` keeps the two-line `Source PDF:` / `Reason:` report; the reason reads `the source uses a PDF construct outside the supported family: <construct>` with ` on page <n>` when known.
 3. No calendar, warning report or empty calendar is written. The report carries the construct name and page, never printed plan text, a station, a name, a date or an activity code.
 4. A truncated or malformed file is `Unreadable`; a readable PDF without the supported detail table is `UnsupportedFamily`; a panic is a defect, not a refusal, and the refusal scenarios assert the failure without an abort.
@@ -523,7 +523,7 @@ flowchart TB
 
 ## Scenario: A backend replacement is measured against the previous extraction
 
-**Trigger:** A revision replaces the PDF extraction backend and must show the
+**Trigger:** A revision replaces the PDF file-structure layer and must show the
 saving on the artifacts that ship.
 
 ```mermaid
@@ -531,8 +531,8 @@ flowchart TB
   rev["Landed revision"] --> landed["Windows GNU executable and browser bundle as built"]
   rev --> wt["temporary worktree of the landed revision"]
   base["Base revision's crates/duty2cal-pdf and Cargo.lock"] --> wt
-  wt --> check{"restored base [dependencies] name pdfplumber?"}
-  check -->|"yes"| prev["same tree rebuilt with the previous extraction"]
+  wt --> check{"restored base [dependencies] name lopdf?"}
+  check -->|"yes"| prev["same tree rebuilt with the previous file-structure layer"]
   check -->|"no"| na["status: not applicable, the resolved base and the landed size; exit 0"]
   landed --> both["landed size, baseline size, saved bytes"]
   prev --> both
@@ -544,15 +544,20 @@ flowchart TB
 **Steps:**
 
 1. The Windows job builds the landed revision's `x86_64-pc-windows-gnu` executable; the browser job builds the landed bundle with the pinned `wasm-pack`.
-2. `scripts/measure_extraction_backend.py` creates a temporary worktree of the landed revision, restores only `crates/duty2cal-pdf/` and `Cargo.lock` from the base revision, and rebuilds the CLI package for the same target while the restored base `crates/duty2cal-pdf/Cargo.toml` still names `pdfplumber` in its `[dependencies]`. `scripts/measure_browser_bundle.py` does the same for the wasm bundle and its inline module.
-3. When the restored base tree's `[dependencies]` no longer name `pdfplumber` — the state of every base after this replacement lands — the script builds nothing, writes `status: not applicable` with the resolved base revision and the landed size, and exits 0. This is the operator decision of 2026-10-28: the same-revision measurement is one-shot for the introducing revision, and after landing no automated size gate remains; the published binary's size and the unchanged 2,097,152-byte budget are the only automated numbers left.
+2. `scripts/measure_extraction_backend.py` creates a temporary worktree of the landed revision, restores only `crates/duty2cal-pdf/` and `Cargo.lock` from the base revision, and rebuilds the CLI package for the same target while the restored base `crates/duty2cal-pdf/Cargo.toml` still names `lopdf` in its `[dependencies]`. `scripts/measure_browser_bundle.py` does the same for the wasm bundle and its inline module.
+3. When the restored base tree's `[dependencies]` no longer name `lopdf` — the state of every base after this replacement lands — the script builds nothing, writes `status: not applicable` with the resolved base revision and the landed size, and exits 0. This is the operator decision of 2026-10-28: the same-revision measurement is one-shot for the introducing revision, and after landing no automated size gate remains; the published binary's size and the unchanged 2,097,152-byte budget are the only automated numbers left.
 4. The reports name the landed and base revisions, the target, the two sizes, the saved bytes and percent, and the toolchain; the Windows job appends the markdown to the step summary and uploads the artifacts.
 5. A restored tree that does not build, a diff beyond the allowed paths, a non-Windows artifact or a measured run's non-positive delta is a named refusal, not a number. The existing 2,097,152-byte budget and the published binary's size are reported separately and are not the baseline.
 
 **Notes:** The baseline is a same-revision restore because the landed tree no
 longer contains the previous extraction; a base-revision checkout would
 attribute unrelated changes. The host measurements in the change's evidence are
-attribution, not acceptance.
+attribution, not acceptance. This scenario is **Gate B** of the ADR-0008
+amendment proposed on 2026-10-29. Its **Gate A** — a host prototype at or below
+the amendment's [INFERENCE] ≈450 KB bound with a green six-file differential —
+runs before the replacement is built and can stop the change; it is not met at
+design time, so `lopdf` still supplies the file structure in both shipped
+graphs.
 
 ## Scenario: The existing public home is adopted into the declared configuration
 

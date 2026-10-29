@@ -51,6 +51,19 @@ pub enum Encoding {
     XrefStream,
     /// A cross-reference stream with every non-stream object in an object stream.
     ObjectStreams,
+    /// An xref stream carrying the PNG predictor (Flate + `/Predictor 12`).
+    PredictedXrefStream,
+    /// A classic table followed by one incremental update with `/Prev`.
+    IncrementalUpdate,
+}
+
+/// Extra file-structure spellings a caller can ask the builder for.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct LayoutOptions {
+    /// Write every stream `/Length` as an indirect integer object.
+    pub indirect_length: bool,
+    /// Move `/Resources` from each page to the `/Pages` node.
+    pub inherited_resources: bool,
 }
 
 /// The construct a refusal fixture places on page 1.
@@ -169,7 +182,14 @@ pub fn weekday_abbreviation(year: i32, month: u32, day: u32) -> &'static str {
 /// Build a one-page PDF placing each `(x, y, text)` item with a 9 pt
 /// Type0/Identity-H font.
 pub fn build_pdf(items: &[(f64, f64, String)]) -> Vec<u8> {
-    build(items, Encoding::ClassicXref, 0, true, Variant::Supported)
+    build(
+        items,
+        Encoding::ClassicXref,
+        LayoutOptions::default(),
+        0,
+        true,
+        Variant::Supported,
+    )
 }
 
 /// Build a PDF of exactly `size` bytes whose page content stays readable.
@@ -178,7 +198,14 @@ pub fn build_pdf(items: &[(f64, f64, String)]) -> Vec<u8> {
 /// trailing `%%EOF` stays where the reader expects it. `/Length` grows with the
 /// padding, so the builder corrects for the changed digit count.
 pub fn build_pdf_at_size(items: &[(f64, f64, String)], size: usize) -> Vec<u8> {
-    let base = build(items, Encoding::ClassicXref, 0, false, Variant::Supported);
+    let base = build(
+        items,
+        Encoding::ClassicXref,
+        LayoutOptions::default(),
+        0,
+        false,
+        Variant::Supported,
+    );
     assert!(
         base.len() <= size,
         "a {size}-byte PDF cannot hold the {} bytes of fixture content",
@@ -189,6 +216,7 @@ pub fn build_pdf_at_size(items: &[(f64, f64, String)], size: usize) -> Vec<u8> {
         let pdf = build(
             items,
             Encoding::ClassicXref,
+            LayoutOptions::default(),
             padding,
             false,
             Variant::Supported,
@@ -207,7 +235,23 @@ pub fn build_pdf_at_size(items: &[(f64, f64, String)], size: usize) -> Vec<u8> {
 
 /// Build a plan in the requested encoding, with the same page content.
 pub fn build_plan(items: &[(f64, f64, String)], encoding: Encoding) -> Vec<u8> {
-    build(items, encoding, 0, true, Variant::Supported)
+    build(
+        items,
+        encoding,
+        LayoutOptions::default(),
+        0,
+        true,
+        Variant::Supported,
+    )
+}
+
+/// Build a plan in the requested encoding with the extra spellings a caller asks for.
+pub fn build_plan_with_options(
+    items: &[(f64, f64, String)],
+    encoding: Encoding,
+    options: LayoutOptions,
+) -> Vec<u8> {
+    build(items, encoding, options, 0, true, Variant::Supported)
 }
 
 /// Build the refusal fixture that places `construct` on page 1.
@@ -229,7 +273,14 @@ pub fn build_construct_plan(construct: &str) -> Vec<u8> {
         "unknown content-stream operator" => Variant::UnknownOperator,
         other => panic!("no generated fixture for the construct {other:?}"),
     };
-    build(&equivalence_plan(), Encoding::ClassicXref, 0, true, variant)
+    build(
+        &equivalence_plan(),
+        Encoding::ClassicXref,
+        LayoutOptions::default(),
+        0,
+        true,
+        variant,
+    )
 }
 
 /// Build an encrypted document with a readable structure.
@@ -237,6 +288,7 @@ pub fn build_encrypted_plan() -> Vec<u8> {
     build(
         &equivalence_plan(),
         Encoding::ClassicXref,
+        LayoutOptions::default(),
         0,
         true,
         Variant::Encrypted,
@@ -249,7 +301,14 @@ pub fn build_no_header_plan() -> Vec<u8> {
         700.0,
         &[(DATE_X, "Notes"), (FROM_X, "This page is not a duty plan.")],
     );
-    build(&items, Encoding::ClassicXref, 0, true, Variant::Supported)
+    build(
+        &items,
+        Encoding::ClassicXref,
+        LayoutOptions::default(),
+        0,
+        true,
+        Variant::Supported,
+    )
 }
 
 /// Build a truncated document: a valid fixture cut short.
@@ -264,7 +323,14 @@ pub fn build_truncated_plan() -> Vec<u8> {
 pub fn build_privacy_plan() -> Vec<u8> {
     let mut items = equivalence_plan();
     items.extend(at(760.0, &[(DATE_X, "Zephyr"), (DATE_X + 40.0, "Vale")]));
-    build(&items, Encoding::ClassicXref, 0, true, Variant::Type3Font)
+    build(
+        &items,
+        Encoding::ClassicXref,
+        LayoutOptions::default(),
+        0,
+        true,
+        Variant::Type3Font,
+    )
 }
 
 /// Build a supported plan whose detail table continues on a second page with a
@@ -287,6 +353,7 @@ pub fn build_multipage_plan() -> Vec<u8> {
     build_pages(
         &[row("2026-06-12"), row("2026-06-13")],
         Encoding::ClassicXref,
+        LayoutOptions::default(),
         0,
         true,
         Variant::Supported,
@@ -297,17 +364,26 @@ pub fn build_multipage_plan() -> Vec<u8> {
 fn build(
     items: &[TextItem],
     encoding: Encoding,
+    options: LayoutOptions,
     padding: usize,
     flate: bool,
     variant: Variant,
 ) -> Vec<u8> {
-    build_pages(&[items.to_vec()], encoding, padding, flate, variant)
+    build_pages(
+        &[items.to_vec()],
+        encoding,
+        options,
+        padding,
+        flate,
+        variant,
+    )
 }
 
 /// Build a document with one content stream per page.
 fn build_pages(
     pages: &[Vec<TextItem>],
     encoding: Encoding,
+    options: LayoutOptions,
     padding: usize,
     flate: bool,
     variant: Variant,
@@ -326,7 +402,10 @@ fn build_pages(
         contents.push(page_content(&all, padding, variant));
     }
 
-    let mut pdf = Pdf::default();
+    let mut pdf = Pdf {
+        indirect_length: options.indirect_length,
+        ..Pdf::default()
+    };
     let content_ids: Vec<u32> = contents
         .iter()
         .map(|content| match variant {
@@ -351,6 +430,17 @@ fn build_pages(
     });
 
     let fonts = add_fonts(&mut pdf, &used, variant);
+    let xobjects = match form_id {
+        Some(form_id) => format!("/XObject << /Fm1 {form_id} 0 R >>"),
+        None => format!("/XObject << /Im1 {image_id} 0 R >>"),
+    };
+    let resources_dict = format!(
+        "<< /Font << /F1 {} 0 R /F2 {} 0 R /F3 {} 0 R >> {xobjects} >>",
+        fonts[0], fonts[1], fonts[2]
+    );
+    let inherited_resource_id = options
+        .inherited_resources
+        .then(|| pdf.add_dict(resources_dict.clone()));
     let pages_id = pdf.reserve();
     let mut page_ids = Vec::new();
     for content_id in content_ids {
@@ -365,17 +455,16 @@ fn build_pages(
         } else {
             ""
         };
-        let xobjects = match form_id {
-            Some(form_id) => format!("/XObject << /Fm1 {form_id} 0 R >>"),
-            None => format!("/XObject << /Im1 {image_id} 0 R >>"),
+        let page_resources = if options.inherited_resources {
+            String::new()
+        } else {
+            format!(" /Resources {resources_dict}")
         };
         pdf.set_reserved(
             page_id,
             format!(
                 "<< /Type /Page /Parent {pages_id} 0 R /MediaBox [0 0 {PAGE_WIDTH} {PAGE_HEIGHT}]\
-                 {rotation}{crop} /Resources << /Font << /F1 {} 0 R /F2 {} 0 R /F3 {} 0 R >> \
-                 {xobjects} >> /Contents {content_id} 0 R >>",
-                fonts[0], fonts[1], fonts[2]
+                 {rotation}{crop} {page_resources} /Contents {content_id} 0 R >>"
             ),
         );
         page_ids.push(page_id);
@@ -385,10 +474,14 @@ fn build_pages(
         .map(|id| format!("{id} 0 R"))
         .collect::<Vec<_>>()
         .join(" ");
+    let pages_resources = match inherited_resource_id {
+        Some(id) => format!(" /Resources {id} 0 R"),
+        None => String::new(),
+    };
     pdf.set_reserved(
         pages_id,
         format!(
-            "<< /Type /Pages /Kids [{kids}] /Count {} >>",
+            "<< /Type /Pages /Kids [{kids}] /Count {}{pages_resources} >>",
             page_ids.len()
         ),
     );
@@ -551,6 +644,7 @@ fn helvetica_width(code: u32) -> u16 {
 #[derive(Default)]
 struct Pdf {
     objects: Vec<Option<ObjectBody>>,
+    indirect_length: bool,
 }
 
 /// One object body.
@@ -586,10 +680,18 @@ impl Pdf {
             data.to_vec()
         };
         let filter = if flate { " /Filter /FlateDecode" } else { "" };
+        let length_id = self.indirect_length.then(|| self.reserve());
+        let length = match length_id {
+            Some(id) => format!("{id} 0 R"),
+            None => data.len().to_string(),
+        };
         self.objects.push(Some(ObjectBody::Stream {
-            dict: format!("<< /Length {}{filter} {extra} >>", data.len()),
-            data,
+            dict: format!("<< /Length {length}{filter} {extra} >>"),
+            data: data.clone(),
         }));
+        if let Some(id) = length_id {
+            self.set_reserved(id, data.len().to_string());
+        }
         self.objects.len() as u32
     }
 
@@ -607,8 +709,10 @@ impl Pdf {
         match encoding {
             Encoding::ClassicXref => self.finish_classic(root, encrypt),
             Encoding::XrefStream | Encoding::ObjectStreams => {
-                self.finish_xref_stream(root, encoding == Encoding::ObjectStreams, encrypt)
+                self.finish_xref_stream(root, encoding == Encoding::ObjectStreams, encrypt, false)
             }
+            Encoding::PredictedXrefStream => self.finish_xref_stream(root, false, encrypt, true),
+            Encoding::IncrementalUpdate => self.finish_incremental(root, encrypt),
         }
     }
 
@@ -643,8 +747,15 @@ impl Pdf {
         pdf
     }
 
-    /// Serialize with an xref stream, optionally packing the dictionaries.
-    fn finish_xref_stream(&self, root: u32, pack: bool, encrypt: Option<u32>) -> Vec<u8> {
+    /// Serialize with an xref stream, optionally packing the dictionaries and
+    /// applying the PNG Up predictor to the cross-reference data.
+    fn finish_xref_stream(
+        &self,
+        root: u32,
+        pack: bool,
+        encrypt: Option<u32>,
+        predict: bool,
+    ) -> Vec<u8> {
         let mut packed: Vec<(u32, String)> = Vec::new();
         if pack {
             for (index, body) in self.objects.iter().enumerate() {
@@ -730,19 +841,84 @@ impl Pdf {
         let encrypt = encrypt
             .map(|id| format!(" /Encrypt {id} 0 R"))
             .unwrap_or_default();
+        let (filter, decode_parms) = if predict {
+            (
+                " /Filter /FlateDecode",
+                " /DecodeParms << /Predictor 12 /Columns 7 >>",
+            )
+        } else {
+            ("", "")
+        };
+        let data = if predict {
+            miniz_oxide::deflate::compress_to_vec_zlib(&png_up_encode(&xref, 7), 6)
+        } else {
+            xref
+        };
         pdf.extend_from_slice(format!("{xref_id} 0 obj\n").as_bytes());
         pdf.extend_from_slice(
             format!(
-                "<< /Type /XRef /Size {size} /W [1 4 2] /Root {root} 0 R{encrypt} /Length {} >>\nstream\n",
-                xref.len()
+                "<< /Type /XRef /Size {size} /W [1 4 2] /Root {root} 0 R{encrypt}{filter}{decode_parms} /Length {} >>\nstream\n",
+                data.len()
             )
             .as_bytes(),
         );
-        pdf.extend_from_slice(&xref);
+        pdf.extend_from_slice(&data);
         pdf.extend_from_slice(b"\nendstream\nendobj\n");
         pdf.extend_from_slice(format!("startxref\n{xref_offset}\n%%EOF\n").as_bytes());
         pdf
     }
+
+    /// Append one incremental update to the classic serialization, with a new
+    /// cross-reference section whose trailer points at the previous one.
+    fn finish_incremental(&self, root: u32, encrypt: Option<u32>) -> Vec<u8> {
+        let mut pdf = self.finish_classic(root, encrypt);
+        let previous = last_startxref(&pdf);
+        let new_id = self.objects.len() as u32 + 1;
+        let object_offset = pdf.len();
+        pdf.extend_from_slice(
+            format!("{new_id} 0 obj\n<< /Producer (incremental update) >>\nendobj\n").as_bytes(),
+        );
+        let xref_offset = pdf.len();
+        pdf.extend_from_slice(
+            format!(
+                "xref\n{new_id} 1\n{object_offset:010} 00000 n \ntrailer\n<< /Size {} /Root {root} 0 R /Prev {previous} >>\nstartxref\n{xref_offset}\n%%EOF\n",
+                new_id + 1
+            )
+            .as_bytes(),
+        );
+        pdf
+    }
+}
+
+/// The `startxref` value of a serialized classic document.
+fn last_startxref(pdf: &[u8]) -> usize {
+    let needle = b"startxref\n";
+    let position = pdf
+        .windows(needle.len())
+        .rposition(|window| window == needle)
+        .expect("a serialized document carries startxref");
+    let start = position + needle.len();
+    let digits: String = pdf[start..]
+        .iter()
+        .take_while(|byte| byte.is_ascii_digit())
+        .map(|byte| *byte as char)
+        .collect();
+    digits.parse().expect("a numeric startxref")
+}
+
+/// Encode each row with the PNG Up filter (type 2), the row bytes deltas from
+/// the previous row and the first row from zeros.
+fn png_up_encode(data: &[u8], columns: usize) -> Vec<u8> {
+    let mut output = Vec::with_capacity(data.len() + data.len() / columns + 1);
+    let mut previous = vec![0u8; columns];
+    for row in data.chunks(columns) {
+        output.push(2);
+        for (index, byte) in row.iter().enumerate() {
+            output.push(byte.wrapping_sub(previous[index]));
+        }
+        previous[..row.len()].copy_from_slice(row);
+    }
+    output
 }
 
 /// Write one object body.

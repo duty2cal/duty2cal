@@ -14,3 +14,29 @@ pub use duty2cal_pdf_fixtures::{
     AIRCRAFT_X, BLOCKTIME_X, DATE_X, END_X, FROM_X, LAYOVER_X, POS_X, REPORT_X, START_X, TAGS_X,
     TO_X, TRIP_X, TZ_X,
 };
+
+/// The committed accepted calendar the e2e and regular steps compare against.
+#[allow(dead_code)] // the golden target includes this module but uses only the fixtures
+pub(crate) fn accepted_calendar() -> String {
+    std::fs::read_to_string(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/expected/2026-06.ics"),
+    )
+    .expect("read the committed accepted calendar")
+}
+
+/// CRLF to LF, and folded lines joined back (the agreed normalisation).
+#[allow(dead_code)] // the golden target includes this module but uses only the fixtures
+pub(crate) fn normalise(calendar: &str) -> String {
+    calendar.replace("\r\n ", "").replace("\r\n", "\n")
+}
+
+/// A calendar's lines with every `UID:` line dropped.
+#[allow(dead_code)] // the golden target includes this module but uses only the fixtures
+pub(crate) fn content_apart_from_identity(calendar: &str) -> Vec<String> {
+    calendar
+        .lines()
+        .filter(|line| !line.starts_with("UID:"))
+        .map(str::to_string)
+        .collect()
+}

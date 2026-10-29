@@ -15,13 +15,34 @@ Every conversion either produces a complete calendar or fails explicitly. The `R
 ## Owned extraction and the frozen supported subset
 
 The shipped graphs read the one supported plan through an extraction the
-project owns: a small `lopdf` object/xref layer and project code for the
-content tokenizer, text state, Type0/Identity-H fonts, `/W` advances,
-`ToUnicode` CMaps, glyph boxes and word assembly. The seam is the positioned
-word; the table construction below it is one implementation used by the
-executable and the browser, so the two routes cannot drift. ADR-0008 freezes
-the subset to the constructs the reference plans and the generated variations
-exercise.
+project owns. Under the accepted boundary `lopdf` supplies the object/xref
+layer and project code supplies the content tokenizer, text state,
+Type0/Identity-H fonts, `/W` advances, `ToUnicode` CMaps, glyph boxes and word
+assembly. The ADR-0008 amendment proposed on 2026-10-29 would put the file
+structure in project code as well — object syntax, classic cross-reference
+tables, cross-reference streams, object streams, the trailer, the page tree
+with its inherited boxes and resources, and Flate decoding — so only the
+pure-Rust `miniz_oxide` decompressor stays third-party in the reading path. The
+amendment is **proposed and pending Gate A**, so no chapter, report or public
+claim may state that `lopdf` has already left the shipped graphs. The seam is
+the positioned word; the table construction below it is one implementation used
+by the executable and the browser, so the two routes cannot drift. ADR-0008
+freezes the subset to the constructs the reference plans and the generated
+variations exercise.
+
+The owned reading accepts a deliberately small set of file-structure spellings —
+a `%PDF-` header, the last `%%EOF` with its `startxref`, classic sections,
+cross-reference streams with `/Prev` and hybrid `/XRefStm`, object streams,
+direct or indirect stream lengths, page order and inheritance, Flate with PNG
+predictors 10–15 applied and every other predictor value passed through — and
+everything else is the unreadable refusal.
+There is no repair: a cross-reference pointer outside the file, an unparsable
+section, a missing `/Root`, a page-tree cycle, a stream length outside the file
+and a decoded stream above the 64 MiB bound are `Unreadable`, not a
+reconstructed cross-reference and not a new construct name. Those spellings are
+spellings of constructs the previous reader already accepted; they add nothing
+to the frozen subset, and a corrupt zlib checksum is recovered through the
+previous reader's raw-deflate retry, so the calendar does not change.
 
 A construct outside the subset — encryption, a font encoding other than
 Identity-H, a Type3 font, a missing `ToUnicode` map, an unmapped glyph code,
@@ -29,16 +50,21 @@ text or page rotation, horizontal scaling, an inline image, a form XObject, an
 unsupported text operator or content filter, a differing page box — maps to
 `SourceError::UnsupportedConstruct` with a closed construct name and a page. It
 is never a panic and never an empty calendar. `Unreadable` is reserved for
-corrupt bytes, `UnsupportedFamily` for a readable PDF without the detail table.
-The reason line carries the construct and page, never printed plan content.
+corrupt bytes and a damaged file structure, `UnsupportedFamily` for a readable
+PDF without the detail table. The reason line carries the construct and page,
+never printed plan content.
 
 The third-party extractor is a `[dev-dependencies]` oracle only.
 `scripts/check-extraction-dependency.sh` refuses it in the
-`x86_64-pc-windows-gnu` and `wasm32-unknown-unknown` normal graphs and refuses a
-missing oracle in the dev graph. The differential compares word text exactly
-and `x0`/`top` within 0.5 point, then the shared table output; the generated
-Identity-H corpus is the CI gate, and the opt-in real-corpus run is the only
-cover for the generator's exact bytes (R-078).
+`x86_64-pc-windows-gnu` and `wasm32-unknown-unknown` normal graphs — and, once
+the 2026-10-29 replacement lands, refuses `lopdf` there too — and refuses a
+missing oracle in the dev graph. The oracle keeps its own `lopdf` copy, which
+is why `Cargo.lock` and the third-party notices still name it. The differential
+compares word text exactly and `x0`/`top` within 0.5 point, then the shared
+table output; the generated Identity-H corpus is the CI gate, and the opt-in
+real-corpus run (`./scripts/validate-local-corpus.sh --differential`) is both
+the only cover for the generator's exact bytes (R-078) and the prototype gate's
+precondition.
 
 ## Row diagnostics and two report kinds
 
@@ -648,7 +674,12 @@ failures: a conversion that cannot be represented still returns the typed
 failure and attempts a numbered diagnostic naming the source PDF and the
 reason, and when no report can be saved the primary failure remains visible.
 The product uses no `unwrap()`/`expect()` outside test code. The owned extraction
-returns `Result` on every path; a panic there is a defect, not a refusal. The host lever
+returns `Result` on every path; a panic there is a defect, not a refusal. That
+rule covers the project's own parser when the file structure becomes project
+code under the ADR-0008 amendment proposed on 2026-10-29: every parse step
+returns `Result`, no parsed value is `unwrap`ped and no read is indexed without
+a bounds check, and a truncated or bad-pointer document stays the unreadable
+refusal. The host lever
 build is run on an unsupported source by the local reduction measurement; the Windows
 executable is started by the release workflow's Windows smoke job.
 
@@ -700,12 +731,22 @@ executable and the browser job builds the landed bundle; each measurement then
 creates a temporary worktree of the landed revision, restores only
 `crates/duty2cal-pdf/` and `Cargo.lock` from the base revision, rebuilds, and
 records both sizes and the saved bytes. The baseline is a same-revision restore
-because the landed tree no longer contains the previous extraction; a
-base-revision checkout would attribute unrelated changes.
+because the landed tree no longer contains the previous layer; a base-revision
+checkout would attribute unrelated changes.
+
+The compared layer is named by the base manifest: the 2026-10-29 file-structure
+replacement keeps the two scripts and their `extraction-backend/` and
+`browser-bundle/` outputs, but their predicate matches `lopdf` in
+`crates/duty2cal-pdf`'s `[dependencies]` instead of `pdfplumber`. This scenario
+is **Gate B** of the ADR-0008 amendment proposed on 2026-10-29. **Gate A** — a
+recorded host prototype at or below the amendment's [INFERENCE] ≈450 KB bound
+with a green six-file differential — runs before the replacement is built and
+can stop the change; because it is not met at design time, the accepted graphs
+still carry the object layer.
 
 A restored tree that does not build, a worktree diff beyond the allowed paths, a
 non-Windows artifact or a measured run's non-positive delta is a named refusal,
-not a number. A base revision that no longer names `pdfplumber` in
+not a number. A base revision that no longer names the previous layer in
 `crates/duty2cal-pdf`'s dependencies — the state of every base once this
 replacement has landed — is not a refusal: the script records
 `status: not applicable` with the resolved base and the landed size and exits 0,
