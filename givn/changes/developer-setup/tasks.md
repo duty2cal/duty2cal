@@ -43,12 +43,14 @@ native is out of scope.
 ## 2. Non-Nix bootstrap
 
 - [x] Add `scripts/setup-dev.sh` with a `--check` mode and its bats test.
-  - Evidence: `bats scripts/tests/setup-dev.bats` → 3/3 passed (missing
-    rustup, missing cargo, wrong Node major); the script sources
-    `$CARGO_HOME/env`, sources `$NVM_DIR/nvm.sh`, reads
-    `web/e2e/.nvmrc`, runs `npm ci --prefix web/e2e` before Chromium and
-    never invokes a package manager.
-  - Commit: `724e97d9b653dc14ef3bdcebb5eb0a14ee8d7587`
+  - Evidence: `bats scripts/tests/setup-dev.bats` → 4/4 passed (missing
+    rustup, missing cargo, browser-build/npm-client mismatch, wrong Node
+    major); the script sources `$CARGO_HOME/env`, sources `$NVM_DIR/nvm.sh`,
+    reads `web/e2e/.nvmrc`, runs `npm ci --prefix web/e2e` before Chromium,
+    prints the host package list from `playwright install-deps --dry-run`,
+    refuses the browser mismatch with a non-zero exit, and never invokes a
+    package manager.
+  - Commit: `724e97d9b653dc14ef3bdcebb5eb0a14ee8d7587` (delta: `4fbe39e20e94d43eab55204b8e66f66a8119f169`)
 
 ## 3. Nix development shell
 
@@ -59,10 +61,11 @@ native is out of scope.
     `cargo-llvm-cov` 0.9.0, Node 24.21.0;
     `NIX_LDFLAGS_x86_64_w64_mingw32` names the pthreads and mcfgthread
     libraries; `cargo build --release --target x86_64-pc-windows-gnu` inside
-    the shell produced `duty2cal.exe` (841,728 B). `reuse` and OpenTofu are
-    deliberately not in the shell (broken package; version drift) and the
-    bootstrap reports them.
-  - Commit: `724e97d9b653dc14ef3bdcebb5eb0a14ee8d7587`
+    the shell produced `duty2cal.exe` (841,728 B). The shell exports
+    `PLAYWRIGHT_DRIVER_VERSION` (1.64.1) and refuses a client/browser
+    mismatch. `reuse` and OpenTofu are deliberately not in the shell (broken
+    package; version drift) and the bootstrap reports them.
+  - Commit: `724e97d9b653dc14ef3bdcebb5eb0a14ee8d7587` (delta: `4fbe39e20e94d43eab55204b8e66f66a8119f169`)
 
 ## 4. CI
 
@@ -70,10 +73,11 @@ native is out of scope.
   them in the four workflows; drop the per-job components/targets.
   - Evidence: `actionlint .github/workflows/*.yml` exit 0; the toolchain
     action runs `rustup show` (installs the file's components and targets)
-    then the guard; the release smoke job gained the checkout the local
-    composite action needs; the five `dtolnay/rust-toolchain@stable` blocks
-    and the per-job `components`/`targets` are gone.
-  - Commit: `724e97d9b653dc14ef3bdcebb5eb0a14ee8d7587`
+    then the guard, `cargo fmt --version` and `cargo clippy --version`; the
+    release smoke job gained the checkout the local composite action needs;
+    the five `dtolnay/rust-toolchain@stable` blocks and the per-job
+    `components`/`targets` are gone.
+  - Commit: `724e97d9b653dc14ef3bdcebb5eb0a14ee8d7587` (delta: `4fbe39e20e94d43eab55204b8e66f66a8119f169`)
 
 ## 5. Documentation
 
@@ -101,4 +105,5 @@ native is out of scope.
 | Revision | Purpose |
 |---|---|
 | `724e97d9b653dc14ef3bdcebb5eb0a14ee8d7587` | The pin, the guard, the bootstrap, the flake, the CI actions and workflows, the documentation and the arc42 chapters. |
+| `4fbe39e20e94d43eab55204b8e66f66a8119f169` | The Playwright client/browser refusal, the dry-run package list, the CI component assertions and the record corrections. |
 | this revision | The completed task record and its evidence; archived with the change. |
