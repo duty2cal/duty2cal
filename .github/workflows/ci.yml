@@ -256,6 +256,7 @@ jobs:
             rustc -V
             cargo fmt --version
             cargo clippy --version
+            scripts/check-playwright-version.sh
           '
 
   scripts:

@@ -19,3 +19,11 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+
+  # Playwright and axe are test-only, but the flake's browser build must stay
+  # equal to the npm client; the `nix` CI job refuses a lockfile bump that does
+  # not move flake.lock with it.
+  - package-ecosystem: "npm"
+    directory: "/web/e2e"
+    schedule:
+      interval: "weekly"
