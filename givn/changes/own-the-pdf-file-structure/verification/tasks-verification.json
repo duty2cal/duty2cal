@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "own-the-pdf-file-structure",
+  "status": "passed",
+  "head": "8ab4806e9c5fa2c140f7a9f5e5f8d8cdf8bb4926",
+  "features_path": "givn/changes/own-the-pdf-file-structure/specs",
+  "features_digest": "1b6486cf6c4c42cce13ce5716546f89d77df0909b781340d9c01babf91134e24",
+  "command_digest": "1031237dac4a7328aa009dc5586392005a11f5408a7dc7b8a4726efc55a93a8e",
+  "command": "./run-tests.sh",
+  "tested_content_digest": "f7b6e65b51655d844403c2c7223c5fcb05afdfec8b638372b0cb7dfafa3d5478",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "regular",
+    "total": 145,
+    "passed": 145,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1793288438
+}
