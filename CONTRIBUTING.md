@@ -68,6 +68,13 @@ compiler and the libraries the link needs. The browser suite needs
 `npm ci --prefix web/e2e` before `./run-tests.sh --browser`; the setup script
 does it, and names any missing Chromium host library.
 
+To move the compiler pin, run `./scripts/bump-toolchain.sh
+<major.minor.patch>` on a machine with Nix. It edits `rust-toolchain.toml`,
+updates the rust-overlay revision in `flake.lock`, and re-runs the guard; an
+unresolvable release restores both files. The cargo tools in
+`scripts/dev-tool-versions.env` are bumped deliberately, because their output
+is byte-compared by the change-log and notices gates.
+
 ## Checks to run before you propose a change
 
 ```sh
