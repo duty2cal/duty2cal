@@ -325,3 +325,27 @@ fn cmp(a: f64, b: f64) -> std::cmp::Ordering {
 fn multipage_plan_matches_the_oracle() {
     compare_with_oracle(&fixtures::build_multipage_plan());
 }
+
+#[test]
+fn png_none_filter_xref_stream_matches_the_oracle() {
+    compare_with_oracle(&fixtures::build_plan_with_options(
+        &fixtures::equivalence_plan(),
+        fixtures::Encoding::PredictedXrefStream,
+        fixtures::LayoutOptions {
+            png_filter: 0,
+            ..fixtures::LayoutOptions::default()
+        },
+    ));
+}
+
+#[test]
+fn png_average_filter_xref_stream_matches_the_oracle() {
+    compare_with_oracle(&fixtures::build_plan_with_options(
+        &fixtures::equivalence_plan(),
+        fixtures::Encoding::PredictedXrefStream,
+        fixtures::LayoutOptions {
+            png_filter: 3,
+            ..fixtures::LayoutOptions::default()
+        },
+    ));
+}

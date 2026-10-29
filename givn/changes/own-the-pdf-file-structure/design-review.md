@@ -250,4 +250,18 @@ and neither duplicates the `@e2e` action. No scenario is merged or deleted.
   decision-ledger entry changed; the Gate A acceptance wording stands.
 - **Verdict.** The design-review remains PASS with the corrected design.
 
+## Re-review after the F6 coverage finding
+
+- **F6 — PNG filter arms.** The predictor's None (0) and Average (3) row-filter
+  branches were implemented but unexercised. Two differential cases now pin
+  them (`png_none_filter_xref_stream_matches_the_oracle`,
+  `png_average_filter_xref_stream_matches_the_oracle`); `cargo test -p
+  duty2cal-pdf` passes 19 cases (1 ignored) and the six private plans stay
+  green. The design, chapter 5, R-078 and R-082 name all four filters.
+- A fresh-context review author verified the two arms against the
+  implementation and the doc list before sign-off; no other design statement
+  changed and no scenario, `@e2e` tag, proposal scope or decision-ledger entry
+  moved.
+- **Verdict.** The design-review remains PASS with the corrected design.
+
 DESIGN-REVIEW: PASS
