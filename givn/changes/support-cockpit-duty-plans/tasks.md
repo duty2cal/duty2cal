@@ -31,22 +31,22 @@ Design constraints:
 
 Use-case constraint: every dated detail row is accounted for; a cabin or cockpit plan may begin with the previous month's tail, and the row's day and weekday must date it without inventing an August event.
 
-- [ ] GREEN — fixture and assertion in place; production rule in `table.rs`; scenario passes.
-- [ ] COMMIT: pending -- Batch: cockpit-plan-reading
+- [x] GREEN — fixture and assertion in place; production rule in `table.rs`; scenario passes.
+- [x] COMMIT: f26522e -- Batch: cockpit-plan-reading
 
 ### 2. A detail date printed in the next month is resolved by its weekday
 
 Use-case constraint: the adjacent-month rule is symmetric; a row after the heading month's last day resolves to the next month when the row order continues.
 
-- [ ] GREEN — fixture and assertion in place; production rule in `table.rs`; scenario passes.
-- [ ] COMMIT: pending -- Batch: cockpit-plan-reading
+- [x] GREEN — fixture and assertion in place; production rule in `table.rs`; scenario passes.
+- [x] COMMIT: f26522e -- Batch: cockpit-plan-reading
 
 ### 3. A Created footer printed directly below the last detail row is not a detail row
 
 Use-case constraint: footer records are not dated activities, even when the footer sits inside the table's row pitch; the revision instant still supplies `DTSTAMP`.
 
-- [ ] GREEN — fixture prints the complete `Created … (UTC) by …` footer 10 pt below the last row; the reader stops at it; the scenario passes with the revision timestamp intact.
-- [ ] COMMIT: pending -- Batch: cockpit-plan-reading
+- [x] GREEN — fixture prints the complete `Created … (UTC) by …` footer 10 pt below the last row; the reader stops at it; the scenario passes with the revision timestamp intact.
+- [x] COMMIT: f26522e -- Batch: cockpit-plan-reading
 
 ## Behavior batch: crew-support-statement
 
@@ -61,15 +61,15 @@ Design constraints:
 
 Use-case constraint: the statement names a Lufthansa crew duty plan, its boundary and the non-affiliation sentence; the same statement is carried by all five carriers and the evidence record; a disagreeing carrier is named.
 
-- [ ] GREEN — `scripts/support-statement-check.sh` exits zero and prints the clean line; all five carriers agree; the check names no refusal.
-- [ ] COMMIT: pending -- Batch: crew-support-statement
+- [x] GREEN — `scripts/support-statement-check.sh` exits zero and prints the clean line; all five carriers agree; the check names no refusal.
+- [x] COMMIT: 5536488 -- Batch: crew-support-statement
 
 ### 5. The evidence record names both crew-role fixtures that exercise the claim
 
 Use-case constraint: a plan is named only with exercised evidence; the cabin and cockpit fixtures both convert through the unchanged conversion.
 
-- [ ] GREEN — the evidence record names `cockpit_prior_month_plan`, `cockpit_next_month_tail_plan`, `footer_beside_last_row_plan` and their scenarios; the bats suite refuses a record that drops the cockpit fixture.
-- [ ] COMMIT: pending -- Batch: crew-support-statement
+- [x] GREEN — the evidence record names `cockpit_prior_month_plan`, `cockpit_next_month_tail_plan`, `footer_beside_last_row_plan` and their scenarios; the bats suite refuses a record that drops the cockpit fixture.
+- [x] COMMIT: 5536488 -- Batch: crew-support-statement
 
 ## Existing E2E coverage
 
@@ -77,7 +77,7 @@ Use-case constraint: a plan is named only with exercised evidence; the cabin and
 
 ## Closeout
 
-- [ ] `./run-tests.sh` and `./run-tests.sh --e2e` exit 0.
-- [ ] `scripts/support-statement-check.sh` exits 0 and `bats scripts/tests/support-statement.bats` passes.
-- [ ] `givn lint --change support-cockpit-duty-plans` exits clean.
-- [ ] The six cabin-crew calendars in `private/mk/` are byte-identical after reconversion, and all five cockpit-crew plans in `private/hs/` exit 0.
+- [x] `./run-tests.sh` and `./run-tests.sh --e2e` exit 0.
+- [x] `scripts/support-statement-check.sh` exits 0 and `bats scripts/tests/support-statement.bats` passes.
+- [x] `givn lint --change support-cockpit-duty-plans` exits clean.
+- [x] The six cabin-crew calendars in `private/mk/` are byte-identical after reconversion, and all five cockpit-crew plans in `private/hs/` exit 0.
