@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "change": "support-cockpit-duty-plans",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "scope_evidence": {},
+  "coverage_inputs": null,
+  "merge_completed": true,
+  "merged_deltas": [
+    "export-duty-plan-calendar/export-duty-plan-calendar.feature",
+    "state-the-converter-support-statement/state-the-support-statement.feature"
+  ],
+  "merge_in_progress": null,
+  "merge_plan": [
+    "export-duty-plan-calendar/export-duty-plan-calendar.feature",
+    "state-the-converter-support-statement/state-the-support-statement.feature"
+  ],
+  "merge_targets": {
+    "export-duty-plan-calendar/export-duty-plan-calendar.feature": "givn/specs/export-duty-plan-calendar/export-duty-plan-calendar.feature",
+    "state-the-converter-support-statement/state-the-support-statement.feature": "givn/specs/state-the-converter-support-statement/state-the-support-statement.feature"
+  },
+  "started_at_unix": 1794434198,
+  "finished_at_unix": null
+}

@@ -1,7 +1,7 @@
 @documentation
 Feature: State the support statement
 
-  @e2e
+  @e2e @state-the-support-statement @documentation
   Scenario: Release owner runs the support-statement check and every carrier carries the statement
     Given  the website, the README, the organization profile, chapter 3 and both issue forms carry the support statement
     And  the statement names a Lufthansa crew duty plan published as a Jeppesen PDF export, its boundary and the non-affiliation sentence
@@ -61,3 +61,11 @@ Feature: State the support statement
     And  the form asks what the refusal said
     And  the form offers a stripped sample only when one is needed
     And  the form asks no export-family question
+
+  @state-the-support-statement @documentation
+  Scenario: The evidence record names both crew-role fixtures that exercise the claim
+    Given  the supported crew duty plan's evidence record in the repository
+    When  a reader reads the evidence record
+    Then  it names the cabin-crew fixture and the cockpit-crew fixture
+    And  it names the scenario that converts the cockpit-crew fixture
+    And  it states that no real plan and no identifying value is committed

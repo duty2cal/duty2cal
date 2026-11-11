@@ -381,6 +381,7 @@ Feature: Export a duty-plan calendar
     Given a supported duty plan whose revision footer prints an unusable stamp
     When the crew member converts it
     Then the calendar's revision is the construction clock
+
   Scenario: A crew position and its flight number are printed as separate words
     Given  a supported duty plan whose travel leg prints crew position FB and flight number 123 from ABC to DEF with resolved UTC start 08:00 and end 09:00
     When  the crew member converts it
@@ -407,6 +408,7 @@ Feature: Export a duty-plan calendar
     When  the crew member converts it
     Then  no calendar is published
     And  the conversion failure names "no unique compatible partner"
+
   Scenario: A travel activity's title ends with its report time in local time
     Given  a supported duty plan travel leg supplying Trip ID T42, Report (LT) 07:30, A/C ABC, Blocktime 02:00, Timezone Difference +01, Layover duration 03:00, and Tags 5_MFL
     When  the crew member converts it
@@ -427,6 +429,7 @@ Feature: Export a duty-plan calendar
     Given  a compatible departure and arrival fragment of one travel leg supplying the same report time 07:30
     When  the crew member converts it
     Then  that activity's title is "LU742 ABC-DEF Report 07:30 LT"
+
   @e2e @browser
   Scenario: Crew member converts a supported duty plan in the browser and saves the offered calendar
     Given  the converter page served from the built Site output
@@ -570,6 +573,7 @@ Feature: Export a duty-plan calendar
     And  the page has stored nothing in persistent browser storage
     When  the crew member reloads the page
     Then  the page shows the empty state and offers no calendar
+
   Scenario: An unrecognized activity code with a printed window becomes a timed activity with a warning
     Given  a supported duty plan dated 2099-06-07 with activity code ZZ_M_CF at station ABC and printed UTC start 08:00 and end 15:30
     When  the crew member converts it
@@ -850,6 +854,7 @@ Feature: Export a duty-plan calendar
     And  the converter reports a conversion failure naming "a required timing could not be resolved"
     And  the failure report lists that row under "Errors:"
     And  the invocation reports failure through a non-zero process exit status
+
   @browser
   Scenario: The page lists an all-day unknown duty with its date and code
     Given  the converter page served from the built Site output
@@ -857,3 +862,26 @@ Feature: Export a duty-plan calendar
     Then  the page shows that the calendar is ready with warnings
     And  the page lists the unknown duty "07-06-2099 unknown duty: ZZ_M_CF"
     And  the page meets the visual baseline in the ready-with-warnings state
+
+  @export-duty-plan-calendar
+  Scenario: A detail date printed in the previous month is resolved by its weekday
+    Given  a supported duty plan whose heading names August 2099 and whose detail rows begin with 30 Thu and 31 Fri
+    When  the crew member converts it
+    Then  the calendar contains a travel activity on 2099-07-30 titled "CP 1916 ABC-DEF"
+    And  the calendar contains a travel activity on 2099-07-31 titled "CP 1917 DEF-ABC"
+    And  the calendar contains an all-day activity on 2099-08-01
+
+  @export-duty-plan-calendar
+  Scenario: A detail date printed in the next month is resolved by its weekday
+    Given  a supported duty plan whose heading names August 2099 and whose detail rows end with 31 Mon and 01 Tue
+    When  the crew member converts it
+    Then  the calendar contains a travel activity on 2099-08-31 titled "CP 1918 ABC-DEF"
+    And  the calendar contains a travel activity on 2099-09-01 titled "CP 1919 DEF-ABC"
+
+  @export-duty-plan-calendar
+  Scenario: A Created footer printed directly below the last detail row is not a detail row
+    Given  a supported duty plan whose Created footer is printed directly below its last dated row
+    When  the crew member converts it
+    Then  the invocation reports success through its process exit status
+    And  the all-day activity for 2099-06-07 ends on 2099-06-08
+    And  the published calendar's revision timestamp is 2099-05-21 15:52 UTC
