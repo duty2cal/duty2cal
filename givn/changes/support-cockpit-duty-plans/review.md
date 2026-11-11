@@ -6,6 +6,8 @@ Author: omp
 Reviewer context: self (same context)
 ```
 
+README-IMPACT: updated - the supported-plan statement, its boundary and the refusal sentence
+
 Reviewed from the tree after the two behavior batches: the reading rules in
 `crates/duty2cal-pdf/src/table.rs`, the three cockpit fixtures and steps, the
 support-statement constants, carriers, evidence record, check and bats suite,
