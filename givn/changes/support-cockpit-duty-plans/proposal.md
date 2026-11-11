@@ -39,8 +39,8 @@ Three of the five cockpit plans already publish a calendar, but with the documen
 
 | Proposed capability | Decision | Rationale |
 |---|---|---|
-| export-duty-plan-calendar | `EXTEND export-duty-plan-calendar` | The actor, goal, calendar contract, publication and reports are unchanged; only two reading rules for dates and footer material change, so the same capability gains the cockpit rows. |
-| state-the-support-statement | `EXTEND state-the-support-statement` | The capability already owns the one public sentence and its five carriers; the sentence's noun phrase and boundary change, and that use case is the durable home of both. |
+| export-duty-plan-calendar | EXTEND export-duty-plan-calendar | The actor, goal, calendar contract, publication and reports are unchanged; only two reading rules for dates and footer material change, so the same capability gains the cockpit rows. |
+| state-the-support-statement | EXTEND state-the-support-statement | The capability already owns the one public sentence and its five carriers; the sentence's noun phrase and boundary change, and that use case is the durable home of both. |
 
 ## Out of Scope
 
