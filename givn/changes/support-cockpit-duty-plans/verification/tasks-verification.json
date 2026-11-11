@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "support-cockpit-duty-plans",
+  "status": "passed",
+  "head": "b5285d3b766ba4a42bba78b6a351cbdf53e832f4",
+  "features_path": "givn/changes/support-cockpit-duty-plans/specs",
+  "features_digest": "f2f67f0575ebb8c8ea3cc4cc31c26ef222be71298d29038f4fdb10ea2df13c23",
+  "command_digest": "1031237dac4a7328aa009dc5586392005a11f5408a7dc7b8a4726efc55a93a8e",
+  "command": "./run-tests.sh",
+  "tested_content_digest": "04077f69ee244a2ccf2d9fc686db585cf567b98d44c13a5e847708d11e9006a0",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 148,
+    "passed": 148,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1794434000
+}
