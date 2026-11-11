@@ -212,9 +212,13 @@ if [ "$status" -ne 0 ] && [ "$failed" -eq 0 ]; then
 fi
 
 if [ -n "${GIVN_RESULT_FILE:-}" ]; then
-  # The scope the gate asked for: "e2e" when the run is the @e2e filter.
-  scope="regular"
-  [ "$want_e2e" = 1 ] && scope="e2e"
+  # The scope the gate asked for; a direct run reports "regular" (or "e2e"
+  # when it selected the @e2e filter).
+  scope="${GIVN_RESULT_SCOPE:-}"
+  if [ -z "$scope" ]; then
+    scope="regular"
+    [ "$want_e2e" = 1 ] && scope="e2e"
+  fi
 
   mkdir -p "$(dirname "$GIVN_RESULT_FILE")"
   printf '{"scope":"%s","total":%s,"passed":%s,"failed":%s,"skipped":%s}\n' \
