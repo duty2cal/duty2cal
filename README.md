@@ -13,9 +13,9 @@
 [![Release](https://github.com/duty2cal/duty2cal/actions/workflows/release.yml/badge.svg)](https://github.com/duty2cal/duty2cal/releases/latest)
 [![License: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-blue)](LICENSES/MPL-2.0.txt)
 
-duty2cal converts a Lufthansa cabin-crew duty plan published as a Jeppesen
-PDF export into one calendar file. One roster month of cabin crew; not cockpit
-duties, other Lufthansa duty plans, other Jeppesen exports or another operator.
+duty2cal converts a Lufthansa crew duty plan published as a Jeppesen
+PDF export into one calendar file. One roster month of one crew member; not
+other Lufthansa duty plans, other Jeppesen exports or another operator.
 It reads the plan's PDF for one roster month and writes one RFC 5545 calendar
 file beside it, plus a warning report when a row was represented by a fallback,
 so that month's flights, standbys, non-flight duties, days off and layovers
@@ -23,7 +23,7 @@ appear in the calendar the crew member already uses. It is built for the crew
 member who holds the plan: no account, no network, no service, one plan in and
 the calendar out.
 
-A plan it cannot read as the supported Lufthansa cabin-crew Jeppesen export is
+A plan it cannot read as the supported Lufthansa crew Jeppesen export is
 never half-converted. It publishes no calendar, writes a numbered diagnostic
 naming the source, the reason, and every row that could not be represented, and
 reports the failure through its exit status, so an unattended run can tell a

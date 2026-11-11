@@ -13,7 +13,7 @@ Feature: Publish the public website
     And  the page header shows the project's vector mark at 48 by 48 with the alternative text "duty2cal", left of the page heading and its subheadline
     And  the page's tab declares the project's vector mark first as its icon and the raster mark after it as the alternate for a browser that cannot use the vector, each declaration naming its own type
     And  a panel above the converter panel states what the tool does, the browser route, the archive route, the privacy rule, the non-affiliation statement and the as-is statement before the page asks for a file, the archive route saying that downloads for various operating systems are available on request and that the release page carries the published builds
-    And  the what-it-does statement names a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export, one roster month of cabin crew, and the limits that cockpit duties, other Lufthansa duty plans, other Jeppesen exports and another operator are not covered
+    And  the what-it-does statement names a Lufthansa crew duty plan published as a Jeppesen PDF export, one roster month of one crew member, and the limits that other Lufthansa duty plans, other Jeppesen exports and another operator are not covered
     And  the non-affiliation statement names Lufthansa, Jeppesen and any duty-plan provider or airline
     And  a panel below the converter panels states the source and the licence, and the footer names the Built revision, states the page's local-processing note and links both notices without repeating any sentence the panels make
     And  the page's footer links "Impressum" and "Datenschutz" to the two notice pages of the same output

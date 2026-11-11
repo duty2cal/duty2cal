@@ -100,7 +100,7 @@ if [ "$what" != "$SUPPORT_SITE $BOUNDARY" ] && [ "$what" != "$SUPPORT_SITE_SHRUN
   fail "web/index.html: what-it-does does not state the support sentence followed by the boundary"
 fi
 [ "$nonaff" = "$NON_AFFILIATION" ] || fail "web/index.html: non-affiliation does not state the named disclaimer"
-has "$(printf '%s' "$page_html" | norm)" 'Lufthansa cabin-crew duty plan published as a Jeppesen PDF export' \
+has "$(printf '%s' "$page_html" | norm)" 'Lufthansa crew duty plan published as a Jeppesen PDF export' \
   || fail "web/index.html: the lede does not name the supported plan"
 
 # --- Carriers 2-5: README, profile, chapter 3 subsection, both issue forms. --
@@ -153,6 +153,14 @@ else
     has "$record" "$code" || fail "docs/evidence/supported-duty-plan.md: does not name the activity code '$code'"
   done
   has "$record" 'LU742' || fail 'docs/evidence/supported-duty-plan.md: does not name the travel leg the fixture prints'
+  has "$record" 'cockpit_prior_month_plan' \
+    || fail 'docs/evidence/supported-duty-plan.md: does not name the cockpit fixture'
+  has "$record" 'A detail date printed in the previous month is resolved by its weekday' \
+    || fail 'docs/evidence/supported-duty-plan.md: does not name the cockpit conversion scenario'
+  has "$record" 'footer_beside_last_row_plan' \
+    || fail 'docs/evidence/supported-duty-plan.md: does not name the close-footer fixture'
+  has "$record" 'A Created footer printed directly below the last detail row is not a detail row' \
+    || fail 'docs/evidence/supported-duty-plan.md: does not name the close-footer scenario'
   has "$record" 'no real plan' || fail 'docs/evidence/supported-duty-plan.md: does not state the privacy rule'
   if has "$record" 'DTSTART'; then fail 'docs/evidence/supported-duty-plan.md: carries the DTSTART property'; fi
   if has "$record" 'CREATED'; then fail 'docs/evidence/supported-duty-plan.md: carries the CREATED property'; fi

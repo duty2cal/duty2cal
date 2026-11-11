@@ -144,7 +144,7 @@ The change that states the supported duty plan (state-the-supported-duty-plan)
 minted no ADR and amended none. Three candidates were assessed:
 
 - **The public statement's unit and boundary** — name the one plan (a Lufthansa
-  cabin-crew duty plan published as a Jeppesen PDF export) with its boundary and
+  crew duty plan published as a Jeppesen PDF export) with its boundary and
   a non-affiliation sentence instead of a generic "supported export" or an
   internal format family. It fails `lower_level_artifact`: the claim, its
   wording and its shrink rule are observable public behaviour owned by the new

@@ -61,7 +61,7 @@ import sys
 path = sys.argv[1]
 text = open(path, encoding="utf-8").read()
 text = text.replace(
-    "duty2cal converts a Lufthansa cabin-crew duty plan",
+    "duty2cal converts a Lufthansa crew duty plan",
     "duty2cal converts a crew duty plan",
     1,
 )
@@ -91,6 +91,13 @@ PY
   run_check
   [ "$status" -ne 0 ]
   [[ "$output" == *"docs/evidence/supported-duty-plan.md: does not name the fixture builder"* ]]
+}
+
+@test "an evidence record that names no cockpit fixture is refused" {
+  sed -i '/cockpit_prior_month_plan/d' "$TMP/docs/evidence/supported-duty-plan.md"
+  run_check
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"docs/evidence/supported-duty-plan.md: does not name the cockpit fixture"* ]]
 }
 
 @test "a form without the outcome fields is refused" {

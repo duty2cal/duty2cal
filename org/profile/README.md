@@ -2,9 +2,9 @@
 <!-- SPDX-License-Identifier: CC0-1.0 -->
 # duty2cal
 
-duty2cal converts a Lufthansa cabin-crew duty plan published as a Jeppesen
-PDF export into one calendar file. One roster month of cabin crew; not cockpit
-duties, other Lufthansa duty plans, other Jeppesen exports or another operator.
+duty2cal converts a Lufthansa crew duty plan published as a Jeppesen
+PDF export into one calendar file. One roster month of one crew member; not
+other Lufthansa duty plans, other Jeppesen exports or another operator.
 The conversion runs locally: no account, no network, no service, and no file
 leaves your device. A plan it cannot read is reported as a failure, never as a
 partial calendar.

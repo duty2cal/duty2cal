@@ -82,7 +82,7 @@ fi
 nonaff="$(statement_text non-affiliation)"
 [ "$nonaff" = "$NON_AFFILIATION" ] \
   || fail "the page's non-affiliation statement does not name Lufthansa and Jeppesen"
-grep -Fq 'Lufthansa cabin-crew duty plan published as a Jeppesen PDF export' "$index" \
+grep -Fq 'Lufthansa crew duty plan published as a Jeppesen PDF export' "$index" \
   || fail "the page's lede does not name the supported plan"
 
 # The Built revision anchor names the commit and wraps the revision text.

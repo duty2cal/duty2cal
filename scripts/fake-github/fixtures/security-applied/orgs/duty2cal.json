@@ -10,7 +10,7 @@
   "members_url": "https://api.github.com/orgs/duty2cal/members{/member}",
   "public_members_url": "https://api.github.com/orgs/duty2cal/public_members{/member}",
   "avatar_url": "https://github.com/identicons/duty2cal.png",
-  "description": "Converts a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export into one calendar file.",
+  "description": "Converts a Lufthansa crew duty plan published as a Jeppesen PDF export into one calendar file.",
   "name": "duty2cal",
   "company": "",
   "blog": "https://duty2cal.github.io/",

@@ -20,7 +20,7 @@ resource "github_organization_settings" "org" {
   # name (GitHub renders the name beside it); the URL is the Public website's
   # canonical address; the mail address is the Impressum's alias, so a reader
   # who writes from the organization page reaches the same mailbox.
-  description = "Converts a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export into one calendar file."
+  description = "Converts a Lufthansa crew duty plan published as a Jeppesen PDF export into one calendar file."
   location    = "Berlin, Germany"
   company     = ""
   blog        = "https://duty2cal.github.io/"

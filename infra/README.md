@@ -83,7 +83,7 @@ other declared object. The current values:
 
 | Field | Value |
 |---|---|
-| Description | `Converts a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export into one calendar file.` |
+| Description | `Converts a Lufthansa crew duty plan published as a Jeppesen PDF export into one calendar file.` |
 | URL (`blog`) | `https://duty2cal.github.io/` |
 | Email (public) | `duty2cal662.abridge974@aleeas.com` — the Impressum's alias |
 | Location | `Berlin, Germany` |
@@ -139,7 +139,7 @@ described in chapter 6 are the full procedure; run them before a broad apply.
 
 ```sh
 curl -sS https://raw.githubusercontent.com/duty2cal/.github/main/profile/README.md \
-  | grep -F 'Lufthansa cabin-crew duty plan'
+  | grep -F 'Lufthansa crew duty plan'
 ```
 
 Commit the state:

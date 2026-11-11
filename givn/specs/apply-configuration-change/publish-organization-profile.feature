@@ -39,8 +39,8 @@ Feature: Publish the organization profile
     Given  the organization profile repository is published
     When  a reader reads the published profile content
     Then  the profile content describes the converter as a local tool that reads a crew duty plan and writes a calendar
-    And  the profile content states that duty2cal converts a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export into one calendar file
-    And  the profile content states the boundary: one roster month of cabin crew; not cockpit duties, other Lufthansa duty plans, other Jeppesen exports or another operator
+    And  the profile content states that duty2cal converts a Lufthansa crew duty plan published as a Jeppesen PDF export into one calendar file
+    And  the profile content states the boundary: one roster month of one crew member; not other Lufthansa duty plans, other Jeppesen exports or another operator
     And  the profile content states that the project is not affiliated with Lufthansa, Jeppesen, or any duty-plan provider or airline
     And  the profile content names Windows x86_64 as the only published archive platform
     And  the profile content states that builds for other operating systems are available on request

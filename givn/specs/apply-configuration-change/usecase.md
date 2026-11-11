@@ -98,6 +98,7 @@ This is a changing use case: it changes the live organization and repositories.
 | enable-repository-security | apply the previewed revision and read the outcome | Organization owner applies the previewed revision and the security settings are enabled |
 | publish-organization-profile | preview the declared configuration and read the named differences | Organization owner previews the profile declaration and only the three creations are named |
 | publish-organization-profile | apply the previewed revision and read the outcome | Organization owner applies the previewed revision and the organization profile is published |
+| publish-organization-profile | apply a revised profile content and read the only changed file | A revised profile content updates only the profile file |
 | publish-site-plumbing | preview the declared configuration and read the named differences | Organization owner previews the pages plumbing and only the three live creations are named |
 | publish-site-plumbing | apply the previewed revision and read the outcome | Organization owner applies the previewed revision and the pages publishing credential is created |
 

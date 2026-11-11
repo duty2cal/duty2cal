@@ -796,7 +796,7 @@ flowchart TB
 
 **Trigger:** The release owner publishes or revises the support statement — on
 a release, or because the evidence behind it changed. The statement names one
-plan: a Lufthansa cabin-crew duty plan published as a Jeppesen PDF export.
+plan: a Lufthansa crew duty plan published as a Jeppesen PDF export.
 
 ```mermaid
 flowchart TB
