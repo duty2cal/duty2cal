@@ -28,9 +28,12 @@ the graphs no longer name the library. The measurement behind that acceptance
 was the host Gate A result: 548,432 B (548,424 B stripped) against the 926,104 B
 baseline, −377,672 B (−40.8%). The seam is
 the positioned word; the table construction below it is one implementation used
-by the executable and the browser, so the two routes cannot drift. ADR-0008
-freezes the subset to the constructs the reference plans and the generated
-variations exercise.
+by the executable and the browser, so the two routes cannot drift. That table
+construction resolves a `DD Ddd` date against the heading month or the adjacent
+previous and next months, continuing the plan's row order, and it ends the
+detail rows at a parsed `Created … (UTC)` footer instead of letting that footer
+become a row. ADR-0008 freezes the subset to the constructs the reference plans
+and the generated variations exercise.
 
 The owned reading accepts a deliberately small set of file-structure spellings —
 a `%PDF-` header, the last `%%EOF` with its `startxref`, classic sections,
@@ -421,8 +424,8 @@ public copy, not product output. They live in `org/` in the monorepo, are
 reviewed like code, are licensed CC0-1.0, and are published into the public
 profile repository by the declaration; the profile repository is output and is
 never edited by hand. The copy states only what the repository keeps: the
-converter and the one plan it converts — a Lufthansa cabin-crew duty plan
-published as a Jeppesen PDF export, with the boundary that cockpit duties, other
+converter and the one plan it converts — a Lufthansa crew duty plan
+published as a Jeppesen PDF export, with the boundary that other
 Lufthansa duty plans, other Jeppesen exports and another operator are not
 covered — the browser conversion route now reachable on the Public website at
 `https://duty2cal.github.io/`, Windows x86_64 as the only published archive

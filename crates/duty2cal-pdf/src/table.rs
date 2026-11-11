@@ -51,6 +51,7 @@ pub(crate) fn build(document: ExtractedDocument) -> Result<SourceDocument, Sourc
     let mut revision: Option<OffsetDateTime> = None;
     let mut roster_month: Option<(i32, Month)> = None;
     let mut family_recognised = false;
+    let mut last_date: Option<Date> = None;
 
     for page in &document.pages {
         let text = page_text(&page.words);
@@ -70,6 +71,13 @@ pub(crate) fn build(document: ExtractedDocument) -> Result<SourceDocument, Sourc
 
         for row in cluster_rows(&page.words, ROW_TOLERANCE) {
             let top = row.first().map(|word| word.top).unwrap_or_default();
+
+            if is_revision_footer(&row) {
+                // The footer is page metadata, not a detail row. It may sit
+                // inside the table's row pitch, so the gap rule alone does not
+                // separate it.
+                break;
+            }
 
             if header.is_empty() && starts_header(&row) {
                 header = row.clone();
@@ -120,7 +128,9 @@ pub(crate) fn build(document: ExtractedDocument) -> Result<SourceDocument, Sourc
                 continue;
             };
             let mut cells = assign_cells(&row, current);
-            resolve_date(&mut cells, current, roster_month);
+            if let Some(date) = resolve_date(&mut cells, current, roster_month, last_date) {
+                last_date = Some(date);
+            }
             table.rows.push(cells);
             last_top = Some(top);
         }
@@ -195,6 +205,20 @@ fn cluster_rows(words: &[PositionedWord], tolerance: f64) -> Vec<Vec<&Positioned
         }
     }
     rows
+}
+
+/// Whether this row is the family's revision footer.
+///
+/// The footer prints `Created DDMonYYYY HH:MM (UTC) by …`; it supplies the
+/// source revision and no activity. The check uses the raw row text because the
+/// stamp's `Created` token is case-sensitive.
+fn is_revision_footer(row: &[&PositionedWord]) -> bool {
+    let text = row
+        .iter()
+        .map(|word| word.text.as_str())
+        .collect::<Vec<_>>()
+        .join(" ");
+    text.trim_start().starts_with("Created") && created_footer(&text).is_some()
 }
 
 /// Whether this row opens the detail-table header.
@@ -311,41 +335,84 @@ fn label_matches(label: &str, wanted: &str) -> bool {
 /// Replace the family's `DD Ddd` date cell with its calendar date.
 ///
 /// The family prints the day and weekday in the row and the month and year once
-/// in the document heading; the weekday is checked against the resolved date, so
-/// a misaligned cell is never accepted as activity timing.
-fn resolve_date(cells: &mut [String], areas: &[Area], month: Option<(i32, Month)>) {
-    let Some((year, month)) = month else {
-        return;
-    };
-    let Some(index) = areas.iter().position(|area| is_body_label_of(area, "date")) else {
-        return;
-    };
+/// in the document heading. A cockpit plan may begin with the previous month's
+/// tail, so the day and weekday resolve against the heading month and its
+/// adjacent months; the row order picks the candidate that continues the plan.
+/// A weekday matching no candidate keeps the cell unresolved.
+fn resolve_date(
+    cells: &mut [String],
+    areas: &[Area],
+    month: Option<(i32, Month)>,
+    previous: Option<Date>,
+) -> Option<Date> {
+    let (year, month) = month?;
+    let index = areas
+        .iter()
+        .position(|area| is_body_label_of(area, "date"))?;
     let mut parts = cells[index].split_whitespace();
     let (Some(day), Some(weekday), None) = (parts.next(), parts.next(), parts.next()) else {
-        return;
+        return None;
     };
-    let Ok(day) = day.parse::<u8>() else {
-        return;
-    };
-    let Some(wanted) = WEEKDAY_NAMES
+    let day = day.parse::<u8>().ok()?;
+    let wanted = WEEKDAY_NAMES
         .iter()
         .position(|name| name.eq_ignore_ascii_case(weekday))
-        .map(|index| WEEKDAYS[index])
-    else {
-        return;
-    };
-    let Ok(date) = Date::from_calendar_date(year, month, day) else {
-        return;
-    };
-    if date.weekday() != wanted {
-        return;
-    }
+        .map(|index| WEEKDAYS[index])?;
+    let candidates = adjacent_dates(year, month, day, wanted);
+    let date = choose_date(&candidates, previous, year, month)?;
     cells[index] = format!(
         "{:04}-{:02}-{:02}",
         date.year(),
         u8::from(date.month()),
         date.day()
     );
+    Some(date)
+}
+
+/// The real dates with this day and weekday in the heading month and its
+/// adjacent previous and next months.
+fn adjacent_dates(year: i32, month: Month, day: u8, weekday: Weekday) -> Vec<Date> {
+    let current = i64::from(year) * 12 + i64::from(u8::from(month) - 1);
+    let mut dates = Vec::new();
+    for offset in [-1, 0, 1] {
+        let absolute = current + offset;
+        let candidate_year = absolute.div_euclid(12) as i32;
+        let candidate_month = Month::try_from((absolute.rem_euclid(12) + 1) as u8).ok();
+        let Some(candidate_month) = candidate_month else {
+            continue;
+        };
+        let Ok(candidate) = Date::from_calendar_date(candidate_year, candidate_month, day) else {
+            continue;
+        };
+        if candidate.weekday() == weekday {
+            dates.push(candidate);
+        }
+    }
+    dates
+}
+
+/// Pick the candidate that continues the dated rows, or the one nearest the
+/// heading month's first day when this is the plan's first dated row.
+fn choose_date(
+    candidates: &[Date],
+    previous: Option<Date>,
+    year: i32,
+    month: Month,
+) -> Option<Date> {
+    if let Some(previous) = previous {
+        // A dated row that would move the plan backwards is not a candidate;
+        // the cell stays unresolved rather than jumping a month.
+        return candidates
+            .iter()
+            .copied()
+            .filter(|date| *date >= previous)
+            .min();
+    }
+    let month_start = Date::from_calendar_date(year, month, 1).ok()?;
+    candidates
+        .iter()
+        .copied()
+        .min_by_key(|date| (date.to_julian_day() - month_start.to_julian_day()).abs())
 }
 
 /// Whether a band is the named body label.

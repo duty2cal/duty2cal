@@ -2673,6 +2673,61 @@ async fn a_travel_activity_on(w: &mut DutyWorld, date: String) {
     );
 }
 
+/// One `VEVENT` body per activity, without its markers.
+fn event_bodies(calendar: &str) -> Vec<&str> {
+    calendar
+        .split("BEGIN:VEVENT")
+        .skip(1)
+        .map(|event| event.split("END:VEVENT").next().unwrap_or(event))
+        .collect()
+}
+
+#[given(
+    "a supported duty plan whose heading names August 2099 and whose detail rows begin with 30 Thu and 31 Fri"
+)]
+async fn a_cockpit_plan_with_a_previous_month_tail(w: &mut DutyWorld) {
+    write_fixture(w, &support::cockpit_prior_month_plan());
+}
+
+#[given(
+    "a supported duty plan whose heading names August 2099 and whose detail rows end with 31 Mon and 01 Tue"
+)]
+async fn a_cockpit_plan_with_a_next_month_tail(w: &mut DutyWorld) {
+    write_fixture(w, &support::cockpit_next_month_tail_plan());
+}
+
+#[given("a supported duty plan whose Created footer is printed directly below its last dated row")]
+async fn a_plan_with_a_close_footer(w: &mut DutyWorld) {
+    write_fixture(w, &support::footer_beside_last_row_plan());
+}
+
+#[then(
+    regex = r#"^the calendar contains a travel activity on (\d{4}-\d{2}-\d{2}) titled "([^"]+)"$"#
+)]
+async fn a_travel_activity_on_titled(w: &mut DutyWorld, date: String, title: String) {
+    let calendar = calendar(w);
+    let summary = format!("SUMMARY:{title}");
+    let start = format!("DTSTART:{}T", compact(&date));
+    assert!(
+        event_bodies(&calendar)
+            .iter()
+            .any(|event| event.contains(&summary) && event.contains(&start)),
+        "no travel activity {title:?} on {date}: {calendar}"
+    );
+}
+
+#[then(regex = r"^the calendar contains an all-day activity on (\d{4}-\d{2}-\d{2})$")]
+async fn an_all_day_activity_on(w: &mut DutyWorld, date: String) {
+    let calendar = calendar(w);
+    let start = format!("DTSTART;VALUE=DATE:{}", compact(&date));
+    assert!(
+        event_bodies(&calendar)
+            .iter()
+            .any(|event| event.contains(&start)),
+        "no all-day activity on {date}: {calendar}"
+    );
+}
+
 #[given("a supported duty plan whose revision footer names no UTC zone")]
 async fn a_plan_with_a_zoneless_footer(w: &mut DutyWorld) {
     let mut items = support::detail_header_row(600.0);
