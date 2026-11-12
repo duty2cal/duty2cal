@@ -1,3 +1,9 @@
+## [1.3.0] - 2026-11-12
+
+### New capabilities
+- Convert a Lufthansa crew duty plan whose detail table begins with days from the previous month, and state the supported plan as one roster month of one Lufthansa crew member without changing the cabin-crew calendars.
+- The public statement now names a Lufthansa crew duty plan for one crew member, so cockpit-crew plans are in scope.
+[1.2.1...1.3.0](https://github.com/duty2cal/duty2cal/compare/v1.2.1...v1.3.0)
 ## [1.2.1] - 2026-10-29
 
 ### New capabilities
