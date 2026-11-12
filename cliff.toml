@@ -74,6 +74,9 @@ commit_preprocessors = [
   # longer true. The history stays intact; the rendered 1.0.0 section states the
   # capability without the stale caveat.
   { pattern = "(?m)^feat\\(export-duty-plan-calendar\\): A crew member can convert one supported duty plan to a complete calendar in a current browser from the built Site output, with the plan never leaving the tab, or receive an explicit failure with an offered diagnostic\\. The public publication of that page is the separate publish-public-website change; this change delivers the browser capability and its evidence, not the public URL\\.$", replace = "feat(export-duty-plan-calendar): A crew member can convert one supported duty plan to a complete calendar in a current browser, with the plan never leaving the tab, or receive an explicit failure with an offered diagnostic." },
+  # The cockpit-plan revision's subject named the internal fixture evidence;
+  # the rendered change log states what a crew member gets instead.
+  { pattern = "(?m)^feat\\(state-the-support-statement\\): state the supported plan as a Lufthansa crew duty plan for one crew member, backed by the cabin and cockpit fixtures\\.$", replace = "feat(state-the-support-statement): The public statement now names a Lufthansa crew duty plan for one crew member, so cockpit-crew plans are in scope." },
   # These three site-publication revisions carried their scenario titles as
   # subjects. The rendered change log states the observable site behaviour.
   { pattern = "(?m)^feat\\(publish-public-website\\): skip publication when a revision changes no site input$", replace = "feat(publish-public-website): the public website stays as it is when a revision changes none of its inputs, instead of republishing an unchanged page" },
