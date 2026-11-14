@@ -486,11 +486,11 @@ DEALINGS IN THE SOFTWARE.
 
 Used by:
 - cfg-if 1.0.5 — https://github.com/rust-lang/cfg-if
-- js-sys 0.3.106 — https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/js-sys
-- wasm-bindgen-macro-support 0.2.129 — https://github.com/wasm-bindgen/wasm-bindgen/tree/main/crates/macro-support
-- wasm-bindgen-macro 0.2.129 — https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/macro
-- wasm-bindgen-shared 0.2.129 — https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/shared
-- wasm-bindgen 0.2.129 — https://github.com/wasm-bindgen/wasm-bindgen
+- js-sys 0.3.107 — https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/js-sys
+- wasm-bindgen-macro-support 0.2.130 — https://github.com/wasm-bindgen/wasm-bindgen/tree/main/crates/macro-support
+- wasm-bindgen-macro 0.2.130 — https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/macro
+- wasm-bindgen-shared 0.2.130 — https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/shared
+- wasm-bindgen 0.2.130 — https://github.com/wasm-bindgen/wasm-bindgen
 
 ```
 Copyright (c) 2014 Alex Crichton
@@ -2836,7 +2836,6 @@ Used by:
 - inventory 0.3.25 — https://github.com/dtolnay/inventory
 - itoa 1.0.18 — https://github.com/dtolnay/itoa
 - linux-raw-sys 0.12.1 — https://github.com/sunfishcode/linux-raw-sys
-- once_cell 1.21.4 — https://github.com/matklad/once_cell
 - pin-project-internal 1.1.13 — https://github.com/taiki-e/pin-project
 - pin-project-lite 0.2.17 — https://github.com/taiki-e/pin-project-lite
 - pin-project 1.1.13 — https://github.com/taiki-e/pin-project
