@@ -33,22 +33,22 @@ Design constraints:
 
 Use-case constraint: `U1` is a vacation variant and `OFF_2` a day-off variant; both are all-day and keep the printed code as the title.
 
-- [ ] GREEN — the modified outline includes `U1` and `OFF_2` with printed clocks; all six examples pass.
-- [ ] COMMIT: pending -- Batch: cockpit-code-recognition
+- [x] GREEN — the modified outline includes `U1` and `OFF_2` with printed clocks; all six examples pass.
+- [x] COMMIT: b01b3be -- Batch: cockpit-code-recognition
 
 ### 2. Medical and training duties use their printed UTC window
 
 Use-case constraint: `MED`, `WBT_*`, `EMCRM` and `EBTF3*` are timed non-flight duties using their own printed UTC window and station, titled by the printed code, with no warning.
 
-- [ ] GREEN — the new outline covers `MED`, `WBT_EM`, `WBT_GR`, `WBT_XY`, `EMCRM`, `EBTF3A`, `EBTF3B`, `EBTF3C`; each asserts the exact title, the printed window and no warning.
-- [ ] COMMIT: pending -- Batch: cockpit-code-recognition
+- [x] GREEN — the new outline covers `MED`, `WBT_EM`, `WBT_GR`, `WBT_XY`, `EMCRM`, `EBTF3A`, `EBTF3B`, `EBTF3C`; each asserts the exact title, the printed window and no warning.
+- [x] COMMIT: b01b3be -- Batch: cockpit-code-recognition
 
 ### 3. A code outside the confirmed training families still warns
 
 Use-case constraint: an unconfirmed code never acquires a meaning from a resembling spelling.
 
-- [ ] GREEN — `WBTX` and `EBTF4A` publish `unknown duty: <code>` with one warning each.
-- [ ] COMMIT: pending -- Batch: cockpit-code-recognition
+- [x] GREEN — `WBTX` and `EBTF4A` publish `unknown duty: <code>` with one warning each.
+- [x] COMMIT: b01b3be -- Batch: cockpit-code-recognition
 
 ## Existing E2E coverage
 
@@ -56,8 +56,8 @@ Use-case constraint: an unconfirmed code never acquires a meaning from a resembl
 
 ## Closeout
 
-- [ ] `./run-tests.sh` and `./run-tests.sh --e2e` exit 0.
-- [ ] `scripts/support-statement-check.sh` exits 0 and `bats scripts/tests/support-statement.bats` passes (9 tests).
-- [ ] `givn lint --change recognize-cockpit-duty-codes` exits clean.
-- [ ] The six cabin-crew calendars in `private/mk/` are byte-identical; all five cockpit-crew plans exit 0; August and September no longer write a warning report, July keeps `AMV`/`REP`, October keeps `S5`, November keeps `SBAO`.
-- [ ] `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` are clean.
+- [x] `./run-tests.sh` and `./run-tests.sh --e2e` exit 0.
+- [x] `scripts/support-statement-check.sh` exits 0 and `bats scripts/tests/support-statement.bats` passes (9 tests).
+- [x] `givn lint --change recognize-cockpit-duty-codes` exits clean.
+- [x] The six cabin-crew calendars in `private/mk/` are byte-identical; all five cockpit-crew plans exit 0; August and September no longer write a warning report, July keeps `AMV`/`REP`, October keeps `S5`, November keeps `SBAO`.
+- [x] `cargo fmt --all --check` and `cargo clippy --workspace --all-targets -- -D warnings` are clean.
