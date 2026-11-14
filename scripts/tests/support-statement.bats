@@ -100,6 +100,13 @@ PY
   [[ "$output" == *"docs/evidence/supported-duty-plan.md: does not name the cockpit fixture"* ]]
 }
 
+@test "an evidence record that names no confirmed cockpit code is refused" {
+  sed -i 's/`MED`/`ZZ`/g' "$TMP/docs/evidence/supported-duty-plan.md"
+  run_check
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"docs/evidence/supported-duty-plan.md: does not name the confirmed cockpit code 'MED'"* ]]
+}
+
 @test "a form without the outcome fields is refused" {
   sed -i '/id: refusal/d' "$TMP/.github/ISSUE_TEMPLATE/proposal.yml"
   run_check

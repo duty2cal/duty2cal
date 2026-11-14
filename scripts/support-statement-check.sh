@@ -152,6 +152,9 @@ else
   for code in FREE OFF U FZ SB SBX RE TK DTUSA EM; do
     has "$record" "$code" || fail "docs/evidence/supported-duty-plan.md: does not name the activity code '$code'"
   done
+  for code in U1 OFF_2 MED WBT_EM WBT_GR EMCRM EBTF3A EBTF3B; do
+    has "$record" "$code" || fail "docs/evidence/supported-duty-plan.md: does not name the confirmed cockpit code '$code'"
+  done
   has "$record" 'LU742' || fail 'docs/evidence/supported-duty-plan.md: does not name the travel leg the fixture prints'
   has "$record" 'cockpit_prior_month_plan' \
     || fail 'docs/evidence/supported-duty-plan.md: does not name the cockpit fixture'

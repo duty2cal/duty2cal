@@ -38,16 +38,20 @@ The generated detail table carries the column labels `Date (LT)`, `Trip`,
 `A/C`, `Blocktime`, `Timezone Difference`, `Layover` and `Tags`.
 
 The generated fixtures print the activity codes `FREE`, `OFF`, `U`, `FZ`, `SB`,
-`SBX`, `RE`, `TK`, `DTUSA` and `EM`, and the travel leg `LU742`. The cockpit
-fixture prints a cockpit position (`CP`) on its travel rows and an unrecognized
-all-day code (`U1`); the latter keeps the documented unknown-code fallback and
-produces a warning, so the fixture does not claim a meaning for it.
+`SBX`, `RE`, `TK`, `DTUSA`, `EM`, `U1` and `OFF_2`, and the travel leg `LU742`.
+The cockpit fixture prints a cockpit position (`CP`) on its travel rows and the
+recognized cockpit vacation variant `U1`.
 
-Separately, the conversion accepts the operator-confirmed standby shift codes
-`SB_F_CF`, `SB_M_CF` and `SB_S_CF`. No generated plan prints them, so this
-fixture and the committed expected calendars do not exercise them; their
-evidence is the capability's Gherkin scenarios, which convert a plan printing
-each code through the real executable.
+Separately, the conversion accepts the operator-confirmed cockpit codes `MED`,
+`WBT_*`, `EMCRM` and `EBTF3*` as timed non-flight duty, and the standby shift
+codes `SB_F_CF`, `SB_M_CF` and `SB_S_CF`. The generated plans print `MED`,
+`WBT_EM`, `WBT_GR`, `WBT_XY`, `EMCRM`, `EBTF3A`, `EBTF3B` and `EBTF3C` in the
+scenario `Medical and training duties use their printed UTC window`; `WBTX` and
+`EBTF4A` exercise the fallback boundary in `A code outside the confirmed
+training families still warns`. No generated plan prints the standby shift
+codes, so this fixture and the committed expected calendars do not exercise
+them; their evidence is the capability's Gherkin scenarios, which convert a
+plan printing each code through the real executable.
 
 The close-footer fixture prints the complete family footer (`Created`, its date,
 its clock, `UTC`, `by`, `Jeppesen`) ten points below its last detail row, so the

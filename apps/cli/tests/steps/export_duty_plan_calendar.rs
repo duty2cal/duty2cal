@@ -514,6 +514,29 @@ async fn one_timed_non_flight(
 }
 
 #[then(
+    regex = r#"^the calendar contains one timed activity titled "([^"]+)" from (\d{2}:\d{2}) to (\d{2}:\d{2}) UTC on (\d{4}-\d{2}-\d{2})$"#
+)]
+async fn one_timed_activity_titled(
+    w: &mut DutyWorld,
+    title: String,
+    start: String,
+    end: String,
+    date: String,
+) {
+    let calendar = calendar(w);
+    assert_event_count(&calendar, 1);
+    assert!(
+        calendar.contains(&format!("SUMMARY:{title}\r\n")),
+        "the activity is not titled {title:?}: {calendar}"
+    );
+    assert!(
+        calendar.contains(&format!("DTSTART:{}", utc(&date, &start)))
+            && calendar.contains(&format!("DTEND:{}", utc(&date, &end))),
+        "the activity does not carry the printed window {start}-{end} on {date}: {calendar}"
+    );
+}
+
+#[then(
     regex = r"^the calendar contains one timed standby activity from (\d{2}:\d{2}) to (\d{2}:\d{2}) UTC lasting (\d+) hours$"
 )]
 async fn one_timed_standby(w: &mut DutyWorld, start: String, end: String, _hours: u32) {

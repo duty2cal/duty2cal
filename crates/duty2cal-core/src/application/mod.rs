@@ -318,11 +318,22 @@ pub struct ConversionOutcome {
 }
 
 /// The activity codes the supported family treats as all-day.
-const ALL_DAY_CODES: [&str; 4] = ["FREE", "OFF", "U", "FZ"];
+const ALL_DAY_CODES: [&str; 6] = ["FREE", "OFF", "U", "FZ", "U1", "OFF_2"];
 /// The activity codes that denote a timed availability window.
 const AVAILABILITY_CODES: [&str; 6] = ["SB", "RE", "SBX", "SB_F_CF", "SB_M_CF", "SB_S_CF"];
 /// The activity codes that denote timed non-flight duty.
-const NON_FLIGHT_CODES: [&str; 3] = ["TK", "DTUSA", "EM"];
+const NON_FLIGHT_CODES: [&str; 5] = ["TK", "DTUSA", "EM", "MED", "EMCRM"];
+/// The confirmed code prefixes that denote timed non-flight duty. The suffix
+/// is preserved in the title and is not interpreted.
+const NON_FLIGHT_PREFIXES: [&str; 2] = ["WBT_", "EBTF3"];
+
+/// Whether a printed code denotes timed non-flight duty.
+fn is_non_flight_code(code: &str) -> bool {
+    NON_FLIGHT_CODES.contains(&code)
+        || NON_FLIGHT_PREFIXES
+            .iter()
+            .any(|prefix| code.starts_with(prefix))
+}
 
 /// One detail row with its cells resolved by column label.
 struct Row {
@@ -644,7 +655,7 @@ fn classify(table: &RawRosterTable, row: &Row) -> Classified {
         };
     }
 
-    if NON_FLIGHT_CODES.contains(&code) {
+    if is_non_flight_code(code) {
         return match row_interval(row) {
             Ok(interval) => Classified::Entry(DutyEntry::NonFlightDuty {
                 date: row.date,
