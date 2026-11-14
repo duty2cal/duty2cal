@@ -2,12 +2,12 @@
   "schema": 2,
   "change": "recognize-cockpit-duty-codes",
   "status": "passed",
-  "head": "acb12f149b012ef9573f8f940df7b029b951e89a",
+  "head": "de52779954e955f4e0fac2b223857fad22272fa4",
   "features_path": "givn/changes/recognize-cockpit-duty-codes/specs",
   "features_digest": "a6f5d9bbdda4825bf285f89b9ec5347d0ef730b885e664c26e683688e01ddc07",
   "command_digest": "1031237dac4a7328aa009dc5586392005a11f5408a7dc7b8a4726efc55a93a8e",
   "command": "./run-tests.sh",
-  "tested_content_digest": "fcfa4bdd586c8b16c4e76d06755a1911c9839731b7e4a325ec75a507724a18d9",
+  "tested_content_digest": "fb68136e7f2eca729198c3f3bfdd4321559d3da4770c4969184a954bece67de1",
   "content_scope": "change-proof/v1",
   "runner_exit": 0,
   "result": {
@@ -17,5 +17,5 @@
     "failed": 0,
     "skipped": 0
   },
-  "finished_at_unix": 1794688984
+  "finished_at_unix": 1794689045
 }
