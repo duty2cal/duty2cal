@@ -332,7 +332,7 @@ address.
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 84% (2786/3328)
+Line coverage: 84% (2792/3334)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:
