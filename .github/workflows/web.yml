@@ -24,8 +24,42 @@ permissions:
   contents: read
 
 jobs:
+  tagged:
+    name: tagged
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tagged: ${{ steps.tags.outputs.tagged }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The tag has to be visible in the checkout, and `fetch-depth: 0`
+          # fetches every tag with the history.
+          fetch-depth: 0
+      - id: tags
+        name: Ask whether the pushed revision carries a version tag
+        run: |
+          set -euo pipefail
+          # A revision that a version tag names is published by the release
+          # workflow. Starting this publication too would put two runs of the
+          # one `site-publication` group on the same revision, and GitHub
+          # cancels a run that is still pending in a group when a newer run
+          # enters it: the cancellation leaves a `site / publish` check the
+          # release's publication gate refuses. Publishing it once keeps the
+          # group uncontended and the check set green.
+          if [ -n "$(git tag --points-at HEAD --list 'v*')" ]; then
+            echo "tagged=true" >> "$GITHUB_OUTPUT"
+            echo "the revision carries a version tag: the release workflow publishes it"
+          else
+            echo "tagged=false" >> "$GITHUB_OUTPUT"
+            echo "the revision carries no version tag: this workflow publishes it"
+          fi
+
   site:
     name: site
+    needs: [tagged]
+    if: needs.tagged.outputs.tagged != 'true'
     permissions:
       contents: read
     uses: ./.github/workflows/site.yml
