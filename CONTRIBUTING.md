@@ -92,10 +92,10 @@ Actionlint is also available as the image the CI job uses:
 `docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 .github/workflows/*.yml`.
 
 The full CI set additionally runs `cargo deny check`, `reuse lint`, the
-third-party notices drift check (`cargo about generate about.hbs
---output-file THIRD-PARTY-NOTICES.md` committed with no diff) and the coverage
-scripts (`./measure-coverage.sh`, `./merge-coverages.sh`). A change does not land
-while any of them fails.
+third-party notices drift check (`cargo about generate about.hbs` twice; one of
+the two renders must reproduce `THIRD-PARTY-NOTICES.md` byte for byte) and the
+coverage scripts (`./measure-coverage.sh`, `./merge-coverages.sh`). A change
+does not land while any of them fails.
 
 Every source file carries an SPDX licence header on line 1 (or on line 2 after a
 shebang), naming MPL-2.0 in the standard SPDX licence tag.

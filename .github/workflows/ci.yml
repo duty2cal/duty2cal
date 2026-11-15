@@ -211,8 +211,30 @@ jobs:
       - uses: ./.github/actions/install-dev-tools
         with:
           tools: cargo-about
-      - run: cargo about generate about.hbs --output-file THIRD-PARTY-NOTICES.md
-      - run: git diff --exit-code THIRD-PARTY-NOTICES.md
+      - name: Render the notices twice
+        run: |
+          set -euo pipefail
+          cargo about generate about.hbs --output-file "$RUNNER_TEMP/notices-1.md"
+          cargo about generate about.hbs --output-file "$RUNNER_TEMP/notices-2.md"
+      - name: Compare the committed notices with both renders
+        run: |
+          set -euo pipefail
+          # The pinned renderer is not byte-stable across invocations on the
+          # same licence sources: on 112dd4c this gate failed on one blank line
+          # in `miniz_oxide`'s MIT section and passed on a rerun of the same
+          # revision, while the committed file reproduced byte for byte on the
+          # maintainer's machine. A render that reproduces the committed file
+          # is the evidence the file is current; a real drift makes every
+          # render differ from it.
+          for render in "$RUNNER_TEMP/notices-1.md" "$RUNNER_TEMP/notices-2.md"; do
+            if cmp -s THIRD-PARTY-NOTICES.md "$render"; then
+              echo "the committed notices are the render in $render"
+              exit 0
+            fi
+          done
+          echo "neither render reproduces THIRD-PARTY-NOTICES.md"
+          diff -u THIRD-PARTY-NOTICES.md "$RUNNER_TEMP/notices-1.md" || true
+          exit 1
 
   coverage:
     # Coverage is a main-branch measurement, not a per-pull-request cost.
