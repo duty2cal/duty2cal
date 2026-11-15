@@ -140,6 +140,17 @@ jobs:
     # A bare call to the one build-and-deploy definition. A tag publication
     # always builds (no `since`), so the footer names the tag and the release
     # announces the page of its own revision.
+    #
+    # The publication starts only after the preparation concludes. A branch and
+    # its tag pushed together start two publications of the same revision, and
+    # both ask for the one `site-publication` group; GitHub cancels a run still
+    # pending in that group when a newer run enters it, whatever
+    # `cancel-in-progress` says. Asking for the group at push time let this job
+    # cancel the default-branch publication of the same revision, and the
+    # publication gate then refused the release on that cancelled check. Behind
+    # the preparation, the default-branch publication leaves the queue first,
+    # which is also the order the deployment view documents.
+    needs: [prepare]
     permissions:
       contents: read
     uses: ./.github/workflows/site.yml
