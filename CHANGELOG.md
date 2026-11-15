@@ -1,3 +1,11 @@
+## [1.4.0] - 2026-11-15
+
+### New capabilities
+- Recognize the cockpit-crew codes U1, OFF_2, MED, WBT_*, EMCRM and EBTF3* by their confirmed meanings, so those rows publish without the unknown-duty warning.
+
+### Dependencies
+- Bump the rust-deps group with 2 updates
+[1.3.0...1.4.0](https://github.com/duty2cal/duty2cal/compare/v1.3.0...v1.4.0)
 ## [1.3.0] - 2026-11-12
 
 ### New capabilities
